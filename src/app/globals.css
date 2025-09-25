@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-termina-bold: "termina", sans-serif;
+  --font-termina-medium: "termina", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-termina-medium);
+  font-weight: 500; /* Medium weight for Termina Medium */
+}
+
+/* Configuration des titres avec Termina Bold */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-termina-bold);
+  font-weight: 700; /* Bold weight for Termina Bold */
+}
