@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Login } from './Login';
 
 const navigationItems = [
   { label: "FORMATIONS", href: "/formations" },
@@ -12,9 +13,18 @@ const navigationItems = [
 
 export const Navbar = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileNavOpen(!isMobileNavOpen);
+  };
+
+  const openLogin = () => {
+    setIsLoginOpen(true);
+  };
+
+  const closeLogin = () => {
+    setIsLoginOpen(false);
   };
 
 
@@ -48,13 +58,13 @@ export const Navbar = () => {
 
               {/* Desktop Action Button */}
               <div className="hidden sm:flex items-center space-x-2 md:space-x-3 ml-auto">
-                <Link 
-                  href="/connexion" 
+                <button 
+                  onClick={openLogin}
                   className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-sm sm:text-sm md:text-base flex items-center justify-center"
                   style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
                 >
                   <span style={{ fontWeight: '900' }}>ME CONNECTER</span>
-                </Link>
+                </button>
               </div>
 
               {/* Mobile Menu Button */}
@@ -114,18 +124,23 @@ export const Navbar = () => {
 
             {/* Action Button - Toujours visible en bas */}
             <div className="flex flex-col space-y-3 px-6 py-4 bg-[#F8F5E4] border-t border-gray-200 flex-shrink-0">
-              <Link 
-                href="/connexion"
-                onClick={toggleMobileMenu}
+              <button 
+                onClick={() => {
+                  openLogin();
+                  toggleMobileMenu();
+                }}
                 className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-6 py-3 tracking-wide transition-all duration-200 flex items-center justify-center"
                 style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
               >
                 <span style={{ fontWeight: '900' }}>ME CONNECTER</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <Login isOpen={isLoginOpen} onClose={closeLogin} />
     </>
   );
 };

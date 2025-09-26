@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Navbar } from './Navbar';
+import { Improve } from './Improve';
 import { Footer } from './Footer';
 
 export const NotFound = () => {
@@ -66,6 +67,7 @@ export const NotFound = () => {
         </div>
       </div>
     </div>
+    <Improve />
     <Footer />
     </>
   );

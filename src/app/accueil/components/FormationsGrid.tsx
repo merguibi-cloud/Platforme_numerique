@@ -1,126 +1,21 @@
 "use client";
 import { useState } from 'react';
 import Image from 'next/image';
-
-// Interface pour définir la structure d'une formation
-interface Formation {
-  id: number;
-  titre: string;
-  description: string;
-  redirection: string;
-  icon: string;
-  image: string;
-  theme: 'DIGITAL' | 'BUSINESS' | 'FINANCE' | 'CRÉATIVITÉ' | 'MANAGEMENT';
-  ecole: 'DIGITAL LEGACY' | 'KEOS' | '1001' | 'AFRICAN BUSINESS SCHOOL' | 'CREATIVE NATION' | 'CSAM' |
-          'EDIFICE' | 'FINANCE SOCIETY' | 'LEADER SOCIETY' | 'STUDIO CAMPUS' | 'TALENT BUSINESS SCHOOL' |
-           'ELITE SOCIETY ONLINE';
-}
-
-// Données des formations
-const formationsData: Formation[] = [
-  {
-    id: 1,
-    titre: "RESPONSABLE MARKETING PRODUITS ET SERVICES",
-    description: "Piloter des stratégies marketing et valoriser des offres adaptées aux besoins du marché",
-    redirection: "/formations/marketing-produits",
-    icon: "/img/icon_ecole/D_logo.png",
-    image: "/img/formation/forma_digital.png",
-    theme: "BUSINESS",
-    ecole: "DIGITAL LEGACY"
-  },
-  {
-    id: 2,
-    titre: "NÉGOCIATEUR TECHNICO-COMMERCIAL",
-    description: "Vendre des solutions techniques en alliant expertise produit et sens de la négociation",
-    redirection: "/formations/negociateur-technico",
-    icon: "/img/icon_ecole/K_KEOS.png",
-    image: "/img/formation/forma_keos2.png",
-    theme: "BUSINESS",
-    ecole: "KEOS"
-  },
-  {
-    id: 3,
-    titre: "MANAGER FINANCIER",
-    description: "Superviser la gestion financière et optimiser la performance économique de l'entreprise",
-    redirection: "/formations/manager-financier",
-    icon: "/img/icon_ecole/Finance.png",
-    image: "/img/formation/forma_finance.png",
-    theme: "FINANCE",
-    ecole: "FINANCE SOCIETY"
-  },
-  {
-    id: 4,
-    titre: "DÉVELOPPEUR EN INTELLIGENCE ARTIFICIELLE",
-    description: "Concevoir des applications intelligentes basées sur des modèles d'IA",
-    redirection: "/formations/developpeur-ia",
-    icon: "/img/icon_ecole/1001_logo.png",
-    image: "/img/formation/forma_1001.png",
-    theme: "DIGITAL",
-    ecole: "1001"
-  },
-  {
-    id: 5,
-    titre: "MANAGEMENT COMMERCIAL OPÉRATIONNEL",
-    description: "Encadrer des équipes terrain et optimiser les performances commerciales",
-    redirection: "/formations/management-commercial",
-    icon: "/img/icon_ecole/K_KEOS.png",
-    image: "/img/formation/forma_keos.png",
-    theme: "MANAGEMENT",
-    ecole: "KEOS"
-  },
-  {
-    id: 6,
-    titre: "MANAGER EN RESSOURCES HUMAINES",
-    description: "Piloter la stratégie RH et accompagner les transformations humaines",
-    redirection: "/formations/manager-rh",
-    icon: "/img/icon_ecole/Talent.png",
-    image: "/img/formation/forma_talent.png",
-    theme: "MANAGEMENT",
-    ecole: "TALENT BUSINESS SCHOOL"
-  },
-  {
-    id: 7,
-    titre: "MANAGER COMMERCIAL ET MARKETING",
-    description: "Concevoir des plans marketing et diriger les actions commerciales",
-    redirection: "/formations/manager-commercial-marketing",
-    icon: "/img/icon_ecole/K_KEOS.png",
-    image: "/img/formation/forma_keos3.jpg",
-    theme: "MANAGEMENT",
-    ecole: "KEOS"
-  },
-  {
-    id: 8,
-    titre: "RESPONSABLE DU DÉVELOPPEMENT DES ACTIVITÉS",
-    description: "Identifier de nouveaux leviers de croissance et structurer leur mise en œuvre",
-    redirection: "/formations/responsable-developpement",
-    icon: "/img/icon_ecole/Leader.png",
-    image: "/img/formation/forma_leader.png",
-    theme: "BUSINESS",
-    ecole: "LEADER SOCIETY"
-  },
-];
-
-const categories = ['DIGITAL', 'BUSINESS', 'FINANCE', 'CRÉATIVITÉ', 'MANAGEMENT'];
+import { formationsData, categories } from '../../formations/data/formationsData';
 
 export const FormationsGrid = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('TOUS');
-  const [showAll, setShowAll] = useState(false);
 
   // Filtrer les formations selon la catégorie sélectionnée
   const filteredFormations = selectedCategory === 'TOUS' 
     ? formationsData 
     : formationsData.filter(formation => formation.theme === selectedCategory);
 
-  // Afficher seulement 8 formations initialement, ou toutes si "Voir Plus" est cliqué
-  const displayedFormations = showAll ? filteredFormations : filteredFormations.slice(0, 8);
+  // Afficher seulement 8 formations maximum sur la page d'accueil
+  const displayedFormations = filteredFormations.slice(0, 8);
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
-    setShowAll(false); // Réinitialiser l'affichage quand on change de catégorie
-  };
-
-  const handleVoirPlus = () => {
-    setShowAll(true);
   };
 
   return (
@@ -250,15 +145,16 @@ export const FormationsGrid = () => {
           </div>
         )}
 
-<div className="text-center">
-            <button
-              onClick={handleVoirPlus}
-              className="bg-[#032622] text-[#F8F5E4] px-8 py-4 text-lg font-bold hover:bg-[#044a3a] transition-colors duration-300"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              VOIR PLUS
-            </button>
-          </div>
+        {/* Bouton pour aller à la page formations complète */}
+        <div className="text-center">
+          <a
+            href="/formations"
+            className="bg-[#032622] text-[#F8F5E4] px-8 py-4 text-lg font-bold hover:bg-[#044a3a] transition-colors duration-300 inline-block"
+            style={{ fontFamily: 'var(--font-termina-bold)' }}
+          >
+            VOIR PLUS
+          </a>
+        </div>
       </div>
     </div>
   );
