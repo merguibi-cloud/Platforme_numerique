@@ -33,3 +33,19 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-termina-bold);
   font-weight: 700; /* Bold weight for Termina Bold */
 }
+
+/* Scrollbar cachée pour la popup de sélection de formations */
+.popup-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  overflow-y: auto !important;
+}
+
+.popup-scroll::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* S'assurer que le scroll fonctionne */
+.popup-scroll {
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+}

@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Login } from './Login';
+import { LoginWithFormationSelection } from './LoginWithFormationSelection';
 
 const navigationItems = [
   { label: "FORMATIONS", href: "/formations" },
@@ -139,8 +139,15 @@ export const Navbar = () => {
         </div>
       )}
 
-      {/* Login Modal */}
-      <Login isOpen={isLoginOpen} onClose={closeLogin} />
+      {/* Login with Formation Selection Modal */}
+      <LoginWithFormationSelection 
+        isOpen={isLoginOpen} 
+        onClose={closeLogin}
+        onComplete={(selectedFormations) => {
+          console.log('Formations sélectionnées:', selectedFormations);
+          // Ici vous pouvez traiter les formations sélectionnées
+        }}
+      />
     </>
   );
 };
