@@ -1,7 +1,12 @@
-import { supabase } from './supabase'
+import { supabase, isSupabaseAvailable } from './supabase'
 import { Formation } from '@/types/formations'
 
 export async function getAllFormations(): Promise<Formation[]> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible - retour d\'un tableau vide');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('formations')
@@ -21,6 +26,11 @@ export async function getAllFormations(): Promise<Formation[]> {
 }
 
 export async function getFormationById(id: number): Promise<Formation | null> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('formations')
@@ -41,6 +51,11 @@ export async function getFormationById(id: number): Promise<Formation | null> {
 }
 
 export async function getFormationsByTheme(theme: string): Promise<Formation[]> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('formations')
@@ -61,6 +76,11 @@ export async function getFormationsByTheme(theme: string): Promise<Formation[]> 
 }
 
 export async function getFormationsByEcole(ecole: string): Promise<Formation[]> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('formations')
@@ -81,6 +101,11 @@ export async function getFormationsByEcole(ecole: string): Promise<Formation[]> 
 }
 
 export async function getFormationsByNiveau(niveau: string): Promise<Formation[]> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('formations')
@@ -101,6 +126,11 @@ export async function getFormationsByNiveau(niveau: string): Promise<Formation[]
 }
 
 export async function getFormationsByRythme(rythme: string): Promise<Formation[]> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('formations')
@@ -126,6 +156,11 @@ export async function searchFormations(filters: {
   niveau?: string;
   rythme?: string;
 }): Promise<Formation[]> {
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('Supabase non disponible');
+    return [];
+  }
+
   try {
     let query = supabase.from('formations').select('*');
 
