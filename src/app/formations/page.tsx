@@ -1,5 +1,6 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Navbar } from '../Navbar';
 import { Footer } from '../Footer';
 import { FormationHero } from './components/FormationHero';
@@ -7,10 +8,19 @@ import { FormationFilters } from './components/FormationFilters';
 import { FormationsGridComplete } from './components/FormationsGridComplete';
 
 export default function FormationsPage() {
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('TOUS');
   const [selectedNiveau, setSelectedNiveau] = useState('TOUS');
   const [selectedRythme, setSelectedRythme] = useState('TOUS');
+
+  // Gérer le paramètre de recherche depuis l'URL
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    }
+  }, [searchParams]);
 
   const handleSearchChange = (search: string) => {
     setSearchTerm(search);

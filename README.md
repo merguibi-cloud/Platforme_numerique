@@ -1,24 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plateforme Numérique - Elite Society
 
-## Getting Started
+Cette plateforme utilise Next.js avec Supabase pour la gestion des formations.
 
-First, run the development server:
+## 🚀 Démarrage rapide
+
+### 1. Installation des dépendances
+
+```bash
+npm install
+```
+
+### 2. Configuration Supabase
+
+Créez un fichier `.env.local` avec vos variables d'environnement Supabase :
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+### 3. Lancement du serveur de développement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000) pour voir le résultat.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🏗️ Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Frontend** : Next.js 15 avec TypeScript
+- **Base de données** : Supabase (PostgreSQL)
+- **Styling** : Tailwind CSS
+- **Authentification** : Supabase Auth
+
+## 📁 Structure du projet
+
+- `src/app/` - Pages et composants Next.js
+- `src/lib/` - Utilitaires et configuration Supabase
+- `src/types/` - Types TypeScript
+- `public/` - Assets statiques
 
 ## Learn More
 

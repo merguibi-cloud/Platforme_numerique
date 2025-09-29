@@ -142,8 +142,8 @@ export const Navbar = () => {
       {/* Login with Formation Selection Modal */}
       <LoginWithFormationSelection 
         isOpen={isLoginOpen} 
-        onClose={closeLogin}
-        onComplete={(selectedFormations) => {
+        onCloseAction={closeLogin}
+        onCompleteAction={(selectedFormations) => {
           console.log('Formations sélectionnées:', selectedFormations);
           // Ici vous pouvez traiter les formations sélectionnées
         }}

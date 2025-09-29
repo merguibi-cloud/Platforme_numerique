@@ -3,17 +3,18 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, ChevronDown, Check, ArrowLeft, ArrowRight } from 'lucide-react';
-import { formationsData, Formation, categories, niveaux, rythmes } from './formations/data/formationsData';
+import { Formation, categories, niveaux, rythmes } from '@/types/formations';
+import { getAllFormations } from '@/lib/formations';
 
 interface LoginWithFormationSelectionProps {
   isOpen: boolean;
-  onClose: () => void;
-  onComplete: (selectedFormations: Formation[]) => void;
+  onCloseAction: () => void;
+  onCompleteAction: (selectedFormations: Formation[]) => void;
 }
 
 type Step = 'login' | 'formation-selection' | 'inscription';
 
-export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: LoginWithFormationSelectionProps) => {
+export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteAction }: LoginWithFormationSelectionProps) => {
   const [currentStep, setCurrentStep] = useState<Step>('login');
   const [selectedFormation, setSelectedFormation] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +27,27 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
+  
+  // États pour les formations
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Charger les formations depuis Supabase
+  useEffect(() => {
+    const loadFormations = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllFormations();
+        setFormations(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des formations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFormations();
+  }, []);
 
   // Reset states when popup opens/closes
   useEffect(() => {
@@ -50,7 +72,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
   }, [isOpen]);
 
   // Filtrer les formations selon les critères
-  const filteredFormations = formationsData.filter(formation => {
+  const filteredFormations = formations.filter(formation => {
     const matchesSearch = formation.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          formation.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'TOUS' || formation.theme === selectedCategory;
@@ -69,12 +91,18 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
       setCurrentStep('inscription');
     } else if (currentStep === 'inscription') {
       // Traiter l'inscription
-      const formation = formationsData.find(f => f.id === selectedFormation);
+      const formation = formations.find(f => f.id === selectedFormation);
       if (formation) {
-        onComplete([formation]);
-        onClose();
+        onCompleteAction([formation]);
+        onCloseAction();
       }
     }
+  };
+
+  const handleFormationDetails = (formation: Formation) => {
+    // Fermer le modal et rediriger vers la page de la formation
+    onCloseAction();
+    window.location.href = formation.redirection;
   };
 
   const goBack = () => {
@@ -83,7 +111,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
     } else if (currentStep === 'inscription') {
       setCurrentStep('formation-selection');
     } else {
-      onClose();
+      onCloseAction();
     }
   };
 
@@ -94,7 +122,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
       {/* Overlay */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={onCloseAction}
       />
       
       {/* Modal */}
@@ -111,7 +139,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
                 {currentStep === 'formation-selection' ? 'SÉLECTIONNEZ VOTRE FORMATION' : 'CRÉE TON COMPTE'}
               </h1>
               <button
-                onClick={onClose}
+                onClick={onCloseAction}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +153,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
         {/* Bouton fermer pour l'étape login */}
         {currentStep === 'login' && (
           <button
-            onClick={onClose}
+            onClick={onCloseAction}
             className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700 transition-colors z-10"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +165,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
         {/* Contenu principal */}
         <div className={currentStep === 'login' ? '' : 'flex-1 overflow-hidden'}>
           {currentStep === 'login' && (
-            /* Étape Login - Exactement comme l'ancien composant */
+            /* Étape Login */
             <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[500px] sm:min-h-[600px]">
               
               {/* Section gauche - Image avec logo */}
@@ -377,106 +405,115 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
 
               {/* Contenu principal */}
               <div className="flex-1 overflow-y-auto p-6 pb-24 popup-scroll" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
-                  {filteredFormations.map((formation) => (
-                    <div
-                      key={formation.id}
-                      className="bg-[#032622] shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-[380px] w-full relative"
-                    >
-                      {/* Checkbox */}
-                      <button
-                        onClick={() => toggleFormationSelection(formation.id)}
-                        className={`absolute top-3 left-3 w-6 h-6 border-2 rounded flex items-center justify-center transition-colors z-10 ${
-                          selectedFormation === formation.id
-                            ? 'bg-[#F8F5E4] border-[#F8F5E4] text-[#032622]'
-                            : 'bg-white border-gray-300 hover:border-[#F8F5E4]'
-                        }`}
-                      >
-                        {selectedFormation === formation.id && (
-                          <Check className="w-4 h-4" />
-                        )}
-                      </button>
-
-                      {/* Badge RNCP */}
-                      <div className="absolute top-3 right-3 bg-[#F8F5E4] text-[#032622] px-2 py-1 text-xs font-bold z-10">
-                        CERTIFIÉE RNCP
-                      </div>
-
-                      {/* Image de la formation */}
-                      <div className="h-40 bg-gray-200 relative overflow-hidden flex-shrink-0">
-                        <Image
-                          src={formation.image}
-                          alt={formation.titre}
-                          width={400}
-                          height={160}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/img/formation/forma_digital.png';
-                          }}
-                        />
-                      </div>
-
-                      {/* Contenu de la carte */}
-                      <div className="p-5 flex flex-col flex-grow">
-                        {/* Titre */}
-                        <h3 
-                          className="text-[14px] font-bold mb-2 text-[#F8F5E4] leading-tight flex-shrink-0 h-12 overflow-hidden"
-                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+                    <p className="mt-4 text-[#032622]">Chargement des formations...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+                      {filteredFormations.map((formation) => (
+                        <div
+                          key={formation.id}
+                          className="bg-[#032622] shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-[380px] w-full relative"
                         >
-                          {formation.titre}
-                        </h3>
-
-                        {/* Description */}
-                        <p className="text-[#F8F5E4] text-xs mb-3 leading-relaxed flex-grow h-16 overflow-hidden">
-                          {formation.description}
-                        </p>
-
-                        {/* Bouton et icône - toujours en bas */}
-                        <div className="flex items-center justify-between mt-auto">
-                          <Link
-                            href={formation.redirection}
-                            className="bg-[#F8F5E4] text-[#032622] px-3 py-2 text-sm font-bold hover:bg-[#044a3a] transition-colors duration-300"
-                            style={{ fontFamily: 'var(--font-termina-bold)' }}
+                          {/* Checkbox */}
+                          <button
+                            onClick={() => toggleFormationSelection(formation.id)}
+                            className={`absolute top-3 left-3 w-6 h-6 border-2 rounded flex items-center justify-center transition-colors z-10 ${
+                              selectedFormation === formation.id
+                                ? 'bg-[#F8F5E4] border-[#F8F5E4] text-[#032622]'
+                                : 'bg-white border-gray-300 hover:border-[#F8F5E4]'
+                            }`}
                           >
-                            EN SAVOIR PLUS
-                          </Link>
-                          
-                          {/* Icône de l'école */}
-                          <div className="w-12 h-12 flex items-center justify-center">
+                            {selectedFormation === formation.id && (
+                              <Check className="w-4 h-4" />
+                            )}
+                          </button>
+
+                          {/* Badge RNCP */}
+                          <div className="absolute top-3 right-3 bg-[#F8F5E4] text-[#032622] px-2 py-1 text-xs font-bold z-10">
+                            CERTIFIÉE RNCP
+                          </div>
+
+                          {/* Image de la formation */}
+                          <div className="h-40 bg-gray-200 relative overflow-hidden flex-shrink-0">
                             <Image
-                              src={formation.icon}
-                              alt={`Logo ${formation.ecole}`}
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-contain"
+                              src={formation.image}
+                              alt={formation.titre}
+                              width={400}
+                              height={160}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/img/formation/forma_digital.png';
+                              }}
                             />
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
 
-                {filteredFormations.length === 0 && (
-                  <div className="text-center py-12">
-                    <p 
-                      className="text-gray-500 text-lg"
-                      style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
-                    >
-                      Aucune formation trouvée avec ces critères
-                    </p>
-                  </div>
+                          {/* Contenu de la carte */}
+                          <div className="p-5 flex flex-col flex-grow">
+                            {/* Titre */}
+                            <h3 
+                              className="text-[14px] font-bold mb-2 text-[#F8F5E4] leading-tight flex-shrink-0 h-12 overflow-hidden"
+                              style={{ fontFamily: 'var(--font-termina-bold)' }}
+                            >
+                              {formation.titre}
+                            </h3>
+
+                            {/* Description */}
+                            <p className="text-[#F8F5E4] text-xs mb-3 leading-relaxed flex-grow h-16 overflow-hidden">
+                              {formation.description}
+                            </p>
+
+                            {/* Bouton et icône - toujours en bas */}
+                            <div className="flex items-center justify-between mt-auto">
+                              <button
+                                onClick={() => handleFormationDetails(formation)}
+                                className="bg-[#F8F5E4] text-[#032622] px-3 py-2 text-sm font-bold hover:bg-[#032622] hover:text-[#F8F5E4] transition-colors duration-300"
+                                style={{ fontFamily: 'var(--font-termina-bold)' }}
+                              >
+                                EN SAVOIR PLUS
+                              </button>
+                              
+                              {/* Icône de l'école */}
+                              <div className="w-12 h-12 flex items-center justify-center">
+                                <Image
+                                  src={formation.icon}
+                                  alt={`Logo ${formation.ecole}`}
+                                  width={48}
+                                  height={48}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {filteredFormations.length === 0 && (
+                      <div className="text-center py-12">
+                        <p 
+                          className="text-gray-500 text-lg"
+                          style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
+                        >
+                          Aucune formation trouvée avec ces critères
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </>
           )}
           
-           {currentStep === 'inscription' && (
-             /* Étape Inscription */
-             <div className="flex-1 overflow-y-auto p-6 pb-24 popup-scroll" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-               <div className="w-full max-w-4xl mx-auto">
-                 {/* Formulaire d'inscription */}
-                 <form className="space-y-6">
+          {currentStep === 'inscription' && (
+            /* Étape Inscription */
+            <div className="flex-1 overflow-y-auto p-6 pb-24 popup-scroll" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+              <div className="w-full max-w-4xl mx-auto">
+                {/* Formulaire d'inscription */}
+                <form className="space-y-6">
                   {/* Email */}
                   <div>
                     <label 
@@ -489,7 +526,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-100 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                      className="w-full px-4 py-3 bg-[#032622]/16 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                       placeholder="Votre email"
                       required
                     />
@@ -507,7 +544,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-[#032622]/10 text-[#F8F5E4] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                      className="w-full px-4 py-3 bg-[#032622]/16 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                       placeholder="Votre mot de passe"
                       required
                     />
@@ -525,7 +562,7 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-100 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                      className="w-full px-4 py-3 bg-[#032622]/16 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                       placeholder="Confirmez votre mot de passe"
                       required
                     />
@@ -546,30 +583,30 @@ export const LoginWithFormationSelection = ({ isOpen, onClose, onComplete }: Log
                     </div>
                   </div>
 
-                   {/* Connexions sociales */}
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <button
-                       type="button"
-                       className="w-full bg-[#F8F5E4] hover:bg-gray-100 text-[#032622] py-4 px-6 font-medium transition-colors duration-200 border border-[#032622] flex items-center justify-center"
-                       style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
-                     >
-                       <div className="flex items-center space-x-3">
-                         <Image src="/img/login/icon_google.png" alt="Google" width={20} height={20} className="w-5 h-5 flex-shrink-0" />
-                         <span className="text-sm font-bold uppercase">INSCRIPTION AVEC GOOGLE</span>
-                       </div>
-                     </button>
+                  {/* Connexions sociales */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      className="w-full bg-[#F8F5E4] hover:bg-gray-100 text-[#032622] py-4 px-6 font-medium transition-colors duration-200 border border-[#032622] flex items-center justify-center"
+                      style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Image src="/img/login/icon_google.png" alt="Google" width={20} height={20} className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-bold uppercase">INSCRIPTION AVEC GOOGLE</span>
+                      </div>
+                    </button>
 
-                     <button
-                       type="button"
-                       className="w-full bg-[#F8F5E4] hover:bg-gray-100 text-[#032622] py-4 px-6 font-medium transition-colors duration-200 border border-[#032622] flex items-center justify-center"
-                       style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
-                     >
-                       <div className="flex items-center space-x-3">
-                         <Image src="/img/login/icon_facebook.png" alt="Facebook" width={20} height={20} className="w-5 h-5 flex-shrink-0" />
-                         <span className="text-sm font-bold uppercase">INSCRIPTION AVEC FACEBOOK</span>
-                       </div>
-                     </button>
-                   </div>
+                    <button
+                      type="button"
+                      className="w-full bg-[#F8F5E4] hover:bg-gray-100 text-[#032622] py-4 px-6 font-medium transition-colors duration-200 border border-[#032622] flex items-center justify-center"
+                      style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Image src="/img/login/icon_facebook.png" alt="Facebook" width={20} height={20} className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-bold uppercase">INSCRIPTION AVEC FACEBOOK</span>
+                      </div>
+                    </button>
+                  </div>
 
                   {/* Conditions d'utilisation */}
                   <div className="flex items-start space-x-3">

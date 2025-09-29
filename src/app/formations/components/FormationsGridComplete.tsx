@@ -1,7 +1,8 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { formationsData, Formation, categories, niveaux, rythmes } from '../data/formationsData';
+import { Formation } from '@/types/formations';
+import { getAllFormations, searchFormations } from '@/lib/formations';
 
 interface FormationsGridCompleteProps {
   searchTerm?: string;
@@ -16,16 +17,63 @@ export const FormationsGridComplete = ({
   selectedNiveau = 'TOUS',
   selectedRythme = 'TOUS'
 }: FormationsGridCompleteProps) => {
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [filteredFormations, setFilteredFormations] = useState<Formation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Charger les formations depuis Supabase
+  useEffect(() => {
+    const loadFormations = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllFormations();
+        setFormations(data);
+        setFilteredFormations(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des formations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFormations();
+  }, []);
+
   // Filtrer les formations selon les critères
-  const filteredFormations = formationsData.filter(formation => {
-    const matchesSearch = formation.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         formation.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'TOUS' || formation.theme === selectedCategory;
-    const matchesNiveau = selectedNiveau === 'TOUS' || formation.niveau === selectedNiveau;
-    const matchesRythme = selectedRythme === 'TOUS' || formation.rythme === selectedRythme;
-    
-    return matchesSearch && matchesCategory && matchesNiveau && matchesRythme;
-  });
+  useEffect(() => {
+    const filterFormations = async () => {
+      try {
+        // Si tous les filtres sont sur "TOUS", on récupère toutes les formations
+        if (selectedCategory === 'TOUS' && selectedNiveau === 'TOUS' && selectedRythme === 'TOUS' && !searchTerm) {
+          setFilteredFormations(formations);
+          return;
+        }
+
+        // Sinon, on utilise la fonction de recherche de Supabase
+        const filters: any = {};
+        if (selectedCategory !== 'TOUS') filters.theme = selectedCategory;
+        if (selectedNiveau !== 'TOUS') filters.niveau = selectedNiveau;
+        if (selectedRythme !== 'TOUS') filters.rythme = selectedRythme;
+
+        let results = await searchFormations(filters);
+
+        // Filtrage côté client pour la recherche textuelle
+        if (searchTerm) {
+          results = results.filter(formation => 
+            formation.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            formation.description.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+
+        setFilteredFormations(results);
+      } catch (error) {
+        console.error('Erreur lors du filtrage des formations:', error);
+        setFilteredFormations(formations);
+      }
+    };
+
+    filterFormations();
+  }, [searchTerm, selectedCategory, selectedNiveau, selectedRythme, formations]);
 
   return (
     <div className="py-16 px-4" style={{ backgroundColor: '#F8F5E4' }}>
@@ -47,9 +95,18 @@ export const FormationsGridComplete = ({
           </p>
         </div>
 
+        {/* Indicateur de chargement */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+            <p className="mt-4 text-[#032622]">Chargement des formations...</p>
+          </div>
+        )}
+
         {/* Grille des formations - 4 par ligne */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {filteredFormations.map((formation) => (
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {filteredFormations.map((formation) => (
             <div
               key={formation.id}
               className="bg-[#032622] shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-[380px] w-full"
@@ -109,10 +166,11 @@ export const FormationsGridComplete = ({
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Message si aucune formation trouvée */}
-        {filteredFormations.length === 0 && (
+        {!loading && filteredFormations.length === 0 && (
           <div className="text-center py-12">
             <p className="text-[#032622] text-lg">
               Aucune formation trouvée pour ces critères de recherche.

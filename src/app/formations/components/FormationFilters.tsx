@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { Search, ChevronDown, Filter } from 'lucide-react';
-import { categories, niveaux, rythmes } from '../data/formationsData';
+import { categories, niveaux, rythmes } from '@/types/formations';
 
 interface FormationFiltersProps {
   onSearchChange: (search: string) => void;

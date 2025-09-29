@@ -1,15 +1,52 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { formationsData, categories } from '../../formations/data/formationsData';
+import { Formation } from '@/types/formations';
+import { getAllFormations, getFormationsByTheme } from '@/lib/formations';
+import { categories } from '@/types/formations';
 
 export const FormationsGrid = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('TOUS');
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [filteredFormations, setFilteredFormations] = useState<Formation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Charger les formations depuis Supabase
+  useEffect(() => {
+    const loadFormations = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllFormations();
+        setFormations(data);
+        setFilteredFormations(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des formations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFormations();
+  }, []);
 
   // Filtrer les formations selon la catégorie sélectionnée
-  const filteredFormations = selectedCategory === 'TOUS' 
-    ? formationsData 
-    : formationsData.filter(formation => formation.theme === selectedCategory);
+  useEffect(() => {
+    const filterFormations = async () => {
+      try {
+        if (selectedCategory === 'TOUS') {
+          setFilteredFormations(formations);
+        } else {
+          const data = await getFormationsByTheme(selectedCategory);
+          setFilteredFormations(data);
+        }
+      } catch (error) {
+        console.error('Erreur lors du filtrage des formations:', error);
+        setFilteredFormations(formations);
+      }
+    };
+
+    filterFormations();
+  }, [selectedCategory, formations]);
 
   // Afficher seulement 8 formations maximum sur la page d'accueil
   const displayedFormations = filteredFormations.slice(0, 8);
@@ -72,9 +109,18 @@ export const FormationsGrid = () => {
           ))}
         </div>
 
+        {/* Indicateur de chargement */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+            <p className="mt-4 text-[#032622]">Chargement des formations...</p>
+          </div>
+        )}
+
         {/* Grille des formations - 4 par ligne */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {displayedFormations.map((formation) => (
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {displayedFormations.map((formation) => (
             <div
               key={formation.id}
               className="bg-[#032622] shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-[380px] w-full"
@@ -134,10 +180,11 @@ export const FormationsGrid = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Message si aucune formation trouvée */}
-        {filteredFormations.length === 0 && (
+        {!loading && filteredFormations.length === 0 && (
           <div className="text-center py-12">
             <p className="text-[#032622] text-lg">
               Aucune formation trouvée pour cette catégorie.
