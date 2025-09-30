@@ -1,11 +1,11 @@
-import { StudentSidebar } from '../components/StudentSidebar';
+import { AdminSidebar } from '../components/AdminSidebar';
 import MessagerieComponent from '../components/MessagerieComponent';
 
-export default function MessageriePage() {
+export default function AdminMessagerie() {
   return (
     <div className="min-h-screen bg-[#F8F5E4] flex">
       {/* Sidebar gauche */}
-      <StudentSidebar />
+      <AdminSidebar />
       
       {/* Contenu principal */}
       <div className="flex-1 p-6">
@@ -14,7 +14,7 @@ export default function MessageriePage() {
             className="text-3xl font-bold text-[#032622]"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            MESSAGERIE
+            MESSAGERIE ADMINISTRATEUR
           </h1>
           
           <MessagerieComponent />
@@ -23,5 +23,3 @@ export default function MessageriePage() {
     </div>
   );
 }
-
-

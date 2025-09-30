@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StudentSidebar } from "../components/StudentSidebar";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
@@ -63,20 +64,69 @@ const courseBlocks = [
   },
 ];
 
-const upcomingEvents = [
-  {
-    title: "Masterclass en ligne : Stratégies digitales 2025",
-    time: "En visio / 09h30 - 11h00",
-  },
-  {
-    title: "Entretien pédagogique avec votre animatrice",
-    time: "En visio / 16h00 - 16h30",
-  },
-  {
-    title: "Conférence live : " + "\"" + "Le futur du travail" + "\"",
-    time: "En visio / 18h00 - 19h00",
-  },
-];
+// Événements par jour
+const eventsByDay = {
+  15: [
+    {
+      title: "Réunion d'équipe",
+      time: "En visio / 10h00 - 11h00",
+    },
+    {
+      title: "Formation Excel",
+      time: "En visio / 14h00 - 16h00",
+    },
+  ],
+  16: [
+    {
+      title: "Atelier créatif",
+      time: "En visio / 09h00 - 12h00",
+    },
+  ],
+  17: [
+    {
+      title: "Séance de coaching",
+      time: "En visio / 15h00 - 16h00",
+    },
+    {
+      title: "Webinaire marketing",
+      time: "En visio / 18h00 - 19h30",
+    },
+  ],
+  18: [
+    {
+      title: "Masterclass en ligne : Stratégies digitales 2025",
+      time: "En visio / 09h30 - 11h00",
+    },
+    {
+      title: "Entretien pédagogique avec votre animatrice",
+      time: "En visio / 16h00 - 16h30",
+    },
+    {
+      title: "Conférence live : " + "\"" + "Le futur du travail" + "\"",
+      time: "En visio / 18h00 - 19h00",
+    },
+  ],
+  19: [
+    {
+      title: "Workshop design thinking",
+      time: "En visio / 10h00 - 17h00",
+    },
+  ],
+  20: [
+    {
+      title: "Présentation de projet",
+      time: "En visio / 14h00 - 15h30",
+    },
+  ],
+  21: [
+    {
+      title: "Évaluation finale",
+      time: "En visio / 09h00 - 12h00",
+    },
+  ],
+};
+
+const upcomingEvents = eventsByDay[18] || [];
 
 const latestGrades = [
   {
@@ -164,7 +214,25 @@ export default function MesFormationsPage() {
   const [isNotebookOpen, setIsNotebookOpen] = useState(false);
   const [notebookContent, setNotebookContent] = useState("");
   const [moduleNotes, setModuleNotes] = useState("");
+  const [selectedDay, setSelectedDay] = useState(18);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
+
+  // Fonction pour obtenir les événements du jour sélectionné
+  const getCurrentDayEvents = () => {
+    return eventsByDay[selectedDay] || [];
+  };
+
+  // Fonction pour naviguer entre les jours
+  const navigateDay = (direction: 'prev' | 'next') => {
+    const days = [15, 16, 17, 18, 19, 20, 21];
+    const currentIndex = days.indexOf(selectedDay);
+    
+    if (direction === 'prev' && currentIndex > 0) {
+      setSelectedDay(days[currentIndex - 1]);
+    } else if (direction === 'next' && currentIndex < days.length - 1) {
+      setSelectedDay(days[currentIndex + 1]);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -391,26 +459,34 @@ export default function MesFormationsPage() {
                 {[15, 16, 17, 18, 19, 20, 21].map((day) => (
                   <div
                     key={day}
-                    className={`h-8 flex items-center justify-center border border-black ${
-                      day === 18 ? "bg-[#032622] text-white" : ""
+                    className={`h-8 flex items-center justify-center border border-black cursor-pointer hover:bg-gray-200 ${
+                      day === selectedDay ? "bg-[#032622] text-white" : "bg-[#F8F5E4]"
                     }`}
+                    onClick={() => setSelectedDay(day)}
                   >
                     {day}
                   </div>
                 ))}
               </div>
               <div className="space-y-2 pt-2">
-                {upcomingEvents.map((event, index) => (
+                {getCurrentDayEvents().map((event, index) => (
                   <div key={index} className="border border-black p-3 text-xs bg-white/60">
                     <div className="font-bold text-[#032622]">{event.title}</div>
                     <div className="text-[#032622] opacity-80">{event.time}</div>
                   </div>
                 ))}
+                {getCurrentDayEvents().length === 0 && (
+                  <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                    Aucun événement prévu ce jour
+                  </div>
+                )}
               </div>
-              <button className="border border-black bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold flex items-center justify-center space-x-2">
-                <CalendarDays className="w-4 h-4" />
-                <span>OUVRIR L'AGENDA</span>
-              </button>
+              <Link href="/espace-etudiant/agenda">
+                <button className="border border-black bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold flex items-center justify-center space-x-2 hover:bg-gray-200 transition-colors">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>OUVRIR L'AGENDA</span>
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -894,7 +970,7 @@ export default function MesFormationsPage() {
               <div key={question.id} className="border border-black bg-white/60 p-4 space-y-3">
                 <div className="flex items-center space-x-2">
                   {isCorrect ? (
-                    <CheckCircle className="w-4 h-4 text-[#032622]" />
+                    <CheckCircle className="w-4 h-4 text-green-600" />
                   ) : (
                     <XCircle className="w-4 h-4 text-red-600" />
                   )}
@@ -906,14 +982,14 @@ export default function MesFormationsPage() {
                 <div className="text-sm">
                   <p className="font-semibold text-[#032622]">
                     Ta réponse :
-                    <span className={`ml-2 ${isCorrect ? "text-[#032622]" : "text-red-600"}`}>
+                    <span className={`ml-2 ${isCorrect ? "text-green-600" : "text-red-600"}`}>
                       {selected !== null ? question.options[selected] : "Non renseignée"}
                     </span>
                   </p>
                   {!isCorrect && (
                     <p className="font-semibold text-[#032622]">
                       Bonne réponse :
-                      <span className="ml-2 text-[#032622]">
+                      <span className="ml-2 text-green-600">
                         {question.options[question.correctIndex]}
                       </span>
                     </p>
