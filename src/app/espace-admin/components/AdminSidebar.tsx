@@ -40,6 +40,13 @@ const menuItems = [
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
     href: '/espace-admin/messagerie'
+  },
+  { 
+    id: 'vie-etudiante', 
+    label: 'VIE ÉTUDIANTE', 
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+    href: '/espace-admin/vie-etudiante'
   }
 ];
 
@@ -77,6 +84,8 @@ export const AdminSidebar = () => {
       setActiveItem('bibliotheque');
     } else if (pathname.includes('/messagerie')) {
       setActiveItem('messagerie');
+    } else if (pathname.includes('/vie-etudiante')) {
+      setActiveItem('vie-etudiante');
     } else if (pathname.includes('/parametres')) {
       setActiveItem('parametres');
     }
