@@ -1,5 +1,5 @@
 import { StudentSidebar } from '../components/StudentSidebar';
-import MessagerieComponent from '../components/MessagerieComponent';
+// import MessagerieComponent from '../components/MessagerieComponent';
 
 export default function MessageriePage() {
   return (
@@ -17,7 +17,7 @@ export default function MessageriePage() {
             MESSAGERIE
           </h1>
           
-          <MessagerieComponent />
+          {/* <MessagerieComponent /> */}
         </div>
       </div>
     </div>
