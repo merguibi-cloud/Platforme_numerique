@@ -64,8 +64,14 @@ const courseBlocks = [
   },
 ];
 
+// Type pour les événements
+type Event = {
+  title: string;
+  time: string;
+};
+
 // Événements par jour
-const eventsByDay = {
+const eventsByDay: Record<number, Event[]> = {
   15: [
     {
       title: "Réunion d'équipe",
