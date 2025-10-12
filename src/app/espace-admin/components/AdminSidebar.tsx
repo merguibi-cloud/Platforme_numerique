@@ -65,7 +65,7 @@ export const AdminSidebar = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Déterminer l'élément actif basé sur l'URL
+  // Déterminer l'élément actif basé su l'URL
   useEffect(() => {
     if (pathname === '/espace-admin/dashboard') {
       setActiveItem('dashboard');
