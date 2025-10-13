@@ -12,6 +12,8 @@ import {
   Search,
   Upload,
   X,
+  Link,
+  Check,
 } from "lucide-react";
 
 type DocumentCategory =
@@ -189,6 +191,18 @@ const AdminLibraryContent = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<LibraryDocument | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [urlInput, setUrlInput] = useState("");
+  const [importStep, setImportStep] = useState(1); // 1 = upload, 2 = détails, 3 = validation
+  const [fileName, setFileName] = useState("");
+  const [subject, setSubject] = useState("");
+  const [description, setDescription] = useState("Un guide complet expliquant comment construire des business plan dynamiques et fiables");
+  const [fileType, setFileType] = useState("PDF");
+  const [fileSize, setFileSize] = useState("204 MO");
+  const [enableDownload, setEnableDownload] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const filteredTableDocs = useMemo(() => {
     let docs = [...tableDocuments];
@@ -238,7 +252,7 @@ const AdminLibraryContent = () => {
               <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#D96B6B]" />
               <FileText className="w-6 h-6 text-[#032622]" />
             </div>
-            <div className="w-12 h-12 rounded-full bg-[#01302C] text-white flex items-center justify-center text-lg">
+            <div className="w-12 h-12 rounded-full bg-[#01302C] text-[#032622] flex items-center justify-center text-lg">
               YF
             </div>
           </div>
@@ -269,7 +283,10 @@ const AdminLibraryContent = () => {
             </div>
           </div>
 
-          <button className="inline-flex items-center space-x-2 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-sm font-semibold hover:bg-[#01302C] transition-colors">
+          <button 
+            onClick={() => setShowImportModal(true)}
+            className="inline-flex items-center space-x-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-sm font-semibold hover:bg-[#eae5cf] transition-colors"
+          >
             <Upload className="w-4 h-4" />
             <span>Nouvelle importation</span>
           </button>
@@ -317,6 +334,36 @@ const AdminLibraryContent = () => {
 
       {selectedDocument && (
         <DocumentModal document={selectedDocument} onClose={() => setSelectedDocument(null)} />
+      )}
+
+      {showImportModal && (
+        <ImportModal 
+          onClose={() => {
+            setShowImportModal(false);
+            setImportStep(1);
+          }}
+          uploadProgress={uploadProgress}
+          urlInput={urlInput}
+          setUrlInput={setUrlInput}
+          importStep={importStep}
+          setImportStep={setImportStep}
+          fileName={fileName}
+          setFileName={setFileName}
+          subject={subject}
+          setSubject={setSubject}
+          description={description}
+          setDescription={setDescription}
+          fileType={fileType}
+          setFileType={setFileType}
+          fileSize={fileSize}
+          setFileSize={setFileSize}
+          enableDownload={enableDownload}
+          setEnableDownload={setEnableDownload}
+          selectedFiles={selectedFiles}
+          setSelectedFiles={setSelectedFiles}
+          isDragOver={isDragOver}
+          setIsDragOver={setIsDragOver}
+        />
       )}
     </div>
   );
@@ -383,17 +430,17 @@ const DocumentCard = ({
         </div>
       </div>
 
-      <footer className="bg-[#032622] text-white px-4 py-3 flex items-start justify-between gap-4 flex-grow">
+      <footer className="bg-[#F8F5E4] text-[#032622] border-t border-[#032622] px-4 py-3 flex items-start justify-between gap-4 flex-grow">
         <div className="space-y-1 flex-1">
           <p className="text-sm font-semibold leading-snug">{document.title}</p>
           {document.description && (
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#032622]/70">
               {document.description}
             </p>
           )}
         </div>
         <button 
-          className="text-white/70 hover:text-white transition-colors flex-shrink-0"
+          className="text-[#032622]/70 hover:text-[#032622] transition-colors flex-shrink-0"
           onClick={(e) => {
             e.stopPropagation();
             // Logique pour plus d'options
@@ -451,7 +498,7 @@ const FilterButton = ({
 
 const LibraryTable = ({ documents }: { documents: TableDocument[] }) => (
   <div className="border border-[#032622]">
-    <div className="grid grid-cols-12 bg-[#032622] text-white text-xs uppercase tracking-widest">
+    <div className="grid grid-cols-12 bg-[#F8F5E4] text-[#032622] border-b border-[#032622] text-xs uppercase tracking-widest">
       <div className="col-span-4 px-4 py-3">Titre</div>
       <div className="col-span-2 px-4 py-3">Type</div>
       <div className="col-span-2 px-4 py-3">Date</div>
@@ -563,7 +610,7 @@ const DocumentModal = ({
 
           {/* Boutons d'action */}
           <div className="space-y-2">
-            <button className="w-full bg-[#032622] text-white py-2.5 text-xs font-semibold hover:bg-[#01302C] transition-colors">
+            <button className="w-full bg-[#F8F5E4] text-[#032622] border border-[#032622] py-2.5 text-xs font-semibold hover:bg-[#eae5cf] transition-colors">
               VOIR
             </button>
             <button className="w-full border border-[#032622] text-[#032622] py-2.5 text-xs font-semibold hover:bg-[#eae5cf] transition-colors">
@@ -603,7 +650,7 @@ const DocumentModal = ({
             >
               DESCRIPTION
             </h4>
-            <div className="border border-[#032622] p-3 bg-white/30">
+            <div className="border border-[#032622] p-3 bg-[#F8F5E4]">
               <p className="text-xs text-[#032622] leading-relaxed">
                 Un guide complet expliquant comment construire des business plan dynamiques et faciles à utiliser.
               </p>
@@ -642,6 +689,477 @@ const DocumentModal = ({
               </span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ImportModal = ({ 
+  onClose, 
+  uploadProgress, 
+  urlInput, 
+  setUrlInput,
+  importStep,
+  setImportStep,
+  fileName,
+  setFileName,
+  subject,
+  setSubject,
+  description,
+  setDescription,
+  fileType,
+  setFileType,
+  fileSize,
+  setFileSize,
+  enableDownload,
+  setEnableDownload,
+  selectedFiles,
+  setSelectedFiles,
+  isDragOver,
+  setIsDragOver
+}: { 
+  onClose: () => void;
+  uploadProgress: number;
+  urlInput: string;
+  setUrlInput: (value: string) => void;
+  importStep: number;
+  setImportStep: (step: number) => void;
+  fileName: string;
+  setFileName: (value: string) => void;
+  subject: string;
+  setSubject: (value: string) => void;
+  description: string;
+  setDescription: (value: string) => void;
+  fileType: string;
+  setFileType: (value: string) => void;
+  fileSize: string;
+  setFileSize: (value: string) => void;
+  enableDownload: boolean;
+  setEnableDownload: (value: boolean) => void;
+  selectedFiles: File[];
+  setSelectedFiles: (files: File[]) => void;
+  isDragOver: boolean;
+  setIsDragOver: (value: boolean) => void;
+}) => {
+  const handleFileUpload = () => {
+    // Créer un input file caché
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.pdf,.doc,.docx,.txt,.mp4,.mp3,.ppt,.pptx';
+    
+    input.onchange = (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      handleFiles(files);
+    };
+    
+    input.click();
+  };
+
+  const handleFiles = (files: File[]) => {
+    setSelectedFiles(files);
+    if (files.length > 0) {
+      const firstFile = files[0];
+      setFileName(firstFile.name);
+      
+      // Déterminer le type de fichier
+      const extension = firstFile.name.split('.').pop()?.toLowerCase();
+      switch (extension) {
+        case 'pdf':
+          setFileType('PDF');
+          break;
+        case 'doc':
+        case 'docx':
+          setFileType('DOCUMENT');
+          break;
+        case 'mp4':
+          setFileType('VIDÉO');
+          break;
+        case 'mp3':
+          setFileType('AUDIO');
+          break;
+        case 'ppt':
+        case 'pptx':
+          setFileType('PRÉSENTATION');
+          break;
+        default:
+          setFileType('FICHIER');
+      }
+      
+      // Formater la taille
+      const sizeInMB = (firstFile.size / (1024 * 1024)).toFixed(1);
+      setFileSize(`${sizeInMB} MO`);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+  };
+
+  const handleUrlImport = () => {
+    console.log('Import depuis URL:', urlInput);
+    // Logique pour importer depuis URL
+  };
+
+  const handleNext = () => {
+    setImportStep(2);
+  };
+
+  const handleBack = () => {
+    setImportStep(1);
+  };
+
+  const handleImport = () => {
+    console.log('Import final:', { fileName, subject, description, fileType, fileSize, enableDownload });
+    setImportStep(3); // Passer à l'étape de validation
+  };
+
+  // Étape 1 : Upload
+  if (importStep === 1) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+        <div 
+          className="bg-[#F8F5E4] w-full max-w-2xl border-2 border-[#032622] p-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* En-tête de la modale */}
+          <div className="flex items-start justify-between mb-8">
+            <h2 
+              className="text-2xl font-bold text-[#032622] uppercase"
+              style={{ fontFamily: "var(--font-termina-bold)" }}
+            >
+              FICHIER À IMPORTER
+            </h2>
+            <button 
+              onClick={onClose}
+              className="w-8 h-8 border border-[#032622] flex items-center justify-center hover:bg-[#eae5cf] transition-colors"
+            >
+              <X className="w-5 h-5 text-[#032622]" />
+            </button>
+          </div>
+
+          {/* Section Import depuis appareil */}
+          <div className="mb-8">
+            <h3 
+              className="text-lg font-bold text-[#032622] uppercase mb-4"
+              style={{ fontFamily: "var(--font-termina-bold)" }}
+            >
+              IMPORTER DEPUIS SON APPAREIL
+            </h3>
+            
+            {/* Zone de drop */}
+            <div 
+              className={`border-2 border-dashed p-12 text-center cursor-pointer transition-colors ${
+                isDragOver 
+                  ? 'border-[#032622] bg-[#032622]/10' 
+                  : 'border-[#032622] bg-[#F8F5E4] hover:bg-[#eae5cf]'
+              }`}
+              onClick={handleFileUpload}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <Upload className="w-12 h-12 text-[#032622] mx-auto mb-4" />
+              {selectedFiles.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-[#032622] font-semibold">
+                    {selectedFiles.length} fichier(s) sélectionné(s)
+                  </p>
+                  {selectedFiles.slice(0, 3).map((file, index) => (
+                    <p key={index} className="text-sm text-[#032622]/70">
+                      {file.name} ({(file.size / (1024 * 1024)).toFixed(1)} MO)
+                    </p>
+                  ))}
+                  {selectedFiles.length > 3 && (
+                    <p className="text-sm text-[#032622]/70">
+                      ... et {selectedFiles.length - 3} autre(s)
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <p className="text-[#032622] font-semibold mb-2">
+                    Déposez les fichiers ici ou
+                  </p>
+                  <button className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-6 py-2 text-sm font-semibold hover:bg-[#eae5cf] transition-colors">
+                    Sélectionner des fichiers
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Barre de progression */}
+            {uploadProgress > 0 && (
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#032622] h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-[#032622]/60 mt-2 text-center">{uploadProgress}%</p>
+              </div>
+            )}
+          </div>
+
+          {/* Séparateur */}
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#032622]" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-[#F8F5E4] text-[#032622] font-semibold">OU</span>
+            </div>
+          </div>
+
+          {/* Section Import depuis URL */}
+          <div className="mb-8">
+            <h3 
+              className="text-lg font-bold text-[#032622] uppercase mb-4"
+              style={{ fontFamily: "var(--font-termina-bold)" }}
+            >
+              IMPORTER DEPUIS UNE URL
+            </h3>
+            
+            <div className="flex space-x-2">
+              <div className="flex-1 flex">
+                <span className="inline-flex items-center px-4 py-3 border border-r-0 border-[#032622] bg-[#C2C6B6] text-[#032622] text-sm font-semibold">
+                  http://
+                </span>
+                <input
+                  type="text"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="drive.google.com"
+                  className="flex-1 px-4 py-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:border-[#01302C]"
+                />
+              </div>
+              <button 
+                onClick={handleUrlImport}
+                className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-6 py-3 text-sm font-semibold hover:bg-[#eae5cf] transition-colors flex items-center space-x-2"
+              >
+                <Link className="w-4 h-4" />
+                <span>IMPORTER</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Bouton Suivant */}
+          <div className="text-center">
+            <button 
+              onClick={handleNext}
+              className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-12 py-4 text-lg font-semibold hover:bg-[#eae5cf] transition-colors"
+            >
+              SUIVANT
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Étape 2 : Formulaire de détails
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div 
+        className="bg-[#F8F5E4] w-full max-w-4xl border-2 border-[#032622] p-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* En-tête de la modale */}
+        <div className="flex items-start justify-between mb-8">
+          <h2 
+            className="text-2xl font-bold text-[#032622] uppercase"
+            style={{ fontFamily: "var(--font-termina-bold)" }}
+          >
+            FICHIER À IMPORTER
+          </h2>
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 border border-[#032622] flex items-center justify-center hover:bg-[#eae5cf] transition-colors"
+          >
+            <X className="w-5 h-5 text-[#032622]" />
+          </button>
+        </div>
+
+        {/* Formulaire en deux colonnes */}
+        <div className="grid grid-cols-2 gap-8 mb-8">
+          {/* Colonne gauche */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                NOM DU FICHIER
+              </label>
+              <input
+                type="text"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                className="w-full px-4 py-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#01302C]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                SUJET
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full px-4 py-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#01302C]"
+                />
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#032622]" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                DESCRIPTION
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#01302C] resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Colonne droite */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                TYPE DE FICHIER
+              </label>
+              <input
+                type="text"
+                value={fileType}
+                onChange={(e) => setFileType(e.target.value)}
+                className="w-full px-4 py-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#01302C]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                TAILLE DU FICHIER
+              </label>
+              <input
+                type="text"
+                value={fileSize}
+                onChange={(e) => setFileSize(e.target.value)}
+                className="w-full px-4 py-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#01302C]"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section Tags */}
+        <div className="mb-8">
+          <label className="block text-sm font-bold text-[#032622] uppercase mb-4">
+            TAGS
+          </label>
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 min-h-[120px]">
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 bg-[#C2C6B6] text-[#032622] text-sm uppercase font-semibold rounded">
+                COMMUNICATION
+              </span>
+              <span className="px-3 py-1 bg-[#C2C6B6] text-[#032622] text-sm uppercase font-semibold rounded">
+                STORYTELLING
+              </span>
+              <span className="px-3 py-1 bg-[#C2C6B6] text-[#032622] text-sm uppercase font-semibold rounded">
+                LEADERSHIP
+              </span>
+              <span className="px-3 py-1 bg-[#C2C6B6] text-[#032622] text-sm uppercase font-semibold rounded">
+                PERSONAL BRANDING
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Case à cocher */}
+        <div className="mb-8">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={enableDownload}
+              onChange={(e) => setEnableDownload(e.target.checked)}
+              className="w-5 h-5 border border-[#032622] text-[#032622] focus:ring-[#032622]"
+            />
+            <span className="text-sm font-semibold text-[#032622] uppercase">
+              ACTIVER LE TÉLÉCHARGEMENT
+            </span>
+          </label>
+        </div>
+
+        {/* Boutons d'action */}
+        <div className="flex space-x-4 justify-center">
+          <button 
+            onClick={handleBack}
+            className="border border-[#032622] text-[#032622] px-8 py-4 text-lg font-semibold hover:bg-[#eae5cf] transition-colors"
+          >
+            RETOUR
+          </button>
+          <button 
+            onClick={handleImport}
+            className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-8 py-4 text-lg font-semibold hover:bg-[#eae5cf] transition-colors"
+          >
+            IMPORTER
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Étape 3 : Validation de succès
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div 
+        className="bg-[#F8F5E4] w-full max-w-md border-2 border-[#032622] p-8 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* En-tête de la modale */}
+        <div className="flex justify-end mb-6">
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 border border-[#032622] flex items-center justify-center hover:bg-[#eae5cf] transition-colors"
+          >
+            <X className="w-5 h-5 text-[#032622]" />
+          </button>
+        </div>
+
+        {/* Icône de succès */}
+        <div className="mb-6">
+          <div className="w-20 h-20 bg-[#F8F5E4] border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto">
+            <Check className="w-12 h-12 text-[#032622]" />
+          </div>
+        </div>
+
+        {/* Message de succès */}
+        <div className="mb-8">
+          <h2 
+            className="text-2xl font-bold text-[#032622] uppercase mb-4"
+            style={{ fontFamily: "var(--font-termina-bold)" }}
+          >
+            VOTRE FICHIER À BIEN ÉTÉ IMPORTÉ
+          </h2>
+          <p className="text-sm text-[#032622]/70 leading-relaxed">
+            Un guide complet expliquant comment construire des business plan dynamiques et fiables
+          </p>
         </div>
       </div>
     </div>

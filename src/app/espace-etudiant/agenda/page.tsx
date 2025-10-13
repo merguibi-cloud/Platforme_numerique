@@ -1,6 +1,5 @@
 "use client";
 import { useState } from 'react';
-import { StudentSidebar } from '../components/StudentSidebar';
 
 type ViewType = 'today' | 'week' | 'month';
 
@@ -151,55 +150,49 @@ export default function AgendaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F5E4] flex">
-      {/* Sidebar gauche */}
-      <StudentSidebar />
-      
-      {/* Contenu principal */}
-      <div className="flex-1 p-6">
-        <div className="space-y-6">
-          {/* En-tête avec bannière verte */}
-          <div className="bg-[#032622] h-32 -mx-6 -mt-6 mb-6"></div>
-          
-          {/* Contrôles de tri et vue */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <select className="border border-black px-3 py-2 bg-[#F8F5E4] text-[#032622] text-sm">
-                <option>TRIER PAR ▼</option>
-              </select>
-              
-              <button className="bg-[#032622] text-white px-4 py-2 text-sm font-bold">
-                + AJOUTER UN ÉVÉNEMENT
-              </button>
-            </div>
+    <div className="p-6">
+      <div className="space-y-6">
+        {/* En-tête avec bannière verte */}
+        <div className="bg-[#032622] h-32 -mx-6 -mt-6 mb-6"></div>
+        
+        {/* Contrôles de tri et vue */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <select className="border border-black px-3 py-2 bg-[#F8F5E4] text-[#032622] text-sm">
+              <option>TRIER PAR ▼</option>
+            </select>
             
-            <div className="flex space-x-2">
-              <button 
-                onClick={() => setCurrentView('today')}
-                className={`px-4 py-2 text-sm font-bold border border-black ${currentView === 'today' ? 'bg-[#032622] text-white' : 'bg-[#F8F5E4] text-[#032622]'}`}
-              >
-                AUJOURD'HUI
-              </button>
-              <button 
-                onClick={() => setCurrentView('week')}
-                className={`px-4 py-2 text-sm font-bold border border-black ${currentView === 'week' ? 'bg-[#032622] text-white' : 'bg-[#F8F5E4] text-[#032622]'}`}
-              >
-                SEMAINE
-              </button>
-              <button 
-                onClick={() => setCurrentView('month')}
-                className={`px-4 py-2 text-sm font-bold border border-black ${currentView === 'month' ? 'bg-[#032622] text-white' : 'bg-[#F8F5E4] text-[#032622]'}`}
-              >
-                MOIS
-              </button>
-            </div>
+            <button className="bg-[#032622] text-white px-4 py-2 text-sm font-bold">
+              + AJOUTER UN ÉVÉNEMENT
+            </button>
           </div>
-
-          {/* Contenu de l'agenda selon la vue */}
-          {currentView === 'today' && renderTodayView()}
-          {currentView === 'week' && renderWeekView()}
-          {currentView === 'month' && renderMonthView()}
+          
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setCurrentView('today')}
+              className={`px-4 py-2 text-sm font-bold border border-black ${currentView === 'today' ? 'bg-[#032622] text-white' : 'bg-[#F8F5E4] text-[#032622]'}`}
+            >
+              AUJOURD'HUI
+            </button>
+            <button 
+              onClick={() => setCurrentView('week')}
+              className={`px-4 py-2 text-sm font-bold border border-black ${currentView === 'week' ? 'bg-[#032622] text-white' : 'bg-[#F8F5E4] text-[#032622]'}`}
+            >
+              SEMAINE
+            </button>
+            <button 
+              onClick={() => setCurrentView('month')}
+              className={`px-4 py-2 text-sm font-bold border border-black ${currentView === 'month' ? 'bg-[#032622] text-white' : 'bg-[#F8F5E4] text-[#032622]'}`}
+            >
+              MOIS
+            </button>
+          </div>
         </div>
+
+        {/* Contenu de l'agenda selon la vue */}
+        {currentView === 'today' && renderTodayView()}
+        {currentView === 'week' && renderWeekView()}
+        {currentView === 'month' && renderMonthView()}
       </div>
     </div>
   );
