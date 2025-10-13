@@ -45,6 +45,13 @@ interface StudentStatus {
   status: "online" | "offline" | "away";
 }
 
+interface TeacherStatus {
+  id: string;
+  name: string;
+  specialty: string;
+  status: "online" | "offline" | "away";
+}
+
 interface FormationData {
   name: string;
   greeting: string;
@@ -56,6 +63,7 @@ interface FormationData {
   };
   agenda: AgendaEvent[];
   students: StudentStatus[];
+  teachers: TeacherStatus[];
 }
 
 const schools: Record<SchoolId, { label: string }> = {
@@ -110,7 +118,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Annie L.",
         role: "Étudiante",
         excerpt:
-          "Bonjour. Pouvez-vous convenir d’un rapide point (20 min) la semaine prochaine pour évoquer l’intégration ?",
+          "Bonjour. Pouvez-vous convenir d'un rapide point (20 min) la semaine prochaine pour évoquer l'intégration ?",
         timeAgo: "Il y a 2 h",
       },
       {
@@ -118,7 +126,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Kenny A.",
         role: "Étudiant",
         excerpt:
-          "J’ai terminé le module UX. Est-il possible de valider mon dernier quiz ?",
+          "J'ai terminé le module UX. Est-il possible de valider mon dernier quiz ?",
         timeAgo: "Il y a 4 h",
       },
       {
@@ -135,7 +143,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-1",
           blockName:
-            "Bloc 2 - Contribuer à la stratégie de développement de l’organisation",
+            "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "29/08/2024",
           assignedTo: "Jacques Pote",
           status: "en_retard",
@@ -143,7 +151,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-2",
           blockName:
-            "Bloc 4 - Contribuer à la stratégie de développement de l’organisation",
+            "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "29/08/2024",
           assignedTo: "Jacques Pote",
           status: "en_retard",
@@ -153,7 +161,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-3",
           blockName:
-            "Bloc 2 - Contribuer à la stratégie de développement de l’organisation",
+            "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "29/08/2024",
           assignedTo: "Jacques Pote",
           status: "corrige",
@@ -161,7 +169,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-4",
           blockName:
-            "Bloc 4 - Contribuer à la stratégie de développement de l’organisation",
+            "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "29/08/2024",
           assignedTo: "Jacques Pote",
           status: "corrige",
@@ -199,6 +207,11 @@ const formationsData: Record<FormationId, FormationData> = {
       { id: "etu-8", name: "Sasha B.", status: "online" },
       { id: "etu-9", name: "Erwin S.", status: "offline" },
     ],
+    teachers: [
+      { id: "prof-1", name: "Jacques Pote", specialty: "Frontend", status: "online" },
+      { id: "prof-2", name: "Sarah Croche", specialty: "Backend", status: "away" },
+      { id: "prof-3", name: "Marc Dupont", specialty: "Fullstack", status: "offline" },
+    ],
   },
   marketing: {
     name: "Marketing Digital",
@@ -225,7 +238,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Mina P.",
         role: "Étudiante",
         excerpt:
-          "Le quiz sur la stratégie digitale n’apparaît pas, pouvez-vous vérifier ?",
+          "Le quiz sur la stratégie digitale n'apparaît pas, pouvez-vous vérifier ?",
         timeAgo: "Il y a 1 h",
       },
       {
@@ -233,7 +246,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Harold G.",
         role: "Étudiant",
         excerpt:
-          "Je serai absent mardi, pourriez-vous me partager les supports à l’avance ?",
+          "Je serai absent mardi, pourriez-vous me partager les supports à l'avance ?",
         timeAgo: "Il y a 3 h",
       },
     ],
@@ -250,7 +263,7 @@ const formationsData: Record<FormationId, FormationData> = {
       recent: [
         {
           id: "corr-6",
-          blockName: "Bloc 3 - Tunnel d’acquisition",
+          blockName: "Bloc 3 - Tunnel d'acquisition",
           submissionDate: "01/09/2024",
           assignedTo: "Alice M",
           status: "corrige",
@@ -276,6 +289,10 @@ const formationsData: Record<FormationId, FormationData> = {
       { id: "etu-11", name: "Harold G.", status: "away" },
       { id: "etu-12", name: "Lena S.", status: "offline" },
       { id: "etu-13", name: "Oscar V.", status: "online" },
+    ],
+    teachers: [
+      { id: "prof-4", name: "Alice M.", specialty: "SEO", status: "online" },
+      { id: "prof-5", name: "Romain T.", specialty: "Content", status: "online" },
     ],
   },
   ia: {
@@ -309,7 +326,7 @@ const formationsData: Record<FormationId, FormationData> = {
         id: "msg-6",
         author: "Eva Q.",
         role: "Étudiante",
-        excerpt: "Pourrions-nous avoir un exemple d’évaluation sur le projet IA ?",
+        excerpt: "Pourrions-nous avoir un exemple d'évaluation sur le projet IA ?",
         timeAgo: "Il y a 30 min",
       },
       {
@@ -317,7 +334,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Noah D.",
         role: "Étudiant",
         excerpt:
-          "Je rencontre un blocage sur TensorFlow, est-il possible d’avoir un tutoriel ?",
+          "Je rencontre un blocage sur TensorFlow, est-il possible d'avoir un tutoriel ?",
         timeAgo: "Il y a 5 h",
       },
     ],
@@ -362,6 +379,11 @@ const formationsData: Record<FormationId, FormationData> = {
       { id: "etu-17", name: "Mila R.", status: "online" },
       { id: "etu-18", name: "Aaron P.", status: "offline" },
     ],
+    teachers: [
+      { id: "prof-6", name: "Prof. Xavier", specialty: "ML & NLP", status: "online" },
+      { id: "prof-7", name: "Jean M.", specialty: "Deep Learning", status: "away" },
+      { id: "prof-8", name: "Dr. Yamamoto", specialty: "Computer Vision", status: "offline" },
+    ],
   },
   designUX: {
     name: "Design UX/UI",
@@ -388,7 +410,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Julien F.",
         role: "Étudiant",
         excerpt:
-          "Je n’arrive pas à importer la grille de composants, avez-vous une solution ?",
+          "Je n'arrive pas à importer la grille de composants, avez-vous une solution ?",
         timeAgo: "Il y a 1 h",
       },
     ],
@@ -416,6 +438,10 @@ const formationsData: Record<FormationId, FormationData> = {
       { id: "etu-19", name: "Julien F.", status: "online" },
       { id: "etu-20", name: "Clara E.", status: "away" },
       { id: "etu-21", name: "Sarah T.", status: "offline" },
+    ],
+    teachers: [
+      { id: "prof-9", name: "Sophie N.", specialty: "UX Research", status: "online" },
+      { id: "prof-10", name: "Antoine P.", specialty: "UI Design", status: "away" },
     ],
   },
 };
@@ -454,7 +480,8 @@ const AdminDashboardContent = () => {
     setSelectedFormation(firstFormation);
   };
 
-  const totalOnline = data.students.filter((s) => s.status === "online").length;
+  const totalStudentsOnline = data.students.filter((s) => s.status === "online").length;
+  const totalTeachersOnline = data.teachers.filter((t) => t.status === "online").length;
 
   return (
     <div className="flex-1 p-10 bg-[#F8F5E4]">
@@ -507,7 +534,12 @@ const AdminDashboardContent = () => {
           <div className="space-y-6">
             <MessagesCard messages={data.messages} />
             <ProfileCard />
-            <PromoCard students={data.students} totalOnline={totalOnline} />
+            <PromoCard 
+              students={data.students} 
+              teachers={data.teachers}
+              totalStudentsOnline={totalStudentsOnline} 
+              totalTeachersOnline={totalTeachersOnline}
+            />
           </div>
         </div>
       </div>
@@ -795,12 +827,16 @@ const ProfileDropdown = () => (
 
 const PromoCard = ({
   students,
-  totalOnline,
+  teachers,
+  totalStudentsOnline,
+  totalTeachersOnline,
 }: {
   students: FormationData["students"];
-  totalOnline: number;
+  teachers: FormationData["teachers"];
+  totalStudentsOnline: number;
+  totalTeachersOnline: number;
 }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-6">
     <header>
       <h2
         className="text-xl font-bold text-[#032622]"
@@ -808,23 +844,63 @@ const PromoCard = ({
       >
         PROMO
       </h2>
-      <p className="text-xs text-[#032622]/70">
-        Nombre d’étudiants en ligne : {totalOnline}
-      </p>
     </header>
-    <div className="space-y-2">
-      {students.map((student) => (
-        <div key={student.id} className="flex items-center justify-between text-sm text-[#032622]">
-          <div className="flex items-center space-x-3">
-            <span className={`w-3 h-3 rounded-full ${studentStatusColors[student.status]}`} />
-            <p className="font-semibold">{student.name}</p>
+
+    {/* Section Formateurs */}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
+          Formateurs
+        </h3>
+        <p className="text-xs text-[#032622]/70">
+          {totalTeachersOnline} en ligne
+        </p>
+      </div>
+      <div className="space-y-2">
+        {teachers.map((teacher) => (
+          <div key={teacher.id} className="flex items-center justify-between text-sm text-[#032622]">
+            <div className="flex items-center space-x-3">
+              <span className={`w-3 h-3 rounded-full ${studentStatusColors[teacher.status]}`} />
+              <div>
+                <p className="font-semibold">{teacher.name}</p>
+                <p className="text-xs text-[#032622]/60">{teacher.specialty}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 text-[#032622]/60">
+              <MessageCircle className="w-4 h-4" />
+            </div>
           </div>
-          <div className="flex items-center space-x-3 text-[#032622]/60">
-            <Users className="w-4 h-4" />
-            <MessageCircle className="w-4 h-4" />
+        ))}
+      </div>
+    </div>
+
+    {/* Séparateur */}
+    <div className="border-t border-[#032622]/20" />
+
+    {/* Section Étudiants */}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
+          Étudiants
+        </h3>
+        <p className="text-xs text-[#032622]/70">
+          {totalStudentsOnline} en ligne
+        </p>
+      </div>
+      <div className="space-y-2">
+        {students.map((student) => (
+          <div key={student.id} className="flex items-center justify-between text-sm text-[#032622]">
+            <div className="flex items-center space-x-3">
+              <span className={`w-3 h-3 rounded-full ${studentStatusColors[student.status]}`} />
+              <p className="font-semibold">{student.name}</p>
+            </div>
+            <div className="flex items-center space-x-3 text-[#032622]/60">
+              <Users className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4" />
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   </section>
 );
