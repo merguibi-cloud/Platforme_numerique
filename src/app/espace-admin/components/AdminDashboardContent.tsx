@@ -754,7 +754,7 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
         <div
           key={`${day}-${index}`}
           className={`py-2 ${index % 7 === 0 ? "text-[#032622]" : ""} ${
-            day === "30" ? "bg-[#032622] text-white" : "bg-[#F8F5E4]"
+            day === "30" ? "bg-[#F8F5E4] text-[#032622] border-2 border-[#032622]" : "bg-[#F8F5E4]"
           } border border-[#032622]/20`}
         >
           {day}
@@ -795,7 +795,7 @@ const ProfileCard = () => (
 const ProfileDropdown = () => (
   <div className="relative group">
     <div className="flex items-center space-x-3 cursor-pointer">
-      <div className="w-12 h-12 rounded-full bg-[#01302C] flex items-center justify-center text-white text-lg">
+      <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
         YF
       </div>
       <div>
