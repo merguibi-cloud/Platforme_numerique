@@ -1,9 +1,11 @@
 "use client";
 import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { LoginWithFormationSelection } from './LoginWithFormationSelection';
+import { getCurrentUser, signOut } from '@/lib/auth-api';
 
 const navigationItems = [
   { label: "FORMATIONS", href: "/formations" },
@@ -12,8 +14,23 @@ const navigationItems = [
 ];
 
 export const Navbar = () => {
+  const router = useRouter();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Vérifier l'état de connexion au chargement
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    setIsLoading(true);
+    const result = await getCurrentUser();
+    setIsAuthenticated(result.success && !!result.user);
+    setIsLoading(false);
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileNavOpen(!isMobileNavOpen);
@@ -25,6 +42,17 @@ export const Navbar = () => {
 
   const closeLogin = () => {
     setIsLoginOpen(false);
+    // Revérifier l'état après la connexion
+    checkAuthStatus();
+  };
+
+  const handleLogout = async () => {
+    const result = await signOut();
+    if (result.success) {
+      setIsAuthenticated(false);
+      router.push('/');
+      router.refresh();
+    }
   };
 
 
@@ -58,13 +86,17 @@ export const Navbar = () => {
 
               {/* Desktop Action Button */}
               <div className="hidden sm:flex items-center space-x-2 md:space-x-3 ml-auto">
-                <button 
-                  onClick={openLogin}
-                  className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-sm sm:text-sm md:text-base flex items-center justify-center"
-                  style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
-                >
-                  <span style={{ fontWeight: '900' }}>ME CONNECTER</span>
-                </button>
+                {!isLoading && (
+                  <button 
+                    onClick={isAuthenticated ? handleLogout : openLogin}
+                    className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-sm sm:text-sm md:text-base flex items-center justify-center"
+                    style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
+                  >
+                    <span style={{ fontWeight: '900' }}>
+                      {isAuthenticated ? 'ME DÉCONNECTER' : 'ME CONNECTER'}
+                    </span>
+                  </button>
+                )}
               </div>
 
               {/* Mobile Menu Button */}
@@ -124,16 +156,24 @@ export const Navbar = () => {
 
             {/* Action Button - Toujours visible en bas */}
             <div className="flex flex-col space-y-3 px-6 py-4 bg-[#F8F5E4] border-t border-gray-200 flex-shrink-0">
-              <button 
-                onClick={() => {
-                  openLogin();
-                  toggleMobileMenu();
-                }}
-                className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-6 py-3 tracking-wide transition-all duration-200 flex items-center justify-center"
-                style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
-              >
-                <span style={{ fontWeight: '900' }}>ME CONNECTER</span>
-              </button>
+              {!isLoading && (
+                <button 
+                  onClick={() => {
+                    if (isAuthenticated) {
+                      handleLogout();
+                    } else {
+                      openLogin();
+                    }
+                    toggleMobileMenu();
+                  }}
+                  className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-6 py-3 tracking-wide transition-all duration-200 flex items-center justify-center"
+                  style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
+                >
+                  <span style={{ fontWeight: '900' }}>
+                    {isAuthenticated ? 'ME DÉCONNECTER' : 'ME CONNECTER'}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -144,8 +184,7 @@ export const Navbar = () => {
         isOpen={isLoginOpen} 
         onCloseAction={closeLogin}
         onCompleteAction={(selectedFormations) => {
-          console.log('Formations sélectionnées:', selectedFormations);
-          // Ici vous pouvez traiter les formations sélectionnées
+          // Formations sélectionnées traitées
         }}
       />
     </>

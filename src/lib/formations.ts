@@ -3,7 +3,6 @@ import { Formation } from '@/types/formations'
 
 export async function getAllFormations(): Promise<Formation[]> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible - retour d\'un tableau vide');
     return [];
   }
 
@@ -14,20 +13,17 @@ export async function getAllFormations(): Promise<Formation[]> {
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur lors de la récupération des formations:', error);
     return [];
   }
 }
 
 export async function getFormationById(id: number): Promise<Formation | null> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible');
     return null;
   }
 
@@ -39,20 +35,17 @@ export async function getFormationById(id: number): Promise<Formation | null> {
       .single();
 
     if (error) {
-      console.error('Erreur lors de la récupération de la formation:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Erreur lors de la récupération de la formation:', error);
     return null;
   }
 }
 
 export async function getFormationsByTheme(theme: string): Promise<Formation[]> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible');
     return [];
   }
 
@@ -64,20 +57,17 @@ export async function getFormationsByTheme(theme: string): Promise<Formation[]> 
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des formations par thème:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur lors de la récupération des formations par thème:', error);
     return [];
   }
 }
 
 export async function getFormationsByEcole(ecole: string): Promise<Formation[]> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible');
     return [];
   }
 
@@ -89,20 +79,17 @@ export async function getFormationsByEcole(ecole: string): Promise<Formation[]> 
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des formations par école:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur lors de la récupération des formations par école:', error);
     return [];
   }
 }
 
 export async function getFormationsByNiveau(niveau: string): Promise<Formation[]> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible');
     return [];
   }
 
@@ -114,20 +101,17 @@ export async function getFormationsByNiveau(niveau: string): Promise<Formation[]
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des formations par niveau:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur lors de la récupération des formations par niveau:', error);
     return [];
   }
 }
 
 export async function getFormationsByRythme(rythme: string): Promise<Formation[]> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible');
     return [];
   }
 
@@ -139,13 +123,11 @@ export async function getFormationsByRythme(rythme: string): Promise<Formation[]
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des formations par rythme:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur lors de la récupération des formations par rythme:', error);
     return [];
   }
 }
@@ -157,7 +139,6 @@ export async function searchFormations(filters: {
   rythme?: string;
 }): Promise<Formation[]> {
   if (!isSupabaseAvailable() || !supabase) {
-    console.warn('Supabase non disponible');
     return [];
   }
 
@@ -183,13 +164,11 @@ export async function searchFormations(filters: {
     const { data, error } = await query.order('id', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la recherche des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur lors de la recherche des formations:', error);
     return [];
   }
 }

@@ -2,9 +2,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, ChevronDown, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, ChevronDown, Check, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
 import { Formation, categories, niveaux, rythmes } from '@/types/formations';
 import { getAllFormations } from '@/lib/formations';
+import { signIn, signUp } from '@/lib/auth-api';
 
 interface LoginWithFormationSelectionProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface LoginWithFormationSelectionProps {
 type Step = 'login' | 'formation-selection' | 'inscription';
 
 export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteAction }: LoginWithFormationSelectionProps) => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('login');
   const [selectedFormation, setSelectedFormation] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +34,12 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
   // États pour les formations
   const [formations, setFormations] = useState<Formation[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // États pour l'authentification
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Charger les formations depuis Supabase
   useEffect(() => {
@@ -86,16 +95,78 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
     setSelectedFormation(prev => prev === formationId ? null : formationId);
   };
 
+  // Fonction de connexion
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      console.log('🔍 Tentative de connexion...');
+      const result = await signIn({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (!result.success) {
+        setError(result.error || 'Erreur lors de la connexion');
+        return;
+      }
+
+      console.log('✅ Connexion réussie, redirection vers /validation');
+      onCloseAction();
+      router.push('/validation');
+    } catch (error) {
+      console.error('❌ Erreur de connexion:', error);
+      setError('Une erreur est survenue lors de la connexion.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fonction d'inscription
+  const handleSignUp = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      if (password !== confirmPassword) {
+        setError('Les mots de passe ne correspondent pas.');
+        return;
+      }
+
+      if (!acceptTerms) {
+        setError('Vous devez accepter les conditions d\'utilisation.');
+        return;
+      }
+
+      const result = await signUp({
+        email,
+        password,
+        formation_id: selectedFormation || undefined,
+      });
+
+      if (!result.success) {
+        setError(result.error || 'Erreur lors de l\'inscription');
+        return;
+      }
+
+      // Rediriger vers la page de confirmation
+      router.push(`/confirmation?email=${encodeURIComponent(email)}`);
+      onCloseAction();
+    } catch (error) {
+      console.error('Erreur d\'inscription:', error);
+      setError('Une erreur est survenue lors de l\'inscription.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep === 'formation-selection' && selectedFormation) {
       setCurrentStep('inscription');
     } else if (currentStep === 'inscription') {
-      // Traiter l'inscription
-      const formation = formations.find(f => f.id === selectedFormation);
-      if (formation) {
-        onCompleteAction([formation]);
-        onCloseAction();
-      }
+      handleSignUp();
     }
   };
 
@@ -221,8 +292,16 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                     Connectez-vous si vous avez déjà un compte
                   </p>
 
+                  {/* Message d'erreur */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                  )}
+
                   {/* Formulaire */}
-                  <form className="space-y-4 sm:space-y-6">
+                  <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
                     {/* Email */}
                     <div>
                       <label 
@@ -233,8 +312,11 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                       </label>
                       <input
                         type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
                         className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-[#032622]/10 text-[#032622] border border-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent text-sm sm:text-base"
                         placeholder="Email"
+                        required
                       />
                     </div>
 
@@ -248,8 +330,11 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                       </label>
                       <input
                         type="password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
                         className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-[#032622]/10 text-[#032622] border border-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent text-sm sm:text-base"
                         placeholder="Mot de passe"
+                        required
                       />
                     </div>
 
@@ -272,10 +357,11 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                     {/* Bouton de connexion */}
                     <button
                       type="submit"
-                      className="w-full bg-[#032622] hover:bg-[#032622]/90 text-[#F8F5E4] py-3 sm:py-4 font-bold text-base sm:text-lg transition-colors duration-200"
+                      disabled={isLoading}
+                      className="w-full bg-[#032622] hover:bg-[#032622]/90 text-[#F8F5E4] py-3 sm:py-4 font-bold text-base sm:text-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
                     >
-                      ME CONNECTER
+                      {isLoading ? 'CONNEXION...' : 'ME CONNECTER'}
                     </button>
 
                     {/* Connexions sociales */}
@@ -650,17 +736,17 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                   onClick={handleNext}
                   disabled={
                     currentStep === 'formation-selection' ? !selectedFormation : 
-                    currentStep === 'inscription' ? !email || !password || !confirmPassword || !acceptTerms : false
+                    currentStep === 'inscription' ? !email || !password || !confirmPassword || !acceptTerms || isLoading : false
                   }
                   className={`px-8 py-4 font-bold transition-all duration-200 flex items-center gap-3 text-lg ${
                     (currentStep === 'formation-selection' && selectedFormation) ||
-                    (currentStep === 'inscription' && email && password && confirmPassword && acceptTerms)
+                    (currentStep === 'inscription' && email && password && confirmPassword && acceptTerms && !isLoading)
                       ? 'bg-[#032622] hover:bg-[#044a3a] text-white hover:shadow-lg'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                   style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
                 >
-                  SUIVANT
+                  {isLoading ? 'INSCRIPTION...' : 'SUIVANT'}
                   <ArrowRight className="w-6 h-6" />
                 </button>
               </div>
