@@ -1,18 +1,16 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Mail, ArrowLeft } from 'lucide-react';
 import { LoginWithFormationSelection } from '../LoginWithFormationSelection';
 import { Navbar } from '../Navbar';
 import { Footer } from '../Footer';
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const [email, setEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -30,7 +28,6 @@ export default function ConfirmationPage() {
       // await resendConfirmationEmail(email);
       alert('Email de confirmation renvoyé !');
     } catch (error) {
-      console.error('Erreur lors du renvoi de l\'email:', error);
       alert('Erreur lors du renvoi de l\'email');
     } finally {
       setIsLoading(false);
@@ -156,9 +153,23 @@ export default function ConfirmationPage() {
         isOpen={isLoginOpen} 
         onCloseAction={() => setIsLoginOpen(false)}
         onCompleteAction={(selectedFormations) => {
-          console.log('Formations sélectionnées:', selectedFormations);
+          // Formations sélectionnées traitées
         }}
       />
     </div>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+        <div className="text-[#032622] text-lg" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+          Chargement...
+        </div>
+      </div>
+    }>
+      <ConfirmationContent />
+    </Suspense>
   );
 }
