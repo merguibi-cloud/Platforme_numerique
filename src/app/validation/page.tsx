@@ -1,13 +1,23 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/app/Navbar';
 import { Hero } from './components/Hero';
 import { Accueil } from './components/Accueil';
+import { Information } from './components/Information';
+import { Documents } from './components/Documents';
+import { Contrat } from './components/Contrat';
+import { Validation } from './components/Validation';
 import { getCurrentUser } from '@/lib/auth-api';
 
 const ValidationContent = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Déterminer l'état initial basé sur l'URL
+  const currentStep = searchParams.get('step');
 
   useEffect(() => {
     loadUserData();
@@ -61,14 +71,88 @@ const ValidationContent = () => {
     );
   }
 
+  const handleStartApplication = () => {
+    router.push('/validation?step=informations');
+  };
+
+  const handleCloseCandidatureForm = () => {
+    router.push('/validation');
+  };
+
+  const handleNextStep = () => {
+    switch (currentStep) {
+      case 'informations':
+        router.push('/validation?step=documents');
+        break;
+      case 'documents':
+        router.push('/validation?step=contrat');
+        break;
+      case 'contrat':
+        router.push('/validation?step=validation');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handlePrevStep = () => {
+    switch (currentStep) {
+      case 'documents':
+        router.push('/validation?step=informations');
+        break;
+      case 'contrat':
+        router.push('/validation?step=documents');
+        break;
+      case 'validation':
+        router.push('/validation?step=contrat');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 'informations':
+        return <Information onClose={handleCloseCandidatureForm} />;
+      case 'documents':
+        return (
+          <Documents 
+            onClose={handleCloseCandidatureForm}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        );
+      case 'contrat':
+        return (
+          <Contrat 
+            onClose={handleCloseCandidatureForm}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        );
+      case 'validation':
+        return (
+          <Validation 
+            onClose={handleCloseCandidatureForm}
+            onPrev={handlePrevStep}
+          />
+        );
+      default:
+        return (
+          <Accueil
+            userEmail={user.email}
+            onStartApplication={handleStartApplication}
+          />
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Navbar />
       <Hero />
-        <Accueil
-          userEmail={user.email}
-          onStartApplication={() => console.log('Démarrer l\'application')}
-        />
+      {renderCurrentStep()}
     </div>
   );
 };
