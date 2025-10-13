@@ -174,7 +174,7 @@ export default function MessagerieComponent() {
                   </p>
                 </div>
                 {conversation.unreadCount > 0 && (
-                  <div className="bg-[#032622] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <div className="bg-[#F8F5E4] text-[#032622] border border-[#032622] text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {conversation.unreadCount}
                   </div>
                 )}
@@ -216,7 +216,7 @@ export default function MessagerieComponent() {
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                   message.sender === 'user'
-                    ? 'bg-[#032622] text-white'
+                    ? 'bg-[#F8F5E4] text-[#032622] border border-[#032622]'
                     : 'bg-gray-200 text-[#032622]'
                 }`}
               >
@@ -244,7 +244,7 @@ export default function MessagerieComponent() {
             />
             <button
               onClick={handleSendMessage}
-              className="px-6 py-3 bg-[#032622] text-white rounded hover:bg-[#032622]/90 transition-colors"
+              className="px-6 py-3 bg-[#F8F5E4] text-[#032622] border border-[#032622] rounded hover:bg-[#eae5cf] transition-colors"
             >
               Envoyer
             </button>

@@ -165,7 +165,7 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 bg-[#032622] text-white flex items-center justify-center hover:bg-[#01302C] transition-colors"
+            className="w-8 h-8 bg-[#F8F5E4] text-[#032622] border border-[#032622] flex items-center justify-center hover:bg-[#eae5cf] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -338,7 +338,7 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
             <div className="flex justify-center pt-4">
               <button
                 onClick={handleNext}
-                className="bg-[#032622] text-white px-8 py-3 font-semibold hover:bg-[#01302C] transition-colors"
+                className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-8 py-3 font-semibold hover:bg-[#eae5cf] transition-colors"
               >
                 SUIVANT
               </button>
@@ -438,7 +438,7 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
                     <div className="w-8 h-8 bg-[#032622] rounded-full flex items-center justify-center">
                       <div className="w-4 h-4 bg-white rounded-full"></div>
                     </div>
-                    <button className="absolute top-1 left-1 w-6 h-6 bg-[#032622] text-white flex items-center justify-center hover:bg-[#01302C] transition-colors">
+                    <button className="absolute top-1 left-1 w-6 h-6 bg-[#F8F5E4] text-[#032622] border border-[#032622] flex items-center justify-center hover:bg-[#eae5cf] transition-colors">
                       <Camera className="w-3 h-3" />
                     </button>
                   </div>
@@ -489,7 +489,7 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
 
               <button
                 onClick={handleAddIntervenant}
-                className="bg-[#032622] text-white px-4 py-2 text-sm font-semibold hover:bg-[#01302C] transition-colors inline-flex items-center space-x-2"
+                className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-4 py-2 text-sm font-semibold hover:bg-[#eae5cf] transition-colors inline-flex items-center space-x-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>AJOUTER UN INTERVENANT</span>
@@ -506,7 +506,7 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
               </button>
               <button
                 onClick={handleNext}
-                className="bg-[#032622] text-white px-8 py-3 font-semibold hover:bg-[#01302C] transition-colors"
+                className="bg-[#F8F5E4] text-[#032622] border border-[#032622] px-8 py-3 font-semibold hover:bg-[#eae5cf] transition-colors"
               >
                 SUIVANT
               </button>

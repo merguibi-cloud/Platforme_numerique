@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { StudentSidebar } from "../components/StudentSidebar";
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -22,6 +21,18 @@ import {
   NotebookPen,
   Eraser,
   Highlighter,
+  Plus,
+  Trash2,
+  Save,
+  Eye,
+  EyeOff,
+  Copy,
+  Search,
+  Filter,
+  Star,
+  Edit3,
+  X,
+  Check,
 } from "lucide-react";
 
 const heroCourse = {
@@ -208,6 +219,47 @@ const quizQuestions = [
 
 type Step = "overview" | "module" | "quiz" | "results";
 
+// Types pour les nouvelles fonctionnalités
+interface Highlight {
+  id: string;
+  text: string;
+  color: string;
+  colorName: string;
+  timestamp: Date;
+  position: number;
+  note?: string;
+  isFavorite?: boolean;
+}
+
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  highlights: string[]; // IDs des surlignages liés
+  timestamp: Date;
+  tags: string[];
+  isFavorite: boolean;
+}
+
+interface SmartNote {
+  id: string;
+  content: string;
+  source: string;
+  timestamp: Date;
+  category: 'insight' | 'question' | 'action' | 'definition';
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: Date;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in_progress' | 'completed';
+  tags: string[];
+  isUrgent: boolean;
+}
+
 export default function MesFormationsPage() {
   const [step, setStep] = useState<Step>("overview");
   const [showQuizModal, setShowQuizModal] = useState(false);
@@ -222,6 +274,25 @@ export default function MesFormationsPage() {
   const [moduleNotes, setModuleNotes] = useState("");
   const [selectedDay, setSelectedDay] = useState(18);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
+
+  // États pour les nouvelles fonctionnalités
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [smartNotes, setSmartNotes] = useState<SmartNote[]>([]);
+  const [selectedHighlightColor, setSelectedHighlightColor] = useState('#fef3c7');
+  const [showHighlightMenu, setShowHighlightMenu] = useState(false);
+  const [showNotesPanel, setShowNotesPanel] = useState(false);
+  const [showSmartNotesPanel, setShowSmartNotesPanel] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTag, setFilterTag] = useState('');
+  const [isEditingNote, setIsEditingNote] = useState<string | null>(null);
+  const [editingNoteContent, setEditingNoteContent] = useState('');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showTaskPanel, setShowTaskPanel] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
 
   // Fonction pour obtenir les événements du jour sélectionné
   const getCurrentDayEvents = () => {
@@ -250,8 +321,92 @@ export default function MesFormationsPage() {
       if (savedModuleNotes) {
         setModuleNotes(savedModuleNotes);
       }
+      
+      // Charger les surlignages sauvegardés
+      const savedHighlights = window.localStorage.getItem("formation-highlights-bloc1");
+      if (savedHighlights) {
+        try {
+          const highlightsData = JSON.parse(savedHighlights);
+          setHighlights(highlightsData.map((h: any) => ({
+            ...h,
+            timestamp: new Date(h.timestamp)
+          })));
+        } catch (error) {
+          console.warn("Erreur lors du chargement des surlignages:", error);
+        }
+      }
+      
+      // Charger les notes sauvegardées
+      const savedNotes = window.localStorage.getItem("formation-notes-bloc1");
+      if (savedNotes) {
+        try {
+          const notesData = JSON.parse(savedNotes);
+          setNotes(notesData.map((n: any) => ({
+            ...n,
+            timestamp: new Date(n.timestamp)
+          })));
+        } catch (error) {
+          console.warn("Erreur lors du chargement des notes:", error);
+        }
+      }
+      
+      // Charger les smart notes sauvegardées
+      const savedSmartNotes = window.localStorage.getItem("formation-smart-notes-bloc1");
+      if (savedSmartNotes) {
+        try {
+          const smartNotesData = JSON.parse(savedSmartNotes);
+          setSmartNotes(smartNotesData.map((sn: any) => ({
+            ...sn,
+            timestamp: new Date(sn.timestamp)
+          })));
+        } catch (error) {
+          console.warn("Erreur lors du chargement des smart notes:", error);
+        }
+      }
+      
+      // Charger les tâches sauvegardées
+      const savedTasks = window.localStorage.getItem("formation-tasks-bloc1");
+      if (savedTasks) {
+        try {
+          const tasksData = JSON.parse(savedTasks);
+          setTasks(tasksData.map((t: any) => ({
+            ...t,
+            dueDate: new Date(t.dueDate)
+          })));
+        } catch (error) {
+          console.warn("Erreur lors du chargement des tâches:", error);
+        }
+      }
     }
   }, []);
+
+  // Sauvegarde automatique des surlignages
+  useEffect(() => {
+    if (typeof window !== "undefined" && highlights.length > 0) {
+      window.localStorage.setItem("formation-highlights-bloc1", JSON.stringify(highlights));
+    }
+  }, [highlights]);
+
+  // Sauvegarde automatique des notes
+  useEffect(() => {
+    if (typeof window !== "undefined" && notes.length > 0) {
+      window.localStorage.setItem("formation-notes-bloc1", JSON.stringify(notes));
+    }
+  }, [notes]);
+
+  // Sauvegarde automatique des smart notes
+  useEffect(() => {
+    if (typeof window !== "undefined" && smartNotes.length > 0) {
+      window.localStorage.setItem("formation-smart-notes-bloc1", JSON.stringify(smartNotes));
+    }
+  }, [smartNotes]);
+
+  // Sauvegarde automatique des tâches
+  useEffect(() => {
+    if (typeof window !== "undefined" && tasks.length > 0) {
+      window.localStorage.setItem("formation-tasks-bloc1", JSON.stringify(tasks));
+    }
+  }, [tasks]);
 
   const handleNotebookChange = (value: string) => {
     setNotebookContent(value);
@@ -268,48 +423,139 @@ export default function MesFormationsPage() {
   };
 
   const highlightColors = [
-    { label: "Jaune", value: "#fef3c7" },
-    { label: "Vert", value: "#d9f99d" },
-    { label: "Rose", value: "#fbcfe8" },
-    { label: "Bleu", value: "#bae6fd" },
+    { label: "Jaune", value: "#fef3c7", name: "jaune" },
+    { label: "Vert", value: "#d9f99d", name: "vert" },
+    { label: "Rose", value: "#fbcfe8", name: "rose" },
+    { label: "Bleu", value: "#bae6fd", name: "bleu" },
+    { label: "Orange", value: "#fed7aa", name: "orange" },
+    { label: "Violet", value: "#e9d5ff", name: "violet" },
   ];
 
-  const applyHighlight = (color: string) => {
+  // Fonction améliorée pour appliquer un surlignage
+  const applyHighlight = useCallback((color: string, colorName: string) => {
     if (!courseContentRef.current || typeof window === "undefined") return;
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-      setQuizError(null);
       return;
     }
+    
     const range = selection.getRangeAt(0);
     if (!courseContentRef.current.contains(range.commonAncestorContainer)) return;
+    
+    const text = selection.toString().trim();
+    if (!text) return;
+
     const span = document.createElement("span");
     span.style.backgroundColor = color;
-    span.style.padding = "0 2px";
+    span.style.padding = "2px 4px";
+    span.style.borderRadius = "3px";
     span.dataset.highlight = "true";
+    span.dataset.highlightId = `highlight-${Date.now()}`;
+    
     try {
       range.surroundContents(span);
+      
+      // Créer l'objet highlight
+      const highlight: Highlight = {
+        id: span.dataset.highlightId!,
+        text: text,
+        color: color,
+        colorName: colorName,
+        timestamp: new Date(),
+        position: range.startOffset,
+      };
+      
+      setHighlights(prev => [...prev, highlight]);
       selection.removeAllRanges();
     } catch (error) {
       console.warn("Impossible d'appliquer le surlignage sur cette sélection.", error);
     }
-  };
+  }, []);
 
-  const clearHighlights = () => {
+  // Fonction pour supprimer un surlignage spécifique
+  const removeHighlight = useCallback((highlightId: string) => {
+    const element = courseContentRef.current?.querySelector(`[data-highlight-id="${highlightId}"]`);
+    if (element && element.parentNode) {
+      const parent = element.parentNode;
+      while (element.firstChild) {
+        parent.insertBefore(element.firstChild, element);
+      }
+      parent.removeChild(element);
+      parent.normalize?.();
+    }
+    setHighlights(prev => prev.filter(h => h.id !== highlightId));
+  }, []);
+
+  // Fonction pour effacer tous les surlignages
+  const clearAllHighlights = useCallback(() => {
     if (!courseContentRef.current) return;
-    const highlights = courseContentRef.current.querySelectorAll('[data-highlight="true"]');
-    highlights.forEach((element) => {
+    const highlightElements = courseContentRef.current.querySelectorAll('[data-highlight="true"]');
+    highlightElements.forEach((element) => {
       const parent = element.parentNode;
       if (!parent) return;
       while (element.firstChild) {
         parent.insertBefore(element.firstChild, element);
       }
       parent.removeChild(element);
-      if (parent instanceof HTMLElement || parent instanceof Text) {
-        (parent as HTMLElement).normalize?.();
-      }
+      parent.normalize?.();
     });
-  };
+    setHighlights([]);
+  }, []);
+
+  // Fonction pour basculer le statut favori d'un surlignage
+  const toggleHighlightFavorite = useCallback((highlightId: string) => {
+    setHighlights(prev => prev.map(h => 
+      h.id === highlightId ? { ...h, isFavorite: !h.isFavorite } : h
+    ));
+  }, []);
+
+  // Fonction pour ajouter une note à un surlignage
+  const addNoteToHighlight = useCallback((highlightId: string, note: string) => {
+    setHighlights(prev => prev.map(h => 
+      h.id === highlightId ? { ...h, note } : h
+    ));
+  }, []);
+
+  // Fonctions pour la gestion des tâches
+  const addTask = useCallback(() => {
+    if (!newTaskTitle.trim()) return;
+    
+    const task: Task = {
+      id: `task-${Date.now()}`,
+      title: newTaskTitle,
+      description: newTaskDescription,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours par défaut
+      priority: newTaskPriority,
+      status: 'pending',
+      tags: [],
+      isUrgent: false,
+    };
+    
+    setTasks(prev => [...prev, task]);
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setNewTaskPriority('medium');
+  }, [newTaskTitle, newTaskDescription, newTaskPriority]);
+
+  const toggleTaskStatus = useCallback((taskId: string) => {
+    setTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+        return { ...task, status: newStatus };
+      }
+      return task;
+    }));
+  }, []);
+
+  const deleteTask = useCallback((taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+  }, []);
+
+  const toggleTaskUrgent = useCallback((taskId: string) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, isUrgent: !task.isUrgent } : task
+    ));
+  }, []);
 
   const totalQuestions = quizQuestions.length;
 
@@ -575,43 +821,223 @@ export default function MesFormationsPage() {
             <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
               Module 1 · Analyse de marché et veille stratégique
             </p>
-            <div className="bg-[#032622] aspect-video flex items-center justify-center mb-6">
+            {/* Lecteur vidéo avec design simplifié */}
+            <div className="relative mb-6 group">
+              <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
+                {/* Lecteur vidéo principal */}
               <video
                 src="/menue_etudiant/nonselectionner/SSvid.net--Technique-de-vente-Les-10-qualités-pour-devenir-un_1080p.mp4"
                 controls
-                className="w-full h-full"
-              />
+                  className="w-full h-full object-cover rounded-lg"
+                  preload="metadata"
+                >
+                  Votre navigateur ne supporte pas la lecture vidéo.
+                </video>
+                
+                {/* Overlay avec informations essentielles */}
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
+                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
+                      Durée: 8:42
+                    </span>
             </div>
-            <div className="border border-black bg-[#F8F5E4] p-4 mb-6 flex flex-wrap items-center gap-3">
+                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
+                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
+                      HD 1080p
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Options utiles pour les étudiants */}
+              <div className="mt-4 bg-[#F8F5E4] border border-[#032622] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-bold text-[#032622] uppercase tracking-wider">
+                    Options d'étude
+                  </h4>
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button className="flex flex-col items-center space-y-2 p-3 border border-[#032622]/30 rounded-lg hover:bg-[#032622]/5 transition-colors group">
+                    <div className="w-8 h-8 bg-[#032622]/10 rounded-full flex items-center justify-center group-hover:bg-[#032622] transition-colors">
+                      <Play className="w-4 h-4 text-[#032622] group-hover:text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#032622] uppercase text-center">
+                      Lecture rapide
+                    </span>
+                  </button>
+                  
+                  <button className="flex flex-col items-center space-y-2 p-3 border border-[#032622]/30 rounded-lg hover:bg-[#032622]/5 transition-colors group">
+                    <div className="w-8 h-8 bg-[#032622]/10 rounded-full flex items-center justify-center group-hover:bg-[#032622] transition-colors">
+                      <Bookmark className="w-4 h-4 text-[#032622] group-hover:text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#032622] uppercase text-center">
+                      Marquer
+                    </span>
+                  </button>
+                  
+                  <button className="flex flex-col items-center space-y-2 p-3 border border-[#032622]/30 rounded-lg hover:bg-[#032622]/5 transition-colors group">
+                    <div className="w-8 h-8 bg-[#032622]/10 rounded-full flex items-center justify-center group-hover:bg-[#032622] transition-colors">
+                      <Download className="w-4 h-4 text-[#032622] group-hover:text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#032622] uppercase text-center">
+                      Télécharger
+                    </span>
+                  </button>
+                  
+                  <button className="flex flex-col items-center space-y-2 p-3 border border-[#032622]/30 rounded-lg hover:bg-[#032622]/5 transition-colors group">
+                    <div className="w-8 h-8 bg-[#032622]/10 rounded-full flex items-center justify-center group-hover:bg-[#032622] transition-colors">
+                      <MessageCircle className="w-4 h-4 text-[#032622] group-hover:text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#032622] uppercase text-center">
+                      Questions
+                    </span>
+                  </button>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-[#032622]/20">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="space-y-1">
+                      <p className="text-[#032622]/60 text-xs uppercase">Transcription</p>
+                      <button className="text-[#032622] font-bold text-sm hover:text-[#01302C] transition-colors">
+                        Voir
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[#032622]/60 text-xs uppercase">Sous-titres</p>
+                      <button className="text-[#032622] font-bold text-sm hover:text-[#01302C] transition-colors">
+                        FR/EN
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[#032622]/60 text-xs uppercase">Vitesse</p>
+                      <button className="text-[#032622] font-bold text-sm hover:text-[#01302C] transition-colors">
+                        1x
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Surligneur amélioré */}
+            <div className="border border-black bg-[#F8F5E4] p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <Highlighter className="w-4 h-4 text-[#032622]" />
                 <span className="text-xs font-bold uppercase text-[#032622]">
-                  Surligneur
+                    Surligneur intelligent
                 </span>
               </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setShowNotesPanel(!showNotesPanel)}
+                    className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white transition-colors"
+                  >
+                    <NotebookPen className="w-3 h-3" />
+                    <span>Notes ({highlights.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setShowSmartNotesPanel(!showSmartNotesPanel)}
+                    className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white transition-colors"
+                  >
+                    <Star className="w-3 h-3" />
+                    <span>Smart Notes</span>
+                  </button>
+                  <button
+                    onClick={() => setShowTaskPanel(!showTaskPanel)}
+                    className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white transition-colors"
+                  >
+                    <CheckCircle className="w-3 h-3" />
+                    <span>Tâches ({tasks.filter(t => t.status !== 'completed').length})</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
               {highlightColors.map((color) => (
                 <button
                   key={color.value}
-                  onClick={() => applyHighlight(color.value)}
-                  className="w-8 h-8 border border-black"
+                    onClick={() => applyHighlight(color.value, color.name)}
+                    className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 ${
+                      selectedHighlightColor === color.value ? 'border-[#032622] shadow-lg' : 'border-gray-400'
+                    }`}
                   style={{ backgroundColor: color.value }}
                   title={`Surligner en ${color.label}`}
-                ></button>
+                  />
               ))}
               <button
-                onClick={clearHighlights}
-                className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-white"
-              >
+                  onClick={() => {
+                    // Mode gomme : cliquer sur un surlignage pour le supprimer
+                    setShowHighlightMenu(!showHighlightMenu);
+                  }}
+                  className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center ${
+                    showHighlightMenu ? 'border-red-500 bg-red-100' : 'border-gray-400 bg-gray-100'
+                  }`}
+                  title="Mode gomme - Clique sur un surlignage pour le supprimer"
+                >
+                  <Eraser className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2">
+                {showHighlightMenu && (
+                  <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
                 <Eraser className="w-3 h-3" />
-                <span>Effacer</span>
+                    <span>Mode gomme actif - Clique sur un surlignage</span>
+                  </div>
+                )}
+                <button
+                  onClick={clearAllHighlights}
+                  className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-red-100 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Effacer tout</span>
               </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  className={`flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold transition-colors ${
+                    showFavoritesOnly 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-[#F8F5E4] text-[#032622] hover:bg-yellow-100 hover:text-yellow-700'
+                  }`}
+                >
+                  <Star className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  <span>Favoris</span>
+                </button>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <Search className="w-3 h-3 text-[#032622]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border border-black px-2 py-1 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
             <h3 className="text-xl font-bold text-[#032622] mb-4">
               Analyse de marché et veille stratégique
             </h3>
             <div
               ref={courseContentRef}
-              className="space-y-4 text-sm text-[#032622] leading-relaxed"
+              className={`space-y-4 text-sm text-[#032622] leading-relaxed ${
+                showHighlightMenu ? 'cursor-crosshair' : ''
+              }`}
+              onClick={(e) => {
+                if (showHighlightMenu) {
+                  const target = e.target as HTMLElement;
+                  const highlightElement = target.closest('[data-highlight="true"]');
+                  if (highlightElement) {
+                    const highlightId = highlightElement.getAttribute('data-highlight-id');
+                    if (highlightId) {
+                      removeHighlight(highlightId);
+                      setShowHighlightMenu(false); // Désactiver le mode gomme après suppression
+                    }
+                  }
+                }
+              }}
             >
               <section className="space-y-2">
                 <p className="font-semibold uppercase text-xs">Objectif du module</p>
@@ -840,6 +1266,363 @@ export default function MesFormationsPage() {
           </div>
         </div>
       )}
+
+      {/* Panneau des notes et surlignages */}
+      {showNotesPanel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[#032622]">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                Mes Notes et Surlignages
+              </h3>
+              <button
+                onClick={() => setShowNotesPanel(false)}
+                className="text-[#032622] hover:text-red-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {highlights.length === 0 ? (
+                <div className="text-center py-8">
+                  <Highlighter className="w-12 h-12 text-[#032622]/30 mx-auto mb-4" />
+                  <p className="text-sm text-[#032622]/60">
+                    Aucun surlignage pour le moment. Sélectionne du texte et utilise les couleurs ci-dessus pour surligner.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {highlights
+                    .filter(highlight => 
+                      !showFavoritesOnly || highlight.isFavorite
+                    )
+                    .filter(highlight =>
+                      !searchQuery || highlight.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      highlight.note?.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((highlight) => (
+                      <div key={highlight.id} className="border border-[#032622] bg-[#F8F5E4] p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div
+                                className="w-4 h-4 rounded border border-gray-400"
+                                style={{ backgroundColor: highlight.color }}
+                              />
+                              <span className="text-xs font-semibold text-[#032622] uppercase">
+                                {highlight.colorName}
+                              </span>
+                              <span className="text-xs text-[#032622]/60">
+                                {highlight.timestamp.toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <div 
+                              className="p-3 bg-white/50 border border-[#032622]/20 rounded"
+                              style={{ backgroundColor: `${highlight.color}40` }}
+                            >
+                              <p className="text-sm text-[#032622] leading-relaxed">
+                                {highlight.text}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            <button
+                              onClick={() => toggleHighlightFavorite(highlight.id)}
+                              className={`p-1 transition-colors ${
+                                highlight.isFavorite 
+                                  ? 'text-yellow-500' 
+                                  : 'text-[#032622]/40 hover:text-yellow-500'
+                              }`}
+                            >
+                              <Star className={`w-4 h-4 ${highlight.isFavorite ? 'fill-current' : ''}`} />
+                            </button>
+                            <button
+                              onClick={() => removeHighlight(highlight.id)}
+                              className="p-1 text-[#032622]/40 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {highlight.note && (
+                          <div className="bg-[#032622]/5 border border-[#032622]/20 p-3 rounded">
+                            <p className="text-xs font-semibold text-[#032622] uppercase mb-1">Note</p>
+                            <p className="text-sm text-[#032622]">{highlight.note}</p>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            placeholder="Ajouter une note..."
+                            className="flex-1 border border-[#032622] px-3 py-2 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                addNoteToHighlight(highlight.id, e.currentTarget.value);
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              if (input.value.trim()) {
+                                addNoteToHighlight(highlight.id, input.value);
+                                input.value = '';
+                              }
+                            }}
+                            className="border border-[#032622] bg-[#032622] text-white px-3 py-2 text-xs hover:bg-[#01302C] transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Panneau des Smart Notes */}
+      {showSmartNotesPanel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[#032622]">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                Smart Notes - Prise de Notes Intelligente
+              </h3>
+              <button
+                onClick={() => setShowSmartNotesPanel(false)}
+                className="text-[#032622] hover:text-red-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="border border-[#032622] bg-[#F8F5E4] p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-[#032622] uppercase">Insight Clé</h4>
+                  <textarea
+                    placeholder="Note ici les insights importants du module..."
+                    className="w-full h-20 border border-[#032622] bg-white px-3 py-2 text-xs text-[#032622] placeholder-[#032622]/50 focus:outline-none resize-none"
+                  />
+                  <button className="border border-[#032622] bg-[#032622] text-white px-3 py-1 text-xs hover:bg-[#01302C] transition-colors">
+                    <Plus className="w-3 h-3 inline mr-1" />
+                    Ajouter
+                  </button>
+                </div>
+                
+                <div className="border border-[#032622] bg-[#F8F5E4] p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-[#032622] uppercase">Questions</h4>
+                  <textarea
+                    placeholder="Questions qui te viennent en tête..."
+                    className="w-full h-20 border border-[#032622] bg-white px-3 py-2 text-xs text-[#032622] placeholder-[#032622]/50 focus:outline-none resize-none"
+                  />
+                  <button className="border border-[#032622] bg-[#032622] text-white px-3 py-1 text-xs hover:bg-[#01302C] transition-colors">
+                    <Plus className="w-3 h-3 inline mr-1" />
+                    Ajouter
+                  </button>
+                </div>
+                
+                <div className="border border-[#032622] bg-[#F8F5E4] p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-[#032622] uppercase">Actions</h4>
+                  <textarea
+                    placeholder="Actions à entreprendre après le module..."
+                    className="w-full h-20 border border-[#032622] bg-white px-3 py-2 text-xs text-[#032622] placeholder-[#032622]/50 focus:outline-none resize-none"
+                  />
+                  <button className="border border-[#032622] bg-[#032622] text-white px-3 py-1 text-xs hover:bg-[#01302C] transition-colors">
+                    <Plus className="w-3 h-3 inline mr-1" />
+                    Ajouter
+                  </button>
+                </div>
+                
+                <div className="border border-[#032622] bg-[#F8F5E4] p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-[#032622] uppercase">Définitions</h4>
+                  <textarea
+                    placeholder="Définitions importantes à retenir..."
+                    className="w-full h-20 border border-[#032622] bg-white px-3 py-2 text-xs text-[#032622] placeholder-[#032622]/50 focus:outline-none resize-none"
+                  />
+                  <button className="border border-[#032622] bg-[#032622] text-white px-3 py-1 text-xs hover:bg-[#01302C] transition-colors">
+                    <Plus className="w-3 h-3 inline mr-1" />
+                    Ajouter
+                  </button>
+                </div>
+              </div>
+              
+              <div className="border border-[#032622] bg-[#F8F5E4] p-4">
+                <h4 className="text-sm font-bold text-[#032622] uppercase mb-3">Résumé du Module</h4>
+                <textarea
+                  placeholder="Rédige ici un résumé personnel du module..."
+                  className="w-full h-32 border border-[#032622] bg-white px-3 py-2 text-sm text-[#032622] placeholder-[#032622]/50 focus:outline-none resize-none"
+                />
+                <div className="flex justify-between items-center mt-3">
+                  <button className="border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold hover:bg-[#032622] hover:text-white transition-colors">
+                    <Save className="w-3 h-3 inline mr-1" />
+                    Sauvegarder
+                  </button>
+                  <button className="border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold hover:bg-[#01302C] transition-colors">
+                    <Copy className="w-3 h-3 inline mr-1" />
+                    Exporter
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Panneau des tâches */}
+      {showTaskPanel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[#032622]">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                Mes Tâches et Rappels
+              </h3>
+              <button
+                onClick={() => setShowTaskPanel(false)}
+                className="text-[#032622] hover:text-red-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Formulaire d'ajout de tâche */}
+              <div className="border border-[#032622] bg-[#F8F5E4] p-4 mb-6 space-y-3">
+                <h4 className="text-sm font-bold text-[#032622] uppercase">Nouvelle Tâche</h4>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    placeholder="Titre de la tâche..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    className="border border-[#032622] px-3 py-2 text-xs bg-white text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                  <select
+                    value={newTaskPriority}
+                    onChange={(e) => setNewTaskPriority(e.target.value as 'low' | 'medium' | 'high')}
+                    className="border border-[#032622] px-3 py-2 text-xs bg-white text-[#032622] focus:outline-none"
+                  >
+                    <option value="low">Priorité Faible</option>
+                    <option value="medium">Priorité Moyenne</option>
+                    <option value="high">Priorité Haute</option>
+                  </select>
+                </div>
+                <textarea
+                  placeholder="Description de la tâche..."
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  className="w-full border border-[#032622] px-3 py-2 text-xs bg-white text-[#032622] placeholder-[#032622]/50 focus:outline-none resize-none"
+                  rows={3}
+                />
+                <button
+                  onClick={addTask}
+                  className="border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold hover:bg-[#01302C] transition-colors"
+                >
+                  <Plus className="w-3 h-3 inline mr-1" />
+                  Ajouter la tâche
+                </button>
+              </div>
+
+              {/* Liste des tâches */}
+              {tasks.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-12 h-12 text-[#032622]/30 mx-auto mb-4" />
+                  <p className="text-sm text-[#032622]/60">
+                    Aucune tâche pour le moment. Ajoute ta première tâche ci-dessus !
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tasks
+                    .sort((a, b) => {
+                      // Trier par urgence puis par priorité
+                      if (a.isUrgent && !b.isUrgent) return -1;
+                      if (!a.isUrgent && b.isUrgent) return 1;
+                      
+                      const priorityOrder = { high: 3, medium: 2, low: 1 };
+                      return priorityOrder[b.priority] - priorityOrder[a.priority];
+                    })
+                    .map((task) => (
+                      <div 
+                        key={task.id} 
+                        className={`border border-[#032622] p-4 space-y-2 ${
+                          task.isUrgent ? 'bg-red-50 border-red-300' : 'bg-[#F8F5E4]'
+                        } ${task.status === 'completed' ? 'opacity-60' : ''}`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <button
+                              onClick={() => toggleTaskStatus(task.id)}
+                              className={`mt-1 w-5 h-5 border-2 rounded transition-colors ${
+                                task.status === 'completed'
+                                  ? 'bg-green-500 border-green-500 text-white'
+                                  : 'border-[#032622] hover:bg-[#032622] hover:text-white'
+                              }`}
+                            >
+                              {task.status === 'completed' && <Check className="w-3 h-3" />}
+                            </button>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <h5 className={`text-sm font-semibold ${
+                                  task.status === 'completed' ? 'line-through text-[#032622]/60' : 'text-[#032622]'
+                                }`}>
+                                  {task.title}
+                                </h5>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                                  task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>
+                                  {task.priority === 'high' ? 'Haute' : task.priority === 'medium' ? 'Moyenne' : 'Faible'}
+                                </span>
+                                {task.isUrgent && (
+                                  <span className="px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded animate-pulse">
+                                    URGENT
+                                  </span>
+                                )}
+                              </div>
+                              {task.description && (
+                                <p className="text-xs text-[#032622]/70 mb-2">{task.description}</p>
+                              )}
+                              <p className="text-xs text-[#032622]/50">
+                                Échéance : {task.dueDate.toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            <button
+                              onClick={() => toggleTaskUrgent(task.id)}
+                              className={`p-1 transition-colors ${
+                                task.isUrgent 
+                                  ? 'text-red-500' 
+                                  : 'text-[#032622]/40 hover:text-red-500'
+                              }`}
+                            >
+                              <AlertCircle className={`w-4 h-4 ${task.isUrgent ? 'fill-current' : ''}`} />
+                            </button>
+                            <button
+                              onClick={() => deleteTask(task.id)}
+                              className="p-1 text-[#032622]/40 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1045,14 +1828,11 @@ export default function MesFormationsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F5E4] flex">
-      <StudentSidebar />
-      <div className="flex-1 p-6">
+    <div className="p-6">
         {step === "overview" && renderOverview()}
         {step === "module" && renderModuleView()}
         {step === "quiz" && renderQuizView()}
         {step === "results" && renderResultsView()}
-      </div>
     </div>
   );
 }

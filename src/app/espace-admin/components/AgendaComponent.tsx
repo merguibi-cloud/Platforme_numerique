@@ -141,7 +141,7 @@ const AgendaComponent = () => {
               onClick={() => setViewMode("week")}
               className={`px-4 py-2 text-sm font-semibold transition-colors ${
                 viewMode === "week"
-                  ? "bg-[#032622] text-white"
+                  ? "bg-[#F8F5E4] text-[#032622] border-2 border-[#032622]"
                   : "bg-[#F8F5E4] text-[#032622] hover:bg-[#eae5cf]"
               }`}
             >
@@ -151,7 +151,7 @@ const AgendaComponent = () => {
               onClick={() => setViewMode("month")}
               className={`px-4 py-2 text-sm font-semibold transition-colors ${
                 viewMode === "month"
-                  ? "bg-[#032622] text-white"
+                  ? "bg-[#F8F5E4] text-[#032622] border-2 border-[#032622]"
                   : "bg-[#F8F5E4] text-[#032622] hover:bg-[#eae5cf]"
               }`}
             >
@@ -162,7 +162,7 @@ const AgendaComponent = () => {
           {/* Bouton Ajouter */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="w-12 h-12 bg-[#032622] text-white flex items-center justify-center hover:bg-[#01302C] transition-colors"
+            className="w-12 h-12 bg-[#F8F5E4] text-[#032622] border border-[#032622] flex items-center justify-center hover:bg-[#eae5cf] transition-colors"
           >
             <Plus className="w-6 h-6" />
           </button>
@@ -198,7 +198,7 @@ const AgendaComponent = () => {
                 <div className="flex justify-between items-start mb-2">
                   <span
                     className={`text-sm font-medium ${
-                      day.isToday ? "bg-[#032622] text-white px-2 py-1 rounded" : ""
+                      day.isToday ? "bg-[#F8F5E4] text-[#032622] border border-[#032622] px-2 py-1 rounded" : ""
                     }`}
                   >
                     {day.date}
@@ -210,7 +210,7 @@ const AgendaComponent = () => {
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`${getEventTypeColor(event.type)} text-white text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                      className={`${getEventTypeColor(event.type)} text-[#032622] text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
                       title={`${event.title} - ${event.time}`}
                     >
                       {event.title}

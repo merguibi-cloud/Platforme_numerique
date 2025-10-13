@@ -67,10 +67,20 @@ const bottomMenuItems = [
   }
 ];
 
-export const StudentSidebar = () => {
+interface StudentSidebarProps {
+  onCollapseChange?: (isCollapsed: boolean) => void;
+}
+
+export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleCollapse = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    onCollapseChange?.(newCollapsed);
+  };
 
   // Déterminer l'élément actif basé sur l'URL
   useEffect(() => {
@@ -92,7 +102,7 @@ export const StudentSidebar = () => {
   }, [pathname]);
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300`}>
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
       {/* Logo et titre */}
       <div className="p-6 border-b border-gray-600">
         <div className="flex items-center justify-between">
@@ -116,7 +126,7 @@ export const StudentSidebar = () => {
             )}
           </div>
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={handleCollapse}
             className="text-white hover:bg-gray-700 p-1 rounded transition-colors"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}

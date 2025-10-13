@@ -653,7 +653,7 @@ export default function AdminFormationManager() {
                       return (
                         <div
                           key={module.id}
-                          className={'flex items-center justify-between gap-4 rounded border border-[#032622]/20 bg-white/60 px-4 py-3'}
+                          className={'flex items-center justify-between gap-4 rounded border border-[#032622]/20 bg-[#F8F5E4] px-4 py-3'}
                         >
                           <div className={'flex items-center gap-3'}>
                             <span className={`flex h-10 w-10 items-center justify-center rounded-full ${moduleTypeColors[module.type]}`}>
@@ -687,7 +687,7 @@ export default function AdminFormationManager() {
                   </div>
 
                   {addingModuleForBlock === selectedBlock.id && (
-                    <div className={'mt-4 space-y-3 rounded border border-[#032622]/30 bg-white/80 p-4'}>
+                    <div className={'mt-4 space-y-3 rounded border border-[#032622]/30 bg-[#F8F5E4] p-4'}>
                       <div className={'grid gap-3 md:grid-cols-3'}>
                         <div className={'md:col-span-2'}>
                           <input
@@ -773,7 +773,7 @@ export default function AdminFormationManager() {
                       selectedBlock.students.map((student) => (
                         <div
                           key={student.id}
-                          className={`rounded border border-[#032622]/20 bg-white/70 p-4 ${
+                          className={`rounded border border-[#032622]/20 bg-[#F8F5E4] p-4 ${
                             student.flagged ? 'ring-1 ring-[#732f2f]' : ''
                           }`}
                         >
@@ -823,7 +823,7 @@ export default function AdminFormationManager() {
                         .map((flag) => (
                           <div
                             key={flag.id}
-                            className={'flex flex-col gap-2 rounded border border-[#032622]/20 bg-white/80 p-4 text-sm text-[#032622]'}
+                            className={'flex flex-col gap-2 rounded border border-[#032622]/20 bg-[#F8F5E4] p-4 text-sm text-[#032622]'}
                           >
                             <div className={'flex items-center justify-between'}>
                               <span className={'font-semibold'}>{flag.student}</span>
@@ -862,7 +862,7 @@ export default function AdminFormationManager() {
                 {flaggedEvents.map((event) => (
                   <div
                     key={event.id}
-                    className={'flex flex-wrap items-center justify-between gap-3 rounded border border-[#032622]/20 bg-white/70 px-4 py-3 text-sm text-[#032622]'}
+                    className={'flex flex-wrap items-center justify-between gap-3 rounded border border-[#032622]/20 bg-[#F8F5E4] px-4 py-3 text-sm text-[#032622]'}
                   >
                     <div>
                       <p className={'font-semibold'}>{event.student}</p>
@@ -949,7 +949,7 @@ export default function AdminFormationManager() {
                   {newBlockModules.map((module, index) => (
                     <div
                       key={module.id}
-                      className={'grid gap-3 rounded border border-[#032622]/20 bg-white/70 px-4 py-4 md:grid-cols-6'}
+                      className={'grid gap-3 rounded border border-[#032622]/20 bg-[#F8F5E4] px-4 py-4 md:grid-cols-6'}
                     >
                       <div className={'md:col-span-3'}>
                         <input
@@ -1016,7 +1016,7 @@ export default function AdminFormationManager() {
                 </div>
               </div>
 
-              <div className={'flex items-center justify-between rounded border border-[#032622]/30 bg-white/70 px-4 py-3'}>
+              <div className={'flex items-center justify-between rounded border border-[#032622]/30 bg-[#F8F5E4] px-4 py-3'}>
                 <div className={'flex items-center gap-2 text-sm text-[#032622]'}>
                   <ShieldAlert className={'h-4 w-4'} />
                   Activer la surveillance anti-triche
