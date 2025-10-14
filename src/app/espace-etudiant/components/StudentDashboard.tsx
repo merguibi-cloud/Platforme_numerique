@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export const StudentDashboard = () => {
   const [progress] = useState(10);
@@ -8,6 +9,7 @@ export const StudentDashboard = () => {
   const [competences] = useState({ current: 2, total: 19 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Fermer le dropdown quand on clique en dehors
   useEffect(() => {
@@ -32,7 +34,7 @@ export const StudentDashboard = () => {
             className="text-4xl font-bold text-[#032622] mb-2"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            BONJOUR, EL ASSOWAD CHADI
+            BONJOUR, CHADI EL ASSOWAD
           </h1>
         </div>
         
@@ -62,12 +64,20 @@ export const StudentDashboard = () => {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 transition-colors"
             >
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full overflow-hidden border-3 border-[#032622] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Image
+                    src="/images/student-library/IMG_1719 2.PNG"
+                    alt="Avatar"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Indicateur de statut en ligne */}
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F8F5E4] rounded-full animate-pulse"></div>
               </div>
-              <span className="text-[#032622] font-medium">El Assowad Chadi</span>
+              <span className="text-[#032622] font-medium">Chadi El Assowad</span>
               <svg 
                 className={`w-4 h-4 text-[#032622] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
                 fill="none" 
@@ -114,6 +124,7 @@ export const StudentDashboard = () => {
             </div>
           </div>
           <button 
+            onClick={() => router.push('/espace-etudiant/mes-formations')}
             className="bg-white text-[#032622] px-6 py-3 font-bold rounded-lg hover:bg-gray-100 transition-colors"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
@@ -170,6 +181,7 @@ export const StudentDashboard = () => {
                   </div>
                 </div>
                 <button 
+                  onClick={() => router.push('/espace-etudiant/mes-formations')}
                   className="bg-[#032622] text-white px-6 py-3 font-bold hover:bg-[#044a3a] transition-colors"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
@@ -320,24 +332,88 @@ export const StudentDashboard = () => {
 
         {/* Section droite - Profil et notes */}
         <div className="space-y-6">
-          {/* Carte de profil */}
-          <div className="bg-[#F8F5E4] border border-black">
-            <div className="p-8 text-center">
-              <div className="w-40 h-40 border border-black mx-auto mb-6 flex items-center justify-center overflow-hidden bg-[#F8F5E4]">
-                {/* Silhouette de profil - placeholder pour image */}
-                <svg className="w-24 h-24 text-[#032622]" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-              </div>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 bg-[#032622] flex items-center justify-center">
-                  <svg className="w-3 h-3 text-[#F8F5E4]" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M7 14l5-5 5 5z"/>
-                  </svg>
+          {/* Carte de profil - Design ultra moderne */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#F8F5E4] via-[#f0ebd8] to-[#eae5cf] rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-700 group border border-[#032622]/10">
+            {/* Effet de brillance premium */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-[#032622]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+            
+            {/* Motif décoratif en arrière-plan */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#032622]/5 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#032622]/5 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+            
+            {/* Contenu principal */}
+            <div className="relative p-8 text-center">
+              {/* Photo de profil avec design premium amélioré */}
+              <div className="relative mb-8">
+                {/* Conteneur principal pour la photo */}
+                <div className="w-48 h-48 mx-auto relative">
+                  {/* Ombre portée multiple */}
+                  <div className="absolute inset-0 rounded-full bg-[#032622]/15 blur-xl scale-125"></div>
+                  <div className="absolute inset-0 rounded-full bg-[#032622]/10 blur-lg scale-115"></div>
+                  
+                  {/* Cercle principal avec bordure premium */}
+                  <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-2xl">
+                    <Image
+                      src="/images/student-library/IMG_1719 2.PNG"
+                      alt="Photo de profil"
+                      width={192}
+                      height={192}
+                      className="w-full h-full object-cover object-center scale-110 transition-transform duration-700 group-hover:scale-100"
+                      style={{ objectPosition: 'center top' }}
+                    />
+                  </div>
+                  
+                  {/* Bordures décoratives multiples */}
+                  <div className="absolute inset-0 rounded-full border-2 border-[#032622]/20 scale-105"></div>
+                  <div className="absolute inset-0 rounded-full border border-white/50 scale-110"></div>
+                  
+                  {/* Effet de halo */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                 </div>
-                <span className="text-[#032622] text-lg font-bold">Marathonien</span>
+                
+                {/* Badge de statut ultra moderne */}
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+                  <div className="bg-gradient-to-r from-[#032622] via-[#01302C] to-[#032622] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-xl backdrop-blur-md border border-white/30">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-lg"></div>
+                      <span className="tracking-wider">ACTIF</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Informations du profil avec design amélioré */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-[#032622] tracking-wide" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                    CHADI EL ASSOWAD
+                  </h3>
+                  <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-[#032622] to-transparent mx-auto"></div>
+                </div>
+                
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="w-2 h-2 bg-[#032622] rounded-full animate-pulse"></div>
+                  <span className="text-sm text-[#032622]/80 font-semibold tracking-wide uppercase">ÉTUDIANT</span>
+                  <div className="w-2 h-2 bg-[#032622] rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                </div>
+                
+                {/* Indicateurs de statut cohérents */}
+                <div className="flex items-center justify-center space-x-4 pt-2">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-[#032622]/60 font-medium">En ligne</span>
+                  </div>
+                  <div className="w-1 h-1 bg-[#032622]/30 rounded-full"></div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-[#032622]/60 font-medium">Connecté</span>
+                  </div>
+                </div>
               </div>
             </div>
+            
+            {/* Effet de bordure animée premium */}
+            <div className="absolute inset-0 rounded-3xl border-2 border-transparent bg-gradient-to-r from-[#032622] via-transparent to-[#032622] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
           </div>
 
           {/* Carte des notes */}
@@ -389,11 +465,15 @@ export const StudentDashboard = () => {
           <div className="bg-[#F8F5E4] border border-black">
             <div className="flex h-32">
               <div className="w-32 border-r border-black flex items-center justify-center bg-[#F8F5E4]">
-                {/* Placeholder pour photo du référent */}
-                <div className="w-24 h-24 bg-gray-300 flex items-center justify-center">
-                  <svg className="w-12 h-12 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+                {/* Photo du référent */}
+                <div className="w-full h-full">
+                  <Image
+                    src="/menue_etudiant/DSC05507.JPG"
+                    alt="Référent Pédagogique"
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
               <div className="flex-1 bg-[#032622] p-4 flex flex-col justify-center">
