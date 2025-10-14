@@ -65,7 +65,6 @@ export async function GET(request: NextRequest) {
       .createSignedUrl(photoPath, 60 * 60); // 1 heure
 
     if (signedUrlError) {
-      console.error('Erreur génération URL signée');
       return NextResponse.json(
         { error: 'Erreur lors de la génération de l\'URL' },
         { status: 500 }
@@ -78,7 +77,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erreur récupération URL');
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

@@ -50,12 +50,12 @@ export const Accueil = ({
               }
             }
           } catch (error) {
-            console.error('Erreur chargement photo profil');
+            // Erreur silencieuse
           }
         }
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des données');
+      // Erreur silencieuse
     } finally {
       setIsLoading(false);
     }
@@ -72,11 +72,20 @@ export const Accueil = ({
       completedSteps.push('INFORMATIONS');
     }
 
+    // Vérifier l'étape documents
+    const hasDocuments = (candidatureData.cv_path || (candidatureData.releves_paths && candidatureData.releves_paths.length > 0) || 
+                         candidatureData.diplome_path || (candidatureData.piece_identite_paths && candidatureData.piece_identite_paths.length > 0)) &&
+                        candidatureData.entreprise_accueil;
+    
+    if (hasDocuments) {
+      completedSteps.push('DOCUMENTS');
+    }
+
     // Vérifier les documents manquants
     if (!candidatureData.cv_path) missingDocuments.push('CV');
-    if (!candidatureData.diplome_path) missingDocuments.push('TÉLÉCHARGEZ VOTRE DERNIER DIPLÔME OBTENU');
-    if (!candidatureData.releves_path) missingDocuments.push('TÉLÉCHARGEZ VOS RELEVÉS DE NOTES DES 2 DERNIÈRES ANNÉES');
-    if (!candidatureData.piece_identite_path) missingDocuments.push('TÉLÉCHARGEZ VOTRE PIÈCE D\'IDENTITÉ RECTO/VERSO');
+    if (!candidatureData.diplome_path) missingDocuments.push('DIPLÔME');
+    if (!candidatureData.releves_paths || candidatureData.releves_paths.length === 0) missingDocuments.push('RELEVÉS DE NOTES');
+    if (!candidatureData.piece_identite_paths || candidatureData.piece_identite_paths.length === 0) missingDocuments.push('PIÈCE D\'IDENTITÉ');
 
     return { completedSteps, missingDocuments };
   };
@@ -133,14 +142,16 @@ export const Accueil = ({
                       INFORMATIONS
                     </h3>
                     <span className="text-xs sm:text-sm text-[#032622]">
-                      {completedSteps.includes('INFORMATIONS') ? 'ÉTAPE 1 TERMINÉE' : 'ÉTAPE 1 SUR 4'}
+                      {completedSteps.includes('DOCUMENTS') ? 'ÉTAPE 2 TERMINÉE' : 
+                       completedSteps.includes('INFORMATIONS') ? 'ÉTAPE 1 TERMINÉE' : 'ÉTAPE 1 SUR 4'}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 h-1 sm:h-2">
                     <div 
                       className="bg-[#032622] h-1 sm:h-2 transition-all duration-300" 
                       style={{ 
-                        width: completedSteps.includes('INFORMATIONS') ? '25%' : '0%' 
+                        width: completedSteps.includes('DOCUMENTS') ? '50%' : 
+                               completedSteps.includes('INFORMATIONS') ? '25%' : '0%' 
                       }}
                     ></div>
                   </div>
@@ -189,8 +200,20 @@ export const Accueil = ({
                     
                     {/* Étape DOCUMENTS */}
                     <div className="flex items-center space-x-3">
-                      <div className="w-5 h-5 border-2 border-[#032622] bg-transparent"></div>
-                      <span className="text-sm font-bold text-[#032622]">DOCUMENTS</span>
+                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                        completedSteps.includes('DOCUMENTS') ? 'bg-[#032622]' : 'bg-transparent'
+                      }`}>
+                        {completedSteps.includes('DOCUMENTS') && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-sm font-bold ${
+                        completedSteps.includes('DOCUMENTS') ? 'text-[#032622] underline' : 'text-[#032622]'
+                      }`}>
+                        DOCUMENTS
+                      </span>
                     </div>
                   </div>
 

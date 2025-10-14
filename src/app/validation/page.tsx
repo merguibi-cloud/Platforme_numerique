@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/app/Navbar';
 import { Hero } from './components/Hero';
@@ -46,7 +46,7 @@ const ValidationContent = () => {
         // Données formation chargées
       }
     } catch (error) {
-      console.error('Erreur chargement données');
+      // Erreur silencieuse
     } finally {
       setIsLoading(false);
     }
@@ -173,5 +173,16 @@ const ValidationContent = () => {
 };
 
 export default function ValidationPage() {
-  return <ValidationContent />;
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+          <p className="mt-4 text-[#032622]">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <ValidationContent />
+    </Suspense>
+  );
 }

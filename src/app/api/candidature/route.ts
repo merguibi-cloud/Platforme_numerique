@@ -31,14 +31,11 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
 
     if (authError || !user) {
-            console.error('Erreur authentification GET');
       return NextResponse.json(
         { success: false, error: 'Non authentifié' },
         { status: 401 }
       );
     }
-
-            // Utilisateur authentifié
 
     // Récupérer la candidature de l'utilisateur
     const { data: candidature, error: candidatureError } = await supabase
@@ -48,14 +45,11 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (candidatureError) {
-      console.error('Erreur récupération candidature');
       return NextResponse.json(
         { success: false, error: 'Erreur lors de la récupération de la candidature' },
         { status: 500 }
       );
     }
-
-    console.log('📄 Candidature récupérée:', candidature ? 'existante' : 'aucune');
 
     return NextResponse.json({
       success: true,
@@ -63,7 +57,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erreur GET candidature');
     return NextResponse.json(
       { success: false, error: 'Erreur serveur' },
       { status: 500 }
@@ -100,20 +93,14 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
 
     if (authError || !user) {
-            console.error('Erreur authentification POST');
       return NextResponse.json(
         { success: false, error: 'Non authentifié' },
         { status: 401 }
       );
     }
 
-            // Utilisateur authentifié
-
-    // Récupérer les données du body
     const body = await request.json();
     const { step, data: stepData } = body;
-
-    console.log('📝 Étape:', step, 'Données:', stepData);
 
     // Récupérer le formation_id depuis user_profiles
     let profile = await supabase
@@ -138,7 +125,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (createError) {
-        console.error('Erreur création profil');
         return NextResponse.json(
           { success: false, error: 'Impossible de créer le profil utilisateur' },
           { status: 500 }
@@ -149,15 +135,7 @@ export async function POST(request: NextRequest) {
       // Profil créé
     }
 
-    // Si pas de formation_id dans le profil, utiliser celui du body ou null
     const formationId = profile.data?.formation_id || stepData?.formation_id || null;
-    
-    if (!formationId) {
-      console.warn('⚠️ Aucune formation associée à cet utilisateur');
-      // On peut continuer sans formation_id pour le moment
-    } else {
-      console.log('🎓 Formation ID:', formationId);
-    }
 
     // Vérifier si une candidature existe déjà
     const { data: existingCandidature, error: checkError } = await supabase
@@ -167,7 +145,6 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (checkError) {
-      console.error('Erreur vérification candidature');
       return NextResponse.json(
         { success: false, error: 'Erreur lors de la vérification de la candidature' },
         { status: 500 }
@@ -199,11 +176,19 @@ export async function POST(request: NextRequest) {
         situation_actuelle: stepData.situationActuelle,
         ...(stepData.photoIdentitePath && { photo_identite_path: stepData.photoIdentitePath }),
       };
+    } else if (step === 'documents') {
+      updateData = {
+        ...updateData,
+        cv_path: stepData.cvPath || null,
+        diplome_path: stepData.diplomePath || null,
+        releves_paths: stepData.relevesPaths || [],
+        piece_identite_paths: stepData.pieceIdentitePaths || [],
+        entreprise_accueil: stepData.entrepriseAccueil || '',
+        motivation_formation: stepData.motivationFormation || '',
+      };
     }
 
     if (existingCandidature) {
-      // Mise à jour candidature
-      
       // Mettre à jour la candidature existante
       const { data, error } = await supabase
         .from('candidatures')
@@ -213,7 +198,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
-        console.error('Erreur mise à jour candidature');
         return NextResponse.json(
           { success: false, error: 'Erreur lors de la mise à jour de la candidature' },
           { status: 500 }
@@ -222,8 +206,6 @@ export async function POST(request: NextRequest) {
 
       result = data;
     } else {
-      console.log('✨ Création d\'une nouvelle candidature');
-      
       // Créer une nouvelle candidature
       const createData = {
         user_id: user.id,
@@ -240,7 +222,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
-        console.error('Erreur création candidature');
         return NextResponse.json(
           { success: false, error: 'Erreur lors de la création de la candidature' },
           { status: 500 }
@@ -258,7 +239,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erreur POST candidature');
     return NextResponse.json(
       { success: false, error: 'Erreur serveur' },
       { status: 500 }

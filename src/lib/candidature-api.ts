@@ -64,7 +64,6 @@ export async function getCandidature(): Promise<{ success: boolean; data?: Candi
 
     return result;
   } catch (error) {
-    console.error('Erreur getCandidature:', error);
     return {
       success: false,
       error: 'Erreur lors de la récupération de la candidature'
@@ -96,7 +95,6 @@ export async function saveCandidatureStep(
 
     return result;
   } catch (error) {
-    console.error('Erreur saveCandidatureStep:', error);
     return {
       success: false,
       error: 'Erreur lors de la sauvegarde de la candidature'

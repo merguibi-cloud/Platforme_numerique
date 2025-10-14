@@ -61,11 +61,9 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       try {
         const profileCheck = await fetch('/api/user/ensure-profile');
         const profileResult = await profileCheck.json();
-        if (!profileResult.success) {
-          console.error('Erreur profil:', profileResult.error);
-        }
+        // Vérification profil
       } catch (error) {
-        console.error('Erreur vérification profil');
+        // Erreur silencieuse
       }
       
       const result = await getCandidature();
@@ -102,14 +100,12 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               }
             }
           } catch (error) {
-            console.error('Erreur chargement photo');
+            // Erreur silencieuse
           }
         }
-        
-        // Données chargées
       }
     } catch (error) {
-      console.error('Erreur chargement candidature');
+      // Erreur silencieuse
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +173,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
             // Photo uploadée
           }
         } catch (error) {
-          console.error('Erreur upload photo');
+          // Erreur silencieuse
         }
       } else if (existingPhotoPath) {
         // Si pas de nouvelle photo mais qu'une photo existe déjà, garder le chemin existant
@@ -204,15 +200,11 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       const result = await saveCandidatureStep('informations', stepData);
       
       if (result.success) {
-        // Données sauvegardées
-        // Passer à l'étape suivante
         router.push('/validation?step=documents');
       } else {
-        console.error('Erreur sauvegarde:', result.error);
         alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
       }
     } catch (error) {
-      console.error('Erreur sauvegarde');
       alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
     } finally {
       setIsSaving(false);

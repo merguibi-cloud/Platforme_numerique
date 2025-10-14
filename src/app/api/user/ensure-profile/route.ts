@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
 
     if (authError || !user) {
-      console.error('Erreur authentification');
       return NextResponse.json(
         { success: false, error: 'Non authentifié' },
         { status: 401 }
@@ -51,7 +50,6 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (profileError) {
-      console.error('Erreur vérification profil');
       return NextResponse.json(
         { success: false, error: 'Erreur lors de la vérification du profil' },
         { status: 500 }
@@ -82,12 +80,8 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (createError) {
-      console.error('Erreur création profil');
-      
       // Si l'erreur est due à un profil déjà existant, essayer de le récupérer à nouveau
-      if (createError.code === '23505') { // Code PostgreSQL pour violation de contrainte UNIQUE
-        // Retry récupération
-        
+      if (createError.code === '23505') {
         const { data: retryProfile, error: retryError } = await supabase
           .from('user_profiles')
           .select('*')
@@ -129,9 +123,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Erreur ensure-profile');
     return NextResponse.json(
-      { success: false, error: error.message || 'Erreur serveur' },
+      { success: false, error: 'Erreur serveur' },
       { status: 500 }
     );
   }

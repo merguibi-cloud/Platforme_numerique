@@ -54,29 +54,26 @@ export async function POST(request: NextRequest) {
     const fileName = `${user.id}/${type}_${Date.now()}.${fileExt}`;
     const filePath = `profiles/${fileName}`;
 
-    // Upload fichier
+    // Déterminer le bucket selon le type de fichier
+    let bucketName: string;
+    
+    if (type === 'photo-identite') {
+      // Photos d'identité vont dans photo_profil
+      bucketName = 'photo_profil';
+    } else if (['cv', 'diplome', 'releves', 'pieceIdentite'].includes(type)) {
+      // Documents administratifs vont dans user_documents
+      bucketName = 'user_documents';
+    } else {
+      // Par défaut, utiliser user_documents
+      bucketName = 'user_documents';
+    }
 
-    // Utiliser le bucket 'photo_profil' pour les photos d'identité
-    let bucketName = 'photo_profil';
-    let { error: uploadError } = await supabase.storage
+    // Upload fichier dans le bucket approprié
+    const { error: uploadError } = await supabase.storage
       .from(bucketName)
       .upload(filePath, file);
 
-    // Si ça ne marche pas, essayer 'user_documents'
     if (uploadError) {
-      // Bucket alternatif
-      bucketName = 'user_documents';
-      uploadError = null;
-      const result = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file);
-      uploadError = result.error;
-      
-      // Erreur bucket alternatif
-    }
-
-    if (uploadError) {
-      console.error('Erreur upload');
       return NextResponse.json(
         { 
           error: 'Erreur lors de l\'upload du fichier',
@@ -95,9 +92,7 @@ export async function POST(request: NextRequest) {
         .from(bucketName)
         .createSignedUrl(filePath, 60 * 60 * 24 * 365); // URL valide 1 an
 
-      if (signedUrlError) {
-        console.error('Erreur génération URL signée');
-      } else {
+      if (!signedUrlError) {
         signedUrl = signedUrlData.signedUrl;
       }
     }
@@ -111,7 +106,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erreur upload');
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
