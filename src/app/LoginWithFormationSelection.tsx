@@ -102,7 +102,7 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
     setError('');
 
     try {
-      console.log('🔍 Tentative de connexion...');
+      // Tentative connexion
       const result = await signIn({
         email: loginEmail,
         password: loginPassword,
@@ -113,11 +113,11 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
         return;
       }
 
-      console.log('✅ Connexion réussie, redirection vers /validation');
+      // Connexion réussie
       onCloseAction();
       router.push('/validation');
     } catch (error) {
-      console.error('❌ Erreur de connexion:', error);
+      console.error('Erreur connexion');
       setError('Une erreur est survenue lors de la connexion.');
     } finally {
       setIsLoading(false);

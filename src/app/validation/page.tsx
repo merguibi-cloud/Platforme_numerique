@@ -9,11 +9,13 @@ import { Documents } from './components/Documents';
 import { Contrat } from './components/Contrat';
 import { Validation } from './components/Validation';
 import { getCurrentUser } from '@/lib/auth-api';
+import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 
 const ValidationContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<any>(null);
+  const [formationData, setFormationData] = useState<UserFormationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   // Déterminer l'état initial basé sur l'URL
@@ -25,19 +27,26 @@ const ValidationContent = () => {
 
   const loadUserData = async () => {
     try {
-      console.log('🔍 Vérification de l\'utilisateur...');
+      // Vérification utilisateur
       const userResult = await getCurrentUser();
-      console.log('👤 Résultat getCurrentUser:', userResult);
+      // Résultat authentification
       
       if (!userResult.success || !userResult.user) {
-        console.log('❌ Utilisateur non authentifié');
+        // Utilisateur non authentifié
         return;
       }
 
       setUser(userResult.user);
-      console.log('✅ Utilisateur authentifié:', userResult.user.email);
+      // Utilisateur authentifié
+
+      // Charger les données de formation
+      const formationResult = await getUserFormationData();
+      if (formationResult.success && formationResult.data) {
+        setFormationData(formationResult.data);
+        // Données formation chargées
+      }
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des données:', error);
+      console.error('Erreur chargement données');
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +123,13 @@ const ValidationContent = () => {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'informations':
-        return <Information onClose={handleCloseCandidatureForm} />;
+        return (
+          <Information 
+            onClose={handleCloseCandidatureForm}
+            userEmail={user?.email || ''}
+            formationData={formationData}
+          />
+        );
       case 'documents':
         return (
           <Documents 

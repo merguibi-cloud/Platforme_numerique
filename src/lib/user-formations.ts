@@ -5,6 +5,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export interface UserFormationData {
   formation_id: number;
   formation_titre: string;
+  formation_ecole: string;
   formation_prix: number;
 }
 
@@ -40,6 +41,7 @@ export async function getUserFormationDataFromDB(userId: string, supabaseClient?
         data: {
           formation_id: 0,
           formation_titre: 'Aucune formation assignée',
+          formation_ecole: '',
           formation_prix: 0,
         }
       };
@@ -48,7 +50,7 @@ export async function getUserFormationDataFromDB(userId: string, supabaseClient?
     // Étape 2: Récupérer les données de la formation
     const { data: formationData, error: formationError } = await supabase
       .from('formations')
-      .select('id, titre, prix')
+      .select('id, titre, ecole, prix')
       .eq('id', profileData.formation_id)
       .maybeSingle();
 
@@ -70,6 +72,7 @@ export async function getUserFormationDataFromDB(userId: string, supabaseClient?
     const formationResult = {
       formation_id: profileData.formation_id,
       formation_titre: formationData.titre || 'Formation non spécifiée',
+      formation_ecole: formationData.ecole || '',
       formation_prix: formationData.prix || 0,
     };
 

@@ -150,9 +150,6 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-lg font-bold text-[#032622]">AVEZ-VOUS DÉJÀ UNE ENTREPRISE D'ACCUEIL?*</h3>
-                <div className="w-6 h-6 bg-[#032622] rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">D</span>
-                </div>
               </div>
               <input
                 type="text"
@@ -167,9 +164,6 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-lg font-bold text-[#032622]">POURQUOI CETTE FORMATION?</h3>
-                <div className="w-6 h-6 bg-[#032622] rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">D</span>
-                </div>
               </div>
               <textarea
                 value={formData.motivationFormation}
