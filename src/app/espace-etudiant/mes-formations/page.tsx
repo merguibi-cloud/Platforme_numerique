@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 
 const heroCourse = {
-  greeting: "Bonjour, El Assowad Chadi",
+  greeting: "Bonjour, Chadi El Assowad",
   headline: "Prêt à apprendre quelque chose de nouveau aujourd'hui ?",
 };
 
@@ -287,10 +287,39 @@ export default function MesFormationsPage() {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  
+  // États pour le lecteur vidéo
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Fonction pour lancer la vidéo
+  const handlePlayVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.play();
+      setIsVideoPlaying(true);
+    }
+  };
+
+  // Effect pour gérer les événements de la vidéo
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePause = () => setIsVideoPlaying(false);
+    const handlePlay = () => setIsVideoPlaying(true);
+
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('play', handlePlay);
+
+    return () => {
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('play', handlePlay);
+    };
+  }, []);
 
   // Fonction pour obtenir les événements du jour sélectionné
   const getCurrentDayEvents = () => {
-    return eventsByDay[selectedDay] || [];
+    return eventsByDay[selectedDay as keyof typeof eventsByDay] || [];
   };
 
   // Fonction pour naviguer entre les jours
@@ -439,19 +468,22 @@ export default function MesFormationsPage() {
     const text = selection.toString().trim();
     if (!text) return;
 
-    const span = document.createElement("span");
-    span.style.backgroundColor = color;
-    span.style.padding = "2px 4px";
-    span.style.borderRadius = "3px";
-    span.dataset.highlight = "true";
-    span.dataset.highlightId = `highlight-${Date.now()}`;
+    const highlightId = `highlight-${Date.now()}`;
     
     try {
+      // Méthode simple pour les sélections dans un seul élément
+    const span = document.createElement("span");
+    span.style.backgroundColor = color;
+      span.style.padding = "2px 4px";
+      span.style.borderRadius = "3px";
+    span.dataset.highlight = "true";
+      span.dataset.highlightId = highlightId;
+      
       range.surroundContents(span);
       
       // Créer l'objet highlight
       const highlight: Highlight = {
-        id: span.dataset.highlightId!,
+        id: highlightId,
         text: text,
         color: color,
         colorName: colorName,
@@ -462,7 +494,126 @@ export default function MesFormationsPage() {
       setHighlights(prev => [...prev, highlight]);
       selection.removeAllRanges();
     } catch (error) {
-      console.warn("Impossible d'appliquer le surlignage sur cette sélection.", error);
+      console.warn("Méthode simple échouée, utilisation de la méthode avancée:", error);
+      
+      // Méthode avancée pour les grandes sélections multi-éléments
+      try {
+        const clonedRange = range.cloneRange();
+        const contents = clonedRange.extractContents();
+        
+        // Créer un conteneur pour tous les surlignages
+        const container = document.createElement("span");
+        container.style.backgroundColor = color;
+        container.style.padding = "2px 4px";
+        container.style.borderRadius = "3px";
+        container.dataset.highlight = "true";
+        container.dataset.highlightId = highlightId;
+        
+        // Traiter chaque nœud dans le contenu extrait
+        const processNode = (node: Node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            // Nœud texte : créer un span pour le texte
+            const textSpan = document.createElement("span");
+            textSpan.style.backgroundColor = color;
+            textSpan.style.padding = "2px 4px";
+            textSpan.style.borderRadius = "3px";
+            textSpan.dataset.highlight = "true";
+            textSpan.dataset.highlightId = highlightId;
+            textSpan.textContent = node.textContent;
+            container.appendChild(textSpan);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Élément HTML : traiter récursivement ses enfants
+            const element = node as Element;
+            const clonedElement = element.cloneNode(false) as Element;
+            
+            // Copier les attributs importants
+            if (element.tagName === 'P') {
+              clonedElement.style.margin = '0';
+              clonedElement.style.display = 'inline';
+            }
+            
+            // Traiter les enfants
+            Array.from(element.childNodes).forEach(child => {
+              if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+                const textSpan = document.createElement("span");
+                textSpan.style.backgroundColor = color;
+                textSpan.style.padding = "2px 4px";
+                textSpan.style.borderRadius = "3px";
+                textSpan.dataset.highlight = "true";
+                textSpan.dataset.highlightId = highlightId;
+                textSpan.textContent = child.textContent;
+                clonedElement.appendChild(textSpan);
+              } else if (child.nodeType === Node.ELEMENT_NODE) {
+                const processedChild = processNode(child);
+                if (processedChild) clonedElement.appendChild(processedChild);
+              }
+            });
+            
+            // Ajouter des espaces pour maintenir la structure
+            if (element.tagName === 'P' || element.tagName === 'BR') {
+              const br = document.createElement("br");
+              container.appendChild(br);
+            }
+            
+            return clonedElement;
+          }
+          return null;
+        };
+        
+        // Traiter le contenu extrait
+        Array.from(contents.childNodes).forEach(child => {
+          const processed = processNode(child);
+          if (processed) container.appendChild(processed);
+        });
+        
+        // Insérer le conteneur dans le DOM
+        range.insertNode(container);
+        
+        // Créer l'objet highlight
+        const highlight: Highlight = {
+          id: highlightId,
+          text: text,
+          color: color,
+          colorName: colorName,
+          timestamp: new Date(),
+          position: range.startOffset,
+        };
+        
+        setHighlights(prev => [...prev, highlight]);
+        selection.removeAllRanges();
+        
+      } catch (advancedError) {
+        console.warn("Méthode avancée échouée également:", advancedError);
+        
+        // Dernier recours : méthode par remplacement de texte
+        try {
+          const textContent = range.toString();
+          const span = document.createElement("span");
+          span.style.backgroundColor = color;
+          span.style.padding = "2px 4px";
+          span.style.borderRadius = "3px";
+          span.dataset.highlight = "true";
+          span.dataset.highlightId = highlightId;
+          span.textContent = textContent;
+          
+          range.deleteContents();
+          range.insertNode(span);
+          
+          const highlight: Highlight = {
+            id: highlightId,
+            text: textContent,
+            color: color,
+            colorName: colorName,
+            timestamp: new Date(),
+            position: range.startOffset,
+          };
+          
+          setHighlights(prev => [...prev, highlight]);
+          selection.removeAllRanges();
+        } catch (fallbackError) {
+          console.error("Toutes les méthodes de surlignage ont échoué:", fallbackError);
+        }
+      }
     }
   }, []);
 
@@ -715,7 +866,7 @@ export default function MesFormationsPage() {
                 ))}
               </div>
               <div className="space-y-2 pt-2">
-                {getCurrentDayEvents().map((event, index) => (
+                {getCurrentDayEvents().map((event: any, index: number) => (
                   <div key={index} className="border border-black p-3 text-xs bg-white/60">
                     <div className="font-bold text-[#032622]">{event.title}</div>
                     <div className="text-[#032622] opacity-80">{event.time}</div>
@@ -815,11 +966,12 @@ export default function MesFormationsPage() {
             <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
               Module 1 · Analyse de marché et veille stratégique
             </p>
-            {/* Lecteur vidéo avec design simplifié */}
+            {/* Lecteur vidéo avec overlay interactif */}
             <div className="relative mb-6 group">
               <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
                 {/* Lecteur vidéo principal */}
               <video
+                  ref={videoRef}
                 src="/menue_etudiant/nonselectionner/SSvid.net--Technique-de-vente-Les-10-qualités-pour-devenir-un_1080p.mp4"
                 controls
                   className="w-full h-full object-cover rounded-lg"
@@ -841,6 +993,44 @@ export default function MesFormationsPage() {
                     </span>
                   </div>
                 </div>
+                
+                {/* Overlay vert et beige avec bouton play */}
+                {!isVideoPlaying && (
+                  <div 
+                    className="absolute inset-0 bg-gradient-to-br from-[#032622] via-[#01302C] to-[#032622] flex items-center justify-center cursor-pointer transition-all duration-300 hover:from-[#01302C] hover:to-[#032622]"
+                    onClick={handlePlayVideo}
+                  >
+                    <div className="text-center space-y-6">
+                      {/* Animation de chargement */}
+                      <div className="relative">
+                        <div className="w-24 h-24 border-4 border-[#F8F5E4]/30 border-t-[#F8F5E4] rounded-full animate-spin mx-auto"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Play className="w-12 h-12 text-[#F8F5E4] ml-1" />
+                        </div>
+                      </div>
+                      
+                      {/* Informations du module */}
+                      <div className="space-y-3">
+                        <h4 className="text-[#F8F5E4] font-bold text-xl" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                          MODULE 1
+                        </h4>
+                        <p className="text-[#F8F5E4]/90 text-base max-w-md mx-auto">
+                          Analyse de marché et veille stratégique
+                        </p>
+                        <p className="text-[#F8F5E4]/70 text-sm">
+                          Cliquez pour commencer la lecture
+                        </p>
+                      </div>
+                      
+                      {/* Points d'animation */}
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-3 h-3 bg-[#F8F5E4] rounded-full animate-pulse"></div>
+                        <div className="w-3 h-3 bg-[#F8F5E4]/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-3 h-3 bg-[#F8F5E4]/40 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Options utiles pour les étudiants */}
