@@ -1,13 +1,15 @@
 import { AdminSidebar } from '../components/AdminSidebar';
-import AdminDashboardContent from '../components/AdminDashboardContent';
+import { UserManagement } from '../components/UserManagement';
 import { AdminGuard } from '@/components/RoleGuard';
 
-export default function AdminDashboard() {
+export default function GestionUtilisateurs() {
   return (
     <AdminGuard>
       <div className="min-h-screen bg-[#F8F5E4] flex">
         <AdminSidebar />
-        <AdminDashboardContent />
+        <div className="flex-1 p-6">
+          <UserManagement />
+        </div>
       </div>
     </AdminGuard>
   );

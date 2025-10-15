@@ -17,6 +17,8 @@ import {
   UserCheck,
   X
 } from 'lucide-react';
+import { Modal } from '../../validation/components/Modal';
+import { useModal } from '../../validation/components/useModal';
 
 type ModuleType = 'cours' | 'video' | 'pdf' | 'quiz' | 'word' | 'image';
 
@@ -286,6 +288,7 @@ export default function AdminFormationManager() {
   const [blocks, setBlocks] = useState<BlockItem[]>(initialBlocks);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(initialBlocks[0]?.id ?? null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { modalState, showConfirm, hideModal, handleConfirm, handleCancel } = useModal();
   const [newBlockTitle, setNewBlockTitle] = useState('');
   const [newBlockDescription, setNewBlockDescription] = useState('');
   const [newBlockAntiCheat, setNewBlockAntiCheat] = useState(true);
@@ -459,14 +462,18 @@ export default function AdminFormationManager() {
   };
 
   const handleDeleteBlock = (blockId: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce bloc ? Cette action est irréversible.')) {
-      setBlocks((prev) => prev.filter((block) => block.id !== blockId));
-      // Si le bloc supprimé était sélectionné, sélectionner le premier bloc restant
-      if (selectedBlockId === blockId) {
-        const remainingBlocks = blocks.filter((block) => block.id !== blockId);
-        setSelectedBlockId(remainingBlocks.length > 0 ? remainingBlocks[0].id : null);
+    showConfirm(
+      'Êtes-vous sûr de vouloir supprimer ce bloc ? Cette action est irréversible.',
+      'Confirmation de suppression',
+      () => {
+        setBlocks((prev) => prev.filter((block) => block.id !== blockId));
+        // Si le bloc supprimé était sélectionné, sélectionner le premier bloc restant
+        if (selectedBlockId === blockId) {
+          const remainingBlocks = blocks.filter((block) => block.id !== blockId);
+          setSelectedBlockId(remainingBlocks.length > 0 ? remainingBlocks[0].id : null);
+        }
       }
-    }
+    );
   };
 
   const isCreateDisabled = !newBlockTitle.trim() || newBlockModules.some((module) => !module.title.trim());
@@ -1058,6 +1065,18 @@ export default function AdminFormationManager() {
           </div>
         </div>
       )}
+      
+      {/* Modal de confirmation */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isConfirm={modalState.isConfirm}
+        onConfirm={modalState.onConfirm ? handleConfirm : undefined}
+        onCancel={modalState.onCancel ? handleCancel : undefined}
+      />
     </div>
   );
 }

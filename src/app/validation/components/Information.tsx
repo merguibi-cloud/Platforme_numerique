@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { UserFormationData } from '@/lib/user-formations';
 import { saveCandidatureStep } from '@/lib/candidature-api';
 import { useCandidature } from '@/contexts/CandidatureContext';
+import { Modal } from './Modal';
+import { useModal } from './useModal';
 
 interface InformationProps {
   onClose: () => void;
@@ -16,6 +18,7 @@ interface InformationProps {
 export const Information = ({ onClose, userEmail, formationData }: InformationProps) => {
   const router = useRouter();
   const { candidatureData, refreshCandidature } = useCandidature();
+  const { modalState, showSuccess, showError, showWarning, hideModal } = useModal();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [photoIdentite, setPhotoIdentite] = useState<File | null>(null);
@@ -230,37 +233,71 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       if (result.success) {
         // Rafraîchir les données du Context après sauvegarde
         await refreshCandidature();
-        alert('Vos modifications ont été enregistrées avec succès. Vous pouvez reprendre plus tard.');
+        showSuccess('Vos modifications ont été enregistrées avec succès. Vous pouvez reprendre plus tard.', 'Succès');
       } else {
-        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+        showError('Erreur lors de la sauvegarde. Veuillez réessayer.', 'Erreur');
       }
     } catch (error) {
-      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      showError('Erreur lors de la sauvegarde. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const hasDataChanged = () => {
+    if (!candidatureData) return true; // Si pas de données existantes, considérer comme changé
+    
+    // Vérifier si les données ont changé par rapport à celles existantes
+    const hasFormChanges = (
+      formData.civilite !== (candidatureData.civilite || '') ||
+      formData.nom !== (candidatureData.nom || '') ||
+      formData.prenom !== (candidatureData.prenom || '') ||
+      formData.email !== (candidatureData.email || '') ||
+      formData.telephone !== (candidatureData.telephone || '') ||
+      formData.adresse !== (candidatureData.adresse || '') ||
+      formData.codePostal !== (candidatureData.code_postal || '') ||
+      formData.ville !== (candidatureData.ville || '') ||
+      formData.pays !== (candidatureData.pays || '') ||
+      formData.situationActuelle !== (candidatureData.situation_actuelle || '')
+    );
+    
+    // Vérifier si une nouvelle photo a été ajoutée
+    const hasNewPhoto = photoIdentite !== null;
+    
+    return hasFormChanges || hasNewPhoto;
+  };
+
   const handleNext = async () => {
     // Validation des champs obligatoires
     if (!formData.nom || !formData.prenom || !formData.email || !formData.telephone) {
-      alert('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.');
+      showWarning('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.', 'Champs manquants');
       return;
     }
 
     try {
       setIsSaving(true);
-      const result = await saveData();
       
-      if (result.success) {
-        // Rafraîchir les données du Context après sauvegarde
-        await refreshCandidature();
-        router.push('/validation?step=documents');
+      // Vérifier si des données ont été modifiées
+      if (hasDataChanged()) {
+        console.log('Données modifiées détectées - Sauvegarde en cours...');
+        const result = await saveData();
+        
+        if (result.success) {
+          // Rafraîchir les données du Context après sauvegarde
+          await refreshCandidature();
+          console.log('Sauvegarde réussie');
+        } else {
+          showError('Erreur lors de la sauvegarde des données. Veuillez réessayer.', 'Erreur');
+          return;
+        }
       } else {
-        alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
+        console.log('Aucune modification détectée - Pas d\'appel API');
       }
+      
+      // Passer à l'étape suivante
+      router.push('/validation?step=documents');
     } catch (error) {
-      alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
+      showError('Erreur lors de la sauvegarde des données. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsSaving(false);
     }
@@ -524,6 +561,15 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
           </div>
         </div>
       </main>
+      
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 };

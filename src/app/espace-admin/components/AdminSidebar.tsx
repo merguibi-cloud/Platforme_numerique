@@ -21,6 +21,13 @@ const menuItems = [
     href: '/espace-admin/gestion-etudiants'
   },
   { 
+    id: 'gestion-utilisateurs', 
+    label: 'GESTION UTILISATEURS', 
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+    href: '/espace-admin/gestion-utilisateurs'
+  },
+  { 
     id: 'gestion-formations', 
     label: 'GESTION FORMATIONS', 
     icon: '/menue_etudiant/Livre.png',

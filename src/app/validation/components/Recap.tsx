@@ -5,6 +5,8 @@ import { ProgressHeader } from './ProgressHeader';
 import { saveCandidatureStep } from '@/lib/candidature-api';
 import { useRouter } from 'next/navigation';
 import { useCandidature } from '@/contexts/CandidatureContext';
+import { Modal } from './Modal';
+import { useModal } from './useModal';
 
 interface RecapProps {
   onClose: () => void;
@@ -15,6 +17,7 @@ interface RecapProps {
 export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
   const router = useRouter();
   const { candidatureData, refreshCandidature } = useCandidature();
+  const { modalState, showSuccess, showError, showWarning, hideModal } = useModal();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [acceptConditions, setAcceptConditions] = useState(false);
@@ -144,30 +147,52 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
     return null;
   };
 
+  const hasDataChanged = () => {
+    if (!candidatureData) return true; // Si pas de données existantes, considérer comme changé
+    
+    // Vérifier si les checkboxes ont changé
+    const hasCheckboxChanges = (
+      acceptConditions !== (candidatureData.accept_conditions || false) ||
+      attestCorrect !== (candidatureData.attest_correct || false)
+    );
+    
+    return hasCheckboxChanges;
+  };
+
   const handleNext = async () => {
     if (!acceptConditions || !attestCorrect) {
-      alert('Veuillez accepter les deux conditions pour continuer');
+      showWarning('Veuillez accepter les deux conditions pour continuer', 'Conditions requises');
       return;
     }
 
     try {
       setIsSaving(true);
       
-      // Sauvegarder les checkboxes
-      const result = await saveCandidatureStep('recap', {
-        acceptConditions,
-        attestCorrect
-      });
-      
-      if (result.success) {
-        // Rafraîchir les données du Context après sauvegarde
-        await refreshCandidature();
-        onNext();
+      // Vérifier si des données ont été modifiées
+      if (hasDataChanged()) {
+        console.log('Données modifiées détectées - Sauvegarde en cours...');
+        // Sauvegarder les checkboxes
+        const result = await saveCandidatureStep('recap', {
+          acceptConditions,
+          attestCorrect
+        });
+        
+        if (result.success) {
+          // Rafraîchir les données du Context après sauvegarde
+          await refreshCandidature();
+          console.log('Sauvegarde réussie');
+        } else {
+          showError('Erreur lors de la sauvegarde. Veuillez réessayer.', 'Erreur');
+          return;
+        }
       } else {
-        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+        console.log('Aucune modification détectée - Pas d\'appel API');
       }
+      
+      // Passer à l'étape suivante
+      onNext();
     } catch (error) {
-      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      showError('Erreur lors de la sauvegarde. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsSaving(false);
     }
@@ -237,40 +262,40 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
                   <span>MODIFIER</span>
                 </button>
               </div>
-              <div className="space-y-3 text-[#032622]">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-8 text-[#032622]">
+                {/* Colonne gauche */}
+                <div className="space-y-3">
                   <div>
                     <span className="font-bold">CIVILITÉ :</span> {candidatureData.civilite || 'Non renseigné'}
                   </div>
                   <div>
+                    <span className="font-bold">NOM :</span> {candidatureData.nom || 'Non renseigné'}
+                  </div>
+                  <div>
+                    <span className="font-bold">PRÉNOM :</span> {candidatureData.prenom || 'Non renseigné'}
+                  </div>
+                  <div>
+                    <span className="font-bold">SITUATION ACTUELLE :</span> {candidatureData.situation_actuelle || 'Non renseigné'}
+                  </div>
+                </div>
+                
+                {/* Colonne droite */}
+                <div className="space-y-3">
+                  <div>
                     <span className="font-bold">TÉLÉPHONE :</span> {candidatureData.telephone || 'Non renseigné'}
                   </div>
-                </div>
-                <div>
-                  <span className="font-bold">NOM :</span> {candidatureData.nom || 'Non renseigné'}
-                </div>
-                <div>
-                  <span className="font-bold">PRÉNOM :</span> {candidatureData.prenom || 'Non renseigné'}
-                </div>
-                <div>
-                  <span className="font-bold">EMAIL :</span> {candidatureData.email || 'Non renseigné'}
-                </div>
-                <div>
-                  <span className="font-bold">ADRESSE :</span> {candidatureData.adresse || 'Non renseigné'}
-                </div>
-                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <span className="font-bold">CODE POSTAL :</span> {candidatureData.code_postal || '-'}
+                    <span className="font-bold">EMAIL :</span> {candidatureData.email || 'Non renseigné'}
                   </div>
-                <div>
-                    <span className="font-bold">VILLE :</span> {candidatureData.ville || '-'}
-                </div>
-                <div>
+                  <div>
+                    <span className="font-bold">ADRESSE :</span> {candidatureData.adresse || 'Non renseigné'}
+                  </div>
+                  <div>
+                    <span className="font-bold">CODE POSTAL:</span> {candidatureData.code_postal || '-'}, {candidatureData.ville || '-'}
+                  </div>
+                  <div>
                     <span className="font-bold">PAYS :</span> {candidatureData.pays || '-'}
                   </div>
-                </div>
-                <div>
-                  <span className="font-bold">SITUATION ACTUELLE :</span> {candidatureData.situation_actuelle || 'Non renseigné'}
                 </div>
               </div>
             </div>
@@ -502,6 +527,15 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
           </div>
         </div>
       </main>
+      
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 };

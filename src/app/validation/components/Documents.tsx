@@ -5,6 +5,8 @@ import { ProgressHeader } from './ProgressHeader';
 import { useRouter } from 'next/navigation';
 import { saveCandidatureStep } from '@/lib/candidature-api';
 import { useCandidature } from '@/contexts/CandidatureContext';
+import { Modal } from './Modal';
+import { useModal } from './useModal';
 
 interface DocumentsProps {
   onClose: () => void;
@@ -15,6 +17,7 @@ interface DocumentsProps {
 export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
   const router = useRouter();
   const { candidatureData, refreshCandidature } = useCandidature();
+  const { modalState, showSuccess, showError, showWarning, hideModal } = useModal();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -161,12 +164,12 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         const availableSlots = 2 - currentTotal;
         
         if (availableSlots <= 0) {
-          alert('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).');
+          showWarning('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).', 'Limite atteinte');
           return;
         }
         
         if (newFiles.length > availableSlots) {
-          alert(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`);
+          showWarning(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`, 'Limite atteinte');
           setFormData(prev => ({ ...prev, [field]: [...prev[field], ...newFiles.slice(0, availableSlots)] }));
           return;
         }
@@ -258,12 +261,12 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
           const availableSlots = 2 - currentTotal;
           
           if (availableSlots <= 0) {
-            alert('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).');
+            showWarning('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).', 'Limite atteinte');
             return;
           }
           
           if (files.length > availableSlots) {
-            alert(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`);
+            showWarning(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`, 'Limite atteinte');
             setFormData(prev => ({ ...prev, [field]: [...prev[field], ...files.slice(0, availableSlots)] }));
             return;
           }
@@ -399,15 +402,35 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
       if (result.success) {
         // Rafraîchir les données du Context après sauvegarde
         await refreshCandidature();
-        alert('Vos modifications ont été enregistrées avec succès. Vous pouvez reprendre plus tard.');
+        showSuccess('Vos modifications ont été enregistrées avec succès. Vous pouvez reprendre plus tard.', 'Succès');
       } else {
-        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+        showError('Erreur lors de la sauvegarde. Veuillez réessayer.', 'Erreur');
       }
     } catch (error) {
-      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      showError('Erreur lors de la sauvegarde. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const hasDataChanged = () => {
+    if (!candidatureData) return true; // Si pas de données existantes, considérer comme changé
+    
+    // Vérifier si les champs texte ont changé
+    const hasFormChanges = (
+      formData.entrepriseAccueil !== (candidatureData.entreprise_accueil || '') ||
+      formData.motivationFormation !== (candidatureData.motivation_formation || '')
+    );
+    
+    // Vérifier si de nouveaux fichiers ont été ajoutés
+    const hasNewFiles = (
+      formData.cv !== null ||
+      formData.diplome !== null ||
+      formData.releves.length > 0 ||
+      formData.pieceIdentite.length > 0
+    );
+    
+    return hasFormChanges || hasNewFiles;
   };
 
   const handleNext = async () => {
@@ -418,23 +441,34 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                             existingFiles.pieceIdentite.length > 0 || formData.pieceIdentite.length > 0;
 
     if (!hasRequiredFiles || !formData.entrepriseAccueil) {
-      alert('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.');
+      showWarning('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.', 'Champs manquants');
       return;
     }
 
     try {
       setIsSaving(true);
-      const result = await saveData();
       
-      if (result.success) {
-        // Rafraîchir les données du Context après sauvegarde
-        await refreshCandidature();
-        onNext();
+      // Vérifier si des données ont été modifiées
+      if (hasDataChanged()) {
+        console.log('Données modifiées détectées - Sauvegarde en cours...');
+        const result = await saveData();
+        
+        if (result.success) {
+          // Rafraîchir les données du Context après sauvegarde
+          await refreshCandidature();
+          console.log('Sauvegarde réussie');
+        } else {
+          showError('Erreur lors de la sauvegarde des données. Veuillez réessayer.', 'Erreur');
+          return;
+        }
       } else {
-        alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
+        console.log('Aucune modification détectée - Pas d\'appel API');
       }
+      
+      // Passer à l'étape suivante
+      onNext();
     } catch (error) {
-      alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
+      showError('Erreur lors de la sauvegarde des données. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsSaving(false);
     }
@@ -823,8 +857,8 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                   className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'pieceIdentite')}
-                  onClick={() => document.getElementById('identite-upload')?.click()}
-                >
+                onClick={() => document.getElementById('identite-upload')?.click()}
+              >
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
                       <Upload className="w-8 h-8 text-[#032622]" />
@@ -835,15 +869,15 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                       <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • Maximum 2 fichiers</p>
                     </div>
                   </div>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileChange('pieceIdentite', e.target.files)}
-                    className="hidden"
-                    id="identite-upload"
-                  />
-                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange('pieceIdentite', e.target.files)}
+                  className="hidden"
+                  id="identite-upload"
+                />
+              </div>
               )}
             </div>
 
@@ -902,6 +936,15 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
           </div>
         </div>
       </main>
+      
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 };

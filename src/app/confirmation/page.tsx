@@ -6,12 +6,15 @@ import { CheckCircle, Mail, ArrowLeft } from 'lucide-react';
 import { LoginWithFormationSelection } from '../LoginWithFormationSelection';
 import { Navbar } from '../Navbar';
 import { Footer } from '../Footer';
+import { Modal } from '../validation/components/Modal';
+import { useModal } from '../validation/components/useModal';
 
 function ConfirmationContent() {
   const [email, setEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const searchParams = useSearchParams();
+  const { modalState, showSuccess, showError, hideModal } = useModal();
 
   useEffect(() => {
     // Récupérer l'email depuis les paramètres URL si disponible
@@ -26,9 +29,9 @@ function ConfirmationContent() {
     try {
       // Ici vous pouvez ajouter une fonction pour renvoyer l'email de confirmation
       // await resendConfirmationEmail(email);
-      alert('Email de confirmation renvoyé !');
+      showSuccess('Email de confirmation renvoyé !', 'Succès');
     } catch (error) {
-      alert('Erreur lors du renvoi de l\'email');
+      showError('Erreur lors du renvoi de l\'email', 'Erreur');
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +158,15 @@ function ConfirmationContent() {
         onCompleteAction={(selectedFormations) => {
           // Formations sélectionnées traitées
         }}
+      />
+      
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
       />
     </div>
   );

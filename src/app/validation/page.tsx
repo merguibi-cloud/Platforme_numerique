@@ -11,6 +11,7 @@ import { Validation } from './components/Validation';
 import { getCurrentUser } from '@/lib/auth-api';
 import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 import { CandidatureProvider, useCandidature } from '@/contexts/CandidatureContext';
+import { StudentGuard } from '@/components/RoleGuard';
 
 const ValidationContent = () => {
   const router = useRouter();
@@ -242,15 +243,17 @@ const ValidationWithAuth = () => {
 
 export default function ValidationPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
-          <p className="mt-4 text-[#032622]">Chargement...</p>
+    <StudentGuard>
+      <Suspense fallback={
+        <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+            <p className="mt-4 text-[#032622]">Chargement...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <ValidationWithAuth />
-    </Suspense>
+      }>
+        <ValidationWithAuth />
+      </Suspense>
+    </StudentGuard>
   );
 }

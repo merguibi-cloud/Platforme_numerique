@@ -12,6 +12,14 @@ export async function middleware(request: NextRequest) {
     '/espace-admin'
   ];
   
+  // Routes avec restrictions de rôle
+  const roleRestrictions = {
+    '/espace-admin': ['admin', 'superadmin'],
+    '/espace-animateur': ['animateur', 'admin', 'superadmin'],
+    '/espace-etudiant': ['etudiant', 'animateur', 'admin', 'superadmin'],
+    '/validation': ['etudiant', 'animateur', 'admin', 'superadmin']
+  };
+  
   // Pages publiques
   const publicRoutes = [
     '/',
@@ -50,6 +58,22 @@ export async function middleware(request: NextRequest) {
       
       if (error || !user) {
         return NextResponse.redirect(new URL('/', request.url));
+      }
+
+      // Vérifier les permissions de rôle pour les routes spécifiques
+      const requiredRoles = roleRestrictions[pathname as keyof typeof roleRestrictions];
+      if (requiredRoles) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        const userRole = profile?.role || 'etudiant';
+        
+        if (!requiredRoles.includes(userRole)) {
+          return NextResponse.redirect(new URL('/', request.url));
+        }
       }
     } catch (error) {
       return NextResponse.redirect(new URL('/', request.url));

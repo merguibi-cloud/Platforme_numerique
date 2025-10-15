@@ -40,13 +40,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Créer le profil utilisateur avec formation_id
+    // Créer le profil utilisateur avec formation_id et rôle par défaut
     await supabaseAdmin
       .from('user_profiles')
       .insert({
         user_id: data.user.id,
         formation_id: formation_id || null,
-        profile_completed: false
+        profile_completed: false,
+        role: 'etudiant' // Rôle par défaut pour les nouveaux utilisateurs
       });
 
     return NextResponse.json({

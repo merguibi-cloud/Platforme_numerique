@@ -16,13 +16,10 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     
-    // Créer le client avec le service role key pour bypass RLS si nécessaire
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Créer un client pour l'authentification
-    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    // Créer le client avec le token d'authentification dans les headers
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: {
           Authorization: `Bearer ${accessToken}`
@@ -31,7 +28,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Obtenir l'utilisateur connecté
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
 
     if (authError || !user) {
       return NextResponse.json(

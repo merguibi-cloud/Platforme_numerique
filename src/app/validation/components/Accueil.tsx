@@ -7,6 +7,8 @@ import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 import { useCandidature } from '@/contexts/CandidatureContext';
 import { getAllFormations } from '@/lib/formations';
 import { Formation, categories, niveaux, rythmes } from '@/types/formations';
+import { Modal } from './Modal';
+import { useModal } from './useModal';
 
 interface AccueilProps {
   userEmail: string;
@@ -24,6 +26,7 @@ export const Accueil = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showChangeFormationModal, setShowChangeFormationModal] = useState(false);
   const [isChangingFormation, setIsChangingFormation] = useState(false);
+  const { modalState, showSuccess, showError, hideModal, showConfirm, handleConfirm, handleCancel } = useModal();
   
   // États pour la modale de sélection de formation
   const [formations, setFormations] = useState<Formation[]>([]);
@@ -190,16 +193,16 @@ export const Accueil = ({
   const handleChangeFormation = () => {
     if (hasStarted) {
       // Si candidature commencée, demander confirmation
-      const confirm = window.confirm(
+      showConfirm(
         'Attention : Changer de formation supprimera définitivement votre candidature actuelle.\n\n' +
         'Toutes vos informations et documents seront perdus.\n\n' +
-        'Voulez-vous vraiment continuer ?'
+        'Voulez-vous vraiment continuer ?',
+        'Confirmation requise',
+        () => {
+          loadAllFormations();
+          setShowChangeFormationModal(true);
+        }
       );
-      
-      if (confirm) {
-        loadAllFormations();
-        setShowChangeFormationModal(true);
-      }
     } else {
       // Pas de candidature, ouvrir la modale directement
       loadAllFormations();
@@ -209,7 +212,7 @@ export const Accueil = ({
 
   const handleConfirmChangeFormation = async () => {
     if (!selectedNewFormation) {
-      alert('Veuillez sélectionner une formation');
+      showError('Veuillez sélectionner une formation', 'Sélection requise');
       return;
     }
 
@@ -236,15 +239,15 @@ export const Accueil = ({
         setSelectedNewFormation(null);
         
         // Message de succès
-        alert('Formation changée avec succès ! Votre candidature précédente a été supprimée.');
+        showSuccess('Formation changée avec succès ! Votre candidature précédente a été supprimée.', 'Succès');
         
         // Recharger la page pour tout réinitialiser
         window.location.reload();
       } else {
-        alert(`Erreur : ${result.error || 'Impossible de changer la formation'}`);
+        showError(result.error || 'Impossible de changer la formation', 'Erreur');
       }
     } catch (error) {
-      alert('Erreur lors du changement de formation. Veuillez réessayer.');
+      showError('Erreur lors du changement de formation. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsChangingFormation(false);
     }
@@ -750,6 +753,18 @@ export const Accueil = ({
           </div>
         </div>
       )}
+      
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isConfirm={modalState.isConfirm}
+        onConfirm={modalState.onConfirm ? handleConfirm : undefined}
+        onCancel={modalState.onCancel ? handleCancel : undefined}
+      />
     </div>
   );
 };

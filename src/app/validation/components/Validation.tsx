@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, ChevronLeft, Send } from 'lucide-react';
 import { ProgressHeader } from './ProgressHeader';
 import { useCandidature } from '@/contexts/CandidatureContext';
+import { Modal } from './Modal';
+import { useModal } from './useModal';
 
 interface ValidationProps {
   onClose: () => void;
@@ -11,6 +13,7 @@ interface ValidationProps {
 
 export const Validation = ({ onClose, onPrev }: ValidationProps) => {
   const { candidatureData, refreshCandidature } = useCandidature();
+  const { modalState, showSuccess, showError, showWarning, hideModal } = useModal();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -23,7 +26,7 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
 
   const handleSubmitCandidature = async () => {
     if (!candidatureData) {
-      alert('Aucune candidature trouvée');
+      showError('Aucune candidature trouvée', 'Erreur');
       return;
     }
 
@@ -36,7 +39,7 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
     const hasRecap = candidatureData.accept_conditions && candidatureData.attest_correct;
 
     if (!hasInfos || !hasDocs || !hasRecap) {
-      alert('Veuillez compléter toutes les étapes avant de soumettre votre candidature.');
+      showWarning('Veuillez compléter toutes les étapes avant de soumettre votre candidature.', 'Étapes manquantes');
       return;
     }
 
@@ -56,12 +59,12 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
         setIsSubmitted(true);
         // Rafraîchir les données du Context
         await refreshCandidature();
-        alert('Votre candidature a été envoyée avec succès ! Vous recevrez un email de confirmation.');
+        showSuccess('Votre candidature a été envoyée avec succès ! Vous recevrez un email de confirmation.', 'Succès');
       } else {
-        alert('Erreur lors de l\'envoi de la candidature. Veuillez réessayer.');
+        showError('Erreur lors de l\'envoi de la candidature. Veuillez réessayer.', 'Erreur');
       }
     } catch (error) {
-      alert('Erreur lors de l\'envoi de la candidature. Veuillez réessayer.');
+      showError('Erreur lors de l\'envoi de la candidature. Veuillez réessayer.', 'Erreur');
     } finally {
       setIsSubmitting(false);
     }
@@ -149,6 +152,15 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
           </div>
         </div>
       </main>
+      
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 };
