@@ -1,28 +1,31 @@
 'use client';
-import { AdminSidebar } from './components/AdminSidebar';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 
-interface AdminLayoutProps {
+interface RouteProtectionProps {
   children: React.ReactNode;
+  requiredRoles: string[];
+  redirectTo?: string;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+export default function RouteProtection({ 
+  children, 
+  requiredRoles, 
+  redirectTo = '/' 
+}: RouteProtectionProps) {
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
-    const checkAdminAccess = async (): Promise<void> => {
+    const checkAccess = async (): Promise<void> => {
       try {
         // Utiliser les APIs pour vérifier l'authentification et le rôle
         const userResponse = await fetch('/api/auth/user');
         const userData = await userResponse.json();
         
         if (!userData.success || !userData.user) {
-          router.push('/');
+          router.push(redirectTo);
           return;
         }
 
@@ -31,28 +34,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         const profileData = await profileResponse.json();
         
         if (!profileData.success || !profileData.profile) {
-          router.push('/');
+          router.push(redirectTo);
           return;
         }
 
-        const userRole = profileData.profile.role;
+        const userRole = profileData.profile.role as string;
         
-        if (!['admin', 'superadmin'].includes(userRole)) {
-          router.push('/');
+        if (!requiredRoles.includes(userRole)) {
+          router.push(redirectTo);
           return;
         }
 
         setIsAuthorized(true);
       } catch (error) {
-        console.error('Erreur vérification admin:', error);
-        router.push('/');
+        console.error('Erreur vérification RouteProtection:', error);
+        router.push(redirectTo);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAdminAccess();
-  }, [router]);
+    checkAccess();
+  }, [router, requiredRoles, redirectTo]);
 
   if (isLoading) {
     return (
@@ -76,14 +79,5 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  return (
-    <div className="flex min-h-screen bg-[#F8F5E4]">
-      <AdminSidebar onCollapseChange={setIsCollapsed} />
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {children}
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 }
-
-
