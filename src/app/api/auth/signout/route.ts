@@ -25,10 +25,19 @@ export async function POST(request: NextRequest) {
     cookieStore.delete('sb-access-token');
     cookieStore.delete('sb-refresh-token');
 
-    return NextResponse.json({
-      success: true,
-      message: 'Déconnexion réussie'
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Déconnexion réussie'
+      },
+      {
+        headers: {
+          // Invalider tous les caches lors de la déconnexion
+          'Clear-Site-Data': '"cache", "cookies", "storage"',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        },
+      }
+    );
 
   } catch (error) {
     return NextResponse.json(

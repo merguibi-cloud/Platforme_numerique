@@ -6,14 +6,16 @@ import { Hero } from './components/Hero';
 import { Accueil } from './components/Accueil';
 import { Information } from './components/Information';
 import { Documents } from './components/Documents';
-import { Contrat } from './components/Contrat';
+import { Recap } from './components/Recap';
 import { Validation } from './components/Validation';
 import { getCurrentUser } from '@/lib/auth-api';
 import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
+import { CandidatureProvider, useCandidature } from '@/contexts/CandidatureContext';
 
 const ValidationContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { candidatureData, isLoading: isCandidatureLoading } = useCandidature();
   const [user, setUser] = useState<any>(null);
   const [formationData, setFormationData] = useState<UserFormationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,21 +31,17 @@ const ValidationContent = () => {
     try {
       // Vérification utilisateur
       const userResult = await getCurrentUser();
-      // Résultat authentification
       
       if (!userResult.success || !userResult.user) {
-        // Utilisateur non authentifié
         return;
       }
 
       setUser(userResult.user);
-      // Utilisateur authentifié
 
       // Charger les données de formation
       const formationResult = await getUserFormationData();
       if (formationResult.success && formationResult.data) {
         setFormationData(formationResult.data);
-        // Données formation chargées
       }
     } catch (error) {
       // Erreur silencieuse
@@ -80,8 +78,38 @@ const ValidationContent = () => {
     );
   }
 
+  const redirectToNextIncompleteStep = (data: any) => {
+    // Vérifier quelles étapes sont complétées
+    const hasInfos = data.nom && data.prenom && data.email && data.telephone;
+    const hasDocs = data.cv_path && data.diplome_path && 
+                   (data.releves_paths && data.releves_paths.length > 0) &&
+                   (data.piece_identite_paths && data.piece_identite_paths.length > 0) &&
+                   data.entreprise_accueil;
+    const hasRecap = data.accept_conditions && data.attest_correct && hasDocs;
+    const hasValidation = data.paid_at;
+    
+    // Rediriger vers la prochaine étape non complétée
+    if (hasValidation) {
+      router.push('/validation?step=validation');
+    } else if (hasRecap) {
+      router.push('/validation?step=validation');
+    } else if (hasDocs) {
+      router.push('/validation?step=recap');
+    } else if (hasInfos) {
+      router.push('/validation?step=documents');
+    } else {
+      router.push('/validation?step=informations');
+    }
+  };
+
   const handleStartApplication = () => {
-    router.push('/validation?step=informations');
+    // Utiliser les données du Context si disponibles
+    if (candidatureData) {
+      redirectToNextIncompleteStep(candidatureData);
+    } else {
+      // Pas de candidature, commencer à l'étape informations
+      router.push('/validation?step=informations');
+    }
   };
 
   const handleCloseCandidatureForm = () => {
@@ -94,9 +122,9 @@ const ValidationContent = () => {
         router.push('/validation?step=documents');
         break;
       case 'documents':
-        router.push('/validation?step=contrat');
+        router.push('/validation?step=recap');
         break;
-      case 'contrat':
+      case 'recap':
         router.push('/validation?step=validation');
         break;
       default:
@@ -109,11 +137,11 @@ const ValidationContent = () => {
       case 'documents':
         router.push('/validation?step=informations');
         break;
-      case 'contrat':
+      case 'recap':
         router.push('/validation?step=documents');
         break;
       case 'validation':
-        router.push('/validation?step=contrat');
+        router.push('/validation?step=recap');
         break;
       default:
         break;
@@ -138,9 +166,9 @@ const ValidationContent = () => {
             onPrev={handlePrevStep}
           />
         );
-      case 'contrat':
+      case 'recap':
         return (
-          <Contrat 
+          <Recap 
             onClose={handleCloseCandidatureForm}
             onNext={handleNextStep}
             onPrev={handlePrevStep}
@@ -172,6 +200,46 @@ const ValidationContent = () => {
   );
 };
 
+// Wrapper pour charger l'utilisateur avant le Provider
+const ValidationWithAuth = () => {
+  const [user, setUser] = useState<any>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const userResult = await getCurrentUser();
+      if (userResult.success && userResult.user) {
+        setUser(userResult.user);
+      }
+    } catch (error) {
+      // Erreur silencieuse
+    } finally {
+      setIsLoadingUser(false);
+    }
+  };
+
+  if (isLoadingUser) {
+    return (
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+          <p className="mt-4 text-[#032622]">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <CandidatureProvider userId={user?.id} key={user?.id}>
+      <ValidationContent />
+    </CandidatureProvider>
+  );
+};
+
 export default function ValidationPage() {
   return (
     <Suspense fallback={
@@ -182,7 +250,7 @@ export default function ValidationPage() {
         </div>
       </div>
     }>
-      <ValidationContent />
+      <ValidationWithAuth />
     </Suspense>
   );
 }

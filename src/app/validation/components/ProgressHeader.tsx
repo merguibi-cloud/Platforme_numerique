@@ -1,7 +1,7 @@
 "use client";
 import { User } from 'lucide-react';
 
-type Step = 'INFORMATIONS' | 'DOCUMENTS' | 'CONTRAT' | 'VALIDATION';
+type Step = 'INFORMATIONS' | 'DOCUMENTS' | 'RÉCAPITULATIF' | 'VALIDATION';
 
 interface ProgressHeaderProps {
   currentStep: Step;
@@ -9,7 +9,7 @@ interface ProgressHeaderProps {
 }
 
 export const ProgressHeader = ({ currentStep, onClose }: ProgressHeaderProps) => {
-  const steps: Step[] = ['INFORMATIONS', 'DOCUMENTS', 'CONTRAT', 'VALIDATION'];
+  const steps: Step[] = ['INFORMATIONS', 'DOCUMENTS', 'RÉCAPITULATIF', 'VALIDATION'];
   const currentStepIndex = steps.indexOf(currentStep);
 
   return (

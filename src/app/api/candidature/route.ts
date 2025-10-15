@@ -51,10 +51,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: candidature
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: candidature
+      },
+      {
+        headers: {
+          // Cache privé pour l'utilisateur
+          // max-age=30 : le cache est valide pendant 30 secondes (réduit pour éviter les problèmes de changement d'user)
+          // must-revalidate : force la revalidation quand le cache expire
+          // Vary: Cookie pour s'assurer que le cache est par utilisateur
+          'Cache-Control': 'private, max-age=30, must-revalidate',
+          'Vary': 'Cookie',
+        },
+      }
+    );
 
   } catch (error) {
     return NextResponse.json(
@@ -186,6 +198,12 @@ export async function POST(request: NextRequest) {
         entreprise_accueil: stepData.entrepriseAccueil || '',
         motivation_formation: stepData.motivationFormation || '',
       };
+    } else if (step === 'recap') {
+      updateData = {
+        ...updateData,
+        accept_conditions: stepData.acceptConditions || false,
+        attest_correct: stepData.attestCorrect || false,
+      };
     }
 
     if (existingCandidature) {
@@ -199,7 +217,10 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         return NextResponse.json(
-          { success: false, error: 'Erreur lors de la mise à jour de la candidature' },
+          { 
+            success: false, 
+            error: 'Erreur lors de la mise à jour de la candidature'
+          },
           { status: 500 }
         );
       }
@@ -223,7 +244,10 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         return NextResponse.json(
-          { success: false, error: 'Erreur lors de la création de la candidature' },
+          { 
+            success: false, 
+            error: 'Erreur lors de la création de la candidature'
+          },
           { status: 500 }
         );
       }

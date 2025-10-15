@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { Upload, User } from 'lucide-react';
+import { Upload, User, X } from 'lucide-react';
 import { ProgressHeader } from './ProgressHeader';
 import { useRouter } from 'next/navigation';
 import { UserFormationData } from '@/lib/user-formations';
-import { getCandidature, saveCandidatureStep } from '@/lib/candidature-api';
+import { saveCandidatureStep } from '@/lib/candidature-api';
+import { useCandidature } from '@/contexts/CandidatureContext';
 
 interface InformationProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ interface InformationProps {
 
 export const Information = ({ onClose, userEmail, formationData }: InformationProps) => {
   const router = useRouter();
+  const { candidatureData, refreshCandidature } = useCandidature();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [photoIdentite, setPhotoIdentite] = useState<File | null>(null);
@@ -41,10 +43,10 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     motivationFormation: '',
   });
 
-  // Charger les données de candidature existantes
+  // Charger les données depuis le Context quand disponibles
   useEffect(() => {
     loadCandidatureData();
-  }, []);
+  }, [candidatureData]);
 
   // Mettre à jour l'email quand userEmail change
   useEffect(() => {
@@ -61,16 +63,13 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       try {
         const profileCheck = await fetch('/api/user/ensure-profile');
         const profileResult = await profileCheck.json();
-        // Vérification profil
       } catch (error) {
         // Erreur silencieuse
       }
       
-      const result = await getCandidature();
-      
-      if (result.success && result.data) {
-        // Pré-remplir le formulaire avec les données existantes
-        const candidature = result.data;
+      if (candidatureData) {
+        // Pré-remplir le formulaire avec les données existantes du Context
+        const candidature = candidatureData;
         setFormData(prev => ({
           ...prev,
           civilite: candidature.civilite || '',
@@ -126,9 +125,20 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
   };
 
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Supprimer l'ancienne photo du storage si elle existe
+      if (existingPhotoPath) {
+        try {
+          await fetch(`/api/delete-file?path=${encodeURIComponent(existingPhotoPath)}&bucket=photo_profil`, {
+            method: 'DELETE',
+          });
+        } catch (error) {
+          // Erreur silencieuse
+        }
+      }
+
       setPhotoIdentite(file);
       // Effacer le chemin de la photo existante puisqu'on a une nouvelle photo
       setExistingPhotoPath('');
@@ -142,16 +152,26 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     }
   };
 
-  const handleNext = async () => {
-    // Validation des champs obligatoires
-    if (!formData.nom || !formData.prenom || !formData.email || !formData.telephone) {
-      alert('Veuillez remplir tous les champs obligatoires (*)');
-      return;
+  const handleRemovePhoto = async () => {
+    // Supprimer la photo du storage si elle existe
+    if (existingPhotoPath) {
+      try {
+        await fetch(`/api/delete-file?path=${encodeURIComponent(existingPhotoPath)}&bucket=photo_profil`, {
+          method: 'DELETE',
+        });
+      } catch (error) {
+        // Erreur silencieuse
+      }
     }
 
+    // Réinitialiser l'état
+    setPhotoIdentite(null);
+    setPhotoPreview('');
+    setExistingPhotoPath('');
+  };
+
+  const saveData = async () => {
     try {
-      setIsSaving(true);
-      
       let photoPath = '';
       
       // Uploader la photo seulement si une nouvelle photo a été sélectionnée
@@ -170,7 +190,6 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
           if (uploadResponse.ok) {
             const uploadResult = await uploadResponse.json();
             photoPath = uploadResult.path;
-            // Photo uploadée
           }
         } catch (error) {
           // Erreur silencieuse
@@ -178,7 +197,6 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       } else if (existingPhotoPath) {
         // Si pas de nouvelle photo mais qu'une photo existe déjà, garder le chemin existant
         photoPath = existingPhotoPath;
-        // Conservation photo existante
       }
       
       // Préparer les données pour l'étape informations
@@ -198,8 +216,45 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
 
       // Sauvegarder les données
       const result = await saveCandidatureStep('informations', stepData);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      setIsSaving(true);
+      const result = await saveData();
       
       if (result.success) {
+        // Rafraîchir les données du Context après sauvegarde
+        await refreshCandidature();
+        alert('Vos modifications ont été enregistrées avec succès. Vous pouvez reprendre plus tard.');
+      } else {
+        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      }
+    } catch (error) {
+      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNext = async () => {
+    // Validation des champs obligatoires
+    if (!formData.nom || !formData.prenom || !formData.email || !formData.telephone) {
+      alert('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const result = await saveData();
+      
+      if (result.success) {
+        // Rafraîchir les données du Context après sauvegarde
+        await refreshCandidature();
         router.push('/validation?step=documents');
       } else {
         alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
@@ -223,13 +278,22 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       <div className="w-full mb-6">
         <div className="flex gap-6">
           {/* Photo de profil */}
-          <div className="w-48 h-60 border border-[#032622] flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-50">
+          <div className="relative w-48 h-60 border border-[#032622] flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-50">
             {photoPreview ? (
-              <img 
-                src={photoPreview} 
-                alt="Photo d'identité" 
-                className="w-full h-full object-cover"
-              />
+              <>
+                <img 
+                  src={photoPreview} 
+                  alt="Photo d'identité" 
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  onClick={handleRemovePhoto}
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 transition-colors"
+                  title="Supprimer la photo"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </>
             ) : (
               <User className="w-16 h-16 text-gray-400" />
             )}
@@ -426,13 +490,21 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
 
         {/* Footer */}
         <div className="p-6 border border-[#032622]">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <button
               onClick={handlePrev}
               disabled={true}
               className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               RETOUR
+            </button>
+            
+            <button
+              onClick={handleSaveDraft}
+              disabled={isSaving}
+              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors disabled:opacity-50"
+            >
+              {isSaving ? 'SAUVEGARDE...' : 'ENREGISTRER BROUILLON'}
             </button>
             
             <button

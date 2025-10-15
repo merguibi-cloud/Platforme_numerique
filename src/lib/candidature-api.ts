@@ -4,13 +4,13 @@ export interface CandidatureData {
   id?: string;
   user_id?: string;
   formation_id?: number;
-  status?: string;
+  status?: 'draft' | 'submitted' | 'pending' | 'validated' | 'approved' | 'rejected';
   current_step?: string;
   civilite?: string;
-  nom: string;
-  prenom: string;
-  email: string;
-  telephone: string;
+  nom?: string;
+  prenom?: string;
+  email?: string;
+  telephone?: string;
   adresse?: string;
   code_postal?: string;
   ville?: string;
@@ -47,13 +47,18 @@ export interface InformationsStepData {
 /**
  * Récupérer la candidature de l'utilisateur connecté
  */
-export async function getCandidature(): Promise<{ success: boolean; data?: CandidatureData; error?: string }> {
+export async function getCandidature(forceReload = false): Promise<{ success: boolean; data?: CandidatureData; error?: string }> {
   try {
-    const response = await fetch('/api/candidature', {
+    // Ajouter un timestamp pour bypass le cache si nécessaire
+    const url = forceReload ? `/api/candidature?t=${Date.now()}` : '/api/candidature';
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      // Bypass le cache du navigateur si forceReload
+      cache: forceReload ? 'no-store' : 'default',
     });
 
     const result = await response.json();
@@ -77,7 +82,7 @@ export async function getCandidature(): Promise<{ success: boolean; data?: Candi
 export async function saveCandidatureStep(
   step: string,
   data: InformationsStepData | any
-): Promise<{ success: boolean; data?: CandidatureData; error?: string }> {
+): Promise<{ success: boolean; data?: CandidatureData; error?: string; details?: string }> {
   try {
     const response = await fetch('/api/candidature', {
       method: 'POST',
@@ -90,11 +95,14 @@ export async function saveCandidatureStep(
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || 'Erreur lors de la sauvegarde de la candidature');
+      return {
+        success: false,
+        error: result.error || 'Erreur lors de la sauvegarde de la candidature'
+      };
     }
 
     return result;
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
       error: 'Erreur lors de la sauvegarde de la candidature'

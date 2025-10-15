@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { Upload, X, FileText, Image, Download } from 'lucide-react';
 import { ProgressHeader } from './ProgressHeader';
 import { useRouter } from 'next/navigation';
-import { getCandidature, saveCandidatureStep } from '@/lib/candidature-api';
+import { saveCandidatureStep } from '@/lib/candidature-api';
+import { useCandidature } from '@/contexts/CandidatureContext';
 
 interface DocumentsProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface DocumentsProps {
 
 export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
   const router = useRouter();
+  const { candidatureData, refreshCandidature } = useCandidature();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,10 +37,14 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
   // État pour les fichiers manquants (enregistrés en BDD mais introuvables dans le storage)
   const [missingFiles, setMissingFiles] = useState<string[]>([]);
 
-  // Charger les données de candidature existantes
+  // Charger les données depuis le Context quand disponibles
   useEffect(() => {
-    loadCandidatureData();
-  }, []);
+    if (candidatureData) {
+      loadCandidatureData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [candidatureData]);
 
   const loadCandidatureData = async () => {
     try {
@@ -50,24 +56,13 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         diplome: null,
         releves: [],
         pieceIdentite: [],
-        entrepriseAccueil: '',
-        motivationFormation: '',
+        entrepriseAccueil: candidatureData?.entreprise_accueil || '',
+        motivationFormation: candidatureData?.motivation_formation || '',
       });
-      
-      const result = await getCandidature();
-      
-      if (result.success && result.data) {
-        const candidature = result.data;
-        
-        // Pré-remplir les champs texte
-        setFormData(prev => ({
-          ...prev,
-          entrepriseAccueil: candidature.entreprise_accueil || '',
-          motivationFormation: candidature.motivation_formation || '',
-        }));
 
-        // Charger les fichiers existants
-        await loadExistingFiles(candidature);
+      // Charger les fichiers existants
+      if (candidatureData) {
+        await loadExistingFiles(candidatureData);
       }
     } catch (error) {
       // Erreur silencieuse
@@ -158,7 +153,26 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     if (!files) return;
     
     if (field === 'releves' || field === 'pieceIdentite') {
-      setFormData(prev => ({ ...prev, [field]: Array.from(files) }));
+      const newFiles = Array.from(files);
+      
+      // Limiter à 2 documents pour la pièce d'identité
+      if (field === 'pieceIdentite') {
+        const currentTotal = existingFiles.pieceIdentite.length + formData.pieceIdentite.length;
+        const availableSlots = 2 - currentTotal;
+        
+        if (availableSlots <= 0) {
+          alert('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).');
+          return;
+        }
+        
+        if (newFiles.length > availableSlots) {
+          alert(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`);
+          setFormData(prev => ({ ...prev, [field]: [...prev[field], ...newFiles.slice(0, availableSlots)] }));
+          return;
+        }
+      }
+      
+      setFormData(prev => ({ ...prev, [field]: [...prev[field], ...newFiles] }));
     } else {
       setFormData(prev => ({ ...prev, [field]: files[0] }));
     }
@@ -168,7 +182,40 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const removeExistingFile = (field: string, index?: number) => {
+  const removeExistingFile = async (field: string, index?: number) => {
+    let fileToDelete: { path: string, url: string } | null = null;
+    
+    // Récupérer le fichier à supprimer avant de le retirer de l'état
+    if (field === 'releves' || field === 'pieceIdentite') {
+      if (index !== undefined) {
+        fileToDelete = existingFiles[field][index];
+      }
+    } else {
+      fileToDelete = existingFiles[field as 'cv' | 'diplome'];
+    }
+
+    // Supprimer du storage si le fichier existe
+    if (fileToDelete && fileToDelete.path) {
+      try {
+        // Déterminer le bucket (essayer user_documents d'abord, puis photo_profil)
+        const buckets = ['user_documents', 'photo_profil'];
+        
+        for (const bucket of buckets) {
+          const response = await fetch(`/api/delete-file?path=${encodeURIComponent(fileToDelete.path)}&bucket=${bucket}`, {
+            method: 'DELETE',
+          });
+          
+          if (response.ok) {
+            // Fichier supprimé avec succès
+            break;
+          }
+        }
+      } catch (error) {
+        // Continuer même en cas d'erreur pour permettre la suppression de l'interface
+      }
+    }
+
+    // Retirer de l'état local
     if (field === 'releves' || field === 'pieceIdentite') {
       setExistingFiles(prev => ({
         ...prev,
@@ -205,6 +252,23 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       if (field === 'releves' || field === 'pieceIdentite') {
+        // Limiter à 2 documents pour la pièce d'identité
+        if (field === 'pieceIdentite') {
+          const currentTotal = existingFiles.pieceIdentite.length + formData.pieceIdentite.length;
+          const availableSlots = 2 - currentTotal;
+          
+          if (availableSlots <= 0) {
+            alert('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).');
+            return;
+          }
+          
+          if (files.length > availableSlots) {
+            alert(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`);
+            setFormData(prev => ({ ...prev, [field]: [...prev[field], ...files.slice(0, availableSlots)] }));
+            return;
+          }
+        }
+        
         setFormData(prev => ({ ...prev, [field]: [...prev[field], ...files] }));
       } else {
         setFormData(prev => ({ ...prev, [field]: files[0] }));
@@ -281,21 +345,8 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     );
   };
 
-  const handleNext = async () => {
-    // Validation des champs obligatoires
-    const hasRequiredFiles = existingFiles.cv.path || formData.cv || 
-                            existingFiles.diplome.path || formData.diplome ||
-                            existingFiles.releves.length > 0 || formData.releves.length > 0 ||
-                            existingFiles.pieceIdentite.length > 0 || formData.pieceIdentite.length > 0;
-
-    if (!hasRequiredFiles || !formData.entrepriseAccueil) {
-      alert('Veuillez remplir tous les champs obligatoires (*)');
-      return;
-    }
-
+  const saveData = async () => {
     try {
-      setIsSaving(true);
-      
       // Uploader les nouveaux fichiers
       const uploadPromises = [];
       
@@ -320,8 +371,8 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
       const stepData = {
         entrepriseAccueil: formData.entrepriseAccueil,
         motivationFormation: formData.motivationFormation,
-        cvPath: uploadResults.find(r => r.type === 'cv')?.path || existingFiles.cv.path,
-        diplomePath: uploadResults.find(r => r.type === 'diplome')?.path || existingFiles.diplome.path,
+        cvPath: uploadResults.find(r => r.type === 'cv')?.path || existingFiles.cv.path || null,
+        diplomePath: uploadResults.find(r => r.type === 'diplome')?.path || existingFiles.diplome.path || null,
         relevesPaths: [
           ...existingFiles.releves.map(f => f.path),
           ...uploadResults.filter(r => r.type === 'releves').map(r => r.path)
@@ -334,9 +385,51 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
       // Sauvegarder les données
       const result = await saveCandidatureStep('documents', stepData);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      setIsSaving(true);
+      const result = await saveData();
       
       if (result.success) {
-        router.push('/validation?step=validation');
+        // Rafraîchir les données du Context après sauvegarde
+        await refreshCandidature();
+        alert('Vos modifications ont été enregistrées avec succès. Vous pouvez reprendre plus tard.');
+      } else {
+        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      }
+    } catch (error) {
+      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNext = async () => {
+    // Validation des champs obligatoires
+    const hasRequiredFiles = existingFiles.cv.path || formData.cv || 
+                            existingFiles.diplome.path || formData.diplome ||
+                            existingFiles.releves.length > 0 || formData.releves.length > 0 ||
+                            existingFiles.pieceIdentite.length > 0 || formData.pieceIdentite.length > 0;
+
+    if (!hasRequiredFiles || !formData.entrepriseAccueil) {
+      alert('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const result = await saveData();
+      
+      if (result.success) {
+        // Rafraîchir les données du Context après sauvegarde
+        await refreshCandidature();
+        onNext();
       } else {
         alert('Erreur lors de la sauvegarde des données. Veuillez réessayer.');
       }
@@ -658,7 +751,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
             {/* Pièce d'identité */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE PIÈCE D'IDENTITÉ RECTO/VERSO*</h3>
+              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE PIÈCE D'IDENTITÉ RECTO/VERSO* (Maximum 2 documents)</h3>
               
               {/* Grille de fichiers */}
               {(existingFiles.pieceIdentite.length > 0 || formData.pieceIdentite.length > 0) && (
@@ -724,32 +817,34 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                 </div>
               )}
 
-              {/* Zone de drop */}
-              <div
-                className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, 'pieceIdentite')}
-                onClick={() => document.getElementById('identite-upload')?.click()}
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
-                    <Upload className="w-8 h-8 text-[#032622]" />
+              {/* Zone de drop - affichée seulement si moins de 2 documents */}
+              {(existingFiles.pieceIdentite.length + formData.pieceIdentite.length < 2) && (
+                <div
+                  className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, 'pieceIdentite')}
+                  onClick={() => document.getElementById('identite-upload')?.click()}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                      <Upload className="w-8 h-8 text-[#032622]" />
+                    </div>
+                    <div>
+                      <p className="text-[#032622] font-medium mb-1">Déposez votre pièce d'identité ici</p>
+                      <p className="text-[#032622]/60 text-sm">Recto et verso • ou cliquez pour sélectionner</p>
+                      <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • Maximum 2 fichiers</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[#032622] font-medium mb-1">Déposez votre pièce d'identité ici</p>
-                    <p className="text-[#032622]/60 text-sm">Recto et verso • ou cliquez pour sélectionner</p>
-                    <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • 2 fichiers recommandés</p>
-                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange('pieceIdentite', e.target.files)}
+                    className="hidden"
+                    id="identite-upload"
+                  />
                 </div>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange('pieceIdentite', e.target.files)}
-                  className="hidden"
-                  id="identite-upload"
-                />
-              </div>
+              )}
             </div>
 
             {/* Entreprise d'accueil */}
@@ -780,13 +875,21 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
         {/* Footer */}
         <div className="p-6 border border-[#032622]">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <button
               onClick={onPrev}
               className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
               disabled={isSaving}
             >
               RETOUR
+            </button>
+            
+            <button
+              onClick={handleSaveDraft}
+              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors disabled:opacity-50"
+              disabled={isSaving}
+            >
+              {isSaving ? 'SAUVEGARDE...' : 'ENREGISTRER BROUILLON'}
             </button>
             
             <button
