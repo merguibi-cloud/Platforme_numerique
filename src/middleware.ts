@@ -17,10 +17,11 @@ export async function middleware(request: NextRequest) {
   
   // Routes protégées avec restrictions de rôle
   const protectedRoutes = {
-    '/espace-admin': ['admin', 'superadmin'],
-    '/espace-animateur': ['animateur', 'admin', 'superadmin'],
-    '/espace-etudiant': ['etudiant', 'animateur', 'admin', 'superadmin'],
-    '/validation': ['etudiant', 'animateur', 'admin', 'superadmin']
+    '/espace-superadmin': ['superadmin'],
+    '/espace-admin': ['pedagogie', 'commercial', 'adv', 'admin', 'superadmin'],
+    '/espace-animateur': ['formateur', 'admin', 'superadmin'],
+    '/espace-etudiant': ['etudiant', 'admin', 'superadmin'],
+    '/validation': ['lead', 'candidat'] // Étudiants n'ont plus accès à /validation
   };
   
   // Vérifier si la route est publique
@@ -81,41 +82,29 @@ export async function middleware(request: NextRequest) {
       const getRedirectForRole = async (role: string, currentPath: string): Promise<string | null> => {
         // Si l'utilisateur est déjà sur la bonne page, ne pas rediriger
         if (currentPath.startsWith(`/espace-${role}`) || 
-            (role === 'etudiant' && (currentPath.startsWith('/validation') || currentPath.startsWith('/espace-etudiant')))) {
+            (role === 'etudiant' && currentPath.startsWith('/espace-etudiant')) ||
+            (role === 'lead' && currentPath.startsWith('/validation')) ||
+            (role === 'candidat' && currentPath.startsWith('/validation'))) {
           return null;
         }
         
         switch (role) {
-          case 'admin':
           case 'superadmin':
+            return '/espace-superadmin';
+          case 'admin':
             return '/espace-admin/dashboard';
-          case 'animateur':
+          case 'pedagogie':
+          case 'commercial':
+          case 'adv':
+            return '/espace-admin/dashboard';
+          case 'formateur':
             return '/espace-animateur';
           case 'etudiant':
-            // Pour les étudiants, vérifier le statut de candidature
-            try {
-              const { data: candidature, error: candidatureError } = await supabase
-                .from('candidatures')
-                .select('status')
-                .eq('user_id', user.id)
-                .maybeSingle();
-
-              if (candidatureError || !candidature) {
-                // Pas de candidature, rediriger vers validation
-                return '/validation';
-              }
-
-              // Si la candidature est validée, rediriger vers espace-etudiant
-              if (candidature.status === 'validated' || candidature.status === 'approved') {
-                return '/espace-etudiant';
-              }
-
-              // Sinon, rester sur validation
-              return '/validation';
-            } catch (error) {
-              // En cas d'erreur, rediriger vers validation par défaut
-              return '/validation';
-            }
+            // Les étudiants vont directement vers leur espace
+            return '/espace-etudiant';
+          case 'candidat':
+          case 'lead':
+            return '/validation';
           default:
             return '/';
         }

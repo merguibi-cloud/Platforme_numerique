@@ -12,7 +12,7 @@ interface RoleGuardProps {
 
 export const RoleGuard = ({ 
   children, 
-  requiredRoles = ['etudiant'], 
+  requiredRoles = ['lead'], 
   fallbackRoute = '/',
   fallbackComponent 
 }: RoleGuardProps) => {
@@ -86,14 +86,44 @@ export const RoleGuard = ({
 };
 
 // Composants de convenance pour chaque rôle
-export const StudentGuard = ({ children }: { children: React.ReactNode }) => (
-  <RoleGuard requiredRoles={['etudiant', 'animateur', 'admin', 'superadmin']}>
+export const LeadGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['lead']}>
     {children}
   </RoleGuard>
 );
 
-export const AnimateurGuard = ({ children }: { children: React.ReactNode }) => (
-  <RoleGuard requiredRoles={['animateur', 'admin', 'superadmin']}>
+export const CandidateGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['candidat']}>
+    {children}
+  </RoleGuard>
+);
+
+export const StudentGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['etudiant', 'admin', 'superadmin']}>
+    {children}
+  </RoleGuard>
+);
+
+export const FormateurGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['formateur', 'admin', 'superadmin']}>
+    {children}
+  </RoleGuard>
+);
+
+export const PedagogieGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['pedagogie', 'admin', 'superadmin']}>
+    {children}
+  </RoleGuard>
+);
+
+export const CommercialGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['commercial', 'admin', 'superadmin']}>
+    {children}
+  </RoleGuard>
+);
+
+export const AdvGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['adv', 'admin', 'superadmin']}>
     {children}
   </RoleGuard>
 );
@@ -106,6 +136,19 @@ export const AdminGuard = ({ children }: { children: React.ReactNode }) => (
 
 export const SuperAdminGuard = ({ children }: { children: React.ReactNode }) => (
   <RoleGuard requiredRoles={['superadmin']}>
+    {children}
+  </RoleGuard>
+);
+
+// Composants pour les groupes de rôles
+export const AdminWithRestrictionsGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['pedagogie', 'commercial', 'adv', 'admin', 'superadmin']}>
+    {children}
+  </RoleGuard>
+);
+
+export const StudentOrCandidateGuard = ({ children }: { children: React.ReactNode }) => (
+  <RoleGuard requiredRoles={['lead', 'candidat', 'etudiant']}>
     {children}
   </RoleGuard>
 );
