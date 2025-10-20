@@ -34,6 +34,59 @@ interface CreateEventModalProps {
   onSubmit: (eventData: EventData) => void;
 }
 
+// Composant SchoolDropdown personnalisé
+const SchoolDropdown = ({ value, onChange, schools }: { value: string; onChange: (value: string) => void; schools: string[] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedSchool = schools.find(school => school === value) || "Sélectionner une école";
+
+  return (
+    <div className="relative">
+      <div 
+        className="w-full border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] cursor-pointer hover:bg-[#eae5cf] transition-colors flex justify-between items-center"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={value ? "text-[#032622]" : "text-[#032622]/50"}>
+          {selectedSchool}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-[#032622] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-20 mt-1 w-full border border-[#032622] bg-[#F8F5E4] shadow-lg">
+          <button
+            onClick={() => {
+              onChange("");
+              setIsOpen(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm text-[#032622]/50 hover:bg-[#eae5cf] transition-colors border-b border-[#032622]/20"
+          >
+            Sélectionner une école
+          </button>
+          {schools.map((school) => (
+            <button
+              key={school}
+              onClick={() => {
+                onChange(school);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-[#032622] hover:bg-[#eae5cf] transition-colors border-b border-[#032622]/20 last:border-b-0"
+            >
+              {school}
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
 const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<EventData>({
@@ -299,19 +352,11 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
               <label className="text-sm font-semibold text-[#032622]">
                 Écoles
               </label>
-              <div className="relative">
-                <select
-                  value={formData.school}
-                  onChange={(e) => handleInputChange("school", e.target.value)}
-                  className="w-full border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622] appearance-none pr-8"
-                >
-                  <option value="">Sélectionner une école</option>
-                  {schools.map((school) => (
-                    <option key={school} value={school}>{school}</option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-[#032622] absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-              </div>
+              <SchoolDropdown
+                value={formData.school}
+                onChange={(value) => handleInputChange("school", value)}
+                schools={schools}
+              />
             </div>
 
             {/* Visible */}
