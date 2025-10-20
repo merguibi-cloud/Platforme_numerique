@@ -139,7 +139,7 @@ export default function GestionFormations() {
                     <User className="w-5 h-5" />
                   </span>
                   <div>
-                    <p className="text-xs uppercase font-semibold tracking-[0.2em]">Ymir Fritz</p>
+                    <p className="text-xs uppercase font-semibold tracking-[0.2em]">Sophie Moreau</p>
                     <p className="text-[11px] text-[#032622]/70">Admin</p>
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export default function GestionFormations() {
                 <User className="w-5 h-5" />
               </span>
               <div>
-                <p className="text-xs uppercase font-semibold tracking-[0.2em]">Ymir Fritz</p>
+                <p className="text-xs uppercase font-semibold tracking-[0.2em]">Sophie Moreau</p>
                 <p className="text-[11px] text-[#032622]/70">Admin</p>
               </div>
             </div>
