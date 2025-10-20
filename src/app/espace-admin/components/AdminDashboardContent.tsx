@@ -967,7 +967,7 @@ const ProfileCard = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm text-[#032622]">
-            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Dernière connexion
               </span>
@@ -976,7 +976,7 @@ const ProfileCard = ({
                 {student.lastLogin}
               </div>
             </div>
-            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Prochaine échéance
               </span>
@@ -986,7 +986,7 @@ const ProfileCard = ({
               </div>
               <p className="text-xs text-[#032622]/70">{student.nextDeadline.date}</p>
             </div>
-            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Prochaine séance
               </span>
@@ -996,7 +996,7 @@ const ProfileCard = ({
               </div>
               <p className="text-xs text-[#032622]/70">{student.upcomingSession.date}</p>
             </div>
-            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Promotion
               </span>
@@ -1020,14 +1020,14 @@ const ProfileCard = ({
             </button>
             <button
               onClick={() => handleAction("Brouillon d'e-mail créé pour Chadi. Ajoute le replay et le plan d'action Bloc 2.")}
-              className="flex items-center gap-2 border border-[#032622] bg-[#f0e8cb] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+              className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <Mail className="w-3 h-3" />
               Envoyer un mail
             </button>
             <button
               onClick={() => handleAction("Message envoyé au coach référent pour caler un point avec Chadi.")}
-              className="flex items-center gap-2 border border-[#032622] bg-[#f0e8cb] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+              className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <MessageCircle className="w-3 h-3" />
               Coach référent
@@ -1039,7 +1039,7 @@ const ProfileCard = ({
           <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
             Notes administratives
           </h4>
-          <div className="border border-[#032622]/30 bg-[#f0e8cb] p-4 text-sm text-[#032622]/80 leading-relaxed">
+          <div className="border border-[#032622]/30 bg-[#f8f5e4] p-4 text-sm text-[#032622]/80 leading-relaxed">
             {student.notes}
           </div>
         </div>
@@ -1051,14 +1051,14 @@ const ProfileCard = ({
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleAction("Relance mail programmée pour ce soir à 18h.")}
-              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f0e8cb] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <Send className="w-3 h-3" />
               Relancer par mail
             </button>
             <button
               onClick={() => handleAction("Créneau proposé le 17/10 à 10h30 pour un rendez-vous de suivi.")}
-              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f0e8cb] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <CalendarClock className="w-3 h-3" />
               Planifier un rendez-vous
