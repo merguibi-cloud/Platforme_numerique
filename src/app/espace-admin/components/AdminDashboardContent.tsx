@@ -629,25 +629,51 @@ interface DropdownSelectorProps {
   onChange: (value: string) => void;
 }
 
-const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => (
-  <div className="border border-[#032622] px-4 py-3 flex justify-between items-center bg-[#F8F5E4] relative">
-    <div className="flex-1">
-      <p className="text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="text-lg font-semibold text-[#032622] bg-transparent focus:outline-none appearance-none w-full pr-8"
+const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(option => option.value === value);
+
+  return (
+    <div className="relative">
+      <div 
+        className="border border-[#032622] px-4 py-3 flex justify-between items-center bg-[#F8F5E4] cursor-pointer hover:bg-[#eae5cf] transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value} className="text-[#032622]">
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <div className="flex-1">
+          <p className="text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
+          <p className="text-lg font-semibold text-[#032622]">{selectedOption?.label}</p>
+        </div>
+        <ChevronDown 
+          className={`w-5 h-5 text-[#032622] transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+        />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-20 mt-1 w-full border border-[#032622] bg-[#F8F5E4] shadow-lg">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-3 text-sm text-[#032622] hover:bg-[#eae5cf] transition-colors border-b border-[#032622]/20 last:border-b-0"
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
     </div>
-    <ChevronDown className="w-5 h-5 text-[#032622] absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-  </div>
-);
+  );
+};
 
 const CoursesCard = ({ courses }: { courses: FormationData["courses"] }) => {
   const toValidate = courses.filter((course) => course.status === "a_valider");
