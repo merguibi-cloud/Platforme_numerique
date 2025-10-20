@@ -8,6 +8,7 @@ export const StudentDashboard = () => {
   const [activitiesProgress] = useState(10);
   const [competences] = useState({ current: 2, total: 19 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -24,6 +25,39 @@ export const StudentDashboard = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Auto-défilement du carousel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 3);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Données des slides
+  const slides = [
+    {
+      title: "EXCELLENT PROGRÈS!",
+      subtitle: `Vous avez terminé ${progress}% du Module 1`,
+      buttonText: "CONTINUER",
+      icon: "📚",
+      color: "bg-[#032622]"
+    },
+    {
+      title: "PROCHAINE ÉCHÉANCE",
+      subtitle: "Devoir Bloc 2 - 18 octobre 2025",
+      buttonText: "PRÉPARER",
+      icon: "⏰",
+      color: "bg-[#D96B6B]"
+    },
+    {
+      title: "RENDEZ-VOUS TUTEUR",
+      subtitle: "Visio tuteur - 15 octobre 2025 à 09h00",
+      buttonText: "REJOINDRE",
+      icon: "👨‍🏫",
+      color: "bg-[#4CAF50]"
+    }
+  ];
 
   return (
     <div className="space-y-6 bg-[#F8F5E4] min-h-screen p-6">
@@ -102,40 +136,58 @@ export const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Carte de progression principale */}
-      <div className="bg-[#032622] text-white p-6 rounded-lg">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-[#032622]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-              </svg>
+      {/* Carousel de progression avec 3 slides */}
+      <div className="relative overflow-hidden rounded-lg">
+        <div 
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {slides.map((slide, index) => (
+            <div key={index} className={`w-full ${slide.color} text-white p-6 rounded-lg flex-shrink-0`}>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                    <span className="text-2xl">{slide.icon}</span>
+                  </div>
+                  <div>
+                    <h2 
+                      className="text-xl font-bold mb-2"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      {slide.title}
+                    </h2>
+                    <p className="text-sm opacity-90">
+                      {slide.subtitle}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (index === 0) router.push('/espace-etudiant/mes-formations');
+                    else if (index === 1) router.push('/espace-etudiant/mes-formations');
+                    else router.push('/espace-etudiant/agenda');
+                  }}
+                  className="bg-white text-[#032622] px-6 py-3 font-bold rounded-lg hover:bg-gray-100 transition-colors"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                >
+                  {slide.buttonText}
+                </button>
+              </div>
             </div>
-            <div>
-              <h2 
-                className="text-xl font-bold mb-2"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                EXCELLENT PROGRÈS!
-              </h2>
-              <p className="text-sm opacity-90">
-                Vous avez terminé {progress}% du Module 1
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={() => router.push('/espace-etudiant/mes-formations')}
-            className="bg-white text-[#032622] px-6 py-3 font-bold rounded-lg hover:bg-gray-100 transition-colors"
-            style={{ fontFamily: 'var(--font-termina-bold)' }}
-          >
-            CONTINUER
-          </button>
+          ))}
         </div>
+        
         {/* Indicateurs de progression */}
-        <div className="flex space-x-1 mt-4">
-          <div className="w-8 h-1 bg-white rounded"></div>
-          <div className="w-8 h-1 bg-white/30 rounded"></div>
-          <div className="w-8 h-1 bg-white/30 rounded"></div>
+        <div className="flex justify-center space-x-2 mt-4">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-8 h-1 rounded transition-all duration-300 ${
+                index === currentSlide ? 'bg-[#032622]' : 'bg-gray-300'
+              }`}
+            />
+          ))}
         </div>
       </div>
 
