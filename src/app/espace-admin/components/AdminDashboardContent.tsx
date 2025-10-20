@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Bell,
   CalendarClock,
@@ -871,6 +871,25 @@ const ProfileCard = ({
   students: StudentProfile[];
 }) => {
   const student = students.find((item) => item.id === selectedStudentId);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAction = (message: string) => {
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+    }
+    setFeedback(message);
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 2500);
+  };
+
+  const handleClose = () => {
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = null;
+    }
+    setFeedback(null);
+    onClose();
+  };
 
   if (!student) {
     return (
@@ -895,7 +914,7 @@ const ProfileCard = ({
           Suivi étudiant
         </h2>
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="text-[#032622]/60 hover:text-[#032622] transition-colors"
         >
           <X className="w-5 h-5" />
@@ -948,7 +967,7 @@ const ProfileCard = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm text-[#032622]">
-            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Dernière connexion
               </span>
@@ -957,7 +976,7 @@ const ProfileCard = ({
                 {student.lastLogin}
               </div>
             </div>
-            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Prochaine échéance
               </span>
@@ -967,7 +986,7 @@ const ProfileCard = ({
               </div>
               <p className="text-xs text-[#032622]/70">{student.nextDeadline.date}</p>
             </div>
-            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Prochaine séance
               </span>
@@ -977,7 +996,7 @@ const ProfileCard = ({
               </div>
               <p className="text-xs text-[#032622]/70">{student.upcomingSession.date}</p>
             </div>
-            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+            <div className="border border-[#032622]/30 p-3 bg-[#f0e8cb] space-y-1">
               <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
                 Promotion
               </span>
@@ -992,15 +1011,24 @@ const ProfileCard = ({
             Contact direct
           </h4>
           <div className="flex flex-wrap gap-2">
-            <button className="flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors">
+            <button
+              onClick={() => handleAction("Appel préparé : pense à confirmer avec Chadi l'heure exacte de la visio.")}
+              className="flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
+            >
               <Phone className="w-3 h-3" />
               Appeler
             </button>
-            <button className="flex items-center gap-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors">
+            <button
+              onClick={() => handleAction("Brouillon d'e-mail créé pour Chadi. Ajoute le replay et le plan d'action Bloc 2.")}
+              className="flex items-center gap-2 border border-[#032622] bg-[#f0e8cb] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+            >
               <Mail className="w-3 h-3" />
               Envoyer un mail
             </button>
-            <button className="flex items-center gap-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors">
+            <button
+              onClick={() => handleAction("Message envoyé au coach référent pour caler un point avec Chadi.")}
+              className="flex items-center gap-2 border border-[#032622] bg-[#f0e8cb] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+            >
               <MessageCircle className="w-3 h-3" />
               Coach référent
             </button>
@@ -1011,7 +1039,7 @@ const ProfileCard = ({
           <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
             Notes administratives
           </h4>
-          <div className="border border-[#032622]/30 bg-white/70 p-4 text-sm text-[#032622]/80 leading-relaxed">
+          <div className="border border-[#032622]/30 bg-[#f0e8cb] p-4 text-sm text-[#032622]/80 leading-relaxed">
             {student.notes}
           </div>
         </div>
@@ -1021,16 +1049,32 @@ const ProfileCard = ({
             Relancer ou planifier
           </h4>
           <div className="grid grid-cols-2 gap-3">
-            <button className="flex items-center justify-center gap-2 border border-[#032622] bg-[#F8F5E4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors">
+            <button
+              onClick={() => handleAction("Relance mail programmée pour ce soir à 18h.")}
+              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f0e8cb] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+            >
               <Send className="w-3 h-3" />
               Relancer par mail
             </button>
-            <button className="flex items-center justify-center gap-2 border border-[#032622] bg-[#F8F5E4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors">
+            <button
+              onClick={() => handleAction("Créneau proposé le 17/10 à 10h30 pour un rendez-vous de suivi.")}
+              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f0e8cb] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+            >
               <CalendarClock className="w-3 h-3" />
               Planifier un rendez-vous
             </button>
           </div>
         </div>
+
+        {feedback && (
+          <div
+            className="border border-[#032622]/30 bg-[#032622]/10 px-4 py-3 text-xs font-semibold text-[#032622]"
+            role="status"
+            aria-live="polite"
+          >
+            {feedback}
+          </div>
+        )}
       </div>
     </section>
   );
