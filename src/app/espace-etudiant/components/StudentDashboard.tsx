@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { BookOpen, AlarmClock, CalendarClock } from 'lucide-react';
 
 export const StudentDashboard = () => {
   const [progress] = useState(10);
@@ -34,28 +35,31 @@ export const StudentDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Données des slides
+  // Données des slides (icônes élégantes + couleurs pastel)
   const slides = [
     {
       title: "EXCELLENT PROGRÈS!",
       subtitle: `Vous avez terminé ${progress}% du Module 1`,
       buttonText: "CONTINUER",
-      icon: "📚",
+      icon: ( <BookOpen className="w-6 h-6 text-[#032622]" /> ),
+      // Conserver la couleur de marque pour la première slide
       color: "bg-[#032622]"
     },
     {
       title: "PROCHAINE ÉCHÉANCE",
       subtitle: "Devoir Bloc 2 - 18 octobre 2025",
       buttonText: "PRÉPARER",
-      icon: "⏰",
-      color: "bg-[#D96B6B]"
+      icon: ( <AlarmClock className="w-6 h-6 text-[#032622]" /> ),
+      // Rose pastel
+      color: "bg-[#f2b1b1]"
     },
     {
       title: "RENDEZ-VOUS TUTEUR",
       subtitle: "Visio tuteur - 15 octobre 2025 à 09h00",
       buttonText: "REJOINDRE",
-      icon: "👨‍🏫",
-      color: "bg-[#4CAF50]"
+      icon: ( <CalendarClock className="w-6 h-6 text-[#032622]" /> ),
+      // Bleu ciel pastel
+      color: "bg-[#b9d6f2]"
     }
   ];
 
@@ -147,7 +151,7 @@ export const StudentDashboard = () => {
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                    <span className="text-2xl">{slide.icon}</span>
+                    {slide.icon}
                   </div>
                   <div>
                     <h2 
