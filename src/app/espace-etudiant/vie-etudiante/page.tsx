@@ -71,7 +71,7 @@ const topics = [
     category: 'Vie du campus',
     school: 'Digital Legacy',
     excerpt: "Rappel des règles de bonne conduite dans les échanges du forum...",
-    author: 'Ymir Fritz',
+    author: 'Chadi El Assowad',
     responses: 54,
     views: 274,
     updated: 'Il y a 2 jours',
@@ -230,7 +230,7 @@ export default function VieEtudiantePage() {
             <User className="w-5 h-5" />
           </span>
           <div>
-            <p className="text-xs uppercase font-semibold tracking-[0.2em]">Ymir Fritz</p>
+            <p className="text-xs uppercase font-semibold tracking-[0.2em]">Chadi El Assowad</p>
             <p className="text-[11px] text-[#032622]/70">Étudiant · Digital Legacy</p>
           </div>
         </div>

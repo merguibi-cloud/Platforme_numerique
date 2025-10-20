@@ -81,33 +81,33 @@ const formationsPerSchool: Record<SchoolId, FormationId[]> = {
 const formationsData: Record<FormationId, FormationData> = {
   devWeb: {
     name: "Développement Web",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-1",
         title: "Module 3",
-        mentor: "Jacques Pote",
+        mentor: "Samantha Leroy",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-2",
         title: "Module 4",
-        mentor: "Sarah Croche",
+        mentor: "Samantha Leroy",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-3",
         title: "Module 1",
-        mentor: "Jacques Pote",
+        mentor: "Nicolas Bernard",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
       {
         id: "course-4",
         title: "Module 2",
-        mentor: "Jacques Pote",
+        mentor: "Nicolas Bernard",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
@@ -115,27 +115,27 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-1",
-        author: "Annie L.",
-        role: "Étudiante",
+        author: "Chadi El Assowad",
+        role: "Étudiant",
         excerpt:
-          "Bonjour. Pouvez-vous convenir d'un rapide point (20 min) la semaine prochaine pour évoquer l'intégration ?",
+          "Bonjour Sophie, j'ai déposé le devoir du Bloc 1. Peux-tu me confirmer sa bonne réception ?",
         timeAgo: "Il y a 2 h",
       },
       {
         id: "msg-2",
-        author: "Kenny A.",
-        role: "Étudiant",
+        author: "Lina Bouchard",
+        role: "Étudiante",
         excerpt:
-          "J'ai terminé le module UX. Est-il possible de valider mon dernier quiz ?",
-        timeAgo: "Il y a 4 h",
+          "Merci pour le retour sur le module 2, dois-je déjà commencer la préparation du prochain quiz ?",
+        timeAgo: "Il y a 3 h",
       },
       {
         id: "msg-3",
-        author: "Peak F.",
+        author: "Youssef Karim",
         role: "Étudiant",
         excerpt:
-          "Merci pour le support. Puis-je obtenir le lien vers la vidéo complémentaire ?",
-        timeAgo: "Il y a 6 h",
+          "Je serai absent vendredi matin. Est-ce possible d'obtenir le replay du live ?",
+        timeAgo: "Il y a 5 h",
       },
     ],
     corrections: {
@@ -144,16 +144,16 @@ const formationsData: Record<FormationId, FormationData> = {
           id: "corr-1",
           blockName:
             "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+          submissionDate: "07/10/2025",
+          assignedTo: "Samantha Leroy",
           status: "en_retard",
         },
         {
           id: "corr-2",
           blockName:
             "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+          submissionDate: "05/10/2025",
+          assignedTo: "Samantha Leroy",
           status: "en_retard",
         },
       ],
@@ -161,17 +161,17 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-3",
           blockName:
-            "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+            "Bloc 1 - Contribuer à la stratégie de développement de l'organisation",
+          submissionDate: "10/10/2025",
+          assignedTo: "Nicolas Bernard",
           status: "corrige",
         },
         {
           id: "corr-4",
           blockName:
-            "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+            "Bloc 3 - Contribuer à la stratégie de développement de l'organisation",
+          submissionDate: "09/10/2025",
+          assignedTo: "Nicolas Bernard",
           status: "corrige",
         },
       ],
@@ -179,55 +179,55 @@ const formationsData: Record<FormationId, FormationData> = {
     agenda: [
       {
         id: "agenda-1",
-        title: "Visio tuteur – Bloc 3",
-        date: "2025-09-05",
+        title: "Visio tuteur – suivi individuel Chadi",
+        date: "2025-10-15",
         status: "important",
       },
       {
         id: "agenda-2",
-        title: "Correction devoir UX",
-        date: "2025-09-12",
+        title: "Correction devoir Bloc 2",
+        date: "2025-10-18",
         status: "normal",
       },
       {
         id: "agenda-3",
-        title: "Suivi projets",
-        date: "2025-09-20",
+        title: "Point d'équipe formateurs",
+        date: "2025-10-22",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-1", name: "Peak F.", status: "online" },
-      { id: "etu-2", name: "Annie L.", status: "online" },
-      { id: "etu-3", name: "Hansi Z.", status: "offline" },
-      { id: "etu-4", name: "Kenny A.", status: "online" },
-      { id: "etu-5", name: "Gaby B.", status: "away" },
-      { id: "etu-6", name: "Conny S.", status: "away" },
-      { id: "etu-7", name: "Grisha J.", status: "away" },
-      { id: "etu-8", name: "Sasha B.", status: "online" },
-      { id: "etu-9", name: "Erwin S.", status: "offline" },
+      { id: "etu-1", name: "Chadi El Assowad", status: "online" },
+      { id: "etu-2", name: "Lina Bouchard", status: "online" },
+      { id: "etu-3", name: "Youssef Karim", status: "away" },
+      { id: "etu-4", name: "Anaïs Dubois", status: "online" },
+      { id: "etu-5", name: "Marc Lefort", status: "away" },
+      { id: "etu-6", name: "Clémence Vidal", status: "online" },
+      { id: "etu-7", name: "Noah Perret", status: "offline" },
+      { id: "etu-8", name: "Inès Roussel", status: "offline" },
+      { id: "etu-9", name: "Thomas Nguyen", status: "away" },
     ],
     teachers: [
-      { id: "prof-1", name: "Jacques Pote", specialty: "Frontend", status: "online" },
-      { id: "prof-2", name: "Sarah Croche", specialty: "Backend", status: "away" },
-      { id: "prof-3", name: "Marc Dupont", specialty: "Fullstack", status: "offline" },
+      { id: "prof-1", name: "Samantha Leroy", specialty: "Frontend", status: "online" },
+      { id: "prof-2", name: "Nicolas Bernard", specialty: "Fullstack", status: "online" },
+      { id: "prof-3", name: "Helena Costa", specialty: "Architecture", status: "away" },
     ],
   },
   marketing: {
     name: "Marketing Digital",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-5",
         title: "Campagne Réseaux",
-        mentor: "Alice M",
+        mentor: "Pauline Rey",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-6",
         title: "Copywriting",
-        mentor: "Romain T",
+        mentor: "Romain Tessier",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
@@ -235,18 +235,18 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-4",
-        author: "Mina P.",
+        author: "Juliette Morel",
         role: "Étudiante",
         excerpt:
-          "Le quiz sur la stratégie digitale n'apparaît pas, pouvez-vous vérifier ?",
+          "Le quiz sur la stratégie digitale reste bloqué à la question 7, peux-tu le débloquer ?",
         timeAgo: "Il y a 1 h",
       },
       {
         id: "msg-5",
-        author: "Harold G.",
+        author: "Harold Giraud",
         role: "Étudiant",
         excerpt:
-          "Je serai absent mardi, pourriez-vous me partager les supports à l'avance ?",
+          "Je suis en déplacement jeudi, pourrais-tu me partager les supports en amont ?",
         timeAgo: "Il y a 3 h",
       },
     ],
@@ -255,8 +255,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-5",
           blockName: "Bloc 1 - Audit de marque",
-          submissionDate: "15/08/2024",
-          assignedTo: "Alice M",
+          submissionDate: "04/10/2025",
+          assignedTo: "Pauline Rey",
           status: "en_retard",
         },
       ],
@@ -264,8 +264,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-6",
           blockName: "Bloc 3 - Tunnel d'acquisition",
-          submissionDate: "01/09/2024",
-          assignedTo: "Alice M",
+          submissionDate: "09/10/2025",
+          assignedTo: "Pauline Rey",
           status: "corrige",
         },
       ],
@@ -273,50 +273,50 @@ const formationsData: Record<FormationId, FormationData> = {
     agenda: [
       {
         id: "agenda-4",
-        title: "Atelier SEO",
-        date: "2025-09-08",
+        title: "Atelier SEO avancé",
+        date: "2025-10-16",
         status: "important",
       },
       {
         id: "agenda-5",
-        title: "Feedback campagnes",
-        date: "2025-09-15",
+        title: "Revue campagnes étudiants",
+        date: "2025-10-20",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-10", name: "Mina P.", status: "online" },
-      { id: "etu-11", name: "Harold G.", status: "away" },
-      { id: "etu-12", name: "Lena S.", status: "offline" },
-      { id: "etu-13", name: "Oscar V.", status: "online" },
+      { id: "etu-10", name: "Juliette Morel", status: "online" },
+      { id: "etu-11", name: "Harold Giraud", status: "away" },
+      { id: "etu-12", name: "Lena Sorel", status: "offline" },
+      { id: "etu-13", name: "Oscar Verdier", status: "online" },
     ],
     teachers: [
-      { id: "prof-4", name: "Alice M.", specialty: "SEO", status: "online" },
-      { id: "prof-5", name: "Romain T.", specialty: "Content", status: "online" },
+      { id: "prof-4", name: "Pauline Rey", specialty: "SEO", status: "online" },
+      { id: "prof-5", name: "Romain Tessier", specialty: "Stratégie de contenu", status: "online" },
     ],
   },
   ia: {
     name: "Intelligence Artificielle",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-7",
         title: "Machine Learning",
-        mentor: "Prof. Xavier",
+        mentor: "Alexandre Petit",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-8",
         title: "Deep Learning",
-        mentor: "Jean M",
+        mentor: "Nadia Slimani",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-9",
         title: "NLP",
-        mentor: "Prof. Xavier",
+        mentor: "Alexandre Petit",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
@@ -324,18 +324,18 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-6",
-        author: "Eva Q.",
+        author: "Eva Quentin",
         role: "Étudiante",
-        excerpt: "Pourrions-nous avoir un exemple d'évaluation sur le projet IA ?",
+        excerpt: "Pourrais-tu partager un exemple d'évaluation sur le projet IA ?",
         timeAgo: "Il y a 30 min",
       },
       {
         id: "msg-7",
-        author: "Noah D.",
+        author: "Noah Delorme",
         role: "Étudiant",
         excerpt:
-          "Je rencontre un blocage sur TensorFlow, est-il possible d'avoir un tutoriel ?",
-        timeAgo: "Il y a 5 h",
+          "Je bloque sur l'installation de TensorFlow. Est-il possible d'avoir une session d'assistance ?",
+        timeAgo: "Il y a 4 h",
       },
     ],
     corrections: {
@@ -343,8 +343,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-7",
           blockName: "Bloc 5 - Vision par ordinateur",
-          submissionDate: "10/08/2024",
-          assignedTo: "Jean M",
+          submissionDate: "02/10/2025",
+          assignedTo: "Nadia Slimani",
           status: "en_retard",
         },
       ],
@@ -352,8 +352,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-8",
           blockName: "Bloc 2 - Statistiques avancées",
-          submissionDate: "25/08/2024",
-          assignedTo: "Prof. Xavier",
+          submissionDate: "08/10/2025",
+          assignedTo: "Alexandre Petit",
           status: "corrige",
         },
       ],
@@ -362,44 +362,44 @@ const formationsData: Record<FormationId, FormationData> = {
       {
         id: "agenda-6",
         title: "Workshop IA générative",
-        date: "2025-09-18",
+        date: "2025-10-21",
         status: "important",
       },
       {
         id: "agenda-7",
         title: "Soutenance projets",
-        date: "2025-09-30",
+        date: "2025-10-30",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-14", name: "Eva Q.", status: "online" },
-      { id: "etu-15", name: "Noah D.", status: "away" },
-      { id: "etu-16", name: "Leo W.", status: "offline" },
-      { id: "etu-17", name: "Mila R.", status: "online" },
-      { id: "etu-18", name: "Aaron P.", status: "offline" },
+      { id: "etu-14", name: "Eva Quentin", status: "online" },
+      { id: "etu-15", name: "Noah Delorme", status: "away" },
+      { id: "etu-16", name: "Léo Waechter", status: "offline" },
+      { id: "etu-17", name: "Mila Roussel", status: "online" },
+      { id: "etu-18", name: "Aaron Perrin", status: "offline" },
     ],
     teachers: [
-      { id: "prof-6", name: "Prof. Xavier", specialty: "ML & NLP", status: "online" },
-      { id: "prof-7", name: "Jean M.", specialty: "Deep Learning", status: "away" },
-      { id: "prof-8", name: "Dr. Yamamoto", specialty: "Computer Vision", status: "offline" },
+      { id: "prof-6", name: "Alexandre Petit", specialty: "ML & NLP", status: "online" },
+      { id: "prof-7", name: "Nadia Slimani", specialty: "Deep Learning", status: "away" },
+      { id: "prof-8", name: "Hélène Yamamoto", specialty: "Computer Vision", status: "offline" },
     ],
   },
   designUX: {
     name: "Design UX/UI",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-10",
         title: "Atelier Figma",
-        mentor: "Sophie N",
+        mentor: "Sophie Nicolas",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
       {
         id: "course-11",
         title: "Recherche utilisateur",
-        mentor: "Sophie N",
+        mentor: "Sophie Nicolas",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
@@ -407,10 +407,10 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-8",
-        author: "Julien F.",
+        author: "Julien Fabre",
         role: "Étudiant",
         excerpt:
-          "Je n'arrive pas à importer la grille de composants, avez-vous une solution ?",
+          "Je n'arrive pas à importer la grille de composants sur Figma. Peux-tu m'orienter ?",
         timeAgo: "Il y a 1 h",
       },
     ],
@@ -420,8 +420,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-9",
           blockName: "Bloc 1 - Parcours utilisateur",
-          submissionDate: "02/09/2024",
-          assignedTo: "Sophie N",
+          submissionDate: "11/10/2025",
+          assignedTo: "Sophie Nicolas",
           status: "corrige",
         },
       ],
@@ -430,18 +430,18 @@ const formationsData: Record<FormationId, FormationData> = {
       {
         id: "agenda-8",
         title: "Sprint design",
-        date: "2025-09-10",
+        date: "2025-10-19",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-19", name: "Julien F.", status: "online" },
-      { id: "etu-20", name: "Clara E.", status: "away" },
-      { id: "etu-21", name: "Sarah T.", status: "offline" },
+      { id: "etu-19", name: "Julien Fabre", status: "online" },
+      { id: "etu-20", name: "Clara Estrada", status: "away" },
+      { id: "etu-21", name: "Sarah Thibault", status: "offline" },
     ],
     teachers: [
-      { id: "prof-9", name: "Sophie N.", specialty: "UX Research", status: "online" },
-      { id: "prof-10", name: "Antoine P.", specialty: "UI Design", status: "away" },
+      { id: "prof-9", name: "Sophie Nicolas", specialty: "UX Research", status: "online" },
+      { id: "prof-10", name: "Antoine Pacot", specialty: "UI Design", status: "away" },
     ],
   },
 };
@@ -796,16 +796,16 @@ const ProfileDropdown = () => (
   <div className="relative group">
     <div className="flex items-center space-x-3 cursor-pointer">
       <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
-        YF
+        SM
       </div>
       <div>
         <p
           className="text-[#032622] font-semibold text-sm"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
-          Ymir Fritz
+          Sophie Moreau
         </p>
-        <p className="text-xs text-[#032622]/70">Administrateur</p>
+        <p className="text-xs text-[#032622]/70">Coordinatrice pédagogique</p>
       </div>
     </div>
 
