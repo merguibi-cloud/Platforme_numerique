@@ -1,8 +1,23 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Bell, ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
+import {
+  Bell,
+  CalendarClock,
+  ChevronDown,
+  Clock,
+  Mail,
+  MessageCircle,
+  PencilLine,
+  Phone,
+  Send,
+  Target,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
 
 type SchoolId = "keos" | "edifice" | "x1001";
 
@@ -52,6 +67,29 @@ interface TeacherStatus {
   status: "online" | "offline" | "away";
 }
 
+interface StudentProfile {
+  id: string;
+  promotion: string;
+  campus: string;
+  school: string;
+  track: string;
+  focus: string;
+  progress: number;
+  lastLogin: string;
+  nextDeadline: {
+    label: string;
+    date: string;
+  };
+  upcomingSession: {
+    label: string;
+    date: string;
+  };
+  email: string;
+  phone: string;
+  notes: string;
+  avatar: string;
+}
+
 interface FormationData {
   name: string;
   greeting: string;
@@ -64,6 +102,7 @@ interface FormationData {
   agenda: AgendaEvent[];
   students: StudentStatus[];
   teachers: TeacherStatus[];
+  studentProfiles?: StudentProfile[];
 }
 
 const schools: Record<SchoolId, { label: string }> = {
@@ -211,6 +250,31 @@ const formationsData: Record<FormationId, FormationData> = {
       { id: "prof-1", name: "Samantha Leroy", specialty: "Frontend", status: "online" },
       { id: "prof-2", name: "Nicolas Bernard", specialty: "Fullstack", status: "online" },
       { id: "prof-3", name: "Helena Costa", specialty: "Architecture", status: "away" },
+    ],
+    studentProfiles: [
+      {
+        id: "etu-1",
+        promotion: "Promotion 2025",
+        campus: "Campus Paris La Défense",
+        school: "KEOS Business School",
+        track: "BACHELOR · Responsable du développement des activités",
+        focus: "Bloc 2 · Pilotage de la performance",
+        progress: 72,
+        lastLogin: "Aujourd'hui · 08h47",
+        nextDeadline: {
+          label: "Devoir Bloc 2",
+          date: "18 octobre 2025",
+        },
+        upcomingSession: {
+          label: "Visio tuteur",
+          date: "15 octobre 2025 · 09h00",
+        },
+        email: "chadi.elassowad@elite-society.fr",
+        phone: "+33 6 12 34 56 78",
+        notes:
+          "Chadi maintient un rythme régulier. Relance prévue sur les livrables Bloc 2 et préparation du quiz final.",
+        avatar: "/images/student-library/IMG_1719 2.PNG",
+      },
     ],
   },
   marketing: {
@@ -471,6 +535,7 @@ const AdminDashboardContent = () => {
   const [selectedFormation, setSelectedFormation] = useState<FormationId>(
     availableFormations[0]
   );
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   const data = useMemo(() => formationsData[selectedFormation], [selectedFormation]);
 
@@ -478,6 +543,7 @@ const AdminDashboardContent = () => {
     setSelectedSchool(school);
     const firstFormation = formationsPerSchool[school][0];
     setSelectedFormation(firstFormation);
+    setSelectedStudentId(null);
   };
 
   const totalStudentsOnline = data.students.filter((s) => s.status === "online").length;
@@ -520,7 +586,10 @@ const AdminDashboardContent = () => {
                 value: id,
                 label: formationsData[id].name,
               }))}
-              onChange={(value) => setSelectedFormation(value as FormationId)}
+              onChange={(value) => {
+                setSelectedFormation(value as FormationId);
+                setSelectedStudentId(null);
+              }}
             />
           </div>
         </div>
@@ -533,12 +602,18 @@ const AdminDashboardContent = () => {
           </div>
           <div className="space-y-6">
             <MessagesCard messages={data.messages} />
-            <ProfileCard />
-            <PromoCard 
-              students={data.students} 
+            <ProfileCard
+              selectedStudentId={selectedStudentId}
+              onClose={() => setSelectedStudentId(null)}
+              students={data.studentProfiles ?? []}
+            />
+            <PromoCard
+              students={data.students}
               teachers={data.teachers}
-              totalStudentsOnline={totalStudentsOnline} 
+              totalStudentsOnline={totalStudentsOnline}
               totalTeachersOnline={totalTeachersOnline}
+              onStudentFocus={setSelectedStudentId}
+              selectedStudentId={selectedStudentId}
             />
           </div>
         </div>
@@ -786,11 +861,180 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
   </section>
 );
 
-const ProfileCard = () => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6">
-    <div className="w-full aspect-square border border-[#032622]/50 bg-[#C9C6B4]" />
-  </section>
-);
+const ProfileCard = ({
+  selectedStudentId,
+  onClose,
+  students,
+}: {
+  selectedStudentId: string | null;
+  onClose: () => void;
+  students: StudentProfile[];
+}) => {
+  const student = students.find((item) => item.id === selectedStudentId);
+
+  if (!student) {
+    return (
+      <section className="border border-[#032622] bg-[#F8F5E4] p-6">
+        <div className="flex flex-col items-center justify-center gap-3 text-center text-[#032622]/70">
+          <UserRound className="w-10 h-10" />
+          <p className="text-sm font-semibold">
+            Sélectionnez un étudiant pour afficher sa fiche de suivi
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="border border-[#032622] bg-[#F8F5E4] p-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[#032622]/20 px-6 py-4 bg-[#032622]/10">
+        <h2
+          className="text-xl font-bold text-[#032622]"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          Suivi étudiant
+        </h2>
+        <button
+          onClick={onClose}
+          className="text-[#032622]/60 hover:text-[#032622] transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[#032622]">
+            <Image
+              src={student.avatar}
+              alt={student.id}
+              fill
+              sizes="80px"
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <h3
+              className="text-lg font-bold text-[#032622]"
+              style={{ fontFamily: "var(--font-termina-bold)" }}
+            >
+              Chadi El Assowad
+            </h3>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#032622]/70">
+              {student.track}
+            </p>
+            <span className="inline-flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] mt-2">
+              {student.school}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/70">
+                Progression globale
+              </span>
+              <span className="text-sm font-bold text-[#032622]">
+                {student.progress}%
+              </span>
+            </div>
+            <div className="h-2 bg-[#dcd5b8]">
+              <div
+                className="h-full bg-[#032622]"
+                style={{ width: `${student.progress}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm text-[#032622]">
+            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Dernière connexion
+              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Clock className="w-4 h-4" />
+                {student.lastLogin}
+              </div>
+            </div>
+            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Prochaine échéance
+              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Target className="w-4 h-4" />
+                {student.nextDeadline.label}
+              </div>
+              <p className="text-xs text-[#032622]/70">{student.nextDeadline.date}</p>
+            </div>
+            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Prochaine séance
+              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <CalendarClock className="w-4 h-4" />
+                {student.upcomingSession.label}
+              </div>
+              <p className="text-xs text-[#032622]/70">{student.upcomingSession.date}</p>
+            </div>
+            <div className="border border-[#032622]/30 p-3 bg-white/60 space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Promotion
+              </span>
+              <p className="text-sm font-semibold">{student.promotion}</p>
+              <p className="text-xs text-[#032622]/70">{student.campus}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+            Contact direct
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            <button className="flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors">
+              <Phone className="w-3 h-3" />
+              Appeler
+            </button>
+            <button className="flex items-center gap-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors">
+              <Mail className="w-3 h-3" />
+              Envoyer un mail
+            </button>
+            <button className="flex items-center gap-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors">
+              <MessageCircle className="w-3 h-3" />
+              Coach référent
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+            Notes administratives
+          </h4>
+          <div className="border border-[#032622]/30 bg-white/70 p-4 text-sm text-[#032622]/80 leading-relaxed">
+            {student.notes}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+            Relancer ou planifier
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            <button className="flex items-center justify-center gap-2 border border-[#032622] bg-[#F8F5E4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors">
+              <Send className="w-3 h-3" />
+              Relancer par mail
+            </button>
+            <button className="flex items-center justify-center gap-2 border border-[#032622] bg-[#F8F5E4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors">
+              <CalendarClock className="w-3 h-3" />
+              Planifier un rendez-vous
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const ProfileDropdown = () => (
   <div className="relative group">
@@ -830,11 +1074,15 @@ const PromoCard = ({
   teachers,
   totalStudentsOnline,
   totalTeachersOnline,
+  onStudentFocus,
+  selectedStudentId,
 }: {
   students: FormationData["students"];
   teachers: FormationData["teachers"];
   totalStudentsOnline: number;
   totalTeachersOnline: number;
+  onStudentFocus: (id: string) => void;
+  selectedStudentId: string | null;
 }) => (
   <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-6">
     <header>
@@ -852,9 +1100,7 @@ const PromoCard = ({
         <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Formateurs
         </h3>
-        <p className="text-xs text-[#032622]/70">
-          {totalTeachersOnline} en ligne
-        </p>
+        <p className="text-xs text-[#032622]/70">{totalTeachersOnline} en ligne</p>
       </div>
       <div className="space-y-2">
         {teachers.map((teacher) => (
@@ -874,29 +1120,35 @@ const PromoCard = ({
       </div>
     </div>
 
-    {/* Séparateur */}
     <div className="border-t border-[#032622]/20" />
 
-    {/* Section Étudiants */}
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Étudiants
         </h3>
-        <p className="text-xs text-[#032622]/70">
-          {totalStudentsOnline} en ligne
-        </p>
+        <p className="text-xs text-[#032622]/70">{totalStudentsOnline} en ligne</p>
       </div>
       <div className="space-y-2">
         {students.map((student) => (
-          <div key={student.id} className="flex items-center justify-between text-sm text-[#032622]">
+          <div
+            key={student.id}
+            className={`flex items-center justify-between text-sm text-[#032622] transition-colors ${
+              selectedStudentId === student.id ? "bg-[#032622]/10" : ""
+            }`}
+          >
             <div className="flex items-center space-x-3">
               <span className={`w-3 h-3 rounded-full ${studentStatusColors[student.status]}`} />
               <p className="font-semibold">{student.name}</p>
             </div>
-            <div className="flex items-center space-x-3 text-[#032622]/60">
+            <div className="flex items-center space-x-2 text-[#032622]/60">
               <Users className="w-4 h-4" />
-              <MessageCircle className="w-4 h-4" />
+              <button
+                onClick={() => onStudentFocus(student.id)}
+                className="border border-[#032622] bg-[#F8F5E4] text-[#032622] px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+              >
+                Suivre
+              </button>
             </div>
           </div>
         ))}
