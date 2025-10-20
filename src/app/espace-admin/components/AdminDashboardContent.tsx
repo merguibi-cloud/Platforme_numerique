@@ -872,6 +872,11 @@ const ProfileCard = ({
 }) => {
   const student = students.find((item) => item.id === selectedStudentId);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [showMailModal, setShowMailModal] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [mailContent, setMailContent] = useState("");
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentTime, setAppointmentTime] = useState("");
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAction = (message: string) => {
@@ -888,7 +893,26 @@ const ProfileCard = ({
       feedbackTimer.current = null;
     }
     setFeedback(null);
+    setShowMailModal(false);
+    setShowAppointmentModal(false);
     onClose();
+  };
+
+  const handleSendMail = () => {
+    if (mailContent.trim()) {
+      handleAction(`E-mail envoyé à Chadi : "${mailContent}"`);
+      setMailContent("");
+      setShowMailModal(false);
+    }
+  };
+
+  const handleScheduleAppointment = () => {
+    if (appointmentDate && appointmentTime) {
+      handleAction(`Rendez-vous planifié le ${appointmentDate} à ${appointmentTime}`);
+      setAppointmentDate("");
+      setAppointmentTime("");
+      setShowAppointmentModal(false);
+    }
   };
 
   if (!student) {
@@ -1019,7 +1043,7 @@ const ProfileCard = ({
               Appeler
             </button>
             <button
-              onClick={() => handleAction("Brouillon d'e-mail créé pour Chadi. Ajoute le replay et le plan d'action Bloc 2.")}
+              onClick={() => setShowMailModal(true)}
               className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <Mail className="w-3 h-3" />
@@ -1050,14 +1074,14 @@ const ProfileCard = ({
           </h4>
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => handleAction("Relance mail programmée pour ce soir à 18h.")}
+              onClick={() => setShowMailModal(true)}
               className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <Send className="w-3 h-3" />
               Relancer par mail
             </button>
             <button
-              onClick={() => handleAction("Créneau proposé le 17/10 à 10h30 pour un rendez-vous de suivi.")}
+              onClick={() => setShowAppointmentModal(true)}
               className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
             >
               <CalendarClock className="w-3 h-3" />
@@ -1076,6 +1100,138 @@ const ProfileCard = ({
           </div>
         )}
       </div>
+
+      {/* Modal E-mail */}
+      {showMailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border border-[#032622] p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                Envoyer un e-mail
+              </h3>
+              <button
+                onClick={() => setShowMailModal(false)}
+                className="text-[#032622]/60 hover:text-[#032622] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Destinataire
+                </label>
+                <div className="border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
+                  Chadi El Assowad &lt;chadi.elassowad@elite-society.fr&gt;
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Message
+                </label>
+                <textarea
+                  value={mailContent}
+                  onChange={(e) => setMailContent(e.target.value)}
+                  placeholder="Tapez votre message ici..."
+                  className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622] placeholder-[#032622]/50 resize-none h-24"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSendMail}
+                  className="flex-1 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => setShowMailModal(false)}
+                  className="flex-1 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Rendez-vous */}
+      {showAppointmentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border border-[#032622] p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                Planifier un rendez-vous
+              </h3>
+              <button
+                onClick={() => setShowAppointmentModal(false)}
+                className="text-[#032622]/60 hover:text-[#032622] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Étudiant
+                </label>
+                <div className="border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
+                  Chadi El Assowad - KEOS Business School
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={appointmentDate}
+                    onChange={(e) => setAppointmentDate(e.target.value)}
+                    className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                    Heure
+                  </label>
+                  <input
+                    type="time"
+                    value={appointmentTime}
+                    onChange={(e) => setAppointmentTime(e.target.value)}
+                    className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Type de rendez-vous
+                </label>
+                <select className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
+                  <option>Suivi pédagogique</option>
+                  <option>Relance devoir</option>
+                  <option>Préparation examen</option>
+                  <option>Orientation</option>
+                </select>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleScheduleAppointment}
+                  className="flex-1 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
+                >
+                  Planifier
+                </button>
+                <button
+                  onClick={() => setShowAppointmentModal(false)}
+                  className="flex-1 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
