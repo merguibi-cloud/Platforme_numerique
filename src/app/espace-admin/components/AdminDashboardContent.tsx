@@ -1279,7 +1279,7 @@ const ProfileDropdown = () => (
       </div>
     </div>
 
-    <div className="absolute right-0 mt-3 w-52 border border-[#032622] bg-[#F8F5E4] shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
+    <div className="absolute right-0 mt-3 w-52 border border-[#032622] bg-[#F8F5E4] shadow-lg z-30 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
       <nav className="flex flex-col divide-y divide-[#032622]/20 text-sm text-[#032622]">
         <Link href="/espace-admin/compte" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
           Mon compte

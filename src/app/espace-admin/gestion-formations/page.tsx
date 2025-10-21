@@ -8,7 +8,7 @@ const schools = [
   {
     id: '1001',
     name: '1001',
-    logo: '/logos/1001.png',
+    logo: '/1001.png',
     isSelected: false,
     color: '#8B4513',
   },

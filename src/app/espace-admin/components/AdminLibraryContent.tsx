@@ -58,7 +58,7 @@ const schools = [
   { id: "talent", name: "Talent", logo: "/logos/talent.png" },
   { id: "finance", name: "Finance Society", logo: "/logos/finance.png" },
   { id: "edifice", name: "Edifice", logo: "/logos/edifice.png" },
-  { id: "x1001", name: "1001", logo: "/logos/1001.png" },
+  { id: "x1001", name: "1001", logo: "/1001.png" },
 ];
 
 const favorites: LibraryDocument[] = [
@@ -268,15 +268,15 @@ const AdminLibraryContent = () => {
             >
               DOCUMENTS PAR ÉCOLES
             </h2>
-            <div className="flex flex-wrap items-center gap-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 items-center gap-10">
               {schools.map((school) => (
-                <div key={school.id} className="flex items-center justify-center px-2">
+                <div key={school.id} className="flex items-center justify-center px-2 h-16">
                   <Image
                     src={school.logo}
                     alt={school.name}
-                    width={180}
-                    height={70}
-                    className="h-14 w-44 object-contain"
+                    width={176}
+                    height={56}
+                    className="h-14 w-44 object-contain mx-auto"
                   />
                 </div>
               ))}
