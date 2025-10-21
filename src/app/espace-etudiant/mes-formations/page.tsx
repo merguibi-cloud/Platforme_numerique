@@ -1394,19 +1394,25 @@ export default function MesFormationsPage() {
               </section>
             </div>
 
-            {/* Lecteur vidéo avec overlay interactif */}
+            {/* Placeholder vidéo indisponible */}
             <div className="relative mt-8 mb-6 group">
               <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                {/* Lecteur vidéo principal */}
-              <video
-                  ref={videoRef}
-                  src="/CULTURE%20DE%20L'IA%20-%20Episode%201.mp4"
-                controls
-                  className="w-full h-full object-cover rounded-lg"
-                  preload="metadata"
-                >
-                  Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
+                {/* Placeholder vidéo indisponible */}
+                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                      Vidéo Indisponible
+                    </p>
+                    <p className="text-sm text-[#032622]/70">
+                      Cette vidéo sera bientôt disponible
+                    </p>
+                  </div>
+                </div>
                 
                 {/* Overlay avec informations essentielles */}
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
@@ -3805,17 +3811,24 @@ export default function MesFormationsPage() {
               </section>
             </div>
 
-            {/* Lecteur vidéo Episode 2 */}
+            {/* Placeholder vidéo Episode 2 */}
             <div className="relative mt-8 mb-6 group">
               <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                <video
-                  src="/CULTURE%20DE%20L'IA%20-%20Episode%202.mp4"
-                  controls
-                  className="w-full h-full object-cover rounded-lg"
-                  preload="metadata"
-                >
-                  Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
+                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                      Vidéo Indisponible
+                    </p>
+                    <p className="text-sm text-[#032622]/70">
+                      Cette vidéo sera bientôt disponible
+                    </p>
+                  </div>
+                </div>
                 
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
                   <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
@@ -3957,17 +3970,24 @@ export default function MesFormationsPage() {
               </p>
             </div>
 
-            {/* Lecteur vidéo Episode 3 */}
+            {/* Placeholder vidéo Episode 3 */}
             <div className="relative mt-8 mb-6 group">
               <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                <video
-                  src="/CULTURE%20DE%20L'IA%20-%20Episode%203.mp4"
-                  controls
-                  className="w-full h-full object-cover rounded-lg"
-                  preload="metadata"
-                >
-                  Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
+                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                      Vidéo Indisponible
+                    </p>
+                    <p className="text-sm text-[#032622]/70">
+                      Cette vidéo sera bientôt disponible
+                    </p>
+                  </div>
+                </div>
                 
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
                   <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
@@ -4788,17 +4808,24 @@ export default function MesFormationsPage() {
               </section>
             </div>
 
-            {/* Vidéo Episode 4_1 */}
+            {/* Placeholder vidéo Episode 4_1 */}
             <div className="relative mt-8 mb-6 group">
               <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                <video
-                  src="/Episode%204_1.mp4"
-                  controls
-                  className="w-full h-full object-cover rounded-lg"
-                  preload="metadata"
-                >
-                  Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
+                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                      Vidéo Indisponible
+                    </p>
+                    <p className="text-sm text-[#032622]/70">
+                      Cette vidéo sera bientôt disponible
+                    </p>
+                  </div>
+                </div>
                 
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
                   <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
