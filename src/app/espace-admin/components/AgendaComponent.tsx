@@ -245,8 +245,6 @@ const AgendaComponent = () => {
   );
 };
 
-export default AgendaComponent;
-
 // ----- Modale de détails d'événement -----
 const EventDetailsModal = ({ event, onClose }: { event: Event; onClose: () => void }) => {
   // Construit la date complète au format Date à partir de date (YYYY-MM-DD) et time (HH:mm)
@@ -355,11 +353,6 @@ const EventDetailsModal = ({ event, onClose }: { event: Event; onClose: () => vo
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-
     </div>
   );
 };
