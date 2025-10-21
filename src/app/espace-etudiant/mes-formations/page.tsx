@@ -1394,82 +1394,28 @@ export default function MesFormationsPage() {
               </section>
             </div>
 
-            {/* Placeholder vidéo indisponible */}
-            <div className="relative mt-8 mb-6 group">
-              <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                {/* Placeholder vidéo indisponible */}
-                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                      Vidéo Indisponible
-                    </p>
-                    <p className="text-sm text-[#032622]/70">
-                      Cette vidéo sera bientôt disponible
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Overlay avec informations essentielles */}
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Durée: 8:42
-                    </span>
-            </div>
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      HD 1080p
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Overlay vert et beige avec bouton play */}
-                {!isVideoPlaying && (
-                  <div 
-                    className="absolute inset-0 bg-gradient-to-br from-[#032622] via-[#01302C] to-[#032622] flex items-center justify-center cursor-pointer transition-all duration-300 hover:from-[#01302C] hover:to-[#032622]"
-                    onClick={handlePlayVideo}
-                  >
-                    <div className="text-center space-y-6">
-                      {/* Animation de chargement */}
-                      <div className="relative">
-                        <div className="w-24 h-24 border-4 border-[#F8F5E4]/30 border-t-[#F8F5E4] rounded-full animate-spin mx-auto"></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Play className="w-12 h-12 text-[#F8F5E4] ml-1" />
-                        </div>
-                      </div>
-                      
-                      {/* Informations du module */}
-                      <div className="space-y-3">
-                        <h4 className="text-[#F8F5E4] font-bold text-xl" style={{ fontFamily: 'var(--font-termina-bold)' }}>
-                          INTRODUCTION
-                        </h4>
-                        <p className="text-[#F8F5E4]/90 text-base max-w-md mx-auto">
-                          Culture de l'intelligence artificielle
-                        </p>
-                        <p className="text-[#F8F5E4]/70 text-sm">
-                          Cliquez pour commencer la lecture
-                        </p>
-                      </div>
-                      
-                      {/* Points d'animation */}
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-3 h-3 bg-[#F8F5E4] rounded-full animate-pulse"></div>
-                        <div className="w-3 h-3 bg-[#F8F5E4]/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="w-3 h-3 bg-[#F8F5E4]/40 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {/* Vidéo Episode 1 - Introduction */}
+            <div className="relative mt-8 mb-6">
+              <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
+                <video 
+                  controls 
+                  className="w-full h-full"
+                  poster="/img/formation/forma_keos.jpg"
+                >
+                  <source src="/video/CULTURE DE L'IA - Episode 1.mp4" type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
               </div>
+              <div className="absolute top-4 left-4 bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
+                <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
+                  Épisode 1 - Introduction à la Culture de l'IA
+                </span>
+              </div>
+            </div>
               
-              {/* Options utiles pour les étudiants */}
-              <div className="mt-4 bg-[#F8F5E4] border border-[#032622] rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
+            {/* Options utiles pour les étudiants */}
+            <div className="mt-4 bg-[#F8F5E4] border border-[#032622] rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-bold text-[#032622] uppercase tracking-wider">
                     Options d'étude
                   </h4>
@@ -1491,7 +1437,7 @@ export default function MesFormationsPage() {
                       <Bookmark className="w-4 h-4 text-[#032622] group-hover:text-white" />
                     </div>
                     <span className="text-xs font-semibold text-[#032622] uppercase text-center">
-                      Marquer
+                      Enregistrer
                     </span>
                   </button>
                   
@@ -1535,7 +1481,6 @@ export default function MesFormationsPage() {
                       </button>
                     </div>
                   </div>
-                </div>
                 </div>
             </div>
 
@@ -3970,37 +3915,22 @@ export default function MesFormationsPage() {
               </p>
             </div>
 
-            {/* Placeholder vidéo Episode 3 */}
-            <div className="relative mt-8 mb-6 group">
-              <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                      Vidéo Indisponible
-                    </p>
-                    <p className="text-sm text-[#032622]/70">
-                      Cette vidéo sera bientôt disponible
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Épisode 3
-                    </span>
-                  </div>
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Culture de l'IA
-                    </span>
-                  </div>
-                </div>
+            {/* Vidéo Episode 3 - Introduction Partie 2 */}
+            <div className="relative mt-8 mb-6">
+              <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
+                <video 
+                  controls 
+                  className="w-full h-full"
+                  poster="/img/formation/forma_keos.jpg"
+                >
+                  <source src="/video/CULTURE DE L'IA - Episode 3.mp4" type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+              </div>
+              <div className="absolute top-4 left-4 bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
+                <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
+                  Épisode 3 - Impact Économique de l'IA
+                </span>
               </div>
             </div>
 
