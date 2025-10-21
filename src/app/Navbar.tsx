@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { LoginWithFormationSelection } from './LoginWithFormationSelection';
 import { getCurrentUser, signOut } from '@/lib/auth-api';
 
@@ -15,10 +15,12 @@ const navigationItems = [
 
 export const Navbar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userInfo, setUserInfo] = useState<{name: string, role: string} | null>(null);
 
   // Vérifier l'état de connexion au chargement
   useEffect(() => {
@@ -29,6 +31,29 @@ export const Navbar = () => {
     setIsLoading(true);
     const result = await getCurrentUser();
     setIsAuthenticated(result.success && !!result.user);
+    
+    if (result.success && result.user) {
+      // Récupérer les infos utilisateur pour affichage
+      try {
+        const profileResponse = await fetch('/api/user/ensure-profile');
+        const profileData = await profileResponse.json();
+        
+        if (profileData.success && profileData.profile) {
+          const nom = profileData.profile.nom?.trim();
+          const prenom = profileData.profile.prenom?.trim();
+          const displayName = [prenom, nom].filter(Boolean).join(' ') || 'Utilisateur';
+          setUserInfo({
+            name: displayName,
+            role: profileData.profile.role
+          });
+        }
+      } catch (error) {
+        setUserInfo({ name: 'Utilisateur', role: 'user' });
+      }
+    } else {
+      setUserInfo(null);
+    }
+    
     setIsLoading(false);
   };
 
@@ -46,13 +71,59 @@ export const Navbar = () => {
     checkAuthStatus();
   };
 
+  const handleUserAccess = () => {
+    if (!userInfo) return;
+    
+    // Redirection selon le rôle
+    switch (userInfo.role) {
+      case 'admin':
+      case 'superadmin':
+        router.push('/espace-admin/dashboard');
+        break;
+      case 'pedagogie':
+      case 'commercial':
+      case 'adv':
+        router.push('/espace-admin/dashboard');
+        break;
+      case 'formateur':
+        router.push('/espace-animateur');
+        break;
+      case 'etudiant':
+        router.push('/espace-etudiant');
+        break;
+      case 'lead':
+      case 'candidat':
+        router.push('/validation');
+        break;
+      default:
+        router.push('/validation');
+    }
+  };
+
   const handleLogout = async () => {
     const result = await signOut();
     if (result.success) {
       setIsAuthenticated(false);
+      setUserInfo(null);
       router.push('/');
       router.refresh();
     }
+  };
+
+  // Déterminer si on est sur la page validation (seule page où on peut se déconnecter)
+  const isOnValidationPage = pathname === '/validation';
+
+  // Déterminer le texte et l'action du bouton
+  const getButtonConfig = () => {
+    if (!isAuthenticated) {
+      return { text: 'ME CONNECTER', action: openLogin };
+    }
+    
+    if (isOnValidationPage) {
+      return { text: 'SE DÉCONNECTER', action: handleLogout };
+    }
+    
+    return { text: 'DASHBOARD', action: handleUserAccess };
   };
 
 
@@ -86,17 +157,20 @@ export const Navbar = () => {
 
               {/* Desktop Action Button */}
               <div className="hidden sm:flex items-center space-x-2 md:space-x-3 ml-auto">
-                {!isLoading && (
-                  <button 
-                    onClick={isAuthenticated ? handleLogout : openLogin}
-                    className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-sm sm:text-sm md:text-base flex items-center justify-center"
-                    style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
-                  >
-                    <span style={{ fontWeight: '900' }}>
-                      {isAuthenticated ? 'ME DÉCONNECTER' : 'ME CONNECTER'}
-                    </span>
-                  </button>
-                )}
+                {!isLoading && (() => {
+                  const config = getButtonConfig();
+                  return (
+                    <button 
+                      onClick={config.action}
+                      className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-sm sm:text-sm md:text-base flex items-center justify-center"
+                      style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
+                    >
+                      <span style={{ fontWeight: '900' }}>
+                        {config.text}
+                      </span>
+                    </button>
+                  );
+                })()}
               </div>
 
               {/* Mobile Menu Button */}
@@ -156,24 +230,23 @@ export const Navbar = () => {
 
             {/* Action Button - Toujours visible en bas */}
             <div className="flex flex-col space-y-3 px-6 py-4 bg-[#F8F5E4] border-t border-gray-200 flex-shrink-0">
-              {!isLoading && (
-                <button 
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      handleLogout();
-                    } else {
-                      openLogin();
-                    }
-                    toggleMobileMenu();
-                  }}
-                  className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-6 py-3 tracking-wide transition-all duration-200 flex items-center justify-center"
-                  style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
-                >
-                  <span style={{ fontWeight: '900' }}>
-                    {isAuthenticated ? 'ME DÉCONNECTER' : 'ME CONNECTER'}
-                  </span>
-                </button>
-              )}
+              {!isLoading && (() => {
+                const config = getButtonConfig();
+                return (
+                  <button 
+                    onClick={() => {
+                      config.action();
+                      toggleMobileMenu();
+                    }}
+                    className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-6 py-3 tracking-wide transition-all duration-200 flex items-center justify-center"
+                    style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
+                  >
+                    <span style={{ fontWeight: '900' }}>
+                      {config.text}
+                    </span>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>

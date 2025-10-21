@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Bell, ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
+import { getAllFormations, getFormationsByEcole } from "@/lib/formations";
+import { Formation } from "@/types/formations";
 
-type SchoolId = "keos" | "edifice" | "x1001";
-
-type FormationId = "devWeb" | "marketing" | "ia" | "designUX";
+// Types pour les données dynamiques de la base de données
+type SchoolId = string;
+type FormationId = number;
 
 interface AgendaEvent {
   id: string;
@@ -66,19 +68,9 @@ interface FormationData {
   teachers: TeacherStatus[];
 }
 
-const schools: Record<SchoolId, { label: string }> = {
-  keos: { label: "KEOS" },
-  x1001: { label: "1001" },
-  edifice: { label: "EDIFICE" },
-};
+// Données dynamiques de la base de données
 
-const formationsPerSchool: Record<SchoolId, FormationId[]> = {
-  keos: ["devWeb", "marketing", "ia"],
-  edifice: ["designUX", "marketing"],
-  x1001: ["devWeb", "ia"],
-};
-
-const formationsData: Record<FormationId, FormationData> = {
+const formationsData: Record<string, FormationData> = {
   devWeb: {
     name: "Développement Web",
     greeting: "Bonjour, Ymir Fritz",
@@ -466,22 +458,73 @@ const monthWeeks = [
 ];
 
 const AdminDashboardContent = () => {
-  const [selectedSchool, setSelectedSchool] = useState<SchoolId>("keos");
-  const availableFormations = formationsPerSchool[selectedSchool];
-  const [selectedFormation, setSelectedFormation] = useState<FormationId>(
-    availableFormations[0]
-  );
+  const [allFormations, setAllFormations] = useState<Formation[]>([]);
+  const [selectedSchool, setSelectedSchool] = useState<SchoolId>("");
+  const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const data = useMemo(() => formationsData[selectedFormation], [selectedFormation]);
+  // Charger toutes les formations au montage du composant
+  useEffect(() => {
+    const loadFormations = async () => {
+      try {
+        const formations = await getAllFormations();
+        setAllFormations(formations);
+        
+        // Définir la première école comme sélectionnée par défaut
+        if (formations.length > 0) {
+          const firstSchool = formations[0].ecole;
+          setSelectedSchool(firstSchool);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des formations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleSchoolChange = (school: SchoolId) => {
-    setSelectedSchool(school);
-    const firstFormation = formationsPerSchool[school][0];
-    setSelectedFormation(firstFormation);
+    loadFormations();
+  }, []);
+
+  // Obtenir les écoles uniques disponibles
+  const availableSchools = useMemo(() => {
+    const schools = Array.from(new Set(allFormations.map(f => f.ecole)));
+    return schools.map(school => ({
+      value: school,
+      label: school
+    }));
+  }, [allFormations]);
+
+  // Obtenir les formations filtrées par école sélectionnée
+  const availableFormations = useMemo(() => {
+    if (!selectedSchool) return [];
+    return allFormations
+      .filter(f => f.ecole === selectedSchool)
+      .map(formation => ({
+        value: formation.id.toString(),
+        label: formation.titre
+      }));
+  }, [allFormations, selectedSchool]);
+
+  // Gérer le changement d'école
+  const handleSchoolChange = (schoolId: SchoolId) => {
+    setSelectedSchool(schoolId);
+    setSelectedFormation(null); // Reset formation selection
   };
 
-  const totalStudentsOnline = data.students.filter((s) => s.status === "online").length;
-  const totalTeachersOnline = data.teachers.filter((t) => t.status === "online").length;
+  // Gérer le changement de formation
+  const handleFormationChange = (formationId: string) => {
+    setSelectedFormation(parseInt(formationId));
+  };
+
+  // Données statiques pour l'affichage (en attendant la vraie intégration)
+  const data = useMemo(() => {
+    // Pour l'instant, on garde les données statiques pour les autres éléments
+    // TODO: Intégrer les vraies données de formation sélectionnée
+    return formationsData["devWeb"]; // Valeur par défaut
+  }, [selectedFormation]);
+
+  const totalStudentsOnline = data.students.filter((s: StudentStatus) => s.status === "online").length;
+  const totalTeachersOnline = data.teachers.filter((t: TeacherStatus) => t.status === "online").length;
 
   return (
     <div className="flex-1 p-10 bg-[#F8F5E4]">
@@ -507,20 +550,14 @@ const AdminDashboardContent = () => {
             <DropdownSelector
               label="ÉCOLE"
               value={selectedSchool}
-              options={Object.entries(schools).map(([id, info]) => ({
-                value: id,
-                label: info.label,
-              }))}
+              options={availableSchools}
               onChange={(value) => handleSchoolChange(value as SchoolId)}
             />
             <DropdownSelector
               label="FORMATION"
-              value={selectedFormation}
-              options={availableFormations.map((id) => ({
-                value: id,
-                label: formationsData[id].name,
-              }))}
-              onChange={(value) => setSelectedFormation(value as FormationId)}
+              value={selectedFormation?.toString() || ""}
+              options={availableFormations}
+              onChange={handleFormationChange}
             />
           </div>
         </div>

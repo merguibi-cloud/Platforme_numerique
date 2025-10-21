@@ -48,13 +48,13 @@ export async function POST(request: NextRequest) {
     if (data.session) {
       const cookieStore = await cookies();
       cookieStore.set('sb-access-token', data.session.access_token, {
-        httpOnly: true,
+        httpOnly: false,  // ← CORRECTION : Permettre l'accès côté client
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 7 jours
       });
       cookieStore.set('sb-refresh-token', data.session.refresh_token, {
-        httpOnly: true,
+        httpOnly: false,  // ← CORRECTION : Permettre l'accès côté client
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 7 jours
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { error: 'Erreur de traitement' },
       { status: 500 }
     );
   }

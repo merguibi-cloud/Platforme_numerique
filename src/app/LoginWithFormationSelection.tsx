@@ -114,8 +114,6 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
       }
 
       // Connexion réussie - redirection intelligente selon le rôle
-      onCloseAction();
-      
       // Redirection directe selon le rôle après connexion
       try {
         // Récupérer le rôle de l'utilisateur pour redirection directe
@@ -129,6 +127,9 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
           
           if (profileData.success && profileData.profile) {
             const userRole = profileData.profile.role;
+            
+            // Fermer le modal avant la redirection
+            onCloseAction();
             
             // Redirection selon le rôle
             switch (userRole) {
@@ -146,14 +147,17 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                 router.push('/validation');
             }
           } else {
+            onCloseAction();
             router.push('/validation');
           }
         } else {
+          onCloseAction();
           router.push('/validation');
         }
       } catch (error) {
-        // En cas d'erreur, rediriger vers validation par défaut
-        router.push('/validation');
+        // En cas d'erreur lors de la récupération du profil, afficher l'erreur et rester sur la page
+        console.error('Erreur lors de la récupération du profil:', error);
+        setError('Erreur lors de la récupération de votre profil. Veuillez réessayer.');
       }
     } catch (error) {
       console.error('Erreur connexion');
@@ -436,13 +440,6 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                         style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
                       >
                         Mot de passe oublié
-                      </Link>
-                      <Link 
-                        href="/formateur"
-                        className="text-[#032622] hover:underline text-center sm:text-right"
-                        style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
-                      >
-                        Je suis formateur
                       </Link>
                     </div>
                   </form>

@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { signOut } from '@/lib/auth-api';
+import { Modal } from '../../validation/components/Modal';
 
 const menuItems = [
   { 
@@ -19,13 +21,6 @@ const menuItems = [
     icon: '/menue_etudiant/Etudiant.png',
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
     href: '/espace-admin/gestion-etudiants'
-  },
-  { 
-    id: 'gestion-utilisateurs', 
-    label: 'GESTION UTILISATEURS', 
-    icon: '/menue_etudiant/Etudiant.png',
-    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/gestion-utilisateurs'
   },
   { 
     id: 'gestion-formations', 
@@ -77,7 +72,7 @@ const bottomMenuItems = [
     label: 'SE DÉCONNECTER', 
     icon: '/menue_etudiant/Logout2.png',
     iconInactive: '/menue_etudiant/nonselectionner/deconnexion.png',
-    href: '/'
+    href: '/',
   }
 ];
 
@@ -87,13 +82,63 @@ interface AdminSidebarProps {
 
 export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  // États pour le modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleCollapse = () => {
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     onCollapseChange?.(newCollapsed);
+  };
+
+  const handleLogoutClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Empêcher tout comportement par défaut
+    e.stopPropagation(); // Empêcher la propagation
+    console.log('Bouton de déconnexion cliqué'); // Debug
+    
+    // Test simple pour vérifier que le bouton fonctionne
+    alert('Bouton de déconnexion cliqué !');
+    
+    setShowConfirmModal(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setShowConfirmModal(false);
+    setIsLoggingOut(true);
+    
+    try {
+      const result = await signOut();
+      if (result.success) {
+        router.push('/');
+        router.refresh();
+      } else {
+        console.error('Erreur lors de la déconnexion:', result.error);
+        setErrorMessage(result.error || 'Erreur lors de la déconnexion. Veuillez réessayer.');
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      setErrorMessage('Erreur lors de la déconnexion. Veuillez réessayer.');
+      setShowErrorModal(true);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
   };
 
   // Déterminer l'élément actif basé sur l'URL
@@ -116,6 +161,11 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       setActiveItem('parametres');
     }
   }, [pathname]);
+
+  // Reset de l'état de déconnexion au montage
+  useEffect(() => {
+    setIsLoggingOut(false);
+  }, []);
 
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
@@ -188,32 +238,88 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       {/* Menu du bas */}
       <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
         <nav className="space-y-2">
-          {bottomMenuItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Image 
-                src={activeItem === item.id ? item.icon : item.iconInactive} 
-                alt={item.label} 
-                width={24} 
-                height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
-              />
-              {!isCollapsed && (
-                <span 
-                  className="text-sm font-medium"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+          {bottomMenuItems.map((item) => {
+            if (item.id === 'logout') {
+              return (
+                <button
+                  key={item.id}
+                  onClick={handleLogoutClick}
+                  disabled={isLoggingOut}
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer`}
+                  title={isCollapsed ? item.label : undefined}
+                  style={{ pointerEvents: isLoggingOut ? 'none' : 'auto' }}
                 >
-                  {item.label}
-                </span>
-              )}
-            </Link>
-          ))}
+                  <Image 
+                    src={item.icon} 
+                    alt={item.label} 
+                    width={24} 
+                    height={24}
+                    className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                  />
+                  {!isCollapsed && (
+                    <span 
+                      className="text-sm font-medium"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      {isLoggingOut ? 'DÉCONNEXION...' : item.label}
+                    </span>
+                  )}
+                  {isCollapsed && isLoggingOut && (
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  )}
+                </button>
+              );
+            }
+            
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <Image 
+                  src={activeItem === item.id ? item.icon : item.iconInactive} 
+                  alt={item.label} 
+                  width={24} 
+                  height={24}
+                  className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                />
+                {!isCollapsed && (
+                  <span 
+                    className="text-sm font-medium"
+                    style={{ fontFamily: 'var(--font-termina-bold)' }}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
+
+      {/* Modal de confirmation de déconnexion */}
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={handleLogoutCancel}
+        title="Confirmation de déconnexion"
+        message="Êtes-vous sûr de vouloir vous déconnecter ?"
+        type="warning"
+        isConfirm={true}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={handleErrorModalClose}
+        title="Erreur de déconnexion"
+        message={errorMessage}
+        type="error"
+        isConfirm={false}
+      />
     </div>
   );
 };
