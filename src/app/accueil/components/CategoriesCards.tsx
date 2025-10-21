@@ -75,7 +75,7 @@ export const CategoriesCards = () => {
 
   const renderCards = (rowCategories: string[], rowKey: string) => (
     <>
-      {/* Liste originale */}
+      {/* List originale */}
       {rowCategories.map((category, index) => (
         <div
           key={`${rowKey}-${index}`}
