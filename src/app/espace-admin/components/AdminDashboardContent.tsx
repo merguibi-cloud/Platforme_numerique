@@ -1,8 +1,23 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Bell, ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import {
+  Bell,
+  CalendarClock,
+  ChevronDown,
+  Clock,
+  Mail,
+  MessageCircle,
+  PencilLine,
+  Phone,
+  Send,
+  Target,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
 
 type SchoolId = "keos" | "edifice" | "x1001";
 
@@ -52,6 +67,29 @@ interface TeacherStatus {
   status: "online" | "offline" | "away";
 }
 
+interface StudentProfile {
+  id: string;
+  promotion: string;
+  campus: string;
+  school: string;
+  track: string;
+  focus: string;
+  progress: number;
+  lastLogin: string;
+  nextDeadline: {
+    label: string;
+    date: string;
+  };
+  upcomingSession: {
+    label: string;
+    date: string;
+  };
+  email: string;
+  phone: string;
+  notes: string;
+  avatar: string;
+}
+
 interface FormationData {
   name: string;
   greeting: string;
@@ -64,6 +102,7 @@ interface FormationData {
   agenda: AgendaEvent[];
   students: StudentStatus[];
   teachers: TeacherStatus[];
+  studentProfiles?: StudentProfile[];
 }
 
 const schools: Record<SchoolId, { label: string }> = {
@@ -81,33 +120,33 @@ const formationsPerSchool: Record<SchoolId, FormationId[]> = {
 const formationsData: Record<FormationId, FormationData> = {
   devWeb: {
     name: "Développement Web",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-1",
         title: "Module 3",
-        mentor: "Jacques Pote",
+        mentor: "Samantha Leroy",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-2",
         title: "Module 4",
-        mentor: "Sarah Croche",
+        mentor: "Samantha Leroy",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-3",
         title: "Module 1",
-        mentor: "Jacques Pote",
+        mentor: "Nicolas Bernard",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
       {
         id: "course-4",
         title: "Module 2",
-        mentor: "Jacques Pote",
+        mentor: "Nicolas Bernard",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
@@ -115,27 +154,27 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-1",
-        author: "Annie L.",
-        role: "Étudiante",
+        author: "Chadi El Assowad",
+        role: "Étudiant",
         excerpt:
-          "Bonjour. Pouvez-vous convenir d'un rapide point (20 min) la semaine prochaine pour évoquer l'intégration ?",
+          "Bonjour Sophie, j'ai déposé le devoir du Bloc 1. Peux-tu me confirmer sa bonne réception ?",
         timeAgo: "Il y a 2 h",
       },
       {
         id: "msg-2",
-        author: "Kenny A.",
-        role: "Étudiant",
+        author: "Lina Bouchard",
+        role: "Étudiante",
         excerpt:
-          "J'ai terminé le module UX. Est-il possible de valider mon dernier quiz ?",
-        timeAgo: "Il y a 4 h",
+          "Merci pour le retour sur le module 2, dois-je déjà commencer la préparation du prochain quiz ?",
+        timeAgo: "Il y a 3 h",
       },
       {
         id: "msg-3",
-        author: "Peak F.",
+        author: "Youssef Karim",
         role: "Étudiant",
         excerpt:
-          "Merci pour le support. Puis-je obtenir le lien vers la vidéo complémentaire ?",
-        timeAgo: "Il y a 6 h",
+          "Je serai absent vendredi matin. Est-ce possible d'obtenir le replay du live ?",
+        timeAgo: "Il y a 5 h",
       },
     ],
     corrections: {
@@ -144,16 +183,16 @@ const formationsData: Record<FormationId, FormationData> = {
           id: "corr-1",
           blockName:
             "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+          submissionDate: "07/10/2025",
+          assignedTo: "Samantha Leroy",
           status: "en_retard",
         },
         {
           id: "corr-2",
           blockName:
             "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+          submissionDate: "05/10/2025",
+          assignedTo: "Samantha Leroy",
           status: "en_retard",
         },
       ],
@@ -161,17 +200,17 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-3",
           blockName:
-            "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+            "Bloc 1 - Contribuer à la stratégie de développement de l'organisation",
+          submissionDate: "10/10/2025",
+          assignedTo: "Nicolas Bernard",
           status: "corrige",
         },
         {
           id: "corr-4",
           blockName:
-            "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
-          submissionDate: "29/08/2024",
-          assignedTo: "Jacques Pote",
+            "Bloc 3 - Contribuer à la stratégie de développement de l'organisation",
+          submissionDate: "09/10/2025",
+          assignedTo: "Nicolas Bernard",
           status: "corrige",
         },
       ],
@@ -179,55 +218,80 @@ const formationsData: Record<FormationId, FormationData> = {
     agenda: [
       {
         id: "agenda-1",
-        title: "Visio tuteur – Bloc 3",
-        date: "2025-09-05",
+        title: "Visio tuteur – suivi individuel Chadi",
+        date: "2025-10-15",
         status: "important",
       },
       {
         id: "agenda-2",
-        title: "Correction devoir UX",
-        date: "2025-09-12",
+        title: "Correction devoir Bloc 2",
+        date: "2025-10-18",
         status: "normal",
       },
       {
         id: "agenda-3",
-        title: "Suivi projets",
-        date: "2025-09-20",
+        title: "Point d'équipe formateurs",
+        date: "2025-10-22",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-1", name: "Peak F.", status: "online" },
-      { id: "etu-2", name: "Annie L.", status: "online" },
-      { id: "etu-3", name: "Hansi Z.", status: "offline" },
-      { id: "etu-4", name: "Kenny A.", status: "online" },
-      { id: "etu-5", name: "Gaby B.", status: "away" },
-      { id: "etu-6", name: "Conny S.", status: "away" },
-      { id: "etu-7", name: "Grisha J.", status: "away" },
-      { id: "etu-8", name: "Sasha B.", status: "online" },
-      { id: "etu-9", name: "Erwin S.", status: "offline" },
+      { id: "etu-1", name: "Chadi El Assowad", status: "online" },
+      { id: "etu-2", name: "Lina Bouchard", status: "online" },
+      { id: "etu-3", name: "Youssef Karim", status: "away" },
+      { id: "etu-4", name: "Anaïs Dubois", status: "online" },
+      { id: "etu-5", name: "Marc Lefort", status: "away" },
+      { id: "etu-6", name: "Clémence Vidal", status: "online" },
+      { id: "etu-7", name: "Noah Perret", status: "offline" },
+      { id: "etu-8", name: "Inès Roussel", status: "offline" },
+      { id: "etu-9", name: "Thomas Nguyen", status: "away" },
     ],
     teachers: [
-      { id: "prof-1", name: "Jacques Pote", specialty: "Frontend", status: "online" },
-      { id: "prof-2", name: "Sarah Croche", specialty: "Backend", status: "away" },
-      { id: "prof-3", name: "Marc Dupont", specialty: "Fullstack", status: "offline" },
+      { id: "prof-1", name: "Samantha Leroy", specialty: "Frontend", status: "online" },
+      { id: "prof-2", name: "Nicolas Bernard", specialty: "Fullstack", status: "online" },
+      { id: "prof-3", name: "Helena Costa", specialty: "Architecture", status: "away" },
+    ],
+    studentProfiles: [
+      {
+        id: "etu-1",
+        promotion: "Promotion 2025",
+        campus: "Campus Paris La Défense",
+        school: "KEOS Business School",
+        track: "BACHELOR · Responsable du développement des activités",
+        focus: "Bloc 2 · Pilotage de la performance",
+        progress: 72,
+        lastLogin: "Aujourd'hui · 08h47",
+        nextDeadline: {
+          label: "Devoir Bloc 2",
+          date: "18 octobre 2025",
+        },
+        upcomingSession: {
+          label: "Visio tuteur",
+          date: "15 octobre 2025 · 09h00",
+        },
+        email: "chadi.elassowad@elite-society.fr",
+        phone: "+33 6 12 34 56 78",
+        notes:
+          "Chadi maintient un rythme régulier. Relance prévue sur les livrables Bloc 2 et préparation du quiz final.",
+        avatar: "/images/student-library/IMG_1719 2.PNG",
+      },
     ],
   },
   marketing: {
     name: "Marketing Digital",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-5",
         title: "Campagne Réseaux",
-        mentor: "Alice M",
+        mentor: "Pauline Rey",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-6",
         title: "Copywriting",
-        mentor: "Romain T",
+        mentor: "Romain Tessier",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
@@ -235,18 +299,18 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-4",
-        author: "Mina P.",
+        author: "Juliette Morel",
         role: "Étudiante",
         excerpt:
-          "Le quiz sur la stratégie digitale n'apparaît pas, pouvez-vous vérifier ?",
+          "Le quiz sur la stratégie digitale reste bloqué à la question 7, peux-tu le débloquer ?",
         timeAgo: "Il y a 1 h",
       },
       {
         id: "msg-5",
-        author: "Harold G.",
+        author: "Harold Giraud",
         role: "Étudiant",
         excerpt:
-          "Je serai absent mardi, pourriez-vous me partager les supports à l'avance ?",
+          "Je suis en déplacement jeudi, pourrais-tu me partager les supports en amont ?",
         timeAgo: "Il y a 3 h",
       },
     ],
@@ -255,8 +319,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-5",
           blockName: "Bloc 1 - Audit de marque",
-          submissionDate: "15/08/2024",
-          assignedTo: "Alice M",
+          submissionDate: "04/10/2025",
+          assignedTo: "Pauline Rey",
           status: "en_retard",
         },
       ],
@@ -264,8 +328,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-6",
           blockName: "Bloc 3 - Tunnel d'acquisition",
-          submissionDate: "01/09/2024",
-          assignedTo: "Alice M",
+          submissionDate: "09/10/2025",
+          assignedTo: "Pauline Rey",
           status: "corrige",
         },
       ],
@@ -273,50 +337,50 @@ const formationsData: Record<FormationId, FormationData> = {
     agenda: [
       {
         id: "agenda-4",
-        title: "Atelier SEO",
-        date: "2025-09-08",
+        title: "Atelier SEO avancé",
+        date: "2025-10-16",
         status: "important",
       },
       {
         id: "agenda-5",
-        title: "Feedback campagnes",
-        date: "2025-09-15",
+        title: "Revue campagnes étudiants",
+        date: "2025-10-20",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-10", name: "Mina P.", status: "online" },
-      { id: "etu-11", name: "Harold G.", status: "away" },
-      { id: "etu-12", name: "Lena S.", status: "offline" },
-      { id: "etu-13", name: "Oscar V.", status: "online" },
+      { id: "etu-10", name: "Juliette Morel", status: "online" },
+      { id: "etu-11", name: "Harold Giraud", status: "away" },
+      { id: "etu-12", name: "Lena Sorel", status: "offline" },
+      { id: "etu-13", name: "Oscar Verdier", status: "online" },
     ],
     teachers: [
-      { id: "prof-4", name: "Alice M.", specialty: "SEO", status: "online" },
-      { id: "prof-5", name: "Romain T.", specialty: "Content", status: "online" },
+      { id: "prof-4", name: "Pauline Rey", specialty: "SEO", status: "online" },
+      { id: "prof-5", name: "Romain Tessier", specialty: "Stratégie de contenu", status: "online" },
     ],
   },
   ia: {
     name: "Intelligence Artificielle",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-7",
         title: "Machine Learning",
-        mentor: "Prof. Xavier",
+        mentor: "Alexandre Petit",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-8",
         title: "Deep Learning",
-        mentor: "Jean M",
+        mentor: "Nadia Slimani",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
       {
         id: "course-9",
         title: "NLP",
-        mentor: "Prof. Xavier",
+        mentor: "Alexandre Petit",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
@@ -324,18 +388,18 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-6",
-        author: "Eva Q.",
+        author: "Eva Quentin",
         role: "Étudiante",
-        excerpt: "Pourrions-nous avoir un exemple d'évaluation sur le projet IA ?",
+        excerpt: "Pourrais-tu partager un exemple d'évaluation sur le projet IA ?",
         timeAgo: "Il y a 30 min",
       },
       {
         id: "msg-7",
-        author: "Noah D.",
+        author: "Noah Delorme",
         role: "Étudiant",
         excerpt:
-          "Je rencontre un blocage sur TensorFlow, est-il possible d'avoir un tutoriel ?",
-        timeAgo: "Il y a 5 h",
+          "Je bloque sur l'installation de TensorFlow. Est-il possible d'avoir une session d'assistance ?",
+        timeAgo: "Il y a 4 h",
       },
     ],
     corrections: {
@@ -343,8 +407,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-7",
           blockName: "Bloc 5 - Vision par ordinateur",
-          submissionDate: "10/08/2024",
-          assignedTo: "Jean M",
+          submissionDate: "02/10/2025",
+          assignedTo: "Nadia Slimani",
           status: "en_retard",
         },
       ],
@@ -352,8 +416,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-8",
           blockName: "Bloc 2 - Statistiques avancées",
-          submissionDate: "25/08/2024",
-          assignedTo: "Prof. Xavier",
+          submissionDate: "08/10/2025",
+          assignedTo: "Alexandre Petit",
           status: "corrige",
         },
       ],
@@ -362,44 +426,44 @@ const formationsData: Record<FormationId, FormationData> = {
       {
         id: "agenda-6",
         title: "Workshop IA générative",
-        date: "2025-09-18",
+        date: "2025-10-21",
         status: "important",
       },
       {
         id: "agenda-7",
         title: "Soutenance projets",
-        date: "2025-09-30",
+        date: "2025-10-30",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-14", name: "Eva Q.", status: "online" },
-      { id: "etu-15", name: "Noah D.", status: "away" },
-      { id: "etu-16", name: "Leo W.", status: "offline" },
-      { id: "etu-17", name: "Mila R.", status: "online" },
-      { id: "etu-18", name: "Aaron P.", status: "offline" },
+      { id: "etu-14", name: "Eva Quentin", status: "online" },
+      { id: "etu-15", name: "Noah Delorme", status: "away" },
+      { id: "etu-16", name: "Léo Waechter", status: "offline" },
+      { id: "etu-17", name: "Mila Roussel", status: "online" },
+      { id: "etu-18", name: "Aaron Perrin", status: "offline" },
     ],
     teachers: [
-      { id: "prof-6", name: "Prof. Xavier", specialty: "ML & NLP", status: "online" },
-      { id: "prof-7", name: "Jean M.", specialty: "Deep Learning", status: "away" },
-      { id: "prof-8", name: "Dr. Yamamoto", specialty: "Computer Vision", status: "offline" },
+      { id: "prof-6", name: "Alexandre Petit", specialty: "ML & NLP", status: "online" },
+      { id: "prof-7", name: "Nadia Slimani", specialty: "Deep Learning", status: "away" },
+      { id: "prof-8", name: "Hélène Yamamoto", specialty: "Computer Vision", status: "offline" },
     ],
   },
   designUX: {
     name: "Design UX/UI",
-    greeting: "Bonjour, Ymir Fritz",
+    greeting: "Bonjour, Sophie Moreau",
     courses: [
       {
         id: "course-10",
         title: "Atelier Figma",
-        mentor: "Sophie N",
+        mentor: "Sophie Nicolas",
         status: "en_ligne",
         actionLabel: "Modifier",
       },
       {
         id: "course-11",
         title: "Recherche utilisateur",
-        mentor: "Sophie N",
+        mentor: "Sophie Nicolas",
         status: "a_valider",
         actionLabel: "À vérifier",
       },
@@ -407,10 +471,10 @@ const formationsData: Record<FormationId, FormationData> = {
     messages: [
       {
         id: "msg-8",
-        author: "Julien F.",
+        author: "Julien Fabre",
         role: "Étudiant",
         excerpt:
-          "Je n'arrive pas à importer la grille de composants, avez-vous une solution ?",
+          "Je n'arrive pas à importer la grille de composants sur Figma. Peux-tu m'orienter ?",
         timeAgo: "Il y a 1 h",
       },
     ],
@@ -420,8 +484,8 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-9",
           blockName: "Bloc 1 - Parcours utilisateur",
-          submissionDate: "02/09/2024",
-          assignedTo: "Sophie N",
+          submissionDate: "11/10/2025",
+          assignedTo: "Sophie Nicolas",
           status: "corrige",
         },
       ],
@@ -430,18 +494,18 @@ const formationsData: Record<FormationId, FormationData> = {
       {
         id: "agenda-8",
         title: "Sprint design",
-        date: "2025-09-10",
+        date: "2025-10-19",
         status: "normal",
       },
     ],
     students: [
-      { id: "etu-19", name: "Julien F.", status: "online" },
-      { id: "etu-20", name: "Clara E.", status: "away" },
-      { id: "etu-21", name: "Sarah T.", status: "offline" },
+      { id: "etu-19", name: "Julien Fabre", status: "online" },
+      { id: "etu-20", name: "Clara Estrada", status: "away" },
+      { id: "etu-21", name: "Sarah Thibault", status: "offline" },
     ],
     teachers: [
-      { id: "prof-9", name: "Sophie N.", specialty: "UX Research", status: "online" },
-      { id: "prof-10", name: "Antoine P.", specialty: "UI Design", status: "away" },
+      { id: "prof-9", name: "Sophie Nicolas", specialty: "UX Research", status: "online" },
+      { id: "prof-10", name: "Antoine Pacot", specialty: "UI Design", status: "away" },
     ],
   },
 };
@@ -471,6 +535,7 @@ const AdminDashboardContent = () => {
   const [selectedFormation, setSelectedFormation] = useState<FormationId>(
     availableFormations[0]
   );
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   const data = useMemo(() => formationsData[selectedFormation], [selectedFormation]);
 
@@ -478,6 +543,7 @@ const AdminDashboardContent = () => {
     setSelectedSchool(school);
     const firstFormation = formationsPerSchool[school][0];
     setSelectedFormation(firstFormation);
+    setSelectedStudentId(null);
   };
 
   const totalStudentsOnline = data.students.filter((s) => s.status === "online").length;
@@ -520,7 +586,10 @@ const AdminDashboardContent = () => {
                 value: id,
                 label: formationsData[id].name,
               }))}
-              onChange={(value) => setSelectedFormation(value as FormationId)}
+              onChange={(value) => {
+                setSelectedFormation(value as FormationId);
+                setSelectedStudentId(null);
+              }}
             />
           </div>
         </div>
@@ -533,12 +602,18 @@ const AdminDashboardContent = () => {
           </div>
           <div className="space-y-6">
             <MessagesCard messages={data.messages} />
-            <ProfileCard />
-            <PromoCard 
-              students={data.students} 
+            <ProfileCard
+              selectedStudentId={selectedStudentId}
+              onClose={() => setSelectedStudentId(null)}
+              students={data.studentProfiles ?? []}
+            />
+            <PromoCard
+              students={data.students}
               teachers={data.teachers}
-              totalStudentsOnline={totalStudentsOnline} 
+              totalStudentsOnline={totalStudentsOnline}
               totalTeachersOnline={totalTeachersOnline}
+              onStudentFocus={setSelectedStudentId}
+              selectedStudentId={selectedStudentId}
             />
           </div>
         </div>
@@ -554,25 +629,51 @@ interface DropdownSelectorProps {
   onChange: (value: string) => void;
 }
 
-const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => (
-  <div className="border border-[#032622] px-4 py-3 flex justify-between items-center bg-[#F8F5E4] relative">
-    <div className="flex-1">
-      <p className="text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="text-lg font-semibold text-[#032622] bg-transparent focus:outline-none appearance-none w-full pr-8"
+const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(option => option.value === value);
+
+  return (
+    <div className="relative">
+      <div 
+        className="border border-[#032622] px-4 py-3 flex justify-between items-center bg-[#F8F5E4] cursor-pointer hover:bg-[#eae5cf] transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value} className="text-[#032622]">
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <div className="flex-1">
+          <p className="text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
+          <p className="text-lg font-semibold text-[#032622]">{selectedOption?.label}</p>
+        </div>
+        <ChevronDown 
+          className={`w-5 h-5 text-[#032622] transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+        />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-20 mt-1 w-full border border-[#032622] bg-[#F8F5E4] shadow-lg">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-3 text-sm text-[#032622] hover:bg-[#eae5cf] transition-colors border-b border-[#032622]/20 last:border-b-0"
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
     </div>
-    <ChevronDown className="w-5 h-5 text-[#032622] absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-  </div>
-);
+  );
+};
 
 const CoursesCard = ({ courses }: { courses: FormationData["courses"] }) => {
   const toValidate = courses.filter((course) => course.status === "a_valider");
@@ -786,26 +887,395 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
   </section>
 );
 
-const ProfileCard = () => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6">
-    <div className="w-full aspect-square border border-[#032622]/50 bg-[#C9C6B4]" />
-  </section>
-);
+const ProfileCard = ({
+  selectedStudentId,
+  onClose,
+  students,
+}: {
+  selectedStudentId: string | null;
+  onClose: () => void;
+  students: StudentProfile[];
+}) => {
+  const student = students.find((item) => item.id === selectedStudentId);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [showMailModal, setShowMailModal] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [mailContent, setMailContent] = useState("");
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentTime, setAppointmentTime] = useState("");
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAction = (message: string) => {
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+    }
+    setFeedback(message);
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 2500);
+  };
+
+  const handleClose = () => {
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = null;
+    }
+    setFeedback(null);
+    setShowMailModal(false);
+    setShowAppointmentModal(false);
+    onClose();
+  };
+
+  const handleSendMail = () => {
+    if (mailContent.trim()) {
+      handleAction(`E-mail envoyé à Chadi : "${mailContent}"`);
+      setMailContent("");
+      setShowMailModal(false);
+    }
+  };
+
+  const handleScheduleAppointment = () => {
+    if (appointmentDate && appointmentTime) {
+      handleAction(`Rendez-vous planifié le ${appointmentDate} à ${appointmentTime}`);
+      setAppointmentDate("");
+      setAppointmentTime("");
+      setShowAppointmentModal(false);
+    }
+  };
+
+  if (!student) {
+    return (
+      <section className="border border-[#032622] bg-[#F8F5E4] p-6">
+        <div className="flex flex-col items-center justify-center gap-3 text-center text-[#032622]/70">
+          <UserRound className="w-10 h-10" />
+          <p className="text-sm font-semibold">
+            Sélectionnez un étudiant pour afficher sa fiche de suivi
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="border border-[#032622] bg-[#F8F5E4] p-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[#032622]/20 px-6 py-4 bg-[#032622]/10">
+        <h2
+          className="text-xl font-bold text-[#032622]"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          Suivi étudiant
+        </h2>
+        <button
+          onClick={handleClose}
+          className="text-[#032622]/60 hover:text-[#032622] transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[#032622]">
+            <Image
+              src={student.avatar}
+              alt={student.id}
+              fill
+              sizes="80px"
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <h3
+              className="text-lg font-bold text-[#032622]"
+              style={{ fontFamily: "var(--font-termina-bold)" }}
+            >
+              Chadi El Assowad
+            </h3>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#032622]/70">
+              {student.track}
+            </p>
+            <span className="inline-flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] mt-2">
+              {student.school}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/70">
+                Progression globale
+              </span>
+              <span className="text-sm font-bold text-[#032622]">
+                {student.progress}%
+              </span>
+            </div>
+            <div className="h-2 bg-[#dcd5b8]">
+              <div
+                className="h-full bg-[#032622]"
+                style={{ width: `${student.progress}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm text-[#032622]">
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Dernière connexion
+              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Clock className="w-4 h-4" />
+                {student.lastLogin}
+              </div>
+            </div>
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Prochaine échéance
+              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Target className="w-4 h-4" />
+                {student.nextDeadline.label}
+              </div>
+              <p className="text-xs text-[#032622]/70">{student.nextDeadline.date}</p>
+            </div>
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Prochaine séance
+              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <CalendarClock className="w-4 h-4" />
+                {student.upcomingSession.label}
+              </div>
+              <p className="text-xs text-[#032622]/70">{student.upcomingSession.date}</p>
+            </div>
+            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
+              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+                Promotion
+              </span>
+              <p className="text-sm font-semibold">{student.promotion}</p>
+              <p className="text-xs text-[#032622]/70">{student.campus}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+            Contact direct
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleAction("Appel préparé : pense à confirmer avec Chadi l'heure exacte de la visio.")}
+              className="flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
+            >
+              <Phone className="w-3 h-3" />
+              Appeler
+            </button>
+            <button
+              onClick={() => setShowMailModal(true)}
+              className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+            >
+              <Mail className="w-3 h-3" />
+              Envoyer un mail
+            </button>
+            <button
+              onClick={() => handleAction("Message envoyé au coach référent pour caler un point avec Chadi.")}
+              className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+            >
+              <MessageCircle className="w-3 h-3" />
+              Coach référent
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+            Notes administratives
+          </h4>
+          <div className="border border-[#032622]/30 bg-[#f8f5e4] p-4 text-sm text-[#032622]/80 leading-relaxed">
+            {student.notes}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
+            Relancer ou planifier
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setShowMailModal(true)}
+              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+            >
+              <Send className="w-3 h-3" />
+              Relancer par mail
+            </button>
+            <button
+              onClick={() => setShowAppointmentModal(true)}
+              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+            >
+              <CalendarClock className="w-3 h-3" />
+              Planifier un rendez-vous
+            </button>
+          </div>
+        </div>
+
+        {feedback && (
+          <div
+            className="border border-[#032622]/30 bg-[#032622]/10 px-4 py-3 text-xs font-semibold text-[#032622]"
+            role="status"
+            aria-live="polite"
+          >
+            {feedback}
+          </div>
+        )}
+      </div>
+
+      {/* Modal E-mail */}
+      {showMailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border border-[#032622] p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                Envoyer un e-mail
+              </h3>
+              <button
+                onClick={() => setShowMailModal(false)}
+                className="text-[#032622]/60 hover:text-[#032622] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Destinataire
+                </label>
+                <div className="border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
+                  Chadi El Assowad &lt;chadi.elassowad@elite-society.fr&gt;
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Message
+                </label>
+                <textarea
+                  value={mailContent}
+                  onChange={(e) => setMailContent(e.target.value)}
+                  placeholder="Tapez votre message ici..."
+                  className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622] placeholder-[#032622]/50 resize-none h-24"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSendMail}
+                  className="flex-1 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => setShowMailModal(false)}
+                  className="flex-1 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Rendez-vous */}
+      {showAppointmentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#F8F5E4] border border-[#032622] p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                Planifier un rendez-vous
+              </h3>
+              <button
+                onClick={() => setShowAppointmentModal(false)}
+                className="text-[#032622]/60 hover:text-[#032622] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Étudiant
+                </label>
+                <div className="border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
+                  Chadi El Assowad - KEOS Business School
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={appointmentDate}
+                    onChange={(e) => setAppointmentDate(e.target.value)}
+                    className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                    Heure
+                  </label>
+                  <input
+                    type="time"
+                    value={appointmentTime}
+                    onChange={(e) => setAppointmentTime(e.target.value)}
+                    className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
+                  Type de rendez-vous
+                </label>
+                <select className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
+                  <option>Suivi pédagogique</option>
+                  <option>Relance devoir</option>
+                  <option>Préparation examen</option>
+                  <option>Orientation</option>
+                </select>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleScheduleAppointment}
+                  className="flex-1 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
+                >
+                  Planifier
+                </button>
+                <button
+                  onClick={() => setShowAppointmentModal(false)}
+                  className="flex-1 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
 
 const ProfileDropdown = () => (
   <div className="relative group">
     <div className="flex items-center space-x-3 cursor-pointer">
       <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
-        YF
+        SM
       </div>
       <div>
         <p
           className="text-[#032622] font-semibold text-sm"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
-          Ymir Fritz
+          Sophie Moreau
         </p>
-        <p className="text-xs text-[#032622]/70">Administrateur</p>
+        <p className="text-xs text-[#032622]/70">Coordinatrice pédagogique</p>
       </div>
     </div>
 
@@ -830,11 +1300,15 @@ const PromoCard = ({
   teachers,
   totalStudentsOnline,
   totalTeachersOnline,
+  onStudentFocus,
+  selectedStudentId,
 }: {
   students: FormationData["students"];
   teachers: FormationData["teachers"];
   totalStudentsOnline: number;
   totalTeachersOnline: number;
+  onStudentFocus: (id: string) => void;
+  selectedStudentId: string | null;
 }) => (
   <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-6">
     <header>
@@ -852,9 +1326,7 @@ const PromoCard = ({
         <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Formateurs
         </h3>
-        <p className="text-xs text-[#032622]/70">
-          {totalTeachersOnline} en ligne
-        </p>
+        <p className="text-xs text-[#032622]/70">{totalTeachersOnline} en ligne</p>
       </div>
       <div className="space-y-2">
         {teachers.map((teacher) => (
@@ -874,29 +1346,35 @@ const PromoCard = ({
       </div>
     </div>
 
-    {/* Séparateur */}
     <div className="border-t border-[#032622]/20" />
 
-    {/* Section Étudiants */}
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Étudiants
         </h3>
-        <p className="text-xs text-[#032622]/70">
-          {totalStudentsOnline} en ligne
-        </p>
+        <p className="text-xs text-[#032622]/70">{totalStudentsOnline} en ligne</p>
       </div>
       <div className="space-y-2">
         {students.map((student) => (
-          <div key={student.id} className="flex items-center justify-between text-sm text-[#032622]">
+          <div
+            key={student.id}
+            className={`flex items-center justify-between text-sm text-[#032622] transition-colors ${
+              selectedStudentId === student.id ? "bg-[#032622]/10" : ""
+            }`}
+          >
             <div className="flex items-center space-x-3">
               <span className={`w-3 h-3 rounded-full ${studentStatusColors[student.status]}`} />
               <p className="font-semibold">{student.name}</p>
             </div>
-            <div className="flex items-center space-x-3 text-[#032622]/60">
+            <div className="flex items-center space-x-2 text-[#032622]/60">
               <Users className="w-4 h-4" />
-              <MessageCircle className="w-4 h-4" />
+              <button
+                onClick={() => onStudentFocus(student.id)}
+                className="border border-[#032622] bg-[#F8F5E4] text-[#032622] px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
+              >
+                Suivre
+              </button>
             </div>
           </div>
         ))}

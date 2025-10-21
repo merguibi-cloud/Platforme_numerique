@@ -138,15 +138,15 @@ const initialBlocks: BlockItem[] = [
     students: [
       {
         id: createId(),
-        name: 'Ymir Fritz',
-        progress: 100,
+        name: 'Chadi El Assowad',
+        progress: 95,
         status: 'Terminé',
         lastActivity: "Aujourd'hui · 09:45",
         flagged: false
       },
       {
         id: createId(),
-        name: 'Mikasa Ackerman',
+        name: 'Lina Bouchard',
         progress: 76,
         status: 'En cours',
         lastActivity: 'Hier · 14:12',
@@ -154,10 +154,10 @@ const initialBlocks: BlockItem[] = [
       },
       {
         id: createId(),
-        name: 'Eren Yeager',
-        progress: 42,
+        name: 'Youssef Karim',
+        progress: 48,
         status: 'En retard',
-        lastActivity: '12/09 · 18:05',
+        lastActivity: '12/10 · 18:05',
         flagged: false
       }
     ],
@@ -199,7 +199,7 @@ const initialBlocks: BlockItem[] = [
     students: [
       {
         id: createId(),
-        name: 'Historia Reiss',
+        name: 'Anaïs Dubois',
         progress: 58,
         status: 'En cours',
         lastActivity: "Aujourd'hui · 11:02",
@@ -207,10 +207,10 @@ const initialBlocks: BlockItem[] = [
       },
       {
         id: createId(),
-        name: 'Armin Arlert',
+        name: 'Marc Lefort',
         progress: 32,
         status: 'En retard',
-        lastActivity: '10/09 · 17:20',
+        lastActivity: '10/10 · 17:20',
         flagged: false
       }
     ],
@@ -252,10 +252,18 @@ const initialBlocks: BlockItem[] = [
     students: [
       {
         id: createId(),
-        name: 'Levi Ackerman',
-        progress: 12,
+        name: 'Inès Roussel',
+        progress: 58,
+        status: 'En cours',
+        lastActivity: 'Hier · 20:10',
+        flagged: false
+      },
+      {
+        id: createId(),
+        name: 'Thomas Nguyen',
+        progress: 22,
         status: 'En retard',
-        lastActivity: '08/09 · 08:33',
+        lastActivity: '08/10 · 08:33',
         flagged: false
       }
     ],

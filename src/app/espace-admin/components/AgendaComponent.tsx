@@ -19,13 +19,14 @@ const AgendaComponent = () => {
 
   // Données d'exemple pour les événements
   const events: Event[] = [
-    { id: "1", title: "Visio tuteur – Bloc 3", type: "important", date: "2025-09-07", time: "14:00" },
-    { id: "2", title: "Atelier SEO", type: "normal", date: "2025-09-14", time: "10:00" },
-    { id: "3", title: "Feedback campagnes", type: "late", date: "2025-09-14", time: "15:30" },
-    { id: "4", title: "Sprint design", type: "normal", date: "2025-09-22", time: "09:00" },
-    { id: "5", title: "Correction devoir UX", type: "important", date: "2025-09-24", time: "16:00" },
-    { id: "6", title: "Suivi projets", type: "normal", date: "2025-09-27", time: "11:00" },
-    { id: "7", title: "Workshop IA générative", type: "important", date: "2025-09-29", time: "13:30" },
+    { id: "1", title: "Visio tuteur – suivi individuel Chadi", type: "important", date: "2025-10-15", time: "09:00" },
+    { id: "2", title: "Comité pédagogique · Bloc 2", type: "normal", date: "2025-10-16", time: "14:00" },
+    { id: "3", title: "Correction devoir Bloc 2", type: "late", date: "2025-10-18", time: "16:30" },
+    { id: "4", title: "Visio groupe promo Digital Legacy", type: "normal", date: "2025-10-19", time: "11:00" },
+    { id: "5", title: "Préparation masterclass marketing", type: "important", date: "2025-10-21", time: "17:00" },
+    { id: "6", title: "Suivi projets étudiants", type: "normal", date: "2025-10-23", time: "10:30" },
+    { id: "7", title: "Point formateurs Bloc 3", type: "normal", date: "2025-10-24", time: "15:00" },
+    { id: "8", title: "Review anti-triche Bloc 1", type: "important", date: "2025-10-25", time: "09:30" },
   ];
 
   const getDaysInMonth = (date: Date) => {

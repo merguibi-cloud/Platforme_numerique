@@ -139,7 +139,7 @@ export default function GestionFormations() {
                     <User className="w-5 h-5" />
                   </span>
                   <div>
-                    <p className="text-xs uppercase font-semibold tracking-[0.2em]">Ymir Fritz</p>
+                    <p className="text-xs uppercase font-semibold tracking-[0.2em]">Sophie Moreau</p>
                     <p className="text-[11px] text-[#032622]/70">Admin</p>
                   </div>
                 </div>
@@ -171,16 +171,16 @@ export default function GestionFormations() {
             <button className="relative p-2 border border-[#032622] bg-[#F8F5E4] hover:bg-[#eae5cf] transition-colors">
               <Bell className="w-4 h-4" />
               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D96B6B] text-[10px] text-white">
-                2
+                6
               </span>
             </button>
             <div className="flex items-center gap-3 border border-[#032622] bg-[#F8F5E4] px-4 py-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#032622]/10">
-                <User className="w-5 h-5" />
-              </span>
+              <div className="w-8 h-8 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-sm font-bold">
+                SM
+              </div>
               <div>
-                <p className="text-xs uppercase font-semibold tracking-[0.2em]">Ymir Fritz</p>
-                <p className="text-[11px] text-[#032622]/70">Admin</p>
+                <p className="text-xs uppercase font-semibold tracking-[0.2em]">Sophie Moreau</p>
+                <p className="text-[11px] text-[#032622]/70">Coordinatrice pédagogique</p>
               </div>
             </div>
           </header>
