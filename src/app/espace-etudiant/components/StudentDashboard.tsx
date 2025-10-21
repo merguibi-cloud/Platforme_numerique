@@ -7,9 +7,13 @@ import { BookOpen, AlarmClock, CalendarClock } from 'lucide-react';
 export const StudentDashboard = () => {
   const [progress] = useState(10);
   const [activitiesProgress] = useState(10);
+  const [activitiesAnimated, setActivitiesAnimated] = useState(0);
   const [competences] = useState({ current: 2, total: 19 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [hoursAnimated, setHoursAnimated] = useState(0);
+  const [blocksAnimated, setBlocksAnimated] = useState(0);
+  const [isChartsHovered, setIsChartsHovered] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -26,6 +30,51 @@ export const StudentDashboard = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Animation de la barre de progression des activités au chargement
+  useEffect(() => {
+    const timer = setTimeout(() => setActivitiesAnimated(activitiesProgress), 200);
+    return () => clearTimeout(timer);
+  }, [activitiesProgress]);
+
+  // Animation du pourcentage à droite du titre
+  const [percentAnimated, setPercentAnimated] = useState(0);
+  useEffect(() => {
+    const duration = 800;
+    let start: number | null = null;
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    const step = (ts: number) => {
+      if (start === null) start = ts;
+      const progress = Math.min(1, (ts - start) / duration);
+      setPercentAnimated(Math.round(activitiesProgress * easeOut(progress)));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    const raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [activitiesProgress]);
+
+  // Animation des compteurs (Temps total et Blocs de compétences)
+  useEffect(() => {
+    const targetHours = 5;
+    const targetBlocks = competences.current;
+    const duration = 1000; // ms
+    let start: number | null = null;
+
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const step = (timestamp: number) => {
+      if (start === null) start = timestamp;
+      const elapsed = timestamp - start;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeOutCubic(progress);
+      setHoursAnimated(Math.round(targetHours * eased));
+      setBlocksAnimated(Math.round(targetBlocks * eased));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+
+    const raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [competences.current]);
 
   // Auto-défilement du carousel
   useEffect(() => {
@@ -209,15 +258,15 @@ export const StudentDashboard = () => {
               >
                 RESPONSABLE DU DÉVELOPPEMENT DES ACTIVITÉS
               </h3>
-              <span className="text-2xl font-bold text-[#032622]">{activitiesProgress}%</span>
+              <span className="text-2xl font-bold text-[#032622]">{percentAnimated}%</span>
             </div>
             
-            {/* Barre de progression */}
+            {/* Barre de progression (animée) */}
             <div className="px-6 pb-4">
               <div className="w-full bg-gray-300 h-2">
                 <div 
-                  className="bg-[#032622] h-2 transition-all duration-300"
-                  style={{ width: `${activitiesProgress}%` }}
+                  className="bg-[#032622] h-2 transition-[width] duration-1000 ease-out"
+                  style={{ width: `${activitiesAnimated}%` }}
                 ></div>
               </div>
             </div>
@@ -228,11 +277,11 @@ export const StudentDashboard = () => {
               <div className="flex justify-between items-center">
                 <div className="flex space-x-12">
                   <div>
-                    <div className="text-4xl font-bold text-[#032622] mb-1">5H</div>
+                  <div className="text-4xl font-bold text-[#032622] mb-1">{hoursAnimated}H</div>
                     <div className="text-sm text-[#032622]">Temps total</div>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold text-[#032622] mb-1">{competences.current}/{competences.total}</div>
+                    <div className="text-4xl font-bold text-[#032622] mb-1">{blocksAnimated}/{competences.total}</div>
                     <div className="text-sm text-[#032622]">Blocs de compétences</div>
                   </div>
                 </div>
@@ -247,7 +296,11 @@ export const StudentDashboard = () => {
             </div>
             
             {/* Contenu principal - Graphiques côte à côte */}
-            <div className="grid grid-cols-2 gap-0">
+            <div 
+              className="grid grid-cols-2 gap-0"
+              onMouseEnter={() => setIsChartsHovered(true)}
+              onMouseLeave={() => setIsChartsHovered(false)}
+            >
               {/* Section gauche - Légende et diagramme circulaire */}
               <div className="p-6 border-r border-black flex flex-col justify-between">
                 {/* Légende */}
@@ -271,7 +324,11 @@ export const StudentDashboard = () => {
                 {/* Diagramme circulaire */}
                 <div className="flex justify-center">
                   <div className="relative w-32 h-32">
-                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                    <svg 
+                      className="w-32 h-32 transform -rotate-90 transition-transform duration-500"
+                      style={{ transform: isChartsHovered ? 'rotate(-82deg) scale(1.04)' : 'rotate(-90deg) scale(1)' }}
+                      viewBox="0 0 100 100"
+                    >
                       {/* Cercle de fond beige */}
                       <circle
                         cx="50"
@@ -290,7 +347,7 @@ export const StudentDashboard = () => {
                         strokeWidth="12"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 30 * 0.25}`}
-                        strokeDashoffset={`${2 * Math.PI * 30 * 0.75}`}
+                        strokeDashoffset={`${2 * Math.PI * 30 * (isChartsHovered ? 0.70 : 0.75)}`}
                       />
                       {/* Cercle gris moyen */}
                       <circle
@@ -301,7 +358,7 @@ export const StudentDashboard = () => {
                         strokeWidth="12"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 30 * 0.35}`}
-                        strokeDashoffset={`${2 * Math.PI * 30 * 0.40}`}
+                        strokeDashoffset={`${2 * Math.PI * 30 * (isChartsHovered ? 0.35 : 0.40)}`}
                       />
                       {/* Cercle vert foncé */}
                       <circle
@@ -326,8 +383,12 @@ export const StudentDashboard = () => {
                   {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
                     <div key={index} className="flex flex-col items-center">
                       <div 
-                        className="bg-[#032622] w-6"
-                        style={{ height: `${[40, 25, 45, 60, 65, 50, 20][index]}px` }}
+                        className="bg-[#032622] w-6 transition-all duration-500 ease-out"
+                        style={{ 
+                          height: `${([40, 25, 45, 60, 65, 50, 20][index] + (isChartsHovered ? 12 : 0))}px`,
+                          transform: isChartsHovered ? 'translateY(-4px)' : 'translateY(0)',
+                          transitionDelay: `${index * 60}ms`
+                        }}
                       ></div>
                       <span className="text-xs text-[#032622] mt-2 font-medium">{day}</span>
                     </div>

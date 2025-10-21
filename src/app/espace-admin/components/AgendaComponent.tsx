@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import CreateEventModal from "./CreateEventModal";
 
@@ -16,6 +16,7 @@ const AgendaComponent = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"week" | "month">("month");
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   // Données d'exemple pour les événements
   const events: Event[] = [
@@ -211,8 +212,9 @@ const AgendaComponent = () => {
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`${getEventTypeColor(event.type)} text-[#032622] text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                      className={`${getEventTypeColor(event.type)} text-white text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
                       title={`${event.title} - ${event.time}`}
+                      onClick={() => setSelectedEvent(event)}
                     >
                       {event.title}
                     </div>
@@ -234,9 +236,132 @@ const AgendaComponent = () => {
           }}
         />
       )}
+
+      {/* Modal détail événement */}
+      {selectedEvent && (
+        <EventDetailsModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      )}
     </div>
   );
 };
 
 export default AgendaComponent;
 
+// ----- Modale de détails d'événement -----
+const EventDetailsModal = ({ event, onClose }: { event: Event; onClose: () => void }) => {
+  // Construit la date complète au format Date à partir de date (YYYY-MM-DD) et time (HH:mm)
+  const eventDate: Date = useMemo(() => {
+    const [year, month, day] = event.date.split("-").map((v) => parseInt(v, 10));
+    const [hours, minutes] = event.time.split(":").map((v) => parseInt(v, 10));
+    return new Date(year, (month ?? 1) - 1, day ?? 1, hours ?? 0, minutes ?? 0, 0);
+  }, [event.date, event.time]);
+
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const intervalId = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const isFuture = now.getTime() < eventDate.getTime();
+  const diffSeconds = Math.abs(Math.floor((eventDate.getTime() - now.getTime()) / 1000));
+  const hours = Math.floor(diffSeconds / 3600);
+  const minutes = Math.floor((diffSeconds % 3600) / 60);
+  const seconds = diffSeconds % 60;
+
+  const colorByType = event.type === "important" ? "bg-[#D96B6B]" : event.type === "late" ? "bg-[#F0C75E]" : "bg-[#032622]";
+
+  // Informations fictives pour un rendu réaliste
+  const fakeData = {
+    location: event.type === "normal" ? "Salle 3.2 · Campus La Défense" : "Visio Google Meet",
+    meetLink: "https://meet.google.com/abc-defg-hij",
+    participants: [
+      { name: "Samantha Leroy", role: "Formatrice" },
+      { name: "Chadi El Assowad", role: "Étudiant" },
+      { name: "Nicolas Bernard", role: "Coach référent" },
+    ],
+    description:
+      "Session de suivi focalisée sur l'avancement des livrables Bloc 2, points bloquants et plan d'action jusqu'au prochain jalon.",
+    attachments: [
+      { name: "Ordre du jour.pdf", size: "232 Ko" },
+      { name: "Liste des livrables.xlsx", size: "89 Ko" },
+    ],
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-2xl bg-[#F8F5E4] border border-[#032622] shadow-xl">
+        <header className={`flex items-center justify-between px-6 py-4 border-b border-[#032622] ${colorByType}`}>
+          <h3 className="text-white text-lg font-bold" style={{ fontFamily: "var(--font-termina-bold)" }}>
+            {event.title}
+          </h3>
+          <button onClick={onClose} className="text-white/90 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </header>
+
+        <div className="px-6 py-5 space-y-5">
+          <div className="flex flex-wrap items-center gap-4 text-[#032622]">
+            <span className="inline-flex items-center border border-[#032622] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">{event.date}</span>
+            <span className="inline-flex items-center border border-[#032622] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">{event.time}</span>
+            <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white ${colorByType}`}>{event.type}</span>
+            <span className="ml-auto text-sm font-semibold text-[#032622]">
+              {isFuture ? "Début dans" : "Écoulement"} {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[#032622]">
+            <div className="space-y-2">
+              <p className="font-semibold">Lieu</p>
+              <p>{fakeData.location}</p>
+              {fakeData.location.includes("Visio") && (
+                <a href={fakeData.meetLink} target="_blank" className="underline text-[#032622]">Rejoindre la visio</a>
+              )}
+            </div>
+            <div className="space-y-2">
+              <p className="font-semibold">Participants</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {fakeData.participants.map((p, idx) => (
+                  <li key={idx}>{p.name} · {p.role}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-sm text-[#032622]">
+            <p className="font-semibold">Description</p>
+            <p className="leading-relaxed">{fakeData.description}</p>
+          </div>
+
+          <div className="space-y-2 text-sm text-[#032622]">
+            <p className="font-semibold">Pièces jointes</p>
+            <ul className="space-y-1">
+              {fakeData.attachments.map((a, idx) => (
+                <li key={idx} className="flex items-center justify-between border border-[#032622]/30 bg-[#032622]/5 px-3 py-2">
+                  <span>{a.name}</span>
+                  <span className="text-[#032622]/70">{a.size}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button className="border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors">
+              Démarrer la session
+            </button>
+            <button onClick={onClose} className="border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+    </div>
+  );
+};
+
+export default AgendaComponent;

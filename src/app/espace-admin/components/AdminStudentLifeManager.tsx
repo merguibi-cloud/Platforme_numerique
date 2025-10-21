@@ -243,7 +243,7 @@ const emptyAttachmentDraft: AttachmentDraft = {
   url: "",
 };
 
-const attachmentTypeIcons: Record<AttachmentType, React.ReactElement> = {
+const attachmentTypeIcons: Record<AttachmentType, JSX.Element> = {
   image: <ImageIcon className="w-4 h-4" />,
   video: <Video className="w-4 h-4" />,
   document: <FileText className="w-4 h-4" />,
