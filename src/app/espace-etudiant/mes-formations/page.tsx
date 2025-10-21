@@ -529,8 +529,8 @@ export default function MesFormationsPage() {
             container.appendChild(textSpan);
           } else if (node.nodeType === Node.ELEMENT_NODE) {
             // Élément HTML : traiter récursivement ses enfants
-            const element = node as Element;
-            const clonedElement = element.cloneNode(false) as Element;
+            const element = node as HTMLElement;
+            const clonedElement = element.cloneNode(false) as HTMLElement;
             
             // Copier les attributs importants
             if (element.tagName === 'P') {
