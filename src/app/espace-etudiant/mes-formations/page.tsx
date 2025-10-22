@@ -34,6 +34,9 @@ import {
   X,
   Check,
   Clock,
+  Lightbulb,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 
 const heroCourse = {
@@ -167,7 +170,6 @@ const complementaryDocs = [
     size: "PPTX",
   },
 ];
-
 const quizQuestions = [
   {
     id: 1,
@@ -255,6 +257,26 @@ interface Task {
   isUrgent: boolean;
 }
 
+// Nouvelles interfaces pour les fonctionnalités d'étude
+interface Bookmark {
+  id: string;
+  title: string;
+  content: string;
+  position: number;
+  timestamp: Date;
+  color: string;
+}
+
+interface Annotation {
+  id: string;
+  text: string;
+  note: string;
+  position: number;
+  timestamp: Date;
+  color: string;
+  type: 'note' | 'question' | 'important';
+}
+
 export default function MesFormationsPage() {
   const [step, setStep] = useState<Step>("overview");
   const [showQuizModal, setShowQuizModal] = useState(false);
@@ -301,25 +323,111 @@ export default function MesFormationsPage() {
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
   
-  // États pour le lecteur vidéo
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  // Nouvelles fonctionnalités d'étude
+  const [showStudyTools, setShowStudyTools] = useState(false);
+  const [studyMode, setStudyMode] = useState(false);
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+  const [selectedText, setSelectedText] = useState<string>('');
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  
+  // États pour les lecteurs vidéo
+  const [isVideo1Playing, setIsVideo1Playing] = useState(false);
+  const video1Ref = useRef<HTMLVideoElement>(null);
+  const [isVideo2Playing, setIsVideo2Playing] = useState(false);
+  const video2Ref = useRef<HTMLVideoElement>(null);
+  const [isVideo3Playing, setIsVideo3Playing] = useState(false);
+  const video3Ref = useRef<HTMLVideoElement>(null);
+  const [isVideo4Playing, setIsVideo4Playing] = useState(false);
+  const video4Ref = useRef<HTMLVideoElement>(null);
 
-  // Fonction pour lancer la vidéo
-  const handlePlayVideo = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setIsVideoPlaying(true);
+  // Fonctions pour lancer les vidéos
+  const handlePlayVideo1 = () => {
+    if (video1Ref.current) {
+      video1Ref.current.play();
+      setIsVideo1Playing(true);
     }
   };
 
-  // Effect pour gérer les événements de la vidéo
+  const handlePlayVideo2 = () => {
+    if (video2Ref.current) {
+      video2Ref.current.play();
+      setIsVideo2Playing(true);
+    }
+  };
+
+  const handlePlayVideo3 = () => {
+    if (video3Ref.current) {
+      video3Ref.current.play();
+      setIsVideo3Playing(true);
+    }
+  };
+
+  const handlePlayVideo4 = () => {
+    if (video4Ref.current) {
+      video4Ref.current.play();
+      setIsVideo4Playing(true);
+    }
+  };
+  // Effects pour gérer les événements des vidéos
   useEffect(() => {
-    const video = videoRef.current;
+    const video = video1Ref.current;
     if (!video) return;
 
-    const handlePause = () => setIsVideoPlaying(false);
-    const handlePlay = () => setIsVideoPlaying(true);
+    const handlePause = () => setIsVideo1Playing(false);
+    const handlePlay = () => setIsVideo1Playing(true);
+
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('play', handlePlay);
+
+    return () => {
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('play', handlePlay);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = video2Ref.current;
+    if (!video) return;
+
+    const handlePause = () => setIsVideo2Playing(false);
+    const handlePlay = () => setIsVideo2Playing(true);
+
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('play', handlePlay);
+
+    return () => {
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('play', handlePlay);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = video3Ref.current;
+    if (!video) return;
+
+    const handlePause = () => setIsVideo3Playing(false);
+    const handlePlay = () => setIsVideo3Playing(true);
+
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('play', handlePlay);
+
+    return () => {
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('play', handlePlay);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = video4Ref.current;
+    if (!video) return;
+
+    const handlePause = () => setIsVideo4Playing(false);
+    const handlePlay = () => setIsVideo4Playing(true);
 
     video.addEventListener('pause', handlePause);
     video.addEventListener('play', handlePlay);
@@ -466,10 +574,10 @@ export default function MesFormationsPage() {
     { label: "Orange", value: "#fed7aa", name: "orange" },
     { label: "Violet", value: "#e9d5ff", name: "violet" },
   ];
-
-  // Fonction améliorée pour appliquer un surlignage
+  // Fonction de surlignage optimisée et sans espaces bizarres
   const applyHighlight = useCallback((color: string, colorName: string) => {
     if (!courseContentRef.current || typeof window === "undefined") return;
+    
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       return;
@@ -479,20 +587,61 @@ export default function MesFormationsPage() {
     if (!courseContentRef.current.contains(range.commonAncestorContainer)) return;
     
     const text = selection.toString().trim();
-    if (!text) return;
+    if (!text || text.length < 2) return;
 
     const highlightId = `highlight-${Date.now()}`;
     
     try {
-      // Méthode simple pour les sélections dans un seul élément
-    const span = document.createElement("span");
-    span.style.backgroundColor = color;
-      span.style.padding = "2px 4px";
+      // Méthode optimisée pour éviter les espaces bizarres
+      const span = document.createElement("span");
+      span.className = "highlight-marker";
+      span.style.backgroundColor = color;
+      span.style.padding = "1px 2px";
       span.style.borderRadius = "3px";
-    span.dataset.highlight = "true";
+      span.style.display = "inline";
+      span.style.margin = "0";
+      span.style.lineHeight = "inherit";
+      span.dataset.highlight = "true";
       span.dataset.highlightId = highlightId;
+      span.dataset.highlightColor = colorName;
       
-      range.surroundContents(span);
+      // Extraire le contenu et le nettoyer
+      const contents = range.extractContents();
+      
+      // Nettoyer les espaces en début/fin et préserver la structure
+      const cleanContents = (node: Node): Node | null => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const textNode = node as Text;
+          const cleanedText = textNode.textContent?.trim();
+          if (cleanedText) {
+            const newTextNode = document.createTextNode(cleanedText);
+            return newTextNode;
+          }
+          return null;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as Element;
+          const cleanedElement = element.cloneNode(false) as Element;
+          
+          // Traiter les enfants
+          Array.from(element.childNodes).forEach(child => {
+            const cleanedChild = cleanContents(child);
+            if (cleanedChild && cleanedChild.textContent?.trim()) {
+              cleanedElement.appendChild(cleanedChild);
+            }
+          });
+          
+          return cleanedElement.childNodes.length > 0 ? cleanedElement : null;
+        }
+        return node;
+      };
+      
+      const cleanedContents = cleanContents(contents);
+      if (cleanedContents) {
+        span.appendChild(cleanedContents);
+      }
+      
+      // Insérer le surlignage
+      range.insertNode(span);
       
       // Créer l'objet highlight
       const highlight: Highlight = {
@@ -506,128 +655,85 @@ export default function MesFormationsPage() {
       
       setHighlights(prev => [...prev, highlight]);
       selection.removeAllRanges();
-    } catch (error) {
-      console.warn("Méthode simple échouée, utilisation de la méthode avancée:", error);
       
-      // Méthode avancée pour les grandes sélections multi-éléments
-      try {
-        const clonedRange = range.cloneRange();
-        const contents = clonedRange.extractContents();
-        
-        // Créer un conteneur pour tous les surlignages
-        const container = document.createElement("span");
-        container.style.backgroundColor = color;
-        container.style.padding = "2px 4px";
-        container.style.borderRadius = "3px";
-        container.dataset.highlight = "true";
-        container.dataset.highlightId = highlightId;
-        
-        // Traiter chaque nœud dans le contenu extrait
-        const processNode = (node: Node) => {
-          if (node.nodeType === Node.TEXT_NODE) {
-            // Nœud texte : créer un span pour le texte
-            const textSpan = document.createElement("span");
-            (textSpan as HTMLElement).style.backgroundColor = color;
-            (textSpan as HTMLElement).style.padding = "2px 4px";
-            (textSpan as HTMLElement).style.borderRadius = "3px";
-            textSpan.dataset.highlight = "true";
-            textSpan.dataset.highlightId = highlightId;
-            textSpan.textContent = node.textContent;
-            container.appendChild(textSpan);
-          } else if (node.nodeType === Node.ELEMENT_NODE) {
-            // Élément HTML : traiter récursivement ses enfants
-            const element = node as Element;
-            const clonedElement = element.cloneNode(false) as Element;
-            
-            // Copier les attributs importants
-            if (element.tagName === 'P' && clonedElement instanceof HTMLElement) {
-              clonedElement.style.margin = '0';
-              clonedElement.style.display = 'inline';
-            }
-            
-            // Traiter les enfants
-            Array.from(element.childNodes).forEach(child => {
-              if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
-                const textSpan = document.createElement("span");
-                (textSpan as HTMLElement).style.backgroundColor = color;
-                (textSpan as HTMLElement).style.padding = "2px 4px";
-                (textSpan as HTMLElement).style.borderRadius = "3px";
-                textSpan.dataset.highlight = "true";
-                textSpan.dataset.highlightId = highlightId;
-                textSpan.textContent = child.textContent;
-                clonedElement.appendChild(textSpan);
-              } else if (child.nodeType === Node.ELEMENT_NODE) {
-                const processedChild = processNode(child);
-                if (processedChild) clonedElement.appendChild(processedChild);
-              }
-            });
-            
-            // Ajouter des espaces pour maintenir la structure
-            if (element.tagName === 'P' || element.tagName === 'BR') {
-              const br = document.createElement("br");
-              container.appendChild(br);
-            }
-            
-            return clonedElement;
-          }
-          return null;
-        };
-        
-        // Traiter le contenu extrait
-        Array.from(contents.childNodes).forEach(child => {
-          const processed = processNode(child);
-          if (processed) container.appendChild(processed);
-        });
-        
-        // Insérer le conteneur dans le DOM
-        range.insertNode(container);
-        
-        // Créer l'objet highlight
-        const highlight: Highlight = {
-          id: highlightId,
-          text: text,
-          color: color,
-          colorName: colorName,
-          timestamp: new Date(),
-          position: range.startOffset,
-        };
-        
-        setHighlights(prev => [...prev, highlight]);
-        selection.removeAllRanges();
-        
-      } catch (advancedError) {
-        console.warn("Méthode avancée échouée également:", advancedError);
-        
-        // Dernier recours : méthode par remplacement de texte
-        try {
-          const textContent = range.toString();
-          const span = document.createElement("span");
-          span.style.backgroundColor = color;
-          span.style.padding = "2px 4px";
-          span.style.borderRadius = "3px";
-          span.dataset.highlight = "true";
-          span.dataset.highlightId = highlightId;
-          span.textContent = textContent;
-          
-          range.deleteContents();
-          range.insertNode(span);
-          
-          const highlight: Highlight = {
-            id: highlightId,
-            text: textContent,
-            color: color,
-            colorName: colorName,
-            timestamp: new Date(),
-            position: range.startOffset,
-          };
-          
-          setHighlights(prev => [...prev, highlight]);
-          selection.removeAllRanges();
-        } catch (fallbackError) {
-          console.error("Toutes les méthodes de surlignage ont échoué:", fallbackError);
-        }
-      }
+      // Afficher une notification
+      showNotification(`Texte surligné en ${colorName}`, 'success');
+      
+    } catch (error) {
+      console.error("Erreur lors du surlignage:", error);
+      showNotification("Erreur lors du surlignage", 'error');
     }
+  }, []);
+
+  // Fonction de notification
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-white text-sm font-medium transform translate-x-full transition-transform duration-300 ${
+      type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    setTimeout(() => {
+      notification.classList.add('translate-x-full');
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
+  };
+
+  // Fonction pour ajouter un signet
+  const addBookmark = useCallback((title: string, content: string) => {
+    const bookmark: Bookmark = {
+      id: `bookmark-${Date.now()}`,
+      title,
+      content,
+      position: window.scrollY,
+      timestamp: new Date(),
+      color: '#6B8E23'
+    };
+    setBookmarks(prev => [...prev, bookmark]);
+    showNotification("Signet ajouté", 'success');
+  }, []);
+
+  // Fonction pour ajouter une annotation
+  const addAnnotation = useCallback((text: string, note: string, type: 'note' | 'question' | 'important') => {
+    const annotation: Annotation = {
+      id: `annotation-${Date.now()}`,
+      text,
+      note,
+      position: window.scrollY,
+      timestamp: new Date(),
+      color: type === 'important' ? '#ef4444' : type === 'question' ? '#3b82f6' : '#6B8E23',
+      type
+    };
+    setAnnotations(prev => [...prev, annotation]);
+    showNotification("Annotation ajoutée", 'success');
+  }, []);
+
+  // Fonction pour activer le mode étude
+  const toggleStudyMode = useCallback(() => {
+    setStudyMode(prev => !prev);
+    if (!studyMode) {
+      showNotification("Mode étude activé - Focus sur le contenu", 'info');
+    }
+  }, [studyMode]);
+
+  // Fonction pour calculer le progrès de lecture
+  const calculateReadingProgress = useCallback(() => {
+    if (!courseContentRef.current) return;
+    
+    const contentHeight = courseContentRef.current.scrollHeight;
+    const scrollTop = window.scrollY;
+    const windowHeight = window.innerHeight;
+    const progress = Math.min(100, Math.max(0, (scrollTop / (contentHeight - windowHeight)) * 100));
+    setReadingProgress(Math.round(progress));
   }, []);
 
   // Fonction pour supprimer un surlignage spécifique
@@ -666,7 +772,6 @@ export default function MesFormationsPage() {
       h.id === highlightId ? { ...h, isFavorite: !h.isFavorite } : h
     ));
   }, []);
-
   // Fonction pour ajouter une note à un surlignage
   const addNoteToHighlight = useCallback((highlightId: string, note: string) => {
     setHighlights(prev => prev.map(h => 
@@ -1022,7 +1127,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   const renderOverview = () => (
     <div className="space-y-6">
       <div className="bg-[#032622] text-[#F8F5E4] p-8">
@@ -1191,7 +1295,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   const renderModuleView = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1373,7 +1476,7 @@ export default function MesFormationsPage() {
                     Situer historiquement et culturellement l'intelligence artificielle parmi les grandes révolutions de l'humanité.
                   </li>
                   <li>
-                    Comprendre les logiques techniques et cognitives qui sous-tendent son fonctionnement (apprentissage, algorithmes, données).
+                    Comprendre les logiques technique et cognitives qui sous-tendent son fonctionnement (apprentissage, algorithmes, données).
                   </li>
                   <li>
                     Identifier les impacts économiques et managériaux de l'IA sur les entreprises, les métiers et les organisations.
@@ -1398,6 +1501,7 @@ export default function MesFormationsPage() {
             <div className="relative mt-8 mb-6">
               <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
                 <video 
+                  ref={video1Ref}
                   controls 
                   className="w-full h-full"
                   poster="/img/formation/forma_keos.jpg"
@@ -1405,6 +1509,63 @@ export default function MesFormationsPage() {
                   <source src="/video/CULTURE DE L'IA - Episode 1.mp4" type="video/mp4" />
                   Votre navigateur ne supporte pas la lecture de vidéos.
                 </video>
+                
+                {/* Overlay avec affiche élégante */}
+                {!isVideo1Playing && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer group overflow-hidden"
+                    onClick={handlePlayVideo1}
+                  >
+                    {/* Fond dégradé élégant */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#032622] via-[#1a4d42] to-black"></div>
+                    
+                    {/* Texture subtile */}
+                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{
+                      backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(107, 142, 35, 0.3) 0%, transparent 50%)',
+                    }}></div>
+                    
+                    {/* Contenu affiche */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-8 p-8">
+                      {/* Titre de l'épisode */}
+                      <div className="text-center space-y-4 transform group-hover:scale-105 transition-transform duration-300">
+                        <p className="text-[#6B8E23] text-sm font-bold uppercase tracking-[0.2em] drop-shadow-lg">
+                          Épisode 1
+                        </p>
+                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight drop-shadow-xl" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                          Introduction à la Culture de l'IA
+                        </h2>
+                        <p className="text-[#F8F5E4] text-base opacity-90 max-w-md mx-auto leading-relaxed drop-shadow-lg">
+                          Découvrez les fondamentaux de l'intelligence artificielle et son impact sur nos sociétés
+                        </p>
+                      </div>
+                      
+                      {/* Bouton play */}
+                      <div className="flex flex-col items-center space-y-6">
+                        <div className="relative">
+                          {/* Anneau extérieur animé */}
+                          <div className="absolute inset-0 rounded-full bg-[#6B8E23]/30 animate-pulse" style={{ transform: 'scale(1.3)' }}></div>
+                          
+                          {/* Bouton play principal */}
+                          <button 
+                            className="relative w-20 h-20 rounded-full bg-[#6B8E23] shadow-2xl flex items-center justify-center transform group-hover:scale-125 group-hover:shadow-[0_0_40px_rgba(107,142,35,0.6)] transition-all duration-300 border-4 border-[#F8F5E4]/20 backdrop-blur-sm"
+                          >
+                            <svg className="w-8 h-8 text-white ml-0.5 fill-current drop-shadow-lg" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {/* Texte d'action */}
+                        <span className="text-[#F8F5E4] text-sm font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Cliquez pour regarder
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Ligne de séparation */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#6B8E23] to-transparent"></div>
+                  </div>
+                )}
               </div>
               <div className="absolute top-4 left-4 bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
                 <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
@@ -1522,7 +1683,6 @@ export default function MesFormationsPage() {
             </button>
           </div>
         </div>
-
         <div className="space-y-4">
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4">
@@ -1861,7 +2021,6 @@ export default function MesFormationsPage() {
           </div>
         </div>
       )}
-
       {/* Panneau des tâches */}
       {showTaskPanel && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -2011,7 +2170,6 @@ export default function MesFormationsPage() {
       )}
     </div>
   );
-
   const renderQuizView = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -2212,7 +2370,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu de la page d'introduction du cours
   const renderCourseIntro = () => (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -2245,7 +2402,6 @@ export default function MesFormationsPage() {
           Comprendre les fondements, les enjeux et les perspectives de l'intelligence artificielle dans notre société contemporaine.
         </p>
       </div>
-
       {/* Sommaire du cours */}
       <div className="border border-[#032622] bg-[#F8F5E4] p-8 space-y-6">
         <h2
@@ -2405,7 +2561,6 @@ export default function MesFormationsPage() {
               </div>
             </div>
           </div>
-
           {/* PARTIE 3 */}
           <div className="space-y-4 border-t border-[#032622]/20 pt-8">
             <div className="flex items-start space-x-3">
@@ -2569,7 +2724,6 @@ export default function MesFormationsPage() {
                   <Eraser className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
-              
               <div className="flex flex-wrap items-center gap-2">
                 {showHighlightMenu && (
                   <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
@@ -2773,6 +2927,87 @@ export default function MesFormationsPage() {
             </div>
           </div>
 
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 1</span>
+                <span className="font-bold">25%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '25%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                3 modules complétés sur 12
+              </p>
+            </div>
+          </div>
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Glossaire de l'IA (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Frise chronologique (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Article : "L'histoire de l'IA"</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bibliographie clé */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">À lire</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <div className="text-xs text-[#032622]">
+                  <p className="font-bold">Alan Turing</p>
+                  <p className="italic opacity-70">"Computing Machinery and Intelligence" (1950)</p>
+                </div>
+                <div className="text-xs text-[#032622]">
+                  <p className="font-bold">Stuart Russell</p>
+                  <p className="italic opacity-70">"Human Compatible" (2019)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
               <p className="text-white text-xs font-bold uppercase">Événements à venir</p>
@@ -2788,7 +3023,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu de la Partie 1.2
   const renderPartie1_2 = () => (
     <div className="space-y-6">
@@ -2896,7 +3130,6 @@ export default function MesFormationsPage() {
             <h4 className="text-2xl font-bold text-[#032622] mb-6 text-center" style={{ fontFamily: "var(--font-termina-bold)" }}>
               1.2. L'âge numérique et la renaissance de l'intelligence artificielle
             </h4>
-
             <div
               ref={courseContentRef}
               className={`space-y-6 text-base text-[#032622] leading-relaxed ${
@@ -3090,7 +3323,6 @@ export default function MesFormationsPage() {
                   Sans que nous le réalisions, le monde numérique devient un laboratoire d'apprentissage permanent. Chaque jour, nos comportements entraînent les modèles qui nous serviront demain.
                 </p>
               </section>
-
               <section className="space-y-4 mt-8">
                 <h5 className="font-bold text-xl text-[#032622]">Le deep learning : la machine qui se met à "percevoir"</h5>
                 <p>
@@ -3136,7 +3368,6 @@ export default function MesFormationsPage() {
                 </p>
               </section>
             </div>
-
             <div className="border border-black bg-[#032622]/10 mt-6 p-4 space-y-2">
               <p className="text-xs font-bold uppercase text-[#032622]">Notes rapides</p>
               <p className="text-xs text-[#032622] opacity-70">
@@ -3195,6 +3426,87 @@ export default function MesFormationsPage() {
             </div>
           </div>
 
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 1</span>
+                <span className="font-bold">50%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '50%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                6 modules complétés sur 12
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Histoire du Deep Learning (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Infographie : Réseaux de neurones</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Vidéo : AlexNet expliqué</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Concepts clés */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Concepts clés</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Deep Learning</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Réseaux de neurones</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Big Data</span>
+              </div>
+            </div>
+          </div>
+
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
               <p className="text-white text-xs font-bold uppercase">Événements à venir</p>
@@ -3210,7 +3522,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu de la Partie 1.3
   const renderPartie1_3 = () => (
     <div className="space-y-6">
@@ -3393,7 +3704,6 @@ export default function MesFormationsPage() {
                 </p>
               </section>
             </div>
-
             {/* Vidéo YouTube */}
             <div className="relative mt-8 mb-6">
               <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
@@ -3410,7 +3720,6 @@ export default function MesFormationsPage() {
                 ></iframe>
               </div>
             </div>
-
             {/* Suite du contenu après la vidéo */}
             <div className="space-y-6 text-base text-[#032622] leading-relaxed mt-8">
               <section className="space-y-4">
@@ -3497,6 +3806,86 @@ export default function MesFormationsPage() {
             </div>
           </div>
 
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 1</span>
+                <span className="font-bold">75%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '75%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                9 modules complétés sur 12
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">L'IA générative (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Carte mentale GPT</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Guide : Prompts efficaces</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Personnalités clés */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Experts IA</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold">Sam Altman</p>
+                <p className="opacity-70">CEO OpenAI</p>
+              </div>
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold">Yann LeCun</p>
+                <p className="opacity-70">Meta AI</p>
+              </div>
+            </div>
+          </div>
+
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
               <p className="text-white text-xs font-bold uppercase">Événements à venir</p>
@@ -3512,7 +3901,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu de la Partie 1.3 Suite
   const renderPartie1_3_Suite = () => (
     <div className="space-y-6">
@@ -3685,7 +4073,6 @@ export default function MesFormationsPage() {
                 />
               </div>
             </div>
-
             {/* Suite du contenu après l'image */}
             <div className="space-y-6 text-base text-[#032622] leading-relaxed mt-8">
               <p>
@@ -3756,37 +4143,80 @@ export default function MesFormationsPage() {
               </section>
             </div>
 
-            {/* Placeholder vidéo Episode 2 */}
-            <div className="relative mt-8 mb-6 group">
-              <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                      Vidéo Indisponible
-                    </p>
-                    <p className="text-sm text-[#032622]/70">
-                      Cette vidéo sera bientôt disponible
+            {/* Vidéo Episode 2 */}
+            <div className="relative mt-8 mb-6">
+              <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
+                <video 
+                  ref={video2Ref}
+                  controls 
+                  className="w-full h-full"
+                  poster="/img/formation/forma_keos.jpg"
+                >
+                  <source src="/video/CULTURE DE L'IA - Episode 2.mp4" type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+                
+                {/* Overlay avec affiche élégante */}
+                {!isVideo2Playing && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer group overflow-hidden"
+                    onClick={handlePlayVideo2}
+                  >
+                    {/* Fond dégradé élégant */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#032622] via-[#1a4d42] to-black"></div>
+                    
+                    {/* Texture subtile */}
+                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{
+                      backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(107, 142, 35, 0.3) 0%, transparent 50%)',
+                    }}></div>
+                    
+                    {/* Contenu affiche */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-8 p-8">
+                      {/* Titre de l'épisode */}
+                      <div className="text-center space-y-4 transform group-hover:scale-105 transition-transform duration-300">
+                        <p className="text-[#6B8E23] text-sm font-bold uppercase tracking-[0.2em] drop-shadow-lg">
+                          Épisode 2
+                        </p>
+                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight drop-shadow-xl" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                          Les Fondations Historiques
+                        </h2>
+                        <p className="text-[#F8F5E4] text-base opacity-90 max-w-md mx-auto leading-relaxed drop-shadow-lg">
+                          Du Test de Turing aux réseaux de neurones: la renaissance de l'IA
                     </p>
                   </div>
+                      
+                      {/* Bouton play */}
+                      <div className="flex flex-col items-center space-y-6">
+                        <div className="relative">
+                          {/* Anneau extérieur animé */}
+                          <div className="absolute inset-0 rounded-full bg-[#6B8E23]/30 animate-pulse" style={{ transform: 'scale(1.3)' }}></div>
+                          
+                          {/* Bouton play principal */}
+                          <button 
+                            className="relative w-20 h-20 rounded-full bg-[#6B8E23] shadow-2xl flex items-center justify-center transform group-hover:scale-125 group-hover:shadow-[0_0_40px_rgba(107,142,35,0.6)] transition-all duration-300 border-4 border-[#F8F5E4]/20 backdrop-blur-sm"
+                          >
+                            <svg className="w-8 h-8 text-white ml-0.5 fill-current drop-shadow-lg" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </button>
                 </div>
                 
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Épisode 2
+                        {/* Texte d'action */}
+                        <span className="text-[#F8F5E4] text-sm font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Cliquez pour regarder
                     </span>
                   </div>
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Culture de l'IA
-                    </span>
                   </div>
+                    
+                    {/* Ligne de séparation */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#6B8E23] to-transparent"></div>
                 </div>
+                )}
+              </div>
+              <div className="absolute top-4 left-4 bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
+                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
+                  Épisode 2 - Culture de l'IA
+                    </span>
               </div>
             </div>
 
@@ -3833,7 +4263,6 @@ export default function MesFormationsPage() {
             </button>
           </div>
         </div>
-
         <div className="space-y-4">
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
@@ -3849,6 +4278,66 @@ export default function MesFormationsPage() {
                   <Clock className="w-4 h-4" />
                   <span>Temps de lecture estimé : 12 min</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 1</span>
+                <span className="font-bold">100%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '100%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Partie 1 terminée ! Prêt pour le quiz ?
+              </p>
+            </div>
+          </div>
+
+          {/* Quiz Préparation */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Préparez le quiz</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2 text-xs text-[#032622]">
+                <div className="flex items-start space-x-2">
+                  <CheckCircle className="w-4 h-4 text-[#6B8E23] mt-0.5 flex-shrink-0" />
+                  <span>10 questions à choix multiples</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <CheckCircle className="w-4 h-4 text-[#6B8E23] mt-0.5 flex-shrink-0" />
+                  <span>Temps recommandé : 15 min</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <CheckCircle className="w-4 h-4 text-[#6B8E23] mt-0.5 flex-shrink-0" />
+                  <span>Score minimum : 70%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Aide-mémoire */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Aide-mémoire</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Test de Turing</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">IA générative</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Transformers</span>
               </div>
             </div>
           </div>
@@ -3884,7 +4373,6 @@ export default function MesFormationsPage() {
       </div>
 
       {renderProgressBar()}
-
       <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
         <div className="space-y-6">
           <div className="border border-black bg-[#F8F5E4] p-6">
@@ -3919,6 +4407,7 @@ export default function MesFormationsPage() {
             <div className="relative mt-8 mb-6">
               <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
                 <video 
+                  ref={video3Ref}
                   controls 
                   className="w-full h-full"
                   poster="/img/formation/forma_keos.jpg"
@@ -3926,6 +4415,63 @@ export default function MesFormationsPage() {
                   <source src="/video/CULTURE DE L'IA - Episode 3.mp4" type="video/mp4" />
                   Votre navigateur ne supporte pas la lecture de vidéos.
                 </video>
+                
+                {/* Overlay avec affiche élégante */}
+                {!isVideo3Playing && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer group overflow-hidden"
+                    onClick={handlePlayVideo3}
+                  >
+                    {/* Fond dégradé élégant */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#032622] via-[#1a4d42] to-black"></div>
+                    
+                    {/* Texture subtile */}
+                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{
+                      backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(107, 142, 35, 0.3) 0%, transparent 50%)',
+                    }}></div>
+                    
+                    {/* Contenu affiche */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-8 p-8">
+                      {/* Titre de l'épisode */}
+                      <div className="text-center space-y-4 transform group-hover:scale-105 transition-transform duration-300">
+                        <p className="text-[#6B8E23] text-sm font-bold uppercase tracking-[0.2em] drop-shadow-lg">
+                          Épisode 3
+                        </p>
+                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight drop-shadow-xl" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                          L'Impact Économique
+                        </h2>
+                        <p className="text-[#F8F5E4] text-base opacity-90 max-w-md mx-auto leading-relaxed drop-shadow-lg">
+                          Comment l'IA redéfinit la valeur économique et le marché du travail
+                        </p>
+                      </div>
+                      
+                      {/* Bouton play */}
+                      <div className="flex flex-col items-center space-y-6">
+                        <div className="relative">
+                          {/* Anneau extérieur animé */}
+                          <div className="absolute inset-0 rounded-full bg-[#6B8E23]/30 animate-pulse" style={{ transform: 'scale(1.3)' }}></div>
+                          
+                          {/* Bouton play principal */}
+                          <button 
+                            className="relative w-20 h-20 rounded-full bg-[#6B8E23] shadow-2xl flex items-center justify-center transform group-hover:scale-125 group-hover:shadow-[0_0_40px_rgba(107,142,35,0.6)] transition-all duration-300 border-4 border-[#F8F5E4]/20 backdrop-blur-sm"
+                          >
+                            <svg className="w-8 h-8 text-white ml-0.5 fill-current drop-shadow-lg" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {/* Texte d'action */}
+                        <span className="text-[#F8F5E4] text-sm font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Cliquez pour regarder
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Ligne de séparation */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#6B8E23] to-transparent"></div>
+                  </div>
+                )}
               </div>
               <div className="absolute top-4 left-4 bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
                 <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
@@ -3992,6 +4538,81 @@ export default function MesFormationsPage() {
             </div>
           </div>
 
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 2</span>
+                <span className="font-bold">0%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '0%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Début de la Partie 2
+              </p>
+            </div>
+          </div>
+
+          {/* Thèmes Partie 2 */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Au programme</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="flex items-start space-x-2 text-xs text-[#032622]">
+                <ArrowRight className="w-3 h-3 mt-1 flex-shrink-0 text-[#6B8E23]" />
+                <span>Impact économique de l'IA</span>
+              </div>
+              <div className="flex items-start space-x-2 text-xs text-[#032622]">
+                <ArrowRight className="w-3 h-3 mt-1 flex-shrink-0 text-[#6B8E23]" />
+                <span>L'entreprise cognitive</span>
+              </div>
+              <div className="flex items-start space-x-2 text-xs text-[#032622]">
+                <ArrowRight className="w-3 h-3 mt-1 flex-shrink-0 text-[#6B8E23]" />
+                <span>Transformation du travail</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Ressources Partie 2 */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span className="underline">Étude McKinsey : IA en entreprise</span>
+              </a>
+              <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span className="underline">Cas Tesla : entreprise cognitive</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Cas d'études */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Cas d'études</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Tesla</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Goldman Sachs</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">IBM Watson Health</span>
+              </div>
+            </div>
+          </div>
+
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
               <p className="text-white text-xs font-bold uppercase">Événements à venir</p>
@@ -4023,7 +4644,6 @@ export default function MesFormationsPage() {
       </div>
 
       {renderProgressBar()}
-
       <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
         <div className="space-y-6">
           <div className="border border-black bg-[#F8F5E4] p-6">
@@ -4191,7 +4811,6 @@ export default function MesFormationsPage() {
                 />
               </div>
             </div>
-
             {/* Suite du contenu après l'image */}
             <div className="space-y-6 text-base text-[#032622] leading-relaxed mt-8">
               <p>
@@ -4289,6 +4908,80 @@ export default function MesFormationsPage() {
             </div>
           </div>
 
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 2</span>
+                <span className="font-bold">33%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '33%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                1 module complété sur 3
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span className="underline">Rapport MIT : Futur du travail</span>
+              </a>
+              <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span className="underline">Étude : IA et productivité</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Chiffres clés */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Chiffres clés</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold text-[#6B8E23] text-base">70%</p>
+                <p className="opacity-70">des entreprises utilisent l'IA</p>
+              </div>
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold text-[#6B8E23] text-base">+15%</p>
+                <p className="opacity-70">de gains de productivité</p>
+              </div>
+            </div>
+          </div>
+
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
               <p className="text-white text-xs font-bold uppercase">Événements à venir</p>
@@ -4304,7 +4997,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu Partie 2.2
   const renderPartie2_2 = () => (
     <div className="space-y-6">
@@ -4408,7 +5100,6 @@ export default function MesFormationsPage() {
             <h3 className="text-3xl font-bold text-[#032622] mb-6 text-center uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
               PARTIE 2 — L'IMPACT ÉCONOMIQUE ET ORGANISATIONNEL DE L'IA
             </h3>
-
             <h4 className="text-2xl font-bold text-[#032622] mb-6 text-center" style={{ fontFamily: "var(--font-termina-bold)" }}>
               2.2. L'entreprise cognitive : un nouveau modèle économique
             </h4>
@@ -4502,7 +5193,6 @@ export default function MesFormationsPage() {
                 Mais cette concentration crée aussi des déséquilibres. Les données sont devenues une ressource stratégique mondiale, au même titre que le pétrole au XXᵉ siècle. Elles sont extraites, stockées, vendues, parfois même spéculées. C'est pourquoi certains économistes parlent aujourd'hui d'un "capitalisme de la donnée", où la ressource la plus rare n'est plus l'énergie, mais la confiance.
               </p>
             </div>
-
             {/* Vidéo YouTube */}
             <div className="relative mt-8 mb-6">
               <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
@@ -4578,6 +5268,85 @@ export default function MesFormationsPage() {
             </div>
           </div>
 
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 2</span>
+                <span className="font-bold">67%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '67%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                2 modules complétés sur 3
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Entreprises à connaître */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Entreprises phares</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold">Tesla</p>
+                <p className="opacity-70 text-[10px]">Apprentissage continu</p>
+              </div>
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold">Carrefour</p>
+                <p className="opacity-70 text-[10px]">Data Factory</p>
+              </div>
+              <div className="text-xs text-[#032622]">
+                <p className="font-bold">Siemens</p>
+                <p className="opacity-70 text-[10px]">Industrie 4.0</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Concepts essentiels */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Concepts essentiels</p>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Entreprise cognitive</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Capteur roulant</span>
+              </div>
+              <div className="bg-white border border-[#032622]/30 px-3 py-2 text-xs text-[#032622]">
+                <span className="font-bold">Data-driven</span>
+              </div>
+            </div>
+          </div>
+
           <div className="border border-black bg-[#F8F5E4]">
             <div className="border-b border-black p-4 bg-[#032622]">
               <p className="text-white text-xs font-bold uppercase">Événements à venir</p>
@@ -4593,7 +5362,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu Partie 2.2 Suite
   const renderPartie2_2_Suite = () => (
     <div className="space-y-6">
@@ -4655,7 +5423,6 @@ export default function MesFormationsPage() {
                   <Eraser className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
-              
               <div className="flex flex-wrap items-center gap-2">
                 {showHighlightMenu && (
                   <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
@@ -4738,40 +5505,82 @@ export default function MesFormationsPage() {
               </section>
             </div>
 
-            {/* Placeholder vidéo Episode 4_1 */}
-            <div className="relative mt-8 mb-6 group">
-              <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden shadow-2xl border-2 border-[#032622] hover:shadow-3xl transition-all duration-300">
-                <div className="w-full h-full bg-[#F8F5E4] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 border-4 border-[#032622] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-10 h-10 text-[#032622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-black text-[#032622] uppercase mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                      Vidéo Indisponible
-                    </p>
-                    <p className="text-sm text-[#032622]/70">
-                      Cette vidéo sera bientôt disponible
+            {/* Vidéo Episode 4 - Entreprise Cognitive */}
+            <div className="relative mt-8 mb-6">
+              <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl aspect-video">
+                <video 
+                  ref={video4Ref}
+                  controls 
+                  className="w-full h-full"
+                  poster="/img/formation/forma_keos.jpg"
+                >
+                  <source src="/video/CULTURE DE L'IA - Episode 4.mp4" type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+                
+                {/* Overlay avec affiche élégante */}
+                {!isVideo4Playing && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer group overflow-hidden"
+                    onClick={handlePlayVideo4}
+                  >
+                    {/* Fond dégradé élégant */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#032622] via-[#1a4d42] to-black"></div>
+                    
+                    {/* Texture subtile */}
+                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{
+                      backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(107, 142, 35, 0.3) 0%, transparent 50%)',
+                    }}></div>
+                    
+                    {/* Contenu affiche */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-8 p-8">
+                      {/* Titre de l'épisode */}
+                      <div className="text-center space-y-4 transform group-hover:scale-105 transition-transform duration-300">
+                        <p className="text-[#6B8E23] text-sm font-bold uppercase tracking-[0.2em] drop-shadow-lg">
+                          Épisode 4
+                        </p>
+                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight drop-shadow-xl" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                          L'Entreprise Cognitive
+                        </h2>
+                        <p className="text-[#F8F5E4] text-base opacity-90 max-w-md mx-auto leading-relaxed drop-shadow-lg">
+                          Vers une nouvelle vision de l'intelligence organisationnelle
                     </p>
                   </div>
+                      
+                      {/* Bouton play */}
+                      <div className="flex flex-col items-center space-y-6">
+                        <div className="relative">
+                          {/* Anneau extérieur animé */}
+                          <div className="absolute inset-0 rounded-full bg-[#6B8E23]/30 animate-pulse" style={{ transform: 'scale(1.3)' }}></div>
+                          
+                          {/* Bouton play principal */}
+                          <button 
+                            className="relative w-20 h-20 rounded-full bg-[#6B8E23] shadow-2xl flex items-center justify-center transform group-hover:scale-125 group-hover:shadow-[0_0_40px_rgba(107,142,35,0.6)] transition-all duration-300 border-4 border-[#F8F5E4]/20 backdrop-blur-sm"
+                          >
+                            <svg className="w-8 h-8 text-white ml-0.5 fill-current drop-shadow-lg" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </button>
                 </div>
                 
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Épisode 4
+                        {/* Texte d'action */}
+                        <span className="text-[#F8F5E4] text-sm font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Cliquez pour regarder
                     </span>
                   </div>
-                  <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
-                      Entreprise Cognitive
-                    </span>
                   </div>
+                    
+                    {/* Ligne de séparation */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#6B8E23] to-transparent"></div>
                 </div>
+                )}
               </div>
+              <div className="absolute top-4 left-4 bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
+                    <span className="text-[#032622] text-xs font-bold uppercase tracking-wider">
+                  Épisode 4 - Entreprise Cognitive
+                    </span>
             </div>
-
+            </div>
             {/* Suite du contenu */}
             <div className="space-y-6 text-base text-[#032622] leading-relaxed mt-8">
               <p>
@@ -5007,7 +5816,6 @@ export default function MesFormationsPage() {
             <h3 className="text-3xl font-bold text-[#032622] mb-6 text-center uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
               PARTIE 2 — L'IMPACT ÉCONOMIQUE ET ORGANISATIONNEL DE L'IA
             </h3>
-
             <h4 className="text-2xl font-bold text-[#032622] mb-6 text-center" style={{ fontFamily: "var(--font-termina-bold)" }}>
               2.3. L'IA dans la société des services et des contenus
             </h4>
@@ -5110,7 +5918,6 @@ export default function MesFormationsPage() {
               />
             </div>
           </div>
-
           <div className="grid sm:grid-cols-3 gap-3">
             <button
               onClick={() => setStep("partie2_2_suite")}
@@ -5308,7 +6115,6 @@ export default function MesFormationsPage() {
                 </p>
               </section>
             </div>
-
             {/* Image musique1 */}
             <div className="relative mt-8 mb-6">
               <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl">
@@ -5319,7 +6125,6 @@ export default function MesFormationsPage() {
                 />
               </div>
             </div>
-
             {/* Suite du contenu après l'image */}
             <div className="space-y-6 text-base text-[#032622] leading-relaxed mt-8">
               <div className="border-l-4 border-[#032622] pl-6 py-4 bg-[#032622]/5">
@@ -5476,7 +6281,6 @@ export default function MesFormationsPage() {
       </div>
     </div>
   );
-
   // Rendu Quiz Partie 1
   const renderQuizPartie1 = () => {
     const currentQuestion = quizPartie1Questions[currentQuizQuestion];
@@ -5622,7 +6426,6 @@ export default function MesFormationsPage() {
       if (percentage >= 50) return "Pas mal ! Quelques révisions seraient bénéfiques.";
       return "Courage ! Relisez la Partie 1 pour mieux comprendre.";
     };
-
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="space-y-8 animate-fadeIn">
@@ -5653,7 +6456,6 @@ export default function MesFormationsPage() {
               </p>
             </div>
           </div>
-
           {/* Détails des réponses */}
           <div className="space-y-4">
             <h3 className="text-2xl font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
@@ -5848,7 +6650,6 @@ export default function MesFormationsPage() {
       </div>
     );
   };
-
   // Rendu Résultats Partie 2
   const renderResultsPartie2 = () => {
     const totalQuestions = quizPartie2Questions.length;
@@ -5966,7 +6767,6 @@ export default function MesFormationsPage() {
       </div>
     );
   };
-
   // Rendu Page Finale du Cours
   const renderCourseFinal = () => {
     return (
@@ -6025,7 +6825,6 @@ export default function MesFormationsPage() {
                         </div>
                       </div>
                     </div>
-
           {/* Section Étude de Cas - Design compact */}
           <div className="border-2 border-[#032622] bg-[#F8F5E4] shadow-lg overflow-hidden">
             <div className="bg-[#032622] text-white p-6 text-center">
@@ -6212,7 +7011,6 @@ export default function MesFormationsPage() {
       </div>
     );
   };
-
   return (
     <div className="p-6">
         {step === "overview" && renderOverview()}
@@ -6238,6 +7036,3 @@ export default function MesFormationsPage() {
     </div>
   );
 }
-
-
-
