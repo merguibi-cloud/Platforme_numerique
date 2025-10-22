@@ -269,7 +269,7 @@ const EventDetailsModal = ({ event, onClose }: { event: Event; onClose: () => vo
 
   const colorByType = event.type === "important" ? "bg-[#D96B6B]" : event.type === "late" ? "bg-[#F0C75E]" : "bg-[#032622]";
 
-  // Informations fictives pour un rendu réaliste
+  // Iformations fictives pour un rendu réaliste
   const fakeData = {
     location: event.type === "normal" ? "Salle 3.2 · Campus La Défense" : "Visio Google Meet",
     meetLink: "https://meet.google.com/abc-defg-hij",
