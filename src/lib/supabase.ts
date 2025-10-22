@@ -29,6 +29,23 @@ export const getSupabaseClient = (): SupabaseClient => {
   return supabase
 }
 
+// Fonction pour obtenir le client Supabase côté serveur (bypass RLS)
+export const getSupabaseServerClient = (): SupabaseClient => {
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Variables d\'environnement Supabase manquantes pour le serveur')
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
 // Fonction pour synchroniser la session avec les cookies
 export const syncSessionWithCookies = async () => {
   if (!supabase || typeof window === 'undefined') return;

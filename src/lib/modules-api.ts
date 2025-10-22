@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabaseServerClient } from './supabase';
 import { ModuleApprentissage, CoursContenu } from '@/types/formation-detailed';
 
 // =============================================
@@ -7,11 +7,12 @@ import { ModuleApprentissage, CoursContenu } from '@/types/formation-detailed';
 
 export interface CreateModuleRequest {
   bloc_id: number;
-  numero_module: number;
+  numero_module?: number;
   titre: string;
   description?: string;
   type_module: 'cours' | 'etude_cas' | 'quiz' | 'projet';
   cours: string[];
+  created_by?: string;
 }
 
 export interface CreateModuleResponse {
@@ -23,22 +24,38 @@ export interface CreateModuleResponse {
 
 export async function createModuleWithCours(data: CreateModuleRequest): Promise<CreateModuleResponse> {
   try {
+    const supabase = getSupabaseServerClient();
+    
+    // Calculer le prochain numéro de module pour ce bloc
+    const { data: existingModules } = await supabase
+      .from('modules_apprentissage')
+      .select('numero_module')
+      .eq('bloc_id', data.bloc_id)
+      .order('numero_module', { ascending: false })
+      .limit(1);
+    
+    const nextModuleNumber = existingModules && existingModules.length > 0 
+      ? existingModules[0].numero_module + 1 
+      : 1;
+    
     // Créer le module
     const { data: module, error: moduleError } = await supabase
       .from('modules_apprentissage')
       .insert({
         bloc_id: data.bloc_id,
-        numero_module: data.numero_module,
+        numero_module: nextModuleNumber,
         titre: data.titre,
         description: data.description,
         type_module: data.type_module,
-        ordre_affichage: data.numero_module
+        ordre_affichage: nextModuleNumber,
+        duree_estimee: 0,
+        actif: true,
+        created_by: data.created_by || null
       })
       .select()
       .single();
 
     if (moduleError) {
-      
       return { success: false, error: 'Erreur lors de la création du module' };
     }
 
@@ -49,7 +66,8 @@ export async function createModuleWithCours(data: CreateModuleRequest): Promise<
         module_id: module.id,
         titre: coursTitre.trim(),
         type_contenu: 'texte' as const,
-        ordre_affichage: index + 1
+        ordre_affichage: index + 1,
+        actif: false
       }));
 
     if (coursToCreate.length > 0) {
@@ -59,7 +77,6 @@ export async function createModuleWithCours(data: CreateModuleRequest): Promise<
         .select();
 
       if (coursError) {
-        
         return { 
           success: true, 
           module, 
@@ -72,13 +89,14 @@ export async function createModuleWithCours(data: CreateModuleRequest): Promise<
 
     return { success: true, module };
   } catch (error) {
-    
     return { success: false, error: 'Erreur interne du serveur' };
   }
 }
 
 export async function getModulesByBlocId(blocId: number): Promise<ModuleApprentissage[]> {
   try {
+    const supabase = getSupabaseServerClient();
+    
     const { data, error } = await supabase
       .from('modules_apprentissage')
       .select('*')
@@ -100,6 +118,8 @@ export async function getModulesByBlocId(blocId: number): Promise<ModuleApprenti
 
 export async function getCoursByModuleId(moduleId: number): Promise<CoursContenu[]> {
   try {
+    const supabase = getSupabaseServerClient();
+    
     const { data, error } = await supabase
       .from('cours_contenu')
       .select('*')
@@ -121,6 +141,8 @@ export async function getCoursByModuleId(moduleId: number): Promise<CoursContenu
 
 export async function updateModule(moduleId: number, updates: Partial<ModuleApprentissage>): Promise<boolean> {
   try {
+    const supabase = getSupabaseServerClient();
+    
     const { error } = await supabase
       .from('modules_apprentissage')
       .update(updates)
@@ -140,6 +162,8 @@ export async function updateModule(moduleId: number, updates: Partial<ModuleAppr
 
 export async function deleteModule(moduleId: number): Promise<boolean> {
   try {
+    const supabase = getSupabaseServerClient();
+    
     // Désactiver le module au lieu de le supprimer (soft delete)
     const { error } = await supabase
       .from('modules_apprentissage')

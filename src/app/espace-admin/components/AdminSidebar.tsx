@@ -101,11 +101,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   const handleLogoutClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Empêcher tout comportement par défaut
     e.stopPropagation(); // Empêcher la propagation
-    console.log('Bouton de déconnexion cliqué'); // Debug
-    
-    // Test simple pour vérifier que le bouton fonctionne
-    alert('Bouton de déconnexion cliqué !');
-    
+   
     setShowConfirmModal(true);
   };
 

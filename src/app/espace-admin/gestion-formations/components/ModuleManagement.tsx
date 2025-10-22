@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Edit, FileText, ChevronDown } from 'lucide-react';
+import { Plus, Edit, FileText, ChevronDown, Eye } from 'lucide-react';
 import { CreateModule } from './CreateModule';
 
 interface ModuleWithStatus {
   id: string;
   type: string;
-  matiere: string;
+  cours: string;
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
@@ -21,6 +21,7 @@ interface ModuleManagementProps {
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
   onAssignModule: (moduleId: string) => void;
+  onVisualizeModule: (moduleId: string) => void;
 }
 
 export const ModuleManagement = ({
@@ -30,7 +31,8 @@ export const ModuleManagement = ({
   onAddModule,
   onEditModule,
   onAddQuiz,
-  onAssignModule
+  onAssignModule,
+  onVisualizeModule
 }: ModuleManagementProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -52,9 +54,7 @@ export const ModuleManagement = ({
   const modulesBrouillon = modules.filter(m => m.statut === 'brouillon');
   const modulesManquant = modules.filter(m => m.statut === 'manquant');
 
-  const ModuleTable = ({ modules, title, color }: { modules: ModuleWithStatus[]; title: string; color: string }) => {
-    if (modules.length === 0) return null;
-
+  const ModuleTable = ({ modules, title, color, emptyMessage }: { modules: ModuleWithStatus[]; title: string; color: string; emptyMessage: string }) => {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -71,60 +71,76 @@ export const ModuleManagement = ({
           <table className="w-full border-2 border-[#032622]">
             <thead>
               <tr className="bg-[#032622] text-[#F8F5E4]">
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">TYPE</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">MATIÈRE</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">CRÉATION/MODIFICATION</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">TITRE</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">COURS</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">DERNIÈRE MODIFICATION</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">CRÉÉ PAR</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {modules.map((module) => (
-                <tr key={module.id} className="bg-[#F8F5E4] hover:bg-gray-100">
-                  <td className="border border-[#032622] p-3 font-semibold text-[#032622]">
-                    {module.type}
+              {modules.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="border border-[#032622] p-8 text-center text-[#032622]">
+                    <p className="text-lg font-medium">{emptyMessage}</p>
                   </td>
-                  <td className="border border-[#032622] p-3 text-[#032622]">
-                    {module.matiere}
-                  </td>
-                  <td className="border border-[#032622] p-3 text-[#032622]">
-                    {module.creationModification || '-'}
-                  </td>
-                  <td className="border border-[#032622] p-3 text-[#032622]">
-                    {module.creePar || '-'}
-                  </td>
-                  <td className="border border-[#032622] p-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onEditModule(module.id)}
-                        className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
-                        style={{ fontFamily: 'var(--font-termina-bold)' }}
-                      >
-                        <Edit className="w-3 h-3" />
-                        MODIFIER LE MODULE
-                      </button>
-                      <button
-                        onClick={() => onAddQuiz(module.id)}
-                        className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
-                        style={{ fontFamily: 'var(--font-termina-bold)' }}
-                      >
-                        <FileText className="w-3 h-3" />
-                        AJOUTER LE QUIZ
-                      </button>
-                      {module.statut === 'manquant' && (
+                </tr>
+              ) : (
+                modules.map((module) => (
+                  <tr key={module.id} className="bg-[#F8F5E4] hover:bg-gray-100">
+                    <td className="border border-[#032622] p-3 font-semibold text-[#032622]">
+                      {module.type}
+                    </td>
+                    <td className="border border-[#032622] p-3 text-[#032622]">
+                      {module.cours}
+                    </td>
+                    <td className="border border-[#032622] p-3 text-[#032622]">
+                      {module.creationModification || '-'}
+                    </td>
+                    <td className="border border-[#032622] p-3 text-[#032622]">
+                      {module.creePar || '-'}
+                    </td>
+                    <td className="border border-[#032622] p-3">
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => onAssignModule(module.id)}
+                          onClick={() => onVisualizeModule(module.id)}
+                          className="bg-blue-600 text-white px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-blue-700 transition-colors flex items-center gap-1"
+                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                        >
+                          <Eye className="w-3 h-3" />
+                          VISUALISER
+                        </button>
+                        <button
+                          onClick={() => onEditModule(module.id)}
                           className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
                           style={{ fontFamily: 'var(--font-termina-bold)' }}
                         >
-                          <ChevronDown className="w-3 h-3" />
-                          ATTRIBUER
+                          <Edit className="w-3 h-3" />
+                          MODIFIER LE COURS
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <button
+                          onClick={() => onAddQuiz(module.id)}
+                          className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
+                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                        >
+                          <FileText className="w-3 h-3" />
+                          {module.statut === 'en_ligne' ? 'MODIFIER LE QUIZ' : 'AJOUTER LE QUIZ'}
+                        </button>
+                        {module.statut === 'manquant' && (
+                          <button
+                            onClick={() => onAssignModule(module.id)}
+                            className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
+                            style={{ fontFamily: 'var(--font-termina-bold)' }}
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                            ATTRIBUER
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -172,17 +188,20 @@ export const ModuleManagement = ({
           <ModuleTable 
             modules={modulesEnLigne} 
             title="EN LIGNE" 
-            color="bg-green-500" 
+            color="bg-green-500"
+            emptyMessage="Aucun module en ligne pour le moment"
           />
           <ModuleTable 
             modules={modulesBrouillon} 
             title="BROUILLON/EN COURS D'EXAMEN" 
-            color="bg-orange-500" 
+            color="bg-orange-500"
+            emptyMessage="Aucun module en cours de développement"
           />
           <ModuleTable 
             modules={modulesManquant} 
             title="MANQUANT" 
-            color="bg-white border-2 border-gray-400" 
+            color="bg-white border-2 border-gray-400"
+            emptyMessage="Aucun module manquant"
           />
         </div>
       </div>

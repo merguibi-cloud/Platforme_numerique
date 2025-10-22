@@ -49,7 +49,7 @@ export const CreateModule = ({ isOpen, onClose, onSave }: CreateModuleProps) => 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#F8F5E4] border-2 border-[#032622] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b-2 border-[#032622]">
           <h2 
@@ -60,7 +60,7 @@ export const CreateModule = ({ isOpen, onClose, onSave }: CreateModuleProps) => 
           </h2>
           <button
             onClick={handleClose}
-            className="w-8 h-8 border-2 border-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-[#F8F5E4] transition-colors flex items-center justify-center"
+            className="w-8 h-8 border-2 border-[#032622] bg-[#032622] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>

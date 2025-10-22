@@ -4,7 +4,6 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModuleManagement } from '../../components/ModuleManagement';
 import { FormationHeader } from '../../components/FormationHeader';
-import { BlocStats } from '../../components/BlocStats';
 
 interface ModuleManagementPageProps {
   params: Promise<{
@@ -16,7 +15,7 @@ interface ModuleManagementPageProps {
 interface ModuleWithStatus {
   id: string;
   type: string;
-  matiere: string;
+  cours: string;
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
@@ -29,62 +28,48 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   const [isLoading, setIsLoading] = useState(true);
   const [modules, setModules] = useState<ModuleWithStatus[]>([]);
 
-  useEffect(() => {
-    // Simuler un chargement
-    setTimeout(() => {
-      setIsLoading(false);
+  const loadModules = async () => {
+    try {
+      const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`);
       
-      // Données de test pour vérifier que la vue fonctionne
-      setModules([
-        {
-          id: '1',
-          type: 'MODULE 1',
-          matiere: 'CONTRIBUER À LA STRATÉGIE DE DÉVELOPPEMENT DE L\'ORGANISATION',
-          creationModification: '25/05/24',
-          creePar: 'JACQUES POTE',
-          statut: 'en_ligne'
-        },
-        {
-          id: '2',
-          type: 'MODULE 2',
-          matiere: 'DÉFINIR ET PLANIFIER DES ACTIONS MARKETING ET DE DÉVELOPPEMENT',
-          creationModification: '25/05/24',
-          creePar: 'JACQUES POTE',
-          statut: 'en_ligne'
-        },
-        {
-          id: '3',
-          type: 'MODULE 3',
-          matiere: 'PILOTER UN PROJET DE DÉVELOPPEMENT',
-          creationModification: '15/03/23',
-          creePar: 'JACQUES POTE',
-          statut: 'brouillon'
-        },
-        {
-          id: '4',
-          type: 'MODULE 4',
-          matiere: 'CONTRIBUER À LA STRATÉGIE DE DÉVELOPPEMENT DE L\'ORGANISATION',
-          statut: 'manquant'
-        },
-        {
-          id: '5',
-          type: 'MODULE 5',
-          matiere: 'DÉFINIR ET PLANIFIER DES ACTIONS MARKETING ET DE DÉVELOPPEMENT',
-          statut: 'manquant'
-        },
-        {
-          id: '6',
-          type: 'MODULE 6',
-          matiere: 'DÉFINIR ET PLANIFIER DES ACTIONS MARKETING ET DE DÉVELOPPEMENT',
-          statut: 'manquant'
-        }
-      ]);
-    }, 1000);
+      if (response.ok) {
+        const data = await response.json();
+        setModules(data.modules || []);
+      } else {
+        setModules([]);
+      }
+    } catch (error) {
+      setModules([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadModules();
   }, [formationId, blocId]);
 
   const handleAddModule = async (moduleData: { titre: string; cours: string[] }) => {
-    console.log('Ajouter module:', moduleData);
-    // TODO: Implémenter l'ajout réel du module
+    try {
+      const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          titre: moduleData.titre,
+          cours: moduleData.cours,
+          description: '',
+          type_module: 'cours'
+        }),
+      });
+
+      if (response.ok) {
+        await loadModules();
+      }
+    } catch (error) {
+      // Erreur silencieuse
+    }
   };
 
   const handleEditModule = (moduleId: string) => {
@@ -95,8 +80,15 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     console.log('Ajouter quiz au module:', moduleId);
   };
 
+  const handleVisualizeModule = (moduleId: string) => {
+    console.log('Visualiser le module:', moduleId);
+    // TODO: Implémenter la navigation vers la page de visualisation
+    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}`);
+  };
+
   const handleAssignModule = (moduleId: string) => {
     console.log('Attribuer le module:', moduleId);
+    // TODO: Implémenter l'attribution du module
   };
 
   const handleBackToBlocs = () => {
@@ -131,12 +123,6 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
               Retour aux blocs
             </button>
             
-            {/* Statistiques du bloc */}
-            <BlocStats 
-              blocId={parseInt(blocId)} 
-              blocTitle="CONTRIBUER À LA STRATÉGIE DE DÉVELOPPEMENT DE L'ORGANISATION"
-            />
-            
             <ModuleManagement
               blocTitle="CONTRIBUER À LA STRATÉGIE DE DÉVELOPPEMENT DE L'ORGANISATION"
               blocNumber="BLOC-1"
@@ -145,6 +131,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
               onEditModule={handleEditModule}
               onAddQuiz={handleAddQuiz}
               onAssignModule={handleAssignModule}
+              onVisualizeModule={handleVisualizeModule}
             />
           </div>
         </div>
