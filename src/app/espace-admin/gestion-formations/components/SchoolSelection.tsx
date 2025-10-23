@@ -60,10 +60,9 @@ export const SchoolSelection = ({ schools, onSchoolSelect }: SchoolSelectionProp
               borderColor: school.isSelected ? (school.color || '#032622') : '#032622',
               boxShadow: school.isSelected ? `0 4px 6px -1px ${school.color || '#032622'}20, 0 2px 4px -1px ${school.color || '#032622'}10` : 'none'
             }}
-            onClick={() => {
-              console.log('Sélection école:', school.id, 'Couleur:', school.color, 'Sélectionné:', school.isSelected);
-              onSchoolSelect(school.id);
-            }}
+              onClick={() => {
+                // TODO: Implémenter la sélection d'école
+              }}
           >
             <div className="flex flex-col items-center justify-center h-full p-4">
               <div className="mb-2">

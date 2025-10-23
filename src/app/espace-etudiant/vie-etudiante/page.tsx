@@ -434,7 +434,7 @@ export default function VieEtudiantePage() {
                       <p className="text-xs font-bold uppercase tracking-[0.2em]">{task.title}</p>
                       <p className="text-[11px] text-[#032622]/70 leading-relaxed">{task.description}</p>
                       <button 
-                        onClick={() => console.log('Voir tâche:', task.id)}
+                        onClick={() => {/* TODO: Implémenter la visualisation de la tâche */}}
                         className="w-full border border-[#032622] bg-[#F8F5E4] py-2 text-[11px] font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
                       >
                         Voir

@@ -4,13 +4,21 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 // GET - Récupérer les détails d'un module avec ses cours
 export async function GET(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: Promise<{ moduleId: string }> }
 ) {
   try {
     const supabase = getSupabaseServerClient();
     
-    // Vérifier l'authentification
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Récupérer le token d'authentification depuis les cookies
+    const cookieStore = await import('next/headers').then(m => m.cookies());
+    const accessToken = cookieStore.get('sb-access-token')?.value;
+    
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    // Vérifier l'authentification avec le token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -26,13 +34,23 @@ export async function GET(
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const { moduleId } = params;
+    const { moduleId } = await params;
 
     // Récupérer le module avec ses cours
     const { data: module, error: moduleError } = await supabase
       .from('modules_apprentissage')
       .select(`
-        *,
+        id,
+        bloc_id,
+        numero_module,
+        titre,
+        description,
+        type_module,
+        duree_estimee,
+        ordre_affichage,
+        actif,
+        created_at,
+        updated_at,
         cours_contenu (
           id,
           titre,
@@ -78,6 +96,8 @@ export async function GET(
         description: module.description,
         type_module: module.type_module,
         duree_estimee: module.duree_estimee,
+        ordre_affichage: module.ordre_affichage,
+        numero_module: module.numero_module,
         statut,
         cours: coursTries,
         created_at: module.created_at,
@@ -94,7 +114,7 @@ export async function GET(
 // POST - Créer un nouveau cours dans un module
 export async function POST(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: Promise<{ moduleId: string }> }
 ) {
   try {
     const supabase = getSupabaseServerClient();
@@ -116,7 +136,7 @@ export async function POST(
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const { moduleId } = params;
+    const { moduleId } = await params;
     const body = await request.json();
     const { titre, description, type_contenu, contenu, url_video, duree_video } = body;
 
@@ -158,7 +178,7 @@ export async function POST(
 // PUT - Mettre à jour un cours
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: Promise<{ moduleId: string }> }
 ) {
   try {
     const supabase = getSupabaseServerClient();
@@ -207,7 +227,7 @@ export async function PUT(
 // DELETE - Supprimer un cours
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: Promise<{ moduleId: string }> }
 ) {
   try {
     const supabase = getSupabaseServerClient();

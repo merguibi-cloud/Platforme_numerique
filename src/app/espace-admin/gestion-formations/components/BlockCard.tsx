@@ -56,16 +56,12 @@ export const BlockCard = ({
   const handleEditBlock = () => {
     if (onEditBlock) {
       onEditBlock(id);
-    } else {
-      console.log('Éditer le bloc:', id);
     }
   };
 
   const handleDeleteBlock = () => {
     if (onDeleteBlock) {
       onDeleteBlock(id);
-    } else {
-      console.log('Supprimer le bloc:', id);
     }
   };
 

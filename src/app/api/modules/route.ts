@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
         statut: 'brouillon' as const,
         duree_estimee: module.duree_estimee || 0,
         cours_count: 0,
-        cours_actifs: 0
+        cours_actifs: 0,
+        ordre_affichage: module.ordre_affichage,
+        numero_module: module.numero_module
       };
     });
 

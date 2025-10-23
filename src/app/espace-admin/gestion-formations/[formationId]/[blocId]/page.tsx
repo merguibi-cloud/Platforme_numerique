@@ -19,6 +19,8 @@ interface ModuleWithStatus {
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
+  ordre_affichage?: number;
+  numero_module?: number;
 }
 
 export default function ModuleManagementPage({ params }: ModuleManagementPageProps) {
@@ -31,7 +33,12 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
 
   const loadBlocInfo = async () => {
     try {
-      const response = await fetch(`/api/blocs?formationId=${formationId}`);
+      const response = await fetch(`/api/blocs?formationId=${formationId}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
       if (response.ok) {
         const data = await response.json();
@@ -50,7 +57,12 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
 
   const loadModules = async () => {
     try {
-      const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`);
+      const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
       if (response.ok) {
         const data = await response.json();
@@ -101,22 +113,32 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   };
 
   const handleEditModule = (moduleId: string) => {
-    console.log('Éditer le module:', moduleId);
+    // TODO: Implémenter l'édition du module
   };
 
   const handleAddQuiz = (moduleId: string) => {
-    console.log('Ajouter quiz au module:', moduleId);
+    // TODO: Implémenter l'ajout de quiz
   };
 
   const handleVisualizeModule = (moduleId: string) => {
-    console.log('Visualiser le module:', moduleId);
     // TODO: Implémenter la navigation vers la page de visualisation
     router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}`);
   };
 
   const handleAssignModule = (moduleId: string) => {
-    console.log('Attribuer le module:', moduleId);
     // TODO: Implémenter l'attribution du module
+  };
+
+  const handleEditCours = (moduleId: string, coursId?: string) => {
+    // Trouver le module pour récupérer son ordre d'affichage
+    const module = modules.find(m => m.id === moduleId);
+    const moduleOrder = module?.ordre_affichage || module?.numero_module || 1;
+    
+    if (coursId) {
+      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours/${coursId}`);
+    } else {
+      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours`);
+    }
   };
 
   const handleBackToBlocs = () => {
@@ -155,11 +177,14 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
               blocTitle={blocInfo?.titre || "Chargement..."}
               blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
               modules={modules}
+              formationId={formationId}
+              blocId={blocId}
               onAddModule={handleAddModule}
               onEditModule={handleEditModule}
               onAddQuiz={handleAddQuiz}
               onAssignModule={handleAssignModule}
               onVisualizeModule={handleVisualizeModule}
+              onEditCours={handleEditCours}
             />
           </div>
         </div>

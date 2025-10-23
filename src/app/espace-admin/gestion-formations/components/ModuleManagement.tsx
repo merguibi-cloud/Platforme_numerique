@@ -11,28 +11,38 @@ interface ModuleWithStatus {
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
+  cours_count?: number;
+  cours_status?: 'brouillon' | 'en_cours_examen' | 'en_ligne' | 'manquant';
+  ordre_affichage?: number;
+  numero_module?: number;
 }
 
 interface ModuleManagementProps {
   blocTitle: string;
   blocNumber: string;
   modules: ModuleWithStatus[];
+  formationId: string;
+  blocId: string;
   onAddModule: (moduleData: { titre: string; cours: string[] }) => void;
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
   onAssignModule: (moduleId: string) => void;
   onVisualizeModule: (moduleId: string) => void;
+  onEditCours: (moduleId: string, coursId?: string) => void;
 }
 
 export const ModuleManagement = ({
   blocTitle,
   blocNumber,
   modules,
+  formationId,
+  blocId,
   onAddModule,
   onEditModule,
   onAddQuiz,
   onAssignModule,
-  onVisualizeModule
+  onVisualizeModule,
+  onEditCours
 }: ModuleManagementProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -49,10 +59,23 @@ export const ModuleManagement = ({
     setIsCreateModalOpen(false);
   };
 
-  // Grouper les modules par statut
-  const modulesEnLigne = modules.filter(m => m.statut === 'en_ligne');
-  const modulesBrouillon = modules.filter(m => m.statut === 'brouillon');
-  const modulesManquant = modules.filter(m => m.statut === 'manquant');
+  // Grouper les modules par statut en tenant compte des cours
+  const modulesEnLigne = modules.filter(m => {
+    if (m.cours_status === 'en_ligne') return true;
+    if (m.cours_count === 0) return false; // Pas de cours = manquant
+    return m.statut === 'en_ligne';
+  });
+  
+  const modulesBrouillon = modules.filter(m => {
+    if (m.cours_status === 'brouillon' || m.cours_status === 'en_cours_examen') return true;
+    if (m.cours_count === 0) return false; // Pas de cours = manquant
+    return m.statut === 'brouillon';
+  });
+  
+  const modulesManquant = modules.filter(m => {
+    if (m.cours_count === 0) return true; // Pas de cours = manquant
+    return m.statut === 'manquant';
+  });
 
   const ModuleTable = ({ modules, title, color, emptyMessage }: { modules: ModuleWithStatus[]; title: string; color: string; emptyMessage: string }) => {
     return (
@@ -104,12 +127,12 @@ export const ModuleManagement = ({
                     </td>
                     <td className="border border-[#032622] p-0">
                       <button
-                        onClick={() => onEditModule(module.id)}
+                        onClick={() => onEditCours(module.id)}
                         className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
                         <Edit className="w-3 h-3" />
-                        MODIFIER LE MODULE
+                        ÉDITER LE COURS
                       </button>
                     </td>
                     <td className="border border-[#032622] p-0">

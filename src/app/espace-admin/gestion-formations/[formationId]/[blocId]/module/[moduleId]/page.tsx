@@ -47,7 +47,12 @@ export default function ModuleViewerPage({ params }: ModuleViewerPageProps) {
   useEffect(() => {
     const loadModule = async () => {
       try {
-        const response = await fetch(`/api/modules/${moduleId}`);
+        const response = await fetch(`/api/modules/${moduleId}`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
         if (response.ok) {
           const data = await response.json();
           setModule(data.module);
@@ -71,7 +76,6 @@ export default function ModuleViewerPage({ params }: ModuleViewerPageProps) {
   };
 
   const handleEditModule = () => {
-    console.log('Éditer le module:', moduleId);
     // TODO: Implémenter l'édition du module
   };
 

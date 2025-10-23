@@ -19,7 +19,6 @@ export const FormationSelection = ({ formations, onFormationSelect }: FormationS
   const router = useRouter();
 
   const handleViewBlocks = (formationId: string) => {
-    console.log('Navigation vers formation ID:', formationId);
     router.push(`/espace-admin/gestion-formations/${formationId}`);
   };
 
