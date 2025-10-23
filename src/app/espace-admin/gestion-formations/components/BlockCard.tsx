@@ -1,7 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit, Eye, Trash2 } from 'lucide-react';
+import { Edit, Eye, Trash2, BookOpen } from 'lucide-react';
+import { getModulesByBlocId } from '@/lib/blocs-api';
+import { ModuleApprentissage } from '@/types/formation-detailed';
 
 interface BlockCardProps {
   id: string;
@@ -23,6 +26,23 @@ export const BlockCard = ({
   onDeleteBlock
 }: BlockCardProps) => {
   const router = useRouter();
+  const [modules, setModules] = useState<ModuleApprentissage[]>([]);
+  const [isLoadingModules, setIsLoadingModules] = useState(true);
+
+  useEffect(() => {
+    const loadModules = async () => {
+      try {
+        const fetchedModules = await getModulesByBlocId(parseInt(id));
+        setModules(fetchedModules);
+      } catch (error) {
+        console.error('Erreur lors du chargement des modules:', error);
+      } finally {
+        setIsLoadingModules(false);
+      }
+    };
+
+    loadModules();
+  }, [id]);
 
   const handleViewBlock = () => {
     if (onViewBlock) {
@@ -58,7 +78,17 @@ export const BlockCard = ({
       <div className="flex-1 flex flex-col justify-between">
         <div>
           <h3 className="text-lg font-bold text-[#032622] mb-2">{title}</h3>
-          <p className="text-[#032622] text-sm leading-relaxed">{description}</p>
+          <p className="text-[#032622] text-sm leading-relaxed mb-4">{description}</p>
+          
+          {/* Modules Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-[#032622]/70">
+              <BookOpen className="w-4 h-4" />
+              <span className="font-medium">
+                {isLoadingModules ? 'Chargement...' : `${modules.length} module${modules.length > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          </div>
         </div>
         
         {/* Buttons */}

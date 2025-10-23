@@ -7,40 +7,22 @@ import { BlocCompetence } from '@/types/formation-detailed';
 interface EditBlocProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (blocId: number, updates: { titre: string; description?: string; objectifs?: string[]; duree_estimee?: number }) => void;
+  onSave: (blocId: number, updates: { titre: string; description?: string; duree_estimee?: number }) => void;
   bloc: BlocCompetence | null;
 }
 
 export const EditBloc = ({ isOpen, onClose, onSave, bloc }: EditBlocProps) => {
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
-  const [objectifs, setObjectifs] = useState<string[]>(['']);
   const [dureeEstimee, setDureeEstimee] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (bloc) {
       setTitre(bloc.titre);
       setDescription(bloc.description || '');
-      setObjectifs(bloc.objectifs && bloc.objectifs.length > 0 ? bloc.objectifs : ['']);
       setDureeEstimee(bloc.duree_estimee || undefined);
     }
   }, [bloc]);
-
-  const handleAddObjectif = () => {
-    setObjectifs([...objectifs, '']);
-  };
-
-  const handleRemoveObjectif = (index: number) => {
-    if (objectifs.length > 1) {
-      setObjectifs(objectifs.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleObjectifChange = (index: number, value: string) => {
-    const newObjectifs = [...objectifs];
-    newObjectifs[index] = value;
-    setObjectifs(newObjectifs);
-  };
 
   const handleSave = () => {
     if (!bloc || !titre.trim()) return;
@@ -48,7 +30,6 @@ export const EditBloc = ({ isOpen, onClose, onSave, bloc }: EditBlocProps) => {
     const updates = {
       titre: titre.trim(),
       description: description.trim() || null,
-      objectifs: objectifs.filter(obj => obj.trim()).length > 0 ? objectifs.filter(obj => obj.trim()) : undefined,
       duree_estimee: dureeEstimee || undefined
     };
 
@@ -59,7 +40,6 @@ export const EditBloc = ({ isOpen, onClose, onSave, bloc }: EditBlocProps) => {
   const handleClose = () => {
     setTitre('');
     setDescription('');
-    setObjectifs(['']);
     setDureeEstimee(undefined);
     onClose();
   };
@@ -158,47 +138,6 @@ export const EditBloc = ({ isOpen, onClose, onSave, bloc }: EditBlocProps) => {
             />
           </div>
 
-          {/* Objectifs */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 
-                className="text-lg font-semibold text-[#032622] uppercase"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                OBJECTIFS
-              </h3>
-              <button
-                onClick={handleAddObjectif}
-                className="bg-[#032622] text-[#F8F5E4] px-4 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-2"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                AJOUTER UN OBJECTIF
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {objectifs.map((objectif, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    value={objectif}
-                    onChange={(e) => handleObjectifChange(index, e.target.value)}
-                    placeholder={`Objectif ${index + 1}`}
-                    className="flex-1 p-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-termina-bold)' }}
-                  />
-                  {objectifs.length > 1 && (
-                    <button
-                      onClick={() => handleRemoveObjectif(index)}
-                      className="w-8 h-8 border-2 border-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-[#F8F5E4] transition-colors flex items-center justify-center"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

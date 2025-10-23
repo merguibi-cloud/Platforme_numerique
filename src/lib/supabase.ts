@@ -21,12 +21,22 @@ export const isSupabaseAvailable = () => {
   return !!(supabaseUrl && supabaseAnonKey && supabase)
 }
 
-// Fonction pour obtenir le client Supabase avec vérification (client-side)
-export const getSupabaseClient = (): SupabaseClient => {
-  if (!supabase) {
-    throw new Error('Supabase n\'est pas configuré. Vérifiez vos variables d\'environnement.')
+// Fonction pour obtenir le client Supabase dédié à l'authentification
+export const getAuth = (): SupabaseClient => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Variables d\'environnement Supabase manquantes pour l\'authentification')
   }
-  return supabase
+  
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false, // Pas besoin de persistance côté serveur
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
+  })
 }
 
 // Fonction pour obtenir le client Supabase côté serveur (bypass RLS)
@@ -42,6 +52,26 @@ export const getSupabaseServerClient = (): SupabaseClient => {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    }
+  })
+}
+
+// Fonction pour obtenir le client Supabase côté client (lecture seule)
+export const getSupabaseClient = (): SupabaseClient => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Variables d\'environnement Supabase manquantes pour le client')
+  }
+  
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'sb-auth-token'
     }
   })
 }

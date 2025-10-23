@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BlocksListView } from './BlocksListView';
 import { FormationHeader } from './FormationHeader';
 import { EditBloc } from './EditBloc';
+import { Modal } from '@/app/espace-admin/components/Modal';
 import { getFormationById } from '@/lib/formations';
 import { getBlocsByFormationId, createBlocWithModules, updateBloc, deleteBloc } from '@/lib/blocs-api';
 import { Formation } from '@/types/formations';
@@ -20,10 +21,15 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
   const [formation, setFormation] = useState<Formation | null>(null);
   const [blocs, setBlocs] = useState<BlocCompetence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [editingBloc, setEditingBloc] = useState<BlocCompetence | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // États pour les modales
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [blocToDelete, setBlocToDelete] = useState<BlocCompetence | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,7 +52,7 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
         const fetchedBlocs = await getBlocsByFormationId(id);
         setBlocs(fetchedBlocs);
       } catch (error) {
-        
+        console.error('Erreur lors du chargement des données:', error);
         router.push('/espace-admin/gestion-formations');
       } finally {
         setIsLoading(false);
@@ -59,15 +65,9 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
   const handleAddBlock = async (blocData: { titre: string; description: string; modules: string[] }) => {
     if (!formation) return;
 
-    setError(null);
-    setSuccess(null);
-
     try {
-      const nextBlocNumber = blocs.length + 1;
-      
       const result = await createBlocWithModules({
         formation_id: formation.id,
-        numero_bloc: nextBlocNumber,
         titre: blocData.titre,
         description: blocData.description,
         modules: blocData.modules
@@ -77,13 +77,15 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
         // Recharger les blocs
         const updatedBlocs = await getBlocsByFormationId(formation.id);
         setBlocs(updatedBlocs);
-        setSuccess('Bloc créé avec succès !');
+        setModalMessage('Bloc créé avec succès !');
+        setIsSuccessModalOpen(true);
       } else {
-        setError(result.error || 'Erreur lors de la création du bloc');
+        setModalMessage(result.error || 'Erreur lors de la création du bloc');
+        setIsErrorModalOpen(true);
       }
     } catch (error) {
-      
-      setError('Erreur interne lors de la création du bloc');
+      setModalMessage('Erreur interne lors de la création du bloc');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -99,31 +101,25 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
     }
   };
 
-  const handleSaveEdit = async (blocId: number, updates: { titre: string; description?: string; objectifs?: string[]; duree_estimee?: number }) => {
-    setError(null);
-    setSuccess(null);
-
-    console.log('Mise à jour du bloc:', blocId, updates);
-
+  const handleSaveEdit = async (blocId: number, updates: { titre: string; description?: string; duree_estimee?: number }) => {
     try {
       const result = await updateBloc(blocId, updates);
-      
-      console.log('Résultat de la mise à jour:', result);
       
       if (result.success) {
         // Recharger les blocs
         if (formation) {
           const updatedBlocs = await getBlocsByFormationId(formation.id);
-          console.log('Blocs rechargés:', updatedBlocs);
           setBlocs(updatedBlocs);
-          setSuccess('Bloc modifié avec succès !');
+          setModalMessage('Bloc modifié avec succès !');
+          setIsSuccessModalOpen(true);
         }
       } else {
-        setError(result.error || 'Erreur lors de la modification du bloc');
+        setModalMessage(result.error || 'Erreur lors de la modification du bloc');
+        setIsErrorModalOpen(true);
       }
     } catch (error) {
-      console.error('Erreur lors de la modification du bloc:', error);
-      setError('Erreur interne lors de la modification du bloc');
+      setModalMessage('Erreur interne lors de la modification du bloc');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -135,29 +131,37 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
 
 
   const handleDeleteBlock = async (blockId: string) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce bloc ?')) {
-      return;
+    const bloc = blocs.find(b => b.id.toString() === blockId);
+    if (bloc) {
+      setBlocToDelete(bloc);
+      setIsDeleteModalOpen(true);
     }
+  };
 
-    setError(null);
-    setSuccess(null);
+  const confirmDeleteBlock = async () => {
+    if (!blocToDelete) return;
 
     try {
-      const result = await deleteBloc(parseInt(blockId));
+      const result = await deleteBloc(blocToDelete.id);
       
       if (result.success) {
         // Recharger les blocs
         if (formation) {
           const updatedBlocs = await getBlocsByFormationId(formation.id);
           setBlocs(updatedBlocs);
-          setSuccess('Bloc supprimé avec succès !');
+          setModalMessage('Bloc supprimé avec succès !');
+          setIsSuccessModalOpen(true);
         }
       } else {
-        setError(result.error || 'Erreur lors de la suppression du bloc');
+        setModalMessage(result.error || 'Erreur lors de la suppression du bloc');
+        setIsErrorModalOpen(true);
       }
     } catch (error) {
-      
-      setError('Erreur interne lors de la suppression du bloc');
+      setModalMessage('Erreur interne lors de la suppression du bloc');
+      setIsErrorModalOpen(true);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setBlocToDelete(null);
     }
   };
 
@@ -206,19 +210,6 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
               </button>
             </div>
 
-            {/* Messages d'erreur et de succès */}
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                <strong>Erreur :</strong> {error}
-              </div>
-            )}
-            
-            {success && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                <strong>Succès :</strong> {success}
-              </div>
-            )}
-            
             <BlocksListView
               formation={formationInfo}
               blocks={blocs}
@@ -237,6 +228,34 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
         onClose={handleCloseEditModal}
         onSave={handleSaveEdit}
         bloc={editingBloc}
+      />
+
+      {/* Modales de confirmation et messages */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Confirmation de suppression"
+        message={`Êtes-vous sûr de vouloir supprimer le bloc "${blocToDelete?.titre}" ? Cette action est irréversible.`}
+        type="warning"
+        isConfirm={true}
+        onConfirm={confirmDeleteBlock}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
+
+      <Modal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Succès"
+        message={modalMessage}
+        type="success"
+      />
+
+      <Modal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        title="Erreur"
+        message={modalMessage}
+        type="error"
       />
     </div>
   );

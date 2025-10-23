@@ -1,33 +1,31 @@
-import { supabase, isSupabaseAvailable } from './supabase'
+import { getSupabaseClient } from './supabase'
 import { Formation } from '@/types/formations'
 
 export async function getAllFormations(): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    console.log('🔍 Récupération de toutes les formations...');
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
       .order('id', { ascending: true });
 
     if (error) {
+      console.error('❌ Erreur lors de la récupération des formations:', error);
       return [];
     }
 
+    console.log('✅ Formations récupérées:', data?.length || 0, 'formations');
     return data || [];
   } catch (error) {
+    console.error('💥 Erreur lors de la récupération des formations:', error);
     return [];
   }
 }
 
 export async function getFormationById(id: number): Promise<Formation | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
@@ -35,21 +33,20 @@ export async function getFormationById(id: number): Promise<Formation | null> {
       .single();
 
     if (error) {
+      console.error('Erreur lors de la récupération de la formation:', error);
       return null;
     }
 
     return data;
   } catch (error) {
+    console.error('Erreur lors de la récupération de la formation:', error);
     return null;
   }
 }
 
 export async function getFormationsByTheme(theme: string): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
@@ -57,21 +54,20 @@ export async function getFormationsByTheme(theme: string): Promise<Formation[]> 
       .order('id', { ascending: true });
 
     if (error) {
+      console.error('Erreur lors de la récupération des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
+    console.error('Erreur lors de la récupération des formations:', error);
     return [];
   }
 }
 
 export async function getFormationsByEcole(ecole: string): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
@@ -79,21 +75,20 @@ export async function getFormationsByEcole(ecole: string): Promise<Formation[]> 
       .order('id', { ascending: true });
 
     if (error) {
+      console.error('Erreur lors de la récupération des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
+    console.error('Erreur lors de la récupération des formations:', error);
     return [];
   }
 }
 
 export async function getFormationsByNiveau(niveau: string): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
@@ -101,21 +96,20 @@ export async function getFormationsByNiveau(niveau: string): Promise<Formation[]
       .order('id', { ascending: true });
 
     if (error) {
+      console.error('Erreur lors de la récupération des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
+    console.error('Erreur lors de la récupération des formations:', error);
     return [];
   }
 }
 
 export async function getFormationsByRythme(rythme: string): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
@@ -123,11 +117,13 @@ export async function getFormationsByRythme(rythme: string): Promise<Formation[]
       .order('id', { ascending: true });
 
     if (error) {
+      console.error('Erreur lors de la récupération des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
+    console.error('Erreur lors de la récupération des formations:', error);
     return [];
   }
 }
@@ -138,11 +134,8 @@ export async function searchFormations(filters: {
   niveau?: string;
   rythme?: string;
 }): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseClient();
     let query = supabase.from('formations').select('*');
 
     if (filters.theme) {
@@ -164,11 +157,13 @@ export async function searchFormations(filters: {
     const { data, error } = await query.order('id', { ascending: true });
 
     if (error) {
+      console.error('Erreur lors de la récupération des formations:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
+    console.error('Erreur lors de la récupération des formations:', error);
     return [];
   }
 }

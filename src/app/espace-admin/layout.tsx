@@ -2,7 +2,6 @@
 import { AdminSidebar } from './components/AdminSidebar';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 
 interface AdminLayoutProps {
   children: React.ReactNode;

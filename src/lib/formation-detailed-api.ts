@@ -1,4 +1,4 @@
-import { supabase, isSupabaseAvailable } from './supabase';
+import { getSupabaseServerClient } from './supabase';
 import { 
   Formation, 
   BlocCompetence, 
@@ -24,11 +24,8 @@ import {
 // =============================================
 
 export async function getAllFormationsDetailed(): Promise<Formation[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('formations')
       .select('*')
@@ -47,11 +44,8 @@ export async function getAllFormationsDetailed(): Promise<Formation[]> {
 }
 
 export async function getFormationWithStats(formationId: number): Promise<Formation & { stats: FormationStats } | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     // Récupérer la formation
     const { data: formation, error: formationError } = await supabase
       .from('formations')
@@ -84,11 +78,8 @@ export async function getFormationWithStats(formationId: number): Promise<Format
 // =============================================
 
 export async function getBlocsByFormation(formationId: number): Promise<BlocCompetence[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('blocs_competences')
       .select('*')
@@ -109,11 +100,8 @@ export async function getBlocsByFormation(formationId: number): Promise<BlocComp
 }
 
 export async function createBloc(blocData: CreateBlocData): Promise<BlocCompetence | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('blocs_competences')
       .insert(blocData)
@@ -133,11 +121,8 @@ export async function createBloc(blocData: CreateBlocData): Promise<BlocCompeten
 }
 
 export async function updateBloc(blocId: number, updates: Partial<BlocCompetence>): Promise<BlocCompetence | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('blocs_competences')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -158,11 +143,8 @@ export async function updateBloc(blocId: number, updates: Partial<BlocCompetence
 }
 
 export async function deleteBloc(blocId: number): Promise<boolean> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return false;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { error } = await supabase
       .from('blocs_competences')
       .update({ actif: false, updated_at: new Date().toISOString() })
@@ -185,11 +167,8 @@ export async function deleteBloc(blocId: number): Promise<boolean> {
 // =============================================
 
 export async function getModulesByBloc(blocId: number): Promise<ModuleApprentissage[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('modules_apprentissage')
       .select('*')
@@ -210,11 +189,8 @@ export async function getModulesByBloc(blocId: number): Promise<ModuleApprentiss
 }
 
 export async function createModule(moduleData: CreateModuleData): Promise<ModuleApprentissage | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('modules_apprentissage')
       .insert(moduleData)
@@ -237,12 +213,9 @@ export async function createModule(moduleData: CreateModuleData): Promise<Module
 // FONCTIONS POUR LES COURS
 // =============================================
 
-export async function getCoursByModule(moduleId: number): Promise<Cours[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
+export async function getCoursByModule(moduleId: number): Promise<CoursContenu[]> {
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('cours_contenu')
       .select('*')
@@ -263,11 +236,8 @@ export async function getCoursByModule(moduleId: number): Promise<Cours[]> {
 }
 
 export async function createCours(coursData: CreateCoursData): Promise<CoursContenu | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('cours_contenu')
       .insert(coursData)
@@ -291,11 +261,8 @@ export async function createCours(coursData: CreateCoursData): Promise<CoursCont
 // =============================================
 
 export async function getEtudesCasByModule(moduleId: number): Promise<EtudeCas[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('etudes_cas')
       .select('*')
@@ -315,11 +282,8 @@ export async function getEtudesCasByModule(moduleId: number): Promise<EtudeCas[]
 }
 
 export async function createEtudeCas(etudeCasData: CreateEtudeCasData): Promise<EtudeCas | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('etudes_cas')
       .insert(etudeCasData)
@@ -342,12 +306,9 @@ export async function createEtudeCas(etudeCasData: CreateEtudeCasData): Promise<
 // FONCTIONS POUR LES QUIZ
 // =============================================
 
-export async function getQuizByModule(moduleId: number): Promise<Quiz[]> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return [];
-  }
-
+export async function getQuizByModule(moduleId: number): Promise<QuizEvaluation[]> {
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('quiz_evaluations')
       .select('*')
@@ -367,11 +328,8 @@ export async function getQuizByModule(moduleId: number): Promise<Quiz[]> {
 }
 
 export async function createQuiz(quizData: CreateQuizData): Promise<QuizEvaluation | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('quiz_evaluations')
       .insert(quizData)
@@ -391,11 +349,8 @@ export async function createQuiz(quizData: CreateQuizData): Promise<QuizEvaluati
 }
 
 export async function getQuizWithQuestions(quizId: number): Promise<QuizEvaluation & { questions: QuestionQuiz[] } | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     // Récupérer le quiz
     const { data: quiz, error: quizError } = await supabase
       .from('quiz_evaluations')
@@ -432,11 +387,8 @@ export async function getQuizWithQuestions(quizId: number): Promise<QuizEvaluati
 // =============================================
 
 export async function createQuestion(questionData: CreateQuestionData): Promise<QuestionQuiz | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from('questions_quiz')
       .insert({
@@ -484,11 +436,8 @@ export async function createQuestion(questionData: CreateQuestionData): Promise<
 // =============================================
 
 export async function getProgressionFormation(userId: string, formationId: number): Promise<ProgressionFormation | null> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return null;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .rpc('calculer_progression_formation', {
         p_user_id: userId,
@@ -531,11 +480,8 @@ export async function updateProgression(
   elementId: number,
   statut: 'non_commence' | 'en_cours' | 'termine' | 'abandonne'
 ): Promise<boolean> {
-  if (!isSupabaseAvailable() || !supabase) {
-    return false;
-  }
-
   try {
+    const supabase = getSupabaseServerClient();
     const progressionData: any = {
       user_id: userId,
       formation_id: formationId,

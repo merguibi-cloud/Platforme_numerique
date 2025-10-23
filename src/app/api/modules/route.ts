@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient, getSupabaseServerClient } from '@/lib/supabase';
+import { getSupabaseServerClient } from '@/lib/supabase';
 import { createModuleWithCours } from '@/lib/modules-api';
 
 // GET - Récupérer les modules d'un bloc avec gestion des permissions
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'ID du bloc requis' }, { status: 400 });
     }
 
-    // Récupérer les modules du bloc avec les informations utilisateur
+    // Récupérer les modules du bloc
     const { data: modules, error: modulesError } = await supabase
       .from('modules_apprentissage')
       .select(`
@@ -29,12 +29,7 @@ export async function GET(request: NextRequest) {
         ordre_affichage,
         actif,
         created_at,
-        updated_at,
-        created_by,
-        user_profiles!modules_apprentissage_created_by_fkey (
-          nom,
-          prenom
-        )
+        updated_at
       `)
       .eq('bloc_id', blocId)
       .eq('actif', true)
@@ -46,16 +41,12 @@ export async function GET(request: NextRequest) {
 
     // Transformer les données pour l'interface
     const modulesWithStatus = modules.map(module => {
-      const userName = module.user_profiles && module.user_profiles.length > 0
-        ? `${module.user_profiles[0].prenom} ${module.user_profiles[0].nom}`
-        : 'SYSTÈME';
-
       return {
         id: module.id.toString(),
         type: `MODULE ${module.numero_module}`,
         cours: module.titre,
         creationModification: new Date(module.created_at).toLocaleDateString('fr-FR'),
-        creePar: userName,
+        creePar: 'SYSTÈME',
         statut: 'brouillon' as const,
         duree_estimee: module.duree_estimee || 0,
         cours_count: 0,

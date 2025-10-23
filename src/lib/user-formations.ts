@@ -1,5 +1,5 @@
 // Fonctions pour les appels directs à la base de données pour les formations utilisateur
-import { getSupabaseClient } from './supabase';
+import { getSupabaseServerClient } from './supabase';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface UserFormationData {
@@ -12,7 +12,7 @@ export interface UserFormationData {
 // Fonction pour récupérer les données de formation de l'utilisateur connecté depuis la DB (utilisée par l'API)
 export async function getUserFormationDataFromDB(userId: string, supabaseClient?: SupabaseClient): Promise<{ success: boolean; data?: UserFormationData; error?: string }> {
   try {
-    const supabase = supabaseClient || getSupabaseClient();
+    const supabase = supabaseClient || getSupabaseServerClient();
 
     // Étape 1: Récupérer le profil utilisateur
     const { data: profileData, error: profileError } = await supabase
