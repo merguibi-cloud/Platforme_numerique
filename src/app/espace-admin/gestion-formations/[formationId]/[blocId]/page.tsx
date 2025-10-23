@@ -27,6 +27,26 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   
   const [isLoading, setIsLoading] = useState(true);
   const [modules, setModules] = useState<ModuleWithStatus[]>([]);
+  const [blocInfo, setBlocInfo] = useState<{ titre: string; numero_bloc: number } | null>(null);
+
+  const loadBlocInfo = async () => {
+    try {
+      const response = await fetch(`/api/blocs?formationId=${formationId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const bloc = data.blocs?.find((b: any) => b.id.toString() === blocId);
+        if (bloc) {
+          setBlocInfo({
+            titre: bloc.titre,
+            numero_bloc: bloc.numero_bloc
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des informations du bloc:', error);
+    }
+  };
 
   const loadModules = async () => {
     try {
@@ -46,7 +66,15 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   };
 
   useEffect(() => {
-    loadModules();
+    const loadData = async () => {
+      await Promise.all([
+        loadBlocInfo(),
+        loadModules()
+      ]);
+      setIsLoading(false);
+    };
+    
+    loadData();
   }, [formationId, blocId]);
 
   const handleAddModule = async (moduleData: { titre: string; cours: string[] }) => {
@@ -124,8 +152,8 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
             </button>
             
             <ModuleManagement
-              blocTitle="CONTRIBUER À LA STRATÉGIE DE DÉVELOPPEMENT DE L'ORGANISATION"
-              blocNumber="BLOC-1"
+              blocTitle={blocInfo?.titre || "Chargement..."}
+              blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
               modules={modules}
               onAddModule={handleAddModule}
               onEditModule={handleEditModule}

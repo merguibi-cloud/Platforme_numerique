@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BlocksListView } from './BlocksListView';
 import { FormationHeader } from './FormationHeader';
 import { EditBloc } from './EditBloc';
-import { Modal } from '@/app/espace-admin/components/Modal';
+import { Modal } from '@/app/Modal';
 import { getFormationById } from '@/lib/formations';
 import { getBlocsByFormationId, createBlocWithModules, updateBloc, deleteBloc } from '@/lib/blocs-api';
 import { Formation } from '@/types/formations';

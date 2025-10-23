@@ -68,30 +68,32 @@ export const ModuleManagement = ({
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full border-2 border-[#032622]">
+          <table className="w-full border border-[#032622]">
             <thead>
-              <tr className="bg-[#032622] text-[#F8F5E4]">
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">TITRE</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">COURS</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">DERNIÈRE MODIFICATION</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">CRÉÉ PAR</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm">ACTIONS</th>
+              <tr className="bg-[#F8F5E4]">
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">TITRE</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">MATIÈRE</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉER PAR</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
               </tr>
             </thead>
             <tbody>
               {modules.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="border border-[#032622] p-8 text-center text-[#032622]">
+                  <td colSpan={7} className="border border-[#032622] p-8 text-center text-[#032622]">
                     <p className="text-lg font-medium">{emptyMessage}</p>
                   </td>
                 </tr>
               ) : (
                 modules.map((module) => (
-                  <tr key={module.id} className="bg-[#F8F5E4] hover:bg-gray-100">
-                    <td className="border border-[#032622] p-3 font-semibold text-[#032622]">
+                  <tr key={module.id} className="bg-[#032622]/10">
+                    <td className="border border-[#032622] p-3 font-semibold text-[#032622] uppercase">
                       {module.type}
                     </td>
-                    <td className="border border-[#032622] p-3 text-[#032622]">
+                    <td className="border border-[#032622] p-3 text-[#032622] uppercase">
                       {module.cours}
                     </td>
                     <td className="border border-[#032622] p-3 text-[#032622]">
@@ -100,44 +102,41 @@ export const ModuleManagement = ({
                     <td className="border border-[#032622] p-3 text-[#032622]">
                       {module.creePar || '-'}
                     </td>
-                    <td className="border border-[#032622] p-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => onVisualizeModule(module.id)}
-                          className="bg-blue-600 text-white px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-blue-700 transition-colors flex items-center gap-1"
-                          style={{ fontFamily: 'var(--font-termina-bold)' }}
-                        >
-                          <Eye className="w-3 h-3" />
-                          VISUALISER
-                        </button>
-                        <button
-                          onClick={() => onEditModule(module.id)}
-                          className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
-                          style={{ fontFamily: 'var(--font-termina-bold)' }}
-                        >
-                          <Edit className="w-3 h-3" />
-                          MODIFIER LE COURS
-                        </button>
-                        <button
-                          onClick={() => onAddQuiz(module.id)}
-                          className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
-                          style={{ fontFamily: 'var(--font-termina-bold)' }}
-                        >
-                          <FileText className="w-3 h-3" />
-                          {module.statut === 'en_ligne' ? 'MODIFIER LE QUIZ' : 'AJOUTER LE QUIZ'}
-                        </button>
-                        {module.statut === 'manquant' && (
-                          <button
-                            onClick={() => onAssignModule(module.id)}
-                            className="bg-[#032622] text-[#F8F5E4] px-3 py-1 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-1"
-                            style={{ fontFamily: 'var(--font-termina-bold)' }}
-                          >
-                            <ChevronDown className="w-3 h-3" />
-                            ATTRIBUER
-                          </button>
-                        )}
-                      </div>
+                    <td className="border border-[#032622] p-0">
+                      <button
+                        onClick={() => onEditModule(module.id)}
+                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        style={{ fontFamily: 'var(--font-termina-bold)' }}
+                      >
+                        <Edit className="w-3 h-3" />
+                        MODIFIER LE MODULE
+                      </button>
                     </td>
+                    <td className="border border-[#032622] p-0">
+                      <button
+                        onClick={() => onAddQuiz(module.id)}
+                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        style={{ fontFamily: 'var(--font-termina-bold)' }}
+                      >
+                        <FileText className="w-3 h-3" />
+                        {module.statut === 'en_ligne' ? 'MODIFIER LE QUIZ' : 'AJOUTER LE QUIZ'}
+                      </button>
+                    </td>
+                    {module.statut === 'manquant' ? (
+                      <td className="border border-[#032622] p-0">
+                        <button
+                          onClick={() => onAssignModule(module.id)}
+                          className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                        >
+                          <ChevronDown className="w-3 h-3" />
+                          ATTRIBUER
+                        </button>
+                      </td>
+                    ) : (
+                      <td className="border border-[#032622] p-3">
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -157,20 +156,8 @@ export const ModuleManagement = ({
             className="text-3xl font-bold text-[#032622] uppercase"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            COURS CRÉÉS
+            {blocNumber} - {blocTitle}
           </h1>
-          <h2 
-            className="text-2xl font-bold text-[#032622] uppercase"
-            style={{ fontFamily: 'var(--font-termina-bold)' }}
-          >
-            {blocNumber}
-          </h2>
-          <p 
-            className="text-lg font-bold text-[#032622]"
-            style={{ fontFamily: 'var(--font-termina-bold)' }}
-          >
-            {blocTitle}
-          </p>
         </div>
 
         {/* Add Module Button */}

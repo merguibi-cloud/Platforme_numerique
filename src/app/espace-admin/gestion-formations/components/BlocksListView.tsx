@@ -22,7 +22,7 @@ export const BlocksListView = ({
   onViewBlock, 
   onEditBlock,
   onDeleteBlock,
-  onAddBlock 
+  onAddBlock
 }: BlocksListViewProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
