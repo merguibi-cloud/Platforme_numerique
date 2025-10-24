@@ -8,6 +8,7 @@ import { Information } from './components/Information';
 import { Documents } from './components/Documents';
 import { Recap } from './components/Recap';
 import { Validation } from './components/Validation';
+import ContratStep from './components/ContratStep';
 import { getCurrentUser } from '@/lib/auth-api';
 import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 import { CandidatureProvider, useCandidature } from '@/contexts/CandidatureContext';
@@ -81,10 +82,19 @@ const ValidationContent = () => {
 
   const redirectToNextIncompleteStep = (data: any) => {
     // Vérifier quelles étapes sont complétées
-    const hasInfos = data.nom && data.prenom && data.email && data.telephone;
+    const hasInfos = data.nom && data.prenom && data.email && data.telephone &&
+                    data.adresse && data.code_postal && data.ville && data.pays &&
+                    data.type_formation && data.etudiant_etranger && data.accepte_donnees &&
+                    (data.piece_identite_paths && data.piece_identite_paths.length > 0) &&
+                    (data.type_formation !== 'alternance' || data.a_une_entreprise);
+    
+    // Pour les formations en alternance avec entreprise, vérifier les formulaires Airtable
+    const needsAirtableForms = data.type_formation === 'alternance' && data.a_une_entreprise === 'oui';
+    const hasAirtableForms = !needsAirtableForms || 
+                            (data.airtable_form_etudiant_completed && data.airtable_form_entreprise_completed);
+    
     const hasDocs = data.cv_path && data.diplome_path && 
                    (data.releves_paths && data.releves_paths.length > 0) &&
-                   (data.piece_identite_paths && data.piece_identite_paths.length > 0) &&
                    data.entreprise_accueil;
     const hasRecap = data.accept_conditions && data.attest_correct && hasDocs;
     const hasValidation = data.paid_at;
@@ -96,7 +106,14 @@ const ValidationContent = () => {
       router.push('/validation?step=validation');
     } else if (hasDocs) {
       router.push('/validation?step=recap');
-    } else if (hasInfos) {
+    } else if (hasInfos && needsAirtableForms && hasAirtableForms) {
+      // Si les formulaires Airtable sont complétés, aller aux documents
+      router.push('/validation?step=documents');
+    } else if (hasInfos && needsAirtableForms && !hasAirtableForms) {
+      // Si les formulaires Airtable ne sont pas complétés, aller à l'étape contrat
+      router.push('/validation?step=contrat');
+    } else if (hasInfos && !needsAirtableForms) {
+      // Si pas besoin de formulaires Airtable, aller directement aux documents
       router.push('/validation?step=documents');
     } else {
       router.push('/validation?step=informations');
@@ -120,6 +137,9 @@ const ValidationContent = () => {
   const handleNextStep = () => {
     switch (currentStep) {
       case 'informations':
+        // La logique de redirection est gérée dans Information.tsx
+        break;
+      case 'contrat':
         router.push('/validation?step=documents');
         break;
       case 'documents':
@@ -135,8 +155,16 @@ const ValidationContent = () => {
 
   const handlePrevStep = () => {
     switch (currentStep) {
-      case 'documents':
+      case 'contrat':
         router.push('/validation?step=informations');
+        break;
+      case 'documents':
+        // Déterminer la route précédente selon le type de formation
+        if (candidatureData?.type_formation === 'alternance' && candidatureData?.a_une_entreprise === 'oui') {
+          router.push('/validation?step=contrat');
+        } else {
+          router.push('/validation?step=informations');
+        }
         break;
       case 'recap':
         router.push('/validation?step=documents');
@@ -173,6 +201,14 @@ const ValidationContent = () => {
             onClose={handleCloseCandidatureForm}
             onNext={handleNextStep}
             onPrev={handlePrevStep}
+          />
+        );
+      case 'contrat':
+        return (
+          <ContratStep 
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+            onClose={handleCloseCandidatureForm}
           />
         );
       case 'validation':

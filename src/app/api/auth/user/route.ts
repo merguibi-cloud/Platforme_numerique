@@ -16,11 +16,21 @@ export async function GET(request: NextRequest) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Créer le client avec le service role key pour bypass RLS
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    // Créer un client temporaire pour vérifier l'authentification
+    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    });
+    
+    const { data: { user }, error } = await authClient.auth.getUser(accessToken);
 
     if (error || !user) {
       return NextResponse.json(

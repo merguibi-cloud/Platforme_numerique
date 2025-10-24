@@ -48,7 +48,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    
+    // Créer un client temporaire pour vérifier l'authentification
+    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    });
+    
+    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
     if (authError || !user) {
       return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
     }
@@ -80,7 +90,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    
+    // Créer un client temporaire pour vérifier l'authentification
+    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    });
+    
+    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
     if (authError || !user) {
       return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
     }

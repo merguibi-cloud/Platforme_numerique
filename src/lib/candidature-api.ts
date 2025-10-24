@@ -16,19 +16,25 @@ export interface CandidatureData {
   ville?: string;
   pays?: string;
   situation_actuelle?: string;
+  type_formation?: string;
+  a_une_entreprise?: string;
+  etudiant_etranger?: string;
+  accepte_donnees?: boolean;
   photo_identite_path?: string;
   cv_path?: string;
   diplome_path?: string;
   releves_paths?: string[];
   piece_identite_paths?: string[];
-  entreprise_accueil?: string;
-  motivation_formation?: string;
+  lettre_motivation_path?: string;
   accept_conditions?: boolean;
   attest_correct?: boolean;
   created_at?: string;
   updated_at?: string;
   submitted_at?: string;
   paid_at?: string;
+  airtable_form_etudiant_completed?: boolean;
+  airtable_form_entreprise_completed?: boolean;
+  airtable_forms_submitted_at?: string;
 }
 
 export interface InformationsStepData {

@@ -25,8 +25,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     diplome: null as File | null,
     releves: [] as File[],
     pieceIdentite: [] as File[],
-    entrepriseAccueil: '',
-    motivationFormation: '',
+    lettreMotivation: null as File | null,
   });
   
   // État pour les fichiers existants (chemin + URL signée)
@@ -35,6 +34,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     diplome: { path: '', url: '' },
     releves: [] as Array<{ path: string, url: string }>,
     pieceIdentite: [] as Array<{ path: string, url: string }>,
+    lettreMotivation: { path: '', url: '' },
   });
   
   // État pour les fichiers manquants (enregistrés en BDD mais introuvables dans le storage)
@@ -59,8 +59,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         diplome: null,
         releves: [],
         pieceIdentite: [],
-        entrepriseAccueil: candidatureData?.entreprise_accueil || '',
-        motivationFormation: candidatureData?.motivation_formation || '',
+        lettreMotivation: null,
       });
 
       // Charger les fichiers existants
@@ -81,6 +80,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
       diplome: { path: '', url: '' },
       releves: [] as Array<{ path: string, url: string }>,
       pieceIdentite: [] as Array<{ path: string, url: string }>,
+      lettreMotivation: { path: '', url: '' },
     };
     
     const newMissingFiles: string[] = [];
@@ -102,6 +102,9 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         filesToLoad.push({ field: 'pieceIdentite', path });
       });
     }
+    if (candidature.lettre_motivation_path) {
+      filesToLoad.push({ field: 'lettreMotivation', path: candidature.lettre_motivation_path });
+    }
 
     // Charger les URLs signées pour tous les fichiers
     for (const file of filesToLoad) {
@@ -117,7 +120,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
             if (file.field === 'releves' || file.field === 'pieceIdentite') {
               newExistingFiles[file.field].push({ path: file.path, url: urlResult.url });
             } else {
-              newExistingFiles[file.field as 'cv' | 'diplome'] = { path: file.path, url: urlResult.url };
+              newExistingFiles[file.field as 'cv' | 'diplome' | 'lettreMotivation'] = { path: file.path, url: urlResult.url };
             }
             fileLoaded = true;
           }
@@ -133,7 +136,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
               if (file.field === 'releves' || file.field === 'pieceIdentite') {
                 newExistingFiles[file.field].push({ path: file.path, url: urlResult.url });
               } else {
-                newExistingFiles[file.field as 'cv' | 'diplome'] = { path: file.path, url: urlResult.url };
+                newExistingFiles[file.field as 'cv' | 'diplome' | 'lettreMotivation'] = { path: file.path, url: urlResult.url };
               }
               fileLoaded = true;
             }
@@ -194,27 +197,46 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         fileToDelete = existingFiles[field][index];
       }
     } else {
-      fileToDelete = existingFiles[field as 'cv' | 'diplome'];
+      fileToDelete = existingFiles[field as 'cv' | 'diplome' | 'lettreMotivation'];
     }
 
     // Supprimer du storage si le fichier existe
     if (fileToDelete && fileToDelete.path) {
       try {
-        // Déterminer le bucket (essayer user_documents d'abord, puis photo_profil)
-        const buckets = ['user_documents', 'photo_profil'];
+        // Essayer d'abord avec user_documents (bucket principal pour les documents)
+        let deleteSuccess = false;
+        const response = await fetch(`/api/delete-file?path=${encodeURIComponent(fileToDelete.path)}&bucket=user_documents`, {
+          method: 'DELETE',
+        });
         
-        for (const bucket of buckets) {
-          const response = await fetch(`/api/delete-file?path=${encodeURIComponent(fileToDelete.path)}&bucket=${bucket}`, {
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            deleteSuccess = true;
+            console.log('Fichier supprimé du storage:', fileToDelete.path);
+          }
+        }
+        
+        // Si échec avec user_documents, essayer avec photo_profil
+        if (!deleteSuccess) {
+          const response2 = await fetch(`/api/delete-file?path=${encodeURIComponent(fileToDelete.path)}&bucket=photo_profil`, {
             method: 'DELETE',
           });
           
-          if (response.ok) {
-            // Fichier supprimé avec succès
-            break;
+          if (response2.ok) {
+            const result2 = await response2.json();
+            if (result2.success) {
+              deleteSuccess = true;
+              console.log('Fichier supprimé du storage (photo_profil):', fileToDelete.path);
+            }
           }
         }
+        
+        if (!deleteSuccess) {
+          console.warn('Impossible de supprimer le fichier du storage:', fileToDelete.path);
+        }
       } catch (error) {
-        // Continuer même en cas d'erreur pour permettre la suppression de l'interface
+        console.error('Erreur lors de la suppression du fichier:', error);
       }
     }
 
@@ -359,32 +381,36 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
       if (formData.diplome) {
         uploadPromises.push(uploadFile(formData.diplome, 'diplome'));
       }
+      if (formData.lettreMotivation) {
+        uploadPromises.push(uploadFile(formData.lettreMotivation, 'lettreMotivation'));
+      }
       
       // Uploader les fichiers multiples
       formData.releves.forEach(file => {
         uploadPromises.push(uploadFile(file, 'releves'));
-      });
-      formData.pieceIdentite.forEach(file => {
-        uploadPromises.push(uploadFile(file, 'pieceIdentite'));
       });
 
       const uploadResults = await Promise.all(uploadPromises);
       
       // Préparer les données pour la sauvegarde
       const stepData = {
-        entrepriseAccueil: formData.entrepriseAccueil,
-        motivationFormation: formData.motivationFormation,
         cvPath: uploadResults.find(r => r.type === 'cv')?.path || existingFiles.cv.path || null,
         diplomePath: uploadResults.find(r => r.type === 'diplome')?.path || existingFiles.diplome.path || null,
+        lettreMotivationPath: uploadResults.find(r => r.type === 'lettreMotivation')?.path || existingFiles.lettreMotivation.path || null,
         relevesPaths: [
           ...existingFiles.releves.map(f => f.path),
           ...uploadResults.filter(r => r.type === 'releves').map(r => r.path)
-        ],
-        pieceIdentitePaths: [
-          ...existingFiles.pieceIdentite.map(f => f.path),
-          ...uploadResults.filter(r => r.type === 'pieceIdentite').map(r => r.path)
         ]
       };
+
+      // Nettoyer les nouveaux fichiers après upload pour éviter les doublons
+      setFormData(prev => ({
+        ...prev,
+        cv: null,
+        diplome: null,
+        lettreMotivation: null,
+        releves: []
+      }));
 
       // Sauvegarder les données
       const result = await saveCandidatureStep('documents', stepData);
@@ -416,21 +442,15 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
   const hasDataChanged = () => {
     if (!candidatureData) return true; // Si pas de données existantes, considérer comme changé
     
-    // Vérifier si les champs texte ont changé
-    const hasFormChanges = (
-      formData.entrepriseAccueil !== (candidatureData.entreprise_accueil || '') ||
-      formData.motivationFormation !== (candidatureData.motivation_formation || '')
-    );
-    
     // Vérifier si de nouveaux fichiers ont été ajoutés
     const hasNewFiles = (
       formData.cv !== null ||
       formData.diplome !== null ||
-      formData.releves.length > 0 ||
-      formData.pieceIdentite.length > 0
+      formData.lettreMotivation !== null ||
+      formData.releves.length > 0
     );
     
-    return hasFormChanges || hasNewFiles;
+    return hasNewFiles;
   };
 
   const handleNext = async () => {
@@ -438,10 +458,10 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
     const hasRequiredFiles = existingFiles.cv.path || formData.cv || 
                             existingFiles.diplome.path || formData.diplome ||
                             existingFiles.releves.length > 0 || formData.releves.length > 0 ||
-                            existingFiles.pieceIdentite.length > 0 || formData.pieceIdentite.length > 0;
+                            existingFiles.lettreMotivation.path || formData.lettreMotivation;
 
-    if (!hasRequiredFiles || !formData.entrepriseAccueil) {
-      showWarning('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.', 'Champs manquants');
+    if (!hasRequiredFiles) {
+      showWarning('Veuillez télécharger tous les documents obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.', 'Documents manquants');
       return;
     }
 
@@ -783,28 +803,33 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
               </div>
             </div>
 
-            {/* Pièce d'identité */}
+            {/* Lettre de motivation */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE PIÈCE D'IDENTITÉ RECTO/VERSO* (Maximum 2 documents)</h3>
+              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE LETTRE DE MOTIVATION*</h3>
               
-              {/* Grille de fichiers */}
-              {(existingFiles.pieceIdentite.length > 0 || formData.pieceIdentite.length > 0) && (
+              {/* Fichier existant ou nouveau */}
+              {(existingFiles.lettreMotivation.path || formData.lettreMotivation) ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-                  {/* Fichiers existants */}
-                  {existingFiles.pieceIdentite.map((file, index) => (
-                    <div key={`existing-${index}`} className="border border-[#032622]  overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-                      {getFilePreview(null, file.url, file.path)}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[#032622] truncate">
-                              {file.path.split('/').pop()}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">Existant</p>
-                          </div>
-                          <div className="flex items-center space-x-1 ml-1">
+                  <div className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                    {getFilePreview(
+                      formData.lettreMotivation, 
+                      existingFiles.lettreMotivation.url, 
+                      formData.lettreMotivation?.name || existingFiles.lettreMotivation.path
+                    )}
+                    <div className="p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-[#032622] truncate">
+                            {formData.lettreMotivation?.name || existingFiles.lettreMotivation.path.split('/').pop()}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formData.lettreMotivation ? 'Nouveau' : 'Existant'}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1 ml-1">
+                          {existingFiles.lettreMotivation.url && !formData.lettreMotivation && (
                             <a 
-                              href={file.url} 
+                              href={existingFiles.lettreMotivation.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-[#032622] hover:text-[#032622]/70 p-1"
@@ -812,33 +837,9 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                             >
                               <Download className="w-3 h-3" />
                             </a>
-                            <button 
-                              onClick={() => removeExistingFile('pieceIdentite', index)}
-                              className="text-red-600 hover:text-red-800 p-1"
-                              title="Supprimer"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {/* Nouveaux fichiers */}
-                  {formData.pieceIdentite.map((file, index) => (
-                    <div key={`new-${index}`} className="border border-[#032622]  overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-                      {getFilePreview(file, null, file.name)}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[#032622] truncate">
-                              {file.name}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">Nouveau</p>
-                          </div>
+                          )}
                           <button 
-                            onClick={() => removeNewFile('pieceIdentite', index)}
+                            onClick={() => formData.lettreMotivation ? removeNewFile('lettreMotivation') : removeExistingFile('lettreMotivation')}
                             className="text-red-600 hover:text-red-800 p-1"
                             title="Supprimer"
                           >
@@ -847,62 +848,34 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-
-              {/* Zone de drop - affichée seulement si moins de 2 documents */}
-              {(existingFiles.pieceIdentite.length + formData.pieceIdentite.length < 2) && (
+              ) : (
                 <div
                   className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
                   onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, 'pieceIdentite')}
-                onClick={() => document.getElementById('identite-upload')?.click()}
-              >
+                  onDrop={(e) => handleDrop(e, 'lettreMotivation')}
+                  onClick={() => document.getElementById('lettre-motivation-upload')?.click()}
+                >
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
                       <Upload className="w-8 h-8 text-[#032622]" />
                     </div>
                     <div>
-                      <p className="text-[#032622] font-medium mb-1">Déposez votre pièce d'identité ici</p>
-                      <p className="text-[#032622]/60 text-sm">Recto et verso • ou cliquez pour sélectionner</p>
-                      <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • Maximum 2 fichiers</p>
+                      <p className="text-[#032622] font-medium mb-1">Déposez votre lettre de motivation ici</p>
+                      <p className="text-[#032622]/60 text-sm">ou cliquez pour sélectionner un fichier</p>
+                      <p className="text-[#032622]/40 text-xs mt-2">PDF, DOC, DOCX</p>
                     </div>
                   </div>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange('pieceIdentite', e.target.files)}
-                  className="hidden"
-                  id="identite-upload"
-                />
-              </div>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => handleFileChange('lettreMotivation', e.target.files)}
+                    className="hidden"
+                    id="lettre-motivation-upload"
+                  />
+                </div>
               )}
-            </div>
-
-            {/* Entreprise d'accueil */}
-            <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-2">AVEZ-VOUS DÉJÀ UNE ENTREPRISE D'ACCUEIL?*</h3>
-              <input
-                type="text"
-                value={formData.entrepriseAccueil}
-                onChange={(e) => handleInputChange('entrepriseAccueil', e.target.value)}
-                className="w-full p-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#032622]"
-                placeholder="Nom de l'entreprise..."
-              />
-            </div>
-
-            {/* Motivation */}
-            <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-2">POURQUOI CETTE FORMATION?</h3>
-              <textarea
-                value={formData.motivationFormation}
-                onChange={(e) => handleInputChange('motivationFormation', e.target.value)}
-                rows={4}
-                className="w-full p-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#032622] resize-none"
-                placeholder="Expliquez votre motivation pour cette formation..."
-              />
             </div>
           </div>
         </div>
@@ -923,7 +896,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
               className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors disabled:opacity-50"
               disabled={isSaving}
             >
-              {isSaving ? 'SAUVEGARDE...' : 'ENREGISTRER BROUILLON'}
+              ENREGISTRER BROUILLON
             </button>
             
             <button

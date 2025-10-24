@@ -28,6 +28,7 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
     diplome?: string;
     releves: Array<{ path: string, url: string }>;
     pieceIdentite: Array<{ path: string, url: string }>;
+    lettreMotivation?: string;
   }>({
     releves: [],
     pieceIdentite: []
@@ -78,6 +79,12 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
           if (diplomeUrl) urls.diplome = diplomeUrl;
         }
         
+        // Lettre de motivation
+        if (result.data.lettre_motivation_path) {
+          const lettreUrl = await loadFileUrl(result.data.lettre_motivation_path);
+          if (lettreUrl) urls.lettreMotivation = lettreUrl;
+        }
+        
         // Relevés
         if (result.data.releves_paths && result.data.releves_paths.length > 0) {
           for (const path of result.data.releves_paths) {
@@ -102,9 +109,16 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
           result.data.prenom &&
           result.data.email &&
           result.data.telephone &&
-          result.data.entreprise_accueil &&
+          result.data.adresse &&
+          result.data.code_postal &&
+          result.data.ville &&
+          result.data.pays &&
+          result.data.type_formation &&
+          result.data.etudiant_etranger &&
+          result.data.accepte_donnees &&
           (result.data.cv_path || urls.cv) &&
           (result.data.diplome_path || urls.diplome) &&
+          (result.data.lettre_motivation_path || urls.lettreMotivation) &&
           ((result.data.releves_paths && result.data.releves_paths.length > 0) || urls.releves.length > 0) &&
           ((result.data.piece_identite_paths && result.data.piece_identite_paths.length > 0) || urls.pieceIdentite.length > 0)
         );
@@ -229,7 +243,7 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
     <div className="min-h-screen bg-[#F8F5E4]">
       {/* Contenu principal */}
       <main className="px-2 sm:px-4 py-4 sm:py-8">
-        <ProgressHeader currentStep="RÉCAPITULATIF" onClose={onClose} />
+        <ProgressHeader currentStep="DOSSIER" onClose={onClose} />
 
         {/* Titre de la section */}
         <div className="mb-6">
@@ -275,7 +289,7 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
                     <span className="font-bold">PRÉNOM :</span> {candidatureData.prenom || 'Non renseigné'}
                   </div>
                   <div>
-                    <span className="font-bold">SITUATION ACTUELLE :</span> {candidatureData.situation_actuelle || 'Non renseigné'}
+                    <span className="font-bold">TYPE DE FORMATION :</span> {candidatureData.type_formation || 'Non renseigné'}
                   </div>
                 </div>
                 
@@ -296,6 +310,12 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
                   <div>
                     <span className="font-bold">PAYS :</span> {candidatureData.pays || '-'}
                   </div>
+                  <div>
+                    <span className="font-bold">ÉTUDIANT ÉTRANGER :</span> {candidatureData.etudiant_etranger || 'Non renseigné'}
+                  </div>
+                  <div>
+                    <span className="font-bold">A UNE ENTREPRISE :</span> {candidatureData.a_une_entreprise || 'Non renseigné'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -304,21 +324,6 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
           {/* Contenu principal du document */}
           <div className="space-y-8 text-[#032622]">
             
-            {/* Motivation et entreprise d'accueil */}
-            <div className="space-y-4">
-            <div>
-                <h3 className="text-lg font-bold text-[#032622] mb-2 uppercase">Motivation</h3>
-                {candidatureData.motivation_formation ? (
-                  <p className="mt-2 p-4 bg-[#F8F5E4] border border-[#032622]/20">{candidatureData.motivation_formation}</p>
-                ) : (
-                  <p className="text-[#032622]/60 italic">Aucune motivation renseignée</p>
-                )}
-            </div>
-            
-            <div>
-                <span className="font-bold">AVEZ-VOUS DÉJÀ UNE ENTREPRISE D'ACCUEIL ? :</span> {candidatureData.entreprise_accueil || 'Non renseigné'}
-            </div>
-            </div>
             
             {/* Documents */}
             <div className="space-y-4">
@@ -384,6 +389,32 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
                   <span className="text-sm text-[#032622]/60 italic">Non déposé</span>
                 )}
             </div>
+            
+              {/* Lettre de motivation */}
+              <div className="flex items-center justify-between p-4 bg-[#F8F5E4] border border-[#032622]/20">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-[#032622]" />
+                  <div>
+                    <span className="font-bold">LETTRE DE MOTIVATION</span>
+                    {candidatureData.lettre_motivation_path && (
+                      <p className="text-sm text-[#032622]/70">{candidatureData.lettre_motivation_path.split('/').pop()}</p>
+                    )}
+                  </div>
+                </div>
+                {documentUrls.lettreMotivation ? (
+                  <a 
+                    href={documentUrls.lettreMotivation}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>TÉLÉCHARGER</span>
+                  </a>
+                ) : (
+                  <span className="text-sm text-[#032622]/60 italic">Non déposée</span>
+                )}
+              </div>
             
               {/* Relevés de notes */}
               <div className="p-4 bg-[#F8F5E4] border border-[#032622]/20">

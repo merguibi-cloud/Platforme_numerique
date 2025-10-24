@@ -117,8 +117,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { step, data: stepData } = body;
+     const body = await request.json();
+     const { step, data: stepData } = body;
 
     // Récupérer le formation_id depuis user_profiles
     let profile = await supabase
@@ -178,31 +178,37 @@ export async function POST(request: NextRequest) {
       current_step: step
     };
 
-    // Ajouter les données spécifiques à l'étape
-    if (step === 'informations') {
-      updateData = {
-        ...updateData,
-        civilite: stepData.civilite,
-        nom: stepData.nom,
-        prenom: stepData.prenom,
-        email: stepData.email,
-        telephone: stepData.telephone,
-        adresse: stepData.adresse,
-        code_postal: stepData.codePostal,
-        ville: stepData.ville,
-        pays: stepData.pays,
-        situation_actuelle: stepData.situationActuelle,
-        ...(stepData.photoIdentitePath && { photo_identite_path: stepData.photoIdentitePath }),
-      };
+     // Ajouter les données spécifiques à l'étape
+     if (step === 'informations') {
+       updateData = {
+         ...updateData,
+         civilite: stepData.civilite,
+         nom: stepData.nom,
+         prenom: stepData.prenom,
+         email: stepData.email,
+         telephone: stepData.telephone,
+         adresse: stepData.adresse,
+         code_postal: stepData.codePostal,
+         ville: stepData.ville,
+         pays: stepData.pays,
+         situation_actuelle: stepData.situationActuelle,
+         type_formation: stepData.typeFormation,
+         // Mettre "non" par défaut si alternance et vide, sinon utiliser la valeur fournie
+         a_une_entreprise: stepData.typeFormation === 'alternance' 
+           ? (stepData.aUneEntreprise || 'non')
+           : 'non',
+         etudiant_etranger: stepData.etudiantEtranger,
+         accepte_donnees: stepData.accepteDonnees,
+         ...(stepData.photoIdentitePath && { photo_identite_path: stepData.photoIdentitePath }),
+         piece_identite_paths: stepData.pieceIdentitePaths || [],
+       };
     } else if (step === 'documents') {
       updateData = {
         ...updateData,
         cv_path: stepData.cvPath || null,
         diplome_path: stepData.diplomePath || null,
         releves_paths: stepData.relevesPaths || [],
-        piece_identite_paths: stepData.pieceIdentitePaths || [],
-        entreprise_accueil: stepData.entrepriseAccueil || '',
-        motivation_formation: stepData.motivationFormation || '',
+        lettre_motivation_path: stepData.lettreMotivationPath || null,
       };
     } else if (step === 'recap') {
       updateData = {
@@ -212,24 +218,24 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    if (existingCandidature) {
-      // Mettre à jour la candidature existante
-      const { data, error } = await supabase
+     if (existingCandidature) {
+       // Mettre à jour la candidature existante
+       const { data, error } = await supabase
         .from('candidatures')
         .update(updateData)
         .eq('user_id', user.id)
         .select()
         .single();
 
-      if (error) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Erreur lors de la mise à jour de la candidature'
-          },
-          { status: 500 }
-        );
-      }
+       if (error) {
+         return NextResponse.json(
+           { 
+             success: false, 
+             error: 'Erreur lors de la mise à jour de la candidature'
+           },
+           { status: 500 }
+         );
+       }
 
       result = data;
     } else {
@@ -248,15 +254,15 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      if (error) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Erreur lors de la création de la candidature'
-          },
-          { status: 500 }
-        );
-      }
+       if (error) {
+         return NextResponse.json(
+           { 
+             success: false, 
+             error: 'Erreur lors de la création de la candidature'
+           },
+           { status: 500 }
+         );
+       }
 
       result = data;
     }

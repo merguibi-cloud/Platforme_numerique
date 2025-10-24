@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { Upload, User, X } from 'lucide-react';
+import { Upload, User, X, FileText, Image, Download } from 'lucide-react';
 import { ProgressHeader } from './ProgressHeader';
 import { useRouter } from 'next/navigation';
 import { UserFormationData } from '@/lib/user-formations';
@@ -24,6 +24,9 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
   const [photoIdentite, setPhotoIdentite] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [existingPhotoPath, setExistingPhotoPath] = useState<string>('');
+  
+  // États pour les fichiers pièce d'identité
+  const [existingPieceIdentite, setExistingPieceIdentite] = useState<Array<{ path: string, url: string }>>([]);
   const [formData, setFormData] = useState({
     // Informations personnelles
     civilite: '',
@@ -35,7 +38,12 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     codePostal: '',
     ville: '',
     pays: '',
-    situationActuelle: '',
+    
+    // Nouveaux champs
+    typeFormation: '',
+    aUneEntreprise: '',
+    etudiantEtranger: '',
+    accepteDonnees: false,
     
     // Documents
     cv: null as File | null,
@@ -71,6 +79,8 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       }
       
       if (candidatureData) {
+        // Réinitialiser les fichiers pièce d'identité pour éviter les doublons
+        setExistingPieceIdentite([]);
         // Pré-remplir le formulaire avec les données existantes du Context
         const candidature = candidatureData;
         setFormData(prev => ({
@@ -84,7 +94,10 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
           codePostal: candidature.code_postal || '',
           ville: candidature.ville || '',
           pays: candidature.pays || '',
-          situationActuelle: candidature.situation_actuelle || '',
+          typeFormation: candidature.type_formation || '',
+          aUneEntreprise: candidature.a_une_entreprise || '',
+          etudiantEtranger: candidature.etudiant_etranger || '',
+          accepteDonnees: candidature.accepte_donnees || false,
         }));
         
         // Charger la photo existante si elle existe
@@ -105,6 +118,25 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
             // Erreur silencieuse
           }
         }
+        
+        // Charger les fichiers pièce d'identité existants
+        if (candidature.piece_identite_paths && candidature.piece_identite_paths.length > 0) {
+          const pieceIdentiteFiles = [];
+          for (const path of candidature.piece_identite_paths) {
+            try {
+              const urlResponse = await fetch(`/api/photo-url?path=${encodeURIComponent(path)}&bucket=user_documents`);
+              if (urlResponse.ok) {
+                const urlResult = await urlResponse.json();
+                if (urlResult.success && urlResult.url) {
+                  pieceIdentiteFiles.push({ path, url: urlResult.url });
+                }
+              }
+            } catch (error) {
+              // Erreur silencieuse
+            }
+          }
+          setExistingPieceIdentite(pieceIdentiteFiles);
+        }
       }
     } catch (error) {
       // Erreur silencieuse
@@ -113,7 +145,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -173,6 +205,168 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     setExistingPhotoPath('');
   };
 
+  // Fonctions pour gérer les fichiers pièce d'identité
+  const handlePieceIdentiteChange = (files: FileList | null) => {
+    if (!files) return;
+    
+    const newFiles = Array.from(files);
+    const currentTotal = existingPieceIdentite.length + formData.pieceIdentite.length;
+    const availableSlots = 2 - currentTotal;
+    
+    if (availableSlots <= 0) {
+      showWarning('Vous ne pouvez télécharger que 2 documents maximum pour la pièce d\'identité (recto et verso).', 'Limite atteinte');
+      return;
+    }
+    
+    if (newFiles.length > availableSlots) {
+      showWarning(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s). Maximum 2 documents au total.`, 'Limite atteinte');
+      setFormData(prev => ({ ...prev, pieceIdentite: [...prev.pieceIdentite, ...newFiles.slice(0, availableSlots)] }));
+      return;
+    }
+    
+    setFormData(prev => ({ ...prev, pieceIdentite: [...prev.pieceIdentite, ...newFiles] }));
+  };
+
+  const removeExistingPieceIdentite = async (index: number) => {
+    const fileToDelete = existingPieceIdentite[index];
+    
+    if (fileToDelete && fileToDelete.path) {
+      try {
+        // Essayer d'abord avec user_documents (bucket principal pour les documents)
+        let deleteSuccess = false;
+        const response = await fetch(`/api/delete-file?path=${encodeURIComponent(fileToDelete.path)}&bucket=user_documents`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            deleteSuccess = true;
+            console.log('Fichier supprimé du storage:', fileToDelete.path);
+          }
+        }
+        
+        // Si échec avec user_documents, essayer avec photo_profil
+        if (!deleteSuccess) {
+          const response2 = await fetch(`/api/delete-file?path=${encodeURIComponent(fileToDelete.path)}&bucket=photo_profil`, {
+            method: 'DELETE',
+          });
+          
+          if (response2.ok) {
+            const result2 = await response2.json();
+            if (result2.success) {
+              deleteSuccess = true;
+              console.log('Fichier supprimé du storage (photo_profil):', fileToDelete.path);
+            }
+          }
+        }
+        
+        if (!deleteSuccess) {
+          console.warn('Impossible de supprimer le fichier du storage:', fileToDelete.path);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression du fichier:', error);
+      }
+    }
+    
+    // Retirer de l'état local même si la suppression du storage a échoué
+    setExistingPieceIdentite(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeNewPieceIdentite = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      pieceIdentite: prev.pieceIdentite.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      // Créer un objet FileList simulé
+      const fileList = {
+        ...files,
+        item: (index: number) => files[index] || null,
+        length: files.length
+      } as FileList;
+      handlePieceIdentiteChange(fileList);
+    }
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) {
+      return <Image className="w-5 h-5" />;
+    }
+    return <FileText className="w-5 h-5" />;
+  };
+
+  const getFilePreview = (file: File | null, url: string | null, fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '');
+    const isPDF = ext === 'pdf';
+
+    if (isImage) {
+      if (file) {
+        const previewUrl = URL.createObjectURL(file);
+        return (
+          <div className="w-full h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
+            <img 
+              src={previewUrl} 
+              alt="Aperçu" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement?.classList.add('bg-[#032622]/5');
+              }}
+            />
+            <div className="absolute inset-0 bg-[#032622]/0 group-hover:bg-[#032622]/10 transition-colors"></div>
+          </div>
+        );
+      } else if (url) {
+        return (
+          <div className="w-full h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
+            <img 
+              src={url} 
+              alt="Aperçu" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement?.classList.add('bg-[#032622]/5');
+              }}
+            />
+            <div className="absolute inset-0 bg-[#032622]/0 group-hover:bg-[#032622]/10 transition-colors"></div>
+          </div>
+        );
+      }
+    }
+
+    return (
+      <div className="w-full h-32 bg-[#F8F5E4] flex flex-col items-center justify-center gap-2 relative group">
+        {isPDF ? (
+          <>
+            <FileText className="w-12 h-12 text-[#032622]" strokeWidth={1.5} />
+            <span className="text-xs font-medium text-[#032622]">PDF</span>
+          </>
+        ) : (
+          <>
+            <FileText className="w-12 h-12 text-[#032622]" strokeWidth={1.5} />
+            <span className="text-xs font-medium text-[#032622] uppercase">{ext || 'DOC'}</span>
+          </>
+        )}
+        <div className="absolute inset-0 bg-[#032622]/0 group-hover:bg-[#032622]/5 transition-colors"></div>
+      </div>
+    );
+  };
+
   const saveData = async () => {
     try {
       let photoPath = '';
@@ -202,6 +396,36 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
         photoPath = existingPhotoPath;
       }
       
+      // Uploader les fichiers pièce d'identité
+      const pieceIdentitePaths = [...existingPieceIdentite.map(f => f.path)];
+      
+      // Uploader seulement les nouveaux fichiers (pas encore uploadés)
+      for (const file of formData.pieceIdentite) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
+        uploadFormData.append('type', 'pieceIdentite');
+
+        try {
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadFormData,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            // Vérifier que le fichier n'est pas déjà dans la liste
+            if (!pieceIdentitePaths.includes(uploadResult.path)) {
+              pieceIdentitePaths.push(uploadResult.path);
+            }
+          }
+        } catch (error) {
+          // Erreur silencieuse
+        }
+      }
+      
+      // Vider les nouveaux fichiers après upload pour éviter les doublons
+      setFormData(prev => ({ ...prev, pieceIdentite: [] }));
+      
       // Préparer les données pour l'étape informations
       const stepData = {
         civilite: formData.civilite,
@@ -213,8 +437,12 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
         codePostal: formData.codePostal,
         ville: formData.ville,
         pays: formData.pays,
-        situationActuelle: formData.situationActuelle,
+        typeFormation: formData.typeFormation,
+        aUneEntreprise: formData.aUneEntreprise,
+        etudiantEtranger: formData.etudiantEtranger,
+        accepteDonnees: formData.accepteDonnees,
         ...(photoPath && { photoIdentitePath: photoPath }),
+        pieceIdentitePaths: pieceIdentitePaths,
       };
 
       // Sauvegarder les données
@@ -258,18 +486,34 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       formData.codePostal !== (candidatureData.code_postal || '') ||
       formData.ville !== (candidatureData.ville || '') ||
       formData.pays !== (candidatureData.pays || '') ||
-      formData.situationActuelle !== (candidatureData.situation_actuelle || '')
+      formData.typeFormation !== (candidatureData.type_formation || '') ||
+      formData.aUneEntreprise !== (candidatureData.a_une_entreprise || '') ||
+      formData.etudiantEtranger !== (candidatureData.etudiant_etranger || '') ||
+      formData.accepteDonnees !== (candidatureData.accepte_donnees || false)
     );
     
     // Vérifier si une nouvelle photo a été ajoutée
     const hasNewPhoto = photoIdentite !== null;
     
-    return hasFormChanges || hasNewPhoto;
+    // Vérifier si de nouveaux fichiers pièce d'identité ont été ajoutés
+    const hasNewPieceIdentite = formData.pieceIdentite.length > 0;
+    
+    return hasFormChanges || hasNewPhoto || hasNewPieceIdentite;
   };
 
   const handleNext = async () => {
     // Validation des champs obligatoires
-    if (!formData.nom || !formData.prenom || !formData.email || !formData.telephone) {
+    const hasRequiredFields = formData.nom && formData.prenom && formData.email && formData.telephone &&
+                             formData.adresse && formData.codePostal && formData.ville && formData.pays &&
+                             formData.typeFormation && formData.etudiantEtranger && formData.accepteDonnees;
+    
+    // Validation conditionnelle pour l'entreprise si alternance
+    const hasRequiredConditionalFields = formData.typeFormation !== 'alternance' || formData.aUneEntreprise;
+    
+    // Validation des fichiers pièce d'identité
+    const hasPieceIdentite = existingPieceIdentite.length > 0 || formData.pieceIdentite.length > 0;
+
+    if (!hasRequiredFields || !hasRequiredConditionalFields || !hasPieceIdentite) {
       showWarning('Veuillez remplir tous les champs obligatoires (*) pour passer à l\'étape suivante.\n\nVous pouvez utiliser le bouton "Enregistrer brouillon" pour sauvegarder et reprendre plus tard.', 'Champs manquants');
       return;
     }
@@ -294,8 +538,14 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
         console.log('Aucune modification détectée - Pas d\'appel API');
       }
       
-      // Passer à l'étape suivante
+      // Passer à l'étape suivante selon le type de formation
+      if (formData.typeFormation === 'alternance' && formData.aUneEntreprise === 'oui') {
+        // Pour les formations en alternance avec entreprise, aller à l'étape contrat
+        router.push('/validation?step=contrat');
+      } else {
+        // Pour les autres cas, aller directement aux documents
       router.push('/validation?step=documents');
+      }
     } catch (error) {
       showError('Erreur lors de la sauvegarde des données. Veuillez réessayer.', 'Erreur');
     } finally {
@@ -445,7 +695,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
             <div>
               <input
                 type="text"
-                placeholder="ADRESSE"
+                placeholder="ADRESSE*"
                 value={formData.adresse}
                 onChange={(e) => handleInputChange('adresse', e.target.value)}
                 className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
@@ -457,7 +707,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               <div>
                 <input
                   type="text"
-                  placeholder="CODE POSTAL"
+                  placeholder="CODE POSTAL*"
                   value={formData.codePostal}
                   onChange={(e) => handleInputChange('codePostal', e.target.value)}
                   className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
@@ -466,7 +716,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               <div>
                 <input
                   type="text"
-                  placeholder="VILLE"
+                  placeholder="VILLE*"
                   value={formData.ville}
                   onChange={(e) => handleInputChange('ville', e.target.value)}
                   className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
@@ -475,7 +725,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               <div>
                 <input
                   type="text"
-                  placeholder="PAYS"
+                  placeholder="PAYS*"
                   value={formData.pays}
                   onChange={(e) => handleInputChange('pays', e.target.value)}
                   className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
@@ -483,20 +733,158 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               </div>
             </div>
 
-            {/* Situation actuelle */}
+            {/* Type de formation */}
             <div>
               <select
-                value={formData.situationActuelle}
-                onChange={(e) => handleInputChange('situationActuelle', e.target.value)}
+                value={formData.typeFormation}
+                onChange={(e) => handleInputChange('typeFormation', e.target.value)}
                 className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
               >
-                <option value="">SITUATION ACTUELLE</option>
-                <option value="etudiant">Étudiant</option>
-                <option value="salarie">Salarié</option>
-                <option value="demandeur-emploi">Demandeur d'emploi</option>
-                <option value="freelance">Freelance</option>
-                <option value="entrepreneur">Entrepreneur</option>
+                <option value="">TYPE DE FORMATION*</option>
+                <option value="initial">Formation Initiale</option>
+                <option value="alternance">Formation en Alternance</option>
               </select>
+            </div>
+
+            {/* Avez-vous une entreprise (conditionnel) */}
+            {formData.typeFormation === 'alternance' && (
+              <div>
+                <select
+                  value={formData.aUneEntreprise}
+                  onChange={(e) => handleInputChange('aUneEntreprise', e.target.value)}
+                  className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                >
+                  <option value="">AVEZ-VOUS UNE ENTREPRISE?*</option>
+                  <option value="oui">Oui</option>
+                  <option value="non">Non</option>
+                </select>
+              </div>
+            )}
+
+            {/* Êtes-vous un étudiant étranger */}
+            <div>
+              <select
+                value={formData.etudiantEtranger}
+                onChange={(e) => handleInputChange('etudiantEtranger', e.target.value)}
+                className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+              >
+                <option value="">ÊTES-VOUS UN ÉTUDIANT ÉTRANGER?*</option>
+                <option value="oui">Oui</option>
+                <option value="non">Non</option>
+              </select>
+            </div>
+
+            {/* Pièce d'identité */}
+            <div>
+              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE PIÈCE D'IDENTITÉ RECTO/VERSO* (Maximum 2 documents)</h3>
+              
+              {/* Grille de fichiers */}
+              {(existingPieceIdentite.length > 0 || formData.pieceIdentite.length > 0) && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                  {/* Fichiers existants */}
+                  {existingPieceIdentite.map((file, index) => (
+                    <div key={`existing-${index}`} className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                      {getFilePreview(null, file.url, file.path)}
+                      <div className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[#032622] truncate">
+                              {file.path.split('/').pop()}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">Existant</p>
+                          </div>
+                          <div className="flex items-center space-x-1 ml-1">
+                            <a 
+                              href={file.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-[#032622] hover:text-[#032622]/70 p-1"
+                              title="Télécharger"
+                            >
+                              <Download className="w-3 h-3" />
+                            </a>
+                            <button 
+                              onClick={() => removeExistingPieceIdentite(index)}
+                              className="text-red-600 hover:text-red-800 p-1"
+                              title="Supprimer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Nouveaux fichiers */}
+                  {formData.pieceIdentite.map((file, index) => (
+                    <div key={`new-${index}`} className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                      {getFilePreview(file, null, file.name)}
+                      <div className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[#032622] truncate">
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">Nouveau</p>
+                          </div>
+                          <button 
+                            onClick={() => removeNewPieceIdentite(index)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Supprimer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Zone de drop - affichée seulement si moins de 2 documents */}
+              {(existingPieceIdentite.length + formData.pieceIdentite.length < 2) && (
+                <div
+                  className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('identite-upload')?.click()}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                      <Upload className="w-8 h-8 text-[#032622]" />
+                    </div>
+                    <div>
+                      <p className="text-[#032622] font-medium mb-1">Déposez votre pièce d'identité ici</p>
+                      <p className="text-[#032622]/60 text-sm">Recto et verso • ou cliquez pour sélectionner</p>
+                      <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • Maximum 2 fichiers</p>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handlePieceIdentiteChange(e.target.files)}
+                    className="hidden"
+                    id="identite-upload"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Checkbox d'acceptation */}
+            <div>
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={formData.accepteDonnees}
+                  onChange={(e) => handleInputChange('accepteDonnees', e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="text-[#032622] text-sm">
+                  J'accepte que mes données soient utilisées pour le traitement de ma candidature et pour être contacté(e) par un conseiller.*
+                </span>
+              </label>
             </div>
           </div>
         );
@@ -541,7 +929,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               disabled={isSaving}
               className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors disabled:opacity-50"
             >
-              {isSaving ? 'SAUVEGARDE...' : 'ENREGISTRER BROUILLON'}
+              ENREGISTRER BROUILLON
             </button>
             
             <button
