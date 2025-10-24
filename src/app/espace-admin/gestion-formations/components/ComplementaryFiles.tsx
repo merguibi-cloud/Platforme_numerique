@@ -53,7 +53,7 @@ export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile }: Comple
   };
 
   return (
-    <div className="bg-white border border-[#032622] overflow-hidden w-[567px] h-[267px] flex flex-col">
+    <div className="bg-[#F8F5E4] border border-[#032622] overflow-hidden w-[567px] h-[267px] flex flex-col">
       <div className="p-4 border-b border-[#032622]/20">
         <h3 
           className="text-lg font-bold text-[#032622] uppercase"

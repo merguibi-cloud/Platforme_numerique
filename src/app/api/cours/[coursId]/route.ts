@@ -4,7 +4,7 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 // GET - Récupérer un cours spécifique
 export async function GET(
   request: NextRequest,
-  { params }: { params: { coursId: string } }
+  { params }: { params: Promise<{ coursId: string }> }
 ) {
   try {
     const supabase = getSupabaseServerClient();
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const { coursId } = params;
+    const { coursId } = await params;
 
     // Récupérer le cours
     const { data: cours, error: coursError } = await supabase
@@ -62,7 +62,7 @@ export async function GET(
 // PUT - Mettre à jour le statut d'un cours (actif/inactif)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { coursId: string } }
+  { params }: { params: Promise<{ coursId: string }> }
 ) {
   try {
     const supabase = getSupabaseServerClient();
@@ -84,7 +84,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const { coursId } = params;
+    const { coursId } = await params;
     const body = await request.json();
     const { actif } = body;
 

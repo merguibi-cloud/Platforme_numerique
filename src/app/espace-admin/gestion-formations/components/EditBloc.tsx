@@ -29,7 +29,7 @@ export const EditBloc = ({ isOpen, onClose, onSave, bloc }: EditBlocProps) => {
 
     const updates = {
       titre: titre.trim(),
-      description: description.trim() || null,
+      description: description.trim() || undefined,
       duree_estimee: dureeEstimee || undefined
     };
 

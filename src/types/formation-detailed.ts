@@ -223,7 +223,7 @@ export interface ProgressionEtudiant {
   module?: ModuleApprentissage;
   cours?: CoursContenu;
   etude_cas?: EtudeCas;
-  quiz?: Quiz;
+  quiz?: QuizEvaluation;
 }
 
 // =============================================

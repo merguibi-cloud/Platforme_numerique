@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 // PUT - Mettre à jour le rôle d'un utilisateur
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -55,7 +55,7 @@ export async function PUT(
       );
     }
 
-    const { userId } = params;
+    const { userId } = await params;
     const body = await request.json();
     const { role } = body;
 
