@@ -214,7 +214,7 @@ const quizQuestions = [
   },
 ];
 
-type Step = "overview" | "courseIntro" | "module" | "partie1_1" | "partie1_2" | "partie1_3" | "partie1_3_suite" | "quizPartie1" | "resultsPartie1" | "partie2" | "partie2_1" | "partie2_2" | "partie2_2_suite" | "partie2_3" | "partie2_3_suite" | "quizPartie2" | "resultsPartie2" | "courseFinal" | "quiz" | "results";
+type Step = "overview" | "courseIntro" | "module" | "partie1_1" | "partie1_2" | "partie1_3" | "partie1_3_suite" | "quizPartie1" | "resultsPartie1" | "partie2" | "partie2_1" | "partie2_2" | "partie2_2_suite" | "partie2_3" | "partie2_3_suite" | "quizPartie2" | "resultsPartie2" | "partie3_1" | "partie3_2" | "partie3_3" | "partie3_4" | "partie3_5" | "quizPartie3" | "resultsPartie3" | "courseFinal" | "quiz" | "results";
 
 // Types pour les nouvelles fonctionnalités
 interface Highlight {
@@ -287,9 +287,10 @@ export default function MesFormationsPage() {
   });
   const [quizError, setQuizError] = useState<string | null>(null);
   
-  // États pour les quiz Partie 1 et Partie 2
+  // États pour les quiz Partie 1, Partie 2 et Partie 3
   const [quizPartie1Answers, setQuizPartie1Answers] = useState<Record<number, number | null>>({});
   const [quizPartie2Answers, setQuizPartie2Answers] = useState<Record<number, number | null>>({});
+  const [quizPartie3Answers, setQuizPartie3Answers] = useState<Record<number, number | null>>({});
   const [currentQuizQuestion, setCurrentQuizQuestion] = useState(0);
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
@@ -1086,26 +1087,246 @@ export default function MesFormationsPage() {
     }
   ];
 
+  const quizPartie3Questions = [
+    {
+      id: 31,
+      question: "Le scandale Cambridge Analytica illustre :",
+      options: ["Une fuite de données médicales", "L'utilisation d'algorithmes pour manipuler des comportements électoraux", "Une cyberattaque sur Facebook", "Un bug de recommandation"],
+      correctAnswer: 1,
+      explanation: "Cambridge Analytica a exploité des données de 87 millions d'utilisateurs Facebook pour influencer le vote via des publicités ciblées."
+    },
+    {
+      id: 32,
+      question: "Quelle loi européenne encadre les IA selon leur niveau de risque ?",
+      options: ["RGPD", "Digital Services Act", "AI Act", "Data Protection Directive"],
+      correctAnswer: 2,
+      explanation: "Adopté en 2024, l'AI Act classe les IA selon leur dangerosité et impose des obligations de transparence et d'auditabilité."
+    },
+    {
+      id: 33,
+      question: "L'affaire Amazon 2018 révèle :",
+      options: ["Un bug logistique", "Un biais de genre dans l'IA de recrutement", "Une erreur de paiement automatique", "Une fuite de données internes"],
+      correctAnswer: 1,
+      explanation: "L'IA d'Amazon rejetait les CV féminins car elle avait appris à partir d'un historique de recrutements masculins."
+    },
+    {
+      id: 34,
+      question: "Le concept de \"responsabilité distribuée\" signifie :",
+      options: ["Une responsabilité partagée entre concepteurs, utilisateurs et entreprises", "Une absence de responsabilité", "Un transfert automatique vers le code", "Une délégation au législateur"],
+      correctAnswer: 0,
+      explanation: "Une IA étant le fruit d'interactions multiples, la responsabilité d'une erreur ne peut être attribuée à une seule entité."
+    },
+    {
+      id: 35,
+      question: "Quelle notion désigne la capacité d'une IA à expliquer ses décisions ?",
+      options: ["Clarté numérique", "Explicabilité algorithmique", "Transparence cognitive", "Lisibilité des données"],
+      correctAnswer: 1,
+      explanation: "L'explicabilité vise à rendre compréhensible le raisonnement d'un modèle pour identifier les erreurs et biais potentiels."
+    },
+    {
+      id: 36,
+      question: "Que signifie \"paternalisme algorithmique\" ?",
+      options: ["Une IA punitive", "Une IA qui décide à notre place pour notre bien supposé", "Une IA morale", "Une IA militaire"],
+      correctAnswer: 1,
+      explanation: "Le terme décrit une automatisation de la décision où la machine oriente subtilement nos choix sous couvert de confort et d'efficacité."
+    },
+    {
+      id: 37,
+      question: "Les \"deepfakes\" posent problème car :",
+      options: ["Ils ralentissent les réseaux", "Ils rendent difficile la distinction entre vrai et faux", "Ils sont coûteux à produire", "Ils sont interdits partout"],
+      correctAnswer: 1,
+      explanation: "Les vidéos truquées par IA peuvent manipuler l'opinion publique et nuire à la confiance dans les images."
+    },
+    {
+      id: 38,
+      question: "L'intelligence artificielle dans l'éducation doit être :",
+      options: ["Interdite", "Intégrée de manière critique et guidée", "Totalement automatisée", "Réservée aux enseignants"],
+      correctAnswer: 1,
+      explanation: "L'enjeu est de former les étudiants à utiliser l'IA comme aide à la réflexion, pas comme substitut de pensée."
+    },
+    {
+      id: 39,
+      question: "La \"paresse cognitive\" désigne :",
+      options: ["Une perte de mémoire liée au stress", "La tendance à déléguer à la machine les efforts intellectuels", "Un bug mental temporaire", "Un effet de surcharge numérique"],
+      correctAnswer: 1,
+      explanation: "L'usage excessif d'IA pour résoudre nos tâches mentales peut réduire notre capacité à réfléchir activement."
+    },
+    {
+      id: 40,
+      question: "Selon Bernard Stiegler, la technologie :",
+      options: ["Remplace l'humain", "Domine l'humain", "Oblige l'humain à redevenir plus humain", "Est une menace"],
+      correctAnswer: 2,
+      explanation: "Stiegler défend l'idée que chaque révolution technique pousse l'humain à redéfinir sa singularité : plus la machine imite, plus nous devons cultiver la conscience et le sens."
+    },
+    {
+      id: 41,
+      question: "Quel philosophe parle du \"pouvoir doux\" des algorithmes ?",
+      options: ["Michel Foucault", "Byung-Chul Han", "Slavoj Žižek", "Yuval Noah Harari"],
+      correctAnswer: 1,
+      explanation: "Byung-Chul Han décrit un pouvoir invisible : l'IA ne contraint pas, elle séduit et oriente subtilement nos choix par confort."
+    },
+    {
+      id: 42,
+      question: "Le \"Digital Services Act\" (DSA) de l'Union européenne vise à :",
+      options: ["Réguler les télécoms", "Encadrer les plateformes et la modération des contenus", "Taxer les géants du numérique", "Financer la cybersécurité"],
+      correctAnswer: 1,
+      explanation: "Adopté en 2023, le DSA oblige les plateformes à plus de transparence dans leurs algorithmes et à mieux contrôler les fausses informations."
+    },
+    {
+      id: 43,
+      question: "Quelle entreprise a réduit de 40 % la consommation énergétique de ses data centers grâce à l'IA ?",
+      options: ["Amazon", "Google DeepMind", "IBM", "Meta"],
+      correctAnswer: 1,
+      explanation: "DeepMind a utilisé des algorithmes d'optimisation pour ajuster automatiquement le refroidissement des serveurs, réduisant la dépense énergétique."
+    },
+    {
+      id: 44,
+      question: "Le projet AlphaFold de DeepMind a permis :",
+      options: ["De modéliser les comportements humains", "De prédire la structure de millions de protéines", "De créer des robots médicaux autonomes", "De simuler la conscience animale"],
+      correctAnswer: 1,
+      explanation: "AlphaFold a résolu un problème vieux de 50 ans en biologie : comprendre comment une protéine se replie, ouvrant la voie à de nouveaux médicaments."
+    },
+    {
+      id: 45,
+      question: "Quelle ressource est devenue la plus rare dans le capitalisme de la donnée ?",
+      options: ["La bande passante", "L'énergie", "Le silicium", "La confiance"],
+      correctAnswer: 3,
+      explanation: "Dans une économie saturée d'informations, la valeur se déplace vers la crédibilité des données et la confiance entre utilisateurs et systèmes."
+    },
+    {
+      id: 46,
+      question: "L'intelligence artificielle peut être qualifiée de \"fait social total\" car :",
+      options: ["Elle concerne uniquement la science", "Elle touche tous les domaines de la société : travail, culture, politique, éducation…", "Elle est réservée aux ingénieurs", "Elle dépend de l'économie américaine"],
+      correctAnswer: 1,
+      explanation: "Reprenant l'expression de Marcel Mauss, l'IA est un phénomène transversal qui modifie simultanément les structures sociales, culturelles et économiques."
+    },
+    {
+      id: 47,
+      question: "L'expression \"paternalisme algorithmique\" désigne :",
+      options: ["Une IA punitive", "Une IA militaire", "Une IA qui décide à notre place pour notre bien supposé", "Une IA open source"],
+      correctAnswer: 2,
+      explanation: "On parle de \"paternalisme algorithmique\" lorsque la technologie anticipe nos besoins de manière si efficace qu'elle restreint nos choix sans contrainte explicite."
+    },
+    {
+      id: 48,
+      question: "Dans le système éducatif, le risque principal lié à l'usage de ChatGPT est :",
+      options: ["La triche pure et simple", "La perte de la réflexion personnelle et de l'esprit critique", "L'exclusion numérique", "Le manque de créativité des professeurs"],
+      correctAnswer: 1,
+      explanation: "L'IA peut assister, mais si elle est utilisée sans recul, elle favorise la passivité intellectuelle et l'appauvrissement du raisonnement autonome."
+    },
+    {
+      id: 49,
+      question: "Que signifie \"explicabilité algorithmique\" ?",
+      options: ["Un code ouvert au public", "La capacité d'un modèle à justifier une décision ou une prédiction", "La vitesse d'exécution du calcul", "La simplicité du langage de programmation"],
+      correctAnswer: 1,
+      explanation: "L'explicabilité est essentielle pour comprendre et corriger les biais d'un modèle, notamment dans des domaines sensibles (santé, justice, finance)."
+    },
+    {
+      id: 50,
+      question: "Quelle notion traduit la fusion entre humains et systèmes intelligents dans la production de savoirs ?",
+      options: ["Hybridation cognitive", "Intelligence collective", "Savoir numérique", "Calcul distribué"],
+      correctAnswer: 1,
+      explanation: "L'intelligence collective désigne la co-construction de la connaissance entre humains et IA : chacun apporte ses forces, la machine la vitesse, l'humain le sens."
+    },
+    {
+      id: 51,
+      question: "Quelle approche décrit le mieux l'IA européenne selon l'AI Act ?",
+      options: ["Ethique et responsable", "Libérale et rapide", "Militaire et centralisée", "Minimaliste et expérimentale"],
+      correctAnswer: 0,
+      explanation: "L'Europe cherche à se distinguer des États-Unis et de la Chine par une IA centrée sur les droits humains et la transparence."
+    },
+    {
+      id: 52,
+      question: "Le concept \"d'intelligence ambiante\" fait référence à :",
+      options: ["Une IA intégrée dans l'environnement, invisible et omniprésente", "Une IA militaire", "Une IA capable d'émotion", "Une IA connectée à Internet uniquement"],
+      correctAnswer: 0,
+      explanation: "L'intelligence ambiante décrit un monde où la technologie devient une infrastructure invisible, intégrée à chaque objet et interaction."
+    },
+    {
+      id: 53,
+      question: "En quoi le modèle chinois de l'IA diffère-t-il du modèle européen ?",
+      options: ["Il est centré sur l'éthique", "Il est plus open source", "Il est centralisé et orienté vers le contrôle social", "Il est limité par la loi"],
+      correctAnswer: 2,
+      explanation: "La Chine privilégie un usage stratégique de l'IA à grande échelle pour la surveillance, la planification urbaine et la sécurité nationale."
+    },
+    {
+      id: 54,
+      question: "Selon Yuval Noah Harari, la question fondamentale à propos de l'IA est :",
+      options: ["\"Comment l'arrêter ?\"", "\"Qui la contrôle ?\"", "\"En quoi va-t-elle nous transformer ?\"", "\"Quand deviendra-t-elle consciente ?\""],
+      correctAnswer: 2,
+      explanation: "Harari invite à penser la transformation de l'humain et de la société à travers les outils qu'il crée — plutôt qu'à craindre leur autonomie."
+    },
+    {
+      id: 55,
+      question: "Quelle est la principale menace des \"deepfakes\" ?",
+      options: ["La désinformation et la perte de confiance dans les images", "La réduction de la créativité", "La lenteur des réseaux", "L'obsolescence des caméras"],
+      correctAnswer: 0,
+      explanation: "Les deepfakes sapent la fiabilité du visible : dans un monde où tout peut être falsifié, la preuve visuelle perd sa valeur sociale et juridique."
+    },
+    {
+      id: 56,
+      question: "Quelle discipline s'occupe de vérifier les biais et les impacts sociaux des IA ?",
+      options: ["L'ingénierie pure", "La sociologie numérique", "L'éthique des algorithmes", "La cyberpsychologie"],
+      correctAnswer: 2,
+      explanation: "L'éthique algorithmique analyse comment les données et modèles peuvent reproduire ou amplifier les discriminations existantes."
+    },
+    {
+      id: 57,
+      question: "Dans la logique du \"travail augmenté\", l'humain doit :",
+      options: ["Collaborer avec la machine pour améliorer la performance globale", "Être remplacé progressivement", "Superviser sans participer", "Rejeter les outils automatisés"],
+      correctAnswer: 0,
+      explanation: "Le travail augmenté repose sur la complémentarité : l'IA gère la répétition et la vitesse, l'humain le jugement et la créativité."
+    },
+    {
+      id: 58,
+      question: "Quelle est la différence entre intelligence et conscience ?",
+      options: ["Aucune différence", "L'intelligence est émotionnelle, la conscience est logique", "L'intelligence traite l'information ; la conscience en donne le sens", "La conscience dépend du calcul"],
+      correctAnswer: 2,
+      explanation: "Une IA peut raisonner sans être consciente : elle manipule des symboles mais ne \"sait pas\" qu'elle pense. La conscience implique subjectivité et ressenti."
+    },
+    {
+      id: 59,
+      question: "Quelle phrase résume le mieux la place de l'humain dans l'avenir de l'IA ?",
+      options: ["L'humain doit s'effacer devant la machine", "L'humain doit tout contrôler", "L'humain doit donner du sens à ce que la machine produit", "L'humain doit arrêter l'innovation"],
+      correctAnswer: 2,
+      explanation: "La valeur humaine réside dans l'interprétation : la machine calcule, mais c'est l'humain qui hiérarchise, comprend et décide."
+    },
+    {
+      id: 60,
+      question: "Quelle phrase conclut le mieux la vision du cours ?",
+      options: ["\"L'IA remplacera l'homme.\"", "\"La machine dominera l'esprit.\"", "\"L'avenir appartient à une humanité augmentée par sa propre invention.\"", "\"L'intelligence artificielle doit être stoppée.\""],
+      correctAnswer: 2,
+      explanation: "Le futur n'oppose pas l'humain à la machine : il repose sur une coévolution où la technologie devient un prolongement conscient de notre intelligence collective."
+    }
+  ];
+
   const progressMap: Record<Step, number> = {
-    overview: 15,
-    courseIntro: 20,
-    module: 30,
-    partie1_1: 40,
-    partie1_2: 50,
-    partie1_3: 55,
-    partie1_3_suite: 60,
-    quizPartie1: 63,
-    resultsPartie1: 65,
-    partie2: 68,
-    partie2_1: 72,
-    partie2_2: 75,
-    partie2_2_suite: 78,
-    partie2_3: 81,
-    partie2_3_suite: 84,
-    quizPartie2: 87,
-    resultsPartie2: 90,
+    overview: 10,
+    courseIntro: 15,
+    module: 20,
+    partie1_1: 28,
+    partie1_2: 36,
+    partie1_3: 42,
+    partie1_3_suite: 48,
+    quizPartie1: 51,
+    resultsPartie1: 54,
+    partie2: 57,
+    partie2_1: 62,
+    partie2_2: 66,
+    partie2_2_suite: 70,
+    partie2_3: 73,
+    partie2_3_suite: 76,
+    quizPartie2: 79,
+    resultsPartie2: 82,
+    partie3_1: 86,
+    partie3_2: 88,
+    partie3_3: 90,
+    partie3_4: 92,
+    partie3_5: 94,
+    quizPartie3: 96,
+    resultsPartie3: 98,
     courseFinal: 100,
-    quiz: 93,
+    quiz: 98,
     results: 100,
   };
 
@@ -6756,10 +6977,10 @@ export default function MesFormationsPage() {
               REFAIRE LE QUIZ
             </button>
             <button
-              onClick={() => setStep("courseFinal")}
+              onClick={() => setStep("partie3_1")}
               className="border-2 border-[#032622] bg-[#032622] text-white px-8 py-4 text-sm font-bold hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center space-x-2"
             >
-              <span>VOIR LES RÉSULTATS FINAUX</span>
+              <span>CONTINUER VERS PARTIE 3</span>
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -6767,6 +6988,2171 @@ export default function MesFormationsPage() {
       </div>
     );
   };
+
+  // Rendu Partie 3.1 - Les enjeux éthiques et moraux
+  const renderPartie3_1 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setStep("partie2_3_suite")}
+          className="flex items-center space-x-2 text-sm font-bold text-[#032622]"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>RETOUR</span>
+        </button>
+        <Bookmark className="w-5 h-5 text-[#032622]" />
+      </div>
+
+      {renderProgressBar()}
+
+      <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
+        <div className="space-y-6">
+          <div className="border border-black bg-[#F8F5E4] p-6">
+            <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
+              Module 1 · Partie 3
+            </p>
+            
+            {/* Surligneur amélioré */}
+            <div className="border border-black bg-[#F8F5E4] p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Highlighter className="w-4 h-4 text-[#032622]" />
+                  <span className="text-xs font-bold uppercase text-[#032622]">
+                    Surligneur intelligent
+                  </span>
+                </div>
+                <div className="text-xs text-[#032622]/70">
+                  {highlights.length} surlignage{highlights.length > 1 ? 's' : ''}
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {highlightColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => applyHighlight(color.value, color.name)}
+                    className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 ${
+                      selectedHighlightColor === color.value ? 'border-[#032622] shadow-lg' : 'border-gray-400'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={`Surligner en ${color.label}`}
+                  />
+                ))}
+                <button
+                  onClick={() => {
+                    setShowHighlightMenu(!showHighlightMenu);
+                  }}
+                  className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center ${
+                    showHighlightMenu ? 'border-red-500 bg-red-100' : 'border-gray-400 bg-gray-100'
+                  }`}
+                  title="Mode gomme - Clique sur un surlignage pour le supprimer"
+                >
+                  <Eraser className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {showHighlightMenu && (
+                  <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
+                    <Eraser className="w-3 h-3" />
+                    <span>Mode gomme actif - Clique sur un surlignage</span>
+                  </div>
+                )}
+                <button
+                  onClick={clearAllHighlights}
+                  className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-red-100 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Effacer tout</span>
+                </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  className={`flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold transition-colors ${
+                    showFavoritesOnly 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-[#F8F5E4] text-[#032622] hover:bg-yellow-100 hover:text-yellow-700'
+                  }`}
+                >
+                  <Star className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  <span>Favoris</span>
+                </button>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <Search className="w-3 h-3 text-[#032622]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border border-black px-2 py-1 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <h3 className="text-3xl font-bold text-[#032622] mb-6 text-center uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
+              PARTIE 3 — L'INTELLIGENCE ARTIFICIELLE, MIROIR DE L'HUMANITÉ : ÉTHIQUE, SOCIÉTÉ ET AVENIR
+            </h3>
+
+            <div
+              ref={courseContentRef}
+              className={`space-y-6 text-base text-[#032622] leading-relaxed ${
+                showHighlightMenu ? 'cursor-crosshair' : ''
+              }`}
+              onClick={(e) => {
+                if (showHighlightMenu) {
+                  const target = e.target as HTMLElement;
+                  const highlightElement = target.closest('[data-highlight="true"]');
+                  if (highlightElement) {
+                    const highlightId = highlightElement.getAttribute('data-highlight-id');
+                    if (highlightId) {
+                      removeHighlight(highlightId);
+                      setShowHighlightMenu(false);
+                    }
+                  }
+                }
+              }}
+            >
+              <section className="space-y-4">
+                <p>
+                  Depuis le début de ce cours, nous avons observé l'intelligence artificielle comme un phénomène technique, économique et organisationnel.
+                  Mais à mesure qu'elle s'intègre dans nos vies, une nouvelle dimension apparaît, plus profonde, plus dérangeante parfois : la dimension morale et existentielle.
+                  Car en apprenant à fabriquer des machines capables de raisonner, d'écrire, de créer, nous ne questionnons plus seulement la technologie — nous questionnons l'humain lui-même.
+                </p>
+                <p>
+                  Chaque révolution technologique a obligé l'humanité à se redéfinir.
+                  L'électricité a changé notre rapport au temps, le numérique a changé notre rapport à l'espace, et l'intelligence artificielle change désormais notre rapport à la pensée.
+                  Nous ne sommes plus seulement des producteurs ou des consommateurs : nous devenons des cohabitants d'une intelligence non biologique.
+                </p>
+                <p>
+                  Mais cette cohabitation ne va pas sans heurts.
+                  À qui appartient la décision quand la machine "suggère" ?
+                  Qui est responsable lorsqu'un algorithme discrimine ?
+                  Peut-on déléguer la création, la justice, la médecine ou la sécurité à une entité sans conscience ?
+                </p>
+                <p>
+                  Ces questions, loin d'être abstraites, structurent déjà notre monde.
+                  Elles touchent à la politique, à la culture, à la vie privée, à la justice et à l'environnement.
+                  Elles forment le cœur de cette troisième partie : comprendre comment l'intelligence artificielle révèle nos valeurs autant qu'elle les met à l'épreuve.
+                </p>
+              </section>
+
+              <section className="space-y-4">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  3.1. Les enjeux éthiques et moraux
+                </h4>
+
+                <h5 className="font-bold text-xl text-[#032622]">
+                  Introduction : une éthique sans conscience ?
+                </h5>
+
+                <p>
+                  L'intelligence artificielle ne pense pas — elle calcule.
+                  Elle n'a pas de morale, pas d'émotion, pas d'intention.
+                  Et pourtant, elle agit dans un monde humain, où chaque décision a des conséquences sociales, économiques, parfois vitales.
+                  C'est là tout le paradoxe : nous créons des systèmes sans conscience qui influencent des décisions profondément humaines.
+                </p>
+
+                <p>
+                  La question éthique ne se limite donc pas à savoir si la machine est "bonne" ou "mauvaise", mais à comprendre quelles valeurs nous inscrivons dans son code.
+                  Une IA reflète toujours les choix, les données et les biais de ceux qui la conçoivent.
+                  Elle n'est pas neutre, même si elle donne cette illusion.
+                </p>
+
+                <p className="italic border-l-4 border-[#032622] pl-4 bg-white/50 py-3">
+                  Le philosophe français Paul Ricœur disait que "la technique prolonge l'action humaine, mais sans en prolonger la responsabilité."
+                  C'est exactement le défi de l'intelligence artificielle : comment maintenir la responsabilité dans un monde où l'action devient partagée entre l'homme et la machine ?
+                </p>
+              </section>
+            </div>
+
+            {/* Vidéo Episode 5 */}
+            <div className="relative mt-8 mb-6">
+              <div className="border-2 border-[#032622] bg-white p-4 space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-[#032622] text-white flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                    </svg>
+                  </div>
+                  <h5 className="text-lg font-bold text-[#032622] uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                    Vidéo : Culture de l'IA - Épisode 5
+                  </h5>
+                </div>
+                <video controls className="w-full border-2 border-[#032622]">
+                  <source src="/video/CULTURE DE L'IA - Episode 5 (1).mp4" type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+              </div>
+            </div>
+
+            {/* Suite du contenu après la vidéo */}
+            <div className="space-y-4 text-base text-[#032622] leading-relaxed mt-8">
+              <h5 className="font-bold text-xl text-[#032622]">
+                L'illusion de la neutralité : quand l'algorithme juge à notre place
+              </h5>
+
+              <p>
+                L'un des mythes les plus tenaces autour de l'IA est celui de la neutralité.
+                Parce qu'elle repose sur des mathématiques, on la croit objective.
+                Mais l'expérience a montré le contraire : les algorithmes reproduisent les inégalités du monde réel.
+              </p>
+
+              <p>
+                En 2018, Amazon a dû supprimer une IA de recrutement après avoir découvert qu'elle écartait systématiquement les candidatures féminines.
+                Pourquoi ? Parce que le modèle avait été entraîné sur dix ans de CV d'employés… majoritairement masculins.
+                La machine n'était pas sexiste : elle avait simplement appris la logique d'un monde biaisé.
+              </p>
+
+              <p>
+                Le même problème est apparu dans le système américain COMPAS, utilisé pour évaluer la probabilité de récidive des détenus.
+                Des enquêtes journalistiques ont révélé que l'algorithme surestimait le risque chez les personnes noires et le sous-estimait chez les personnes blanches.
+                Encore une fois, la machine ne "pensait" pas le racisme : elle le reproduisait.
+              </p>
+
+              <p>
+                Ces exemples rappellent une évidence : il n'existe pas d'intelligence artificielle "pure".
+                Toute donnée est un reflet du monde, et tout reflet déforme.
+                L'objectivité algorithmique n'est pas un fait, mais un projet moral — celui de rendre visibles et corrigibles les biais humains.
+              </p>
+            </div>
+
+            {/* Encart podcast */}
+            <div className="border-2 border-[#032622] bg-[#032622] text-white p-6 mt-6">
+              <h6 className="text-lg font-bold mb-3 uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                🎧 Pour aller plus loin
+              </h6>
+              <p className="mb-3 text-sm">
+                Écoutez le podcast "Quinze" de Radio France sur les enjeux éthiques de l'intelligence artificielle :
+              </p>
+              <a 
+                href="https://www.radiofrance.fr/mouv/podcasts/quinze/quinze-du-jeudi-10-juillet-2025-2703300"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 bg-white text-[#032622] px-4 py-2 text-sm font-bold hover:bg-[#F8F5E4] transition-colors"
+              >
+                <span>ÉCOUTER LE PODCAST</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+
+            {/* Image illustrative */}
+            <div className="relative mt-8 mb-6">
+              <div className="relative border-2 border-[#032622] overflow-hidden shadow-2xl">
+                <img
+                  src="/img/quinz.png"
+                  alt="Illustration - Quinze Podcast"
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+            </div>
+
+            <div className="border border-black bg-[#032622]/10 mt-6 p-4 space-y-2">
+              <p className="text-xs font-bold uppercase text-[#032622]">Notes rapides</p>
+              <p className="text-xs text-[#032622] opacity-70">
+                Note ici les insights ou citations clés à retenir du module. Elles seront automatiquement sauvegardées.
+              </p>
+              <textarea
+                value={moduleNotes}
+                onChange={(event) => handleModuleNotesChange(event.target.value)}
+                className="w-full h-32 border border-black bg-[#F8F5E4] text-[#032622] p-3 text-sm"
+                placeholder="Ex : données chiffrées, idées clés, concepts importants..."
+              />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setStep("partie2_3_suite")}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>MODULE PRÉCÉDENT</span>
+            </button>
+            <button
+              onClick={() => setShowQuizModal(true)}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <PenSquare className="w-4 h-4" />
+              <span>QUIZ DE FIN</span>
+            </button>
+            <button
+              onClick={() => setStep("partie3_2")}
+              className="border border-black bg-[#032622] text-white px-4 py-3 text-sm font-bold flex items-center justify-center space-x-2"
+            >
+              <ChevronRight className="w-4 h-4" />
+              <span>CONTINUER</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Agenda du cours</p>
+            </div>
+            <div className="p-4">
+              <div className="text-xs text-[#032622] space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Date de publication : 30 octobre 2025</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Temps de lecture estimé : 15 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 3</span>
+                <span className="font-bold">86%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '86%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Dernière section du cours
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">L'IA Act européen (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Guide éthique de l'IA (PDF)</span>
+                </a>
+                <a href="https://www.radiofrance.fr/mouv/podcasts/quinze/quinze-du-jeudi-10-juillet-2025-2703300" target="_blank" rel="noopener noreferrer" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Podcast : "Quinze" - IA & Éthique</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendu Partie 3.2 - Responsabilité et décision
+  const renderPartie3_2 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setStep("partie3_1")}
+          className="flex items-center space-x-2 text-sm font-bold text-[#032622]"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>RETOUR</span>
+        </button>
+        <Bookmark className="w-5 h-5 text-[#032622]" />
+      </div>
+
+      {renderProgressBar()}
+
+      <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
+        <div className="space-y-6">
+          <div className="border border-black bg-[#F8F5E4] p-6">
+            <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
+              Module 1 · Partie 3
+            </p>
+            
+            {/* Surligneur amélioré */}
+            <div className="border border-black bg-[#F8F5E4] p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Highlighter className="w-4 h-4 text-[#032622]" />
+                  <span className="text-xs font-bold uppercase text-[#032622]">
+                    Surligneur intelligent
+                  </span>
+                </div>
+                <div className="text-xs text-[#032622]/70">
+                  {highlights.length} surlignage{highlights.length > 1 ? 's' : ''}
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {highlightColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => applyHighlight(color.value, color.name)}
+                    className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 ${
+                      selectedHighlightColor === color.value ? 'border-[#032622] shadow-lg' : 'border-gray-400'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={`Surligner en ${color.label}`}
+                  />
+                ))}
+                <button
+                  onClick={() => {
+                    setShowHighlightMenu(!showHighlightMenu);
+                  }}
+                  className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center ${
+                    showHighlightMenu ? 'border-red-500 bg-red-100' : 'border-gray-400 bg-gray-100'
+                  }`}
+                  title="Mode gomme - Clique sur un surlignage pour le supprimer"
+                >
+                  <Eraser className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {showHighlightMenu && (
+                  <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
+                    <Eraser className="w-3 h-3" />
+                    <span>Mode gomme actif - Clique sur un surlignage</span>
+                  </div>
+                )}
+                <button
+                  onClick={clearAllHighlights}
+                  className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-red-100 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Effacer tout</span>
+                </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  className={`flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold transition-colors ${
+                    showFavoritesOnly 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-[#F8F5E4] text-[#032622] hover:bg-yellow-100 hover:text-yellow-700'
+                  }`}
+                >
+                  <Star className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  <span>Favoris</span>
+                </button>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <Search className="w-3 h-3 text-[#032622]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border border-black px-2 py-1 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={courseContentRef}
+              className={`space-y-6 text-base text-[#032622] leading-relaxed ${
+                showHighlightMenu ? 'cursor-crosshair' : ''
+              }`}
+              onClick={(e) => {
+                if (showHighlightMenu) {
+                  const target = e.target as HTMLElement;
+                  const highlightElement = target.closest('[data-highlight="true"]');
+                  if (highlightElement) {
+                    const highlightId = highlightElement.getAttribute('data-highlight-id');
+                    if (highlightId) {
+                      removeHighlight(highlightId);
+                      setShowHighlightMenu(false);
+                    }
+                  }
+                }
+              }}
+            >
+              <section className="space-y-4">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  Responsabilité et décision : qui porte la faute ?
+                </h4>
+
+                <p>
+                  À mesure que l'intelligence artificielle prend des décisions, la question de la responsabilité devient vertigineuse. 
+                  Qui est coupable si une voiture autonome provoque un accident ? Le constructeur, le programmeur, le conducteur, ou la machine elle-même ?
+                </p>
+
+                <p>
+                  En 2018, la société Uber a fait face à un drame : l'un de ses véhicules autonomes a renversé une piétonne en Arizona. 
+                  L'enquête a révélé que l'algorithme avait "vu" la victime, mais n'avait pas su la classer comme danger immédiat. 
+                  L'IA n'avait donc pas "commis une erreur" — elle avait mal interprété le monde.
+                </p>
+
+                <p>
+                  Ce type de situation inaugure une ère inédite : celle de la <strong>responsabilité distribuée</strong>. 
+                  L'acte n'appartient plus à un individu, mais à un réseau de décisions partagées entre ingénieurs, opérateurs, législateurs et utilisateurs. 
+                  Et notre droit, encore fondé sur la causalité humaine, peine à s'adapter à cette complexité.
+                </p>
+
+                <p>
+                  Certaines entreprises militent pour la création d'une <strong>"personnalité juridique de l'IA"</strong>, 
+                  un statut hybride qui permettrait d'attribuer des droits et des devoirs à une entité non humaine. 
+                  Mais cette idée soulève un débat fondamental : peut-on parler de responsabilité sans conscience ? 
+                  Peut-on juger moralement un programme ? La réponse, pour l'instant, reste non. 
+                  La responsabilité demeure humaine — mais elle devient collective.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  Transparence, explicabilité et justice algorithmique
+                </h4>
+
+                <p>
+                  Pour répondre à ces enjeux, un nouveau champ est né : <strong>l'éthique des algorithmes</strong>. 
+                  Son objectif : rendre les décisions de l'IA compréhensibles et auditées. 
+                  C'est ce qu'on appelle la <strong>transparence</strong> ou <strong>"explicabilité algorithmique"</strong>.
+                </p>
+
+                <p>
+                  L'idée est simple : si une IA prend une décision (recruter, refuser un prêt, classer une image), 
+                  elle doit pouvoir expliquer pourquoi. Mais en pratique, cela reste difficile, car les modèles d'apprentissage profond 
+                  fonctionnent comme des <em>boîtes noires</em>. Des milliards de calculs internes aboutissent à un résultat, 
+                  sans que personne — pas même les ingénieurs — ne puisse retracer chaque étape.
+                </p>
+
+                <p>
+                  Des initiatives émergent pour encadrer cela. L'Union européenne a adopté en 2024 le <strong>AI Act</strong>, 
+                  première législation mondiale à classer les IA selon leur niveau de risque. 
+                  Les systèmes utilisés pour la santé, la sécurité ou la justice devront désormais être audités et documentés. 
+                  De grandes entreprises, comme Microsoft, Google ou IBM, ont mis en place des comités éthiques internes 
+                  et des politiques de <em>"Responsible AI"</em>.
+                </p>
+
+                <p>
+                  Mais la vraie transparence n'est pas qu'une question technique : c'est une question de <strong>pouvoir</strong>. 
+                  Savoir comment un algorithme décide, c'est aussi savoir qui contrôle le savoir. 
+                  Et dans un monde dominé par quelques géants de la donnée, cette transparence devient une bataille culturelle.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  De la morale individuelle à l'éthique collective
+                </h4>
+
+                <p>
+                  Les débats éthiques sur l'intelligence artificielle ne peuvent plus se réduire à la morale personnelle. 
+                  Il ne s'agit pas seulement de "bien utiliser" l'IA, mais de penser les conditions d'un usage juste pour la société tout entière. 
+                  Les entreprises ne peuvent plus se contenter de l'efficacité ; elles doivent intégrer la responsabilité sociale et environnementale 
+                  dans leurs modèles.
+                </p>
+
+                <p>
+                  L'intelligence artificielle, en amplifiant nos capacités, amplifie aussi nos erreurs. 
+                  Elle agit comme un <strong>miroir grossissant</strong> : elle révèle la culture, les inégalités et les choix politiques d'une époque. 
+                  C'est pourquoi une véritable "éthique de l'IA" ne doit pas être défensive, mais créatrice. 
+                  Elle ne doit pas se limiter à éviter les dérives, mais à inventer un <em>nouvel humanisme technologique</em>.
+                </p>
+
+                <p>
+                  Un humanisme où la technologie n'est plus opposée à la morale, mais devient un espace de réflexion collective.
+                </p>
+
+                <p className="font-semibold italic">
+                  Les enjeux éthiques de l'intelligence artificielle dépassent largement la technique. 
+                  Ils touchent au cœur de la condition humaine : la responsabilité, la justice, la liberté et la confiance. 
+                  L'IA ne crée pas des dilemmes nouveaux ; elle met en lumière ceux que nous n'avions jamais vraiment résolus.
+                </p>
+              </section>
+            </div>
+
+            {/* Vidéo YouTube */}
+            <div className="relative mt-8 mb-6">
+              <div className="border-2 border-[#032622] bg-white p-4 space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-[#032622] text-white flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                    </svg>
+                  </div>
+                  <h5 className="text-lg font-bold text-[#032622] uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                    Vidéo : L'éthique de l'IA
+                  </h5>
+                </div>
+                <div className="w-full aspect-video">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src="https://www.youtube.com/embed/tf4-_4IbXPs?si=XAOg3JfeN5CxqE_W"
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                    className="border-2 border-[#032622]"
+                  ></iframe>
+                </div>
+              </div>
+            </div>
+
+            {/* Conclusion de la section */}
+            <div className="space-y-4 text-base text-[#032622] leading-relaxed mt-8">
+              <p className="font-semibold">
+                Elle nous oblige à réapprendre à penser le bien et le mal dans un monde où la décision n'est plus exclusivement humaine.
+              </p>
+              <p className="text-lg font-bold italic">
+                Et peut-être est-ce là sa plus grande leçon : L'intelligence artificielle ne nous remplace pas moralement ; 
+                elle nous rappelle simplement à quel point il est urgent de redevenir responsables.
+              </p>
+            </div>
+
+            {/* Notes rapides */}
+            <div className="mt-6">
+              <label className="block text-xs font-bold uppercase text-[#032622] mb-2">
+                Notes rapides
+              </label>
+              <textarea
+                rows={4}
+                className="w-full border border-black p-3 text-sm text-[#032622] bg-white focus:outline-none"
+                placeholder="Notez vos réflexions personnelles..."
+              ></textarea>
+            </div>
+          </div>
+
+          {/* Boutons de navigation */}
+          <div className="grid sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setStep("partie3_1")}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>PRÉCÉDENT</span>
+            </button>
+            <button
+              onClick={() => {}}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <PenSquare className="w-4 h-4" />
+              <span>QUIZ DE FIN</span>
+            </button>
+            <button
+              onClick={() => setStep("partie3_3")}
+              className="border border-black bg-[#032622] text-white px-4 py-3 text-sm font-bold flex items-center justify-center space-x-2"
+            >
+              <ChevronRight className="w-4 h-4" />
+              <span>CONTINUER</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Agenda du cours</p>
+            </div>
+            <div className="p-4">
+              <div className="text-xs text-[#032622] space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Date de publication : 30 octobre 2025</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Temps de lecture estimé : 12 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 3</span>
+                <span className="font-bold">88%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '88%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Section éthique et société
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">L'IA Act européen (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Responsible AI - Guide pratique (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Cambridge Analytica - Étude de cas</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendu Partie 3.3 - Impact sociétal et culturel (Partie 1)
+  const renderPartie3_3 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setStep("partie3_2")}
+          className="flex items-center space-x-2 text-sm font-bold text-[#032622]"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>RETOUR</span>
+        </button>
+        <Bookmark className="w-5 h-5 text-[#032622]" />
+      </div>
+
+      {renderProgressBar()}
+
+      <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
+        <div className="space-y-6">
+          <div className="border border-black bg-[#F8F5E4] p-6">
+            <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
+              Module 1 · Partie 3
+            </p>
+            
+            {/* Surligneur amélioré */}
+            <div className="border border-black bg-[#F8F5E4] p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Highlighter className="w-4 h-4 text-[#032622]" />
+                  <span className="text-xs font-bold uppercase text-[#032622]">
+                    Surligneur intelligent
+                  </span>
+                </div>
+                <div className="text-xs text-[#032622]/70">
+                  {highlights.length} surlignage{highlights.length > 1 ? 's' : ''}
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {highlightColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => applyHighlight(color.value, color.name)}
+                    className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 ${
+                      selectedHighlightColor === color.value ? 'border-[#032622] shadow-lg' : 'border-gray-400'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={`Surligner en ${color.label}`}
+                  />
+                ))}
+                <button
+                  onClick={() => {
+                    setShowHighlightMenu(!showHighlightMenu);
+                  }}
+                  className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center ${
+                    showHighlightMenu ? 'border-red-500 bg-red-100' : 'border-gray-400 bg-gray-100'
+                  }`}
+                  title="Mode gomme - Clique sur un surlignage pour le supprimer"
+                >
+                  <Eraser className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {showHighlightMenu && (
+                  <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
+                    <Eraser className="w-3 h-3" />
+                    <span>Mode gomme actif - Clique sur un surlignage</span>
+                  </div>
+                )}
+                <button
+                  onClick={clearAllHighlights}
+                  className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-red-100 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Effacer tout</span>
+                </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  className={`flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold transition-colors ${
+                    showFavoritesOnly 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-[#F8F5E4] text-[#032622] hover:bg-yellow-100 hover:text-yellow-700'
+                  }`}
+                >
+                  <Star className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  <span>Favoris</span>
+                </button>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <Search className="w-3 h-3 text-[#032622]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border border-black px-2 py-1 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={courseContentRef}
+              className={`space-y-6 text-base text-[#032622] leading-relaxed ${
+                showHighlightMenu ? 'cursor-crosshair' : ''
+              }`}
+              onClick={(e) => {
+                if (showHighlightMenu) {
+                  const target = e.target as HTMLElement;
+                  const highlightElement = target.closest('[data-highlight="true"]');
+                  if (highlightElement) {
+                    const highlightId = highlightElement.getAttribute('data-highlight-id');
+                    if (highlightId) {
+                      removeHighlight(highlightId);
+                      setShowHighlightMenu(false);
+                    }
+                  }
+                }
+              }}
+            >
+              <section className="space-y-4">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  3.2. L'impact sociétal et culturel : entre dépendance et libération cognitive
+                </h4>
+
+                <p>
+                  L'intelligence artificielle n'est plus une simple innovation technique : elle est devenue un <strong>fait social total</strong>, 
+                  pour reprendre l'expression de l'anthropologue Marcel Mauss.
+                </p>
+              </section>
+
+              {/* Image Marcel Mauss */}
+              <div className="my-8 flex justify-center">
+                <div className="border-2 border-[#032622] p-4 bg-white">
+                  <Image
+                    src="/img/ygggg.png"
+                    alt="Marcel Mauss - Anthropologue"
+                    width={600}
+                    height={400}
+                    className="w-full h-auto"
+                  />
+                </div>
+              </div>
+
+              <section className="space-y-4">
+                <p>
+                  C'est-à-dire un phénomène qui traverse tous les aspects de la vie humaine : le travail, l'éducation, la culture, la politique, 
+                  les relations sociales, jusqu'à notre manière de percevoir le monde. 
+                  L'IA influence la façon dont nous pensons, apprenons, créons, nous informons et interagissons. 
+                  Elle structure nos comportements collectifs à travers des outils si familiers que nous en oublions la puissance : 
+                  les réseaux sociaux, les moteurs de recherche, les plateformes de streaming, les assistants personnels.
+                </p>
+
+                <p>
+                  Mais cette omniprésence soulève un paradoxe : plus l'IA nous simplifie la vie, plus elle transforme notre rapport 
+                  à la liberté, au savoir et au jugement. Sommes-nous en train de vivre une ère d'émancipation intellectuelle 
+                  ou une forme subtile de dépendance cognitive ?
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  L'IA et la démocratie : le risque de la manipulation invisible
+                </h5>
+
+                <p>
+                  Jamais dans l'histoire un outil n'a eu autant d'influence sur nos opinions que les algorithmes. 
+                  Les plateformes sociales, par la personnalisation des flux d'informations, sont devenues les nouveaux espaces 
+                  de la vie politique et médiatique.
+                </p>
+
+                <p>
+                  En 2018, l'affaire <strong>Cambridge Analytica</strong> a révélé au grand jour la puissance de ces technologies. 
+                  Grâce à l'analyse psychologique de 87 millions de profils Facebook, cette société britannique avait pu cibler 
+                  des électeurs américains avec des messages politiques personnalisés, jouant sur leurs émotions et leurs peurs. 
+                  Cette stratégie aurait contribué à influencer le résultat de l'élection présidentielle de 2016.
+                </p>
+
+                <p>
+                  Ce scandale a marqué un tournant : il a montré que l'intelligence artificielle, conçue pour comprendre nos comportements, 
+                  pouvait aussi les orienter. Et contrairement à la propagande classique, cette influence est <em>invisible</em>. 
+                  Chacun reçoit un message différent, adapté à ses croyances et à ses fragilités. 
+                  C'est une persuasion silencieuse, algorithmique, d'autant plus efficace qu'elle ne dit jamais son nom.
+                </p>
+
+                <p>
+                  Le philosophe Byung-Chul Han parle à ce sujet d'un <strong>"pouvoir doux"</strong>, une domination qui ne contraint pas mais séduit, 
+                  qui ne censure pas mais détourne. L'IA ne nous impose pas quoi penser : elle choisit ce que nous voyons pour que nous pensions différemment. 
+                  Et dans ce glissement, la démocratie devient fragile.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  L'ère de la désinformation : la guerre du faux
+                </h5>
+
+                <p>
+                  Avec l'essor des IA génératives, une nouvelle menace s'est imposée : celle de la <strong>désinformation automatisée</strong>. 
+                  Les <em>deepfakes</em> — ces vidéos ou sons manipulés par intelligence artificielle — sont devenus si réalistes 
+                  qu'ils brouillent la frontière entre vrai et faux.
+                </p>
+
+                <p>
+                  En 2024, une vidéo truquée du président ukrainien annonçant une reddition fictive a circulé sur les réseaux sociaux 
+                  avant d'être démentie quelques heures plus tard. L'impact émotionnel, lui, avait déjà fait son œuvre. 
+                  Une simple image, même fausse, a le pouvoir de réécrire le réel.
+                </p>
+
+                <p>
+                  Cette crise de confiance touche toutes les sphères : la politique, les médias, la science, l'économie. 
+                  Quand tout peut être simulé, le doute devient permanent. Et dans une démocratie, le doute systématique n'est pas un signe de lucidité — 
+                  c'est un poison lent.
+                </p>
+
+                <p>
+                  Les plateformes et les gouvernements tentent de réagir. L'Union européenne a mis en place en 2023 le <strong>Digital Services Act</strong>, 
+                  qui impose aux grandes plateformes de signaler les contenus générés par IA et de renforcer la vérification des sources. 
+                  Des initiatives comme Adobe Content Authenticity Initiative cherchent à certifier l'origine des images et vidéos.
+                </p>
+
+                <p className="font-semibold italic">
+                  Mais la bataille du vrai contre le faux n'est plus une question de technologie : c'est une question culturelle. 
+                  La seule arme durable contre la manipulation reste l'esprit critique.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  L'éducation et la formation : enseigner à penser avec la machine
+                </h5>
+
+                <p>
+                  Dans le domaine de l'éducation, l'intelligence artificielle provoque un choc comparable à celui de l'imprimerie. 
+                  L'apparition de ChatGPT en 2022 a bouleversé les écoles et les universités du monde entier. 
+                  Certains enseignants ont crié à la triche, d'autres y ont vu un outil d'apprentissage révolutionnaire.
+                </p>
+
+                <p>
+                  Au lieu d'interdire, de plus en plus d'institutions choisissent aujourd'hui d'intégrer l'IA à la pédagogie. 
+                  Harvard, Sciences Po, Oxford ou le MIT ont déjà créé des modules sur la pensée critique appliquée à l'IA. 
+                  Car la question n'est plus <em>"comment l'éviter ?"</em>, mais <strong>"comment apprendre à s'en servir sans s'y perdre ?"</strong>.
+                </p>
+
+                <p>
+                  L'IA peut aider à rédiger, corriger, traduire, résumer, mais elle peut aussi atrophier la réflexion personnelle 
+                  si elle est utilisée sans recul. Le rôle de l'enseignant n'est donc plus seulement de transmettre un savoir, 
+                  mais d'apprendre à filtrer, questionner, hiérarchiser. C'est un retour à l'essence même de l'éducation : enseigner à penser.
+                </p>
+
+                <p>
+                  L'IA ouvre aussi de formidables perspectives. Grâce à l'apprentissage adaptatif, des plateformes comme Khan Academy ou Coursera 
+                  peuvent désormais proposer des parcours sur mesure, adaptés au rythme et aux besoins de chaque étudiant. 
+                  On parle d'<strong>éducation augmentée</strong> : une pédagogie qui s'ajuste à l'élève, sans le juger, mais en le stimulant.
+                </p>
+
+                <p className="font-semibold">
+                  L'enjeu n'est donc pas de choisir entre l'humain et la machine, mais de réinventer leur collaboration cognitive.
+                </p>
+              </section>
+            </div>
+
+            {/* Notes rapides */}
+            <div className="mt-6">
+              <label className="block text-xs font-bold uppercase text-[#032622] mb-2">
+                Notes rapides
+              </label>
+              <textarea
+                rows={4}
+                className="w-full border border-black p-3 text-sm text-[#032622] bg-white focus:outline-none"
+                placeholder="Notez vos réflexions personnelles..."
+              ></textarea>
+            </div>
+          </div>
+
+          {/* Boutons de navigation */}
+          <div className="grid sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setStep("partie3_2")}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>PRÉCÉDENT</span>
+            </button>
+            <button
+              onClick={() => {}}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <PenSquare className="w-4 h-4" />
+              <span>QUIZ DE FIN</span>
+            </button>
+            <button
+              onClick={() => setStep("partie3_4")}
+              className="border border-black bg-[#032622] text-white px-4 py-3 text-sm font-bold flex items-center justify-center space-x-2"
+            >
+              <ChevronRight className="w-4 h-4" />
+              <span>CONTINUER</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Agenda du cours</p>
+            </div>
+            <div className="p-4">
+              <div className="text-xs text-[#032622] space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Date de publication : 30 octobre 2025</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Temps de lecture estimé : 14 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 3</span>
+                <span className="font-bold">90%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '90%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Impact sociétal et culturel
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Digital Services Act - Guide (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Éducation & IA - Rapport UNESCO (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Byung-Chul Han - Le pouvoir doux</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendu Partie 3.4 - Humain augmenté et culture de l'IA
+  const renderPartie3_4 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setStep("partie3_3")}
+          className="flex items-center space-x-2 text-sm font-bold text-[#032622]"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>RETOUR</span>
+        </button>
+        <Bookmark className="w-5 h-5 text-[#032622]" />
+      </div>
+
+      {renderProgressBar()}
+
+      <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
+        <div className="space-y-6">
+          <div className="border border-black bg-[#F8F5E4] p-6">
+            <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
+              Module 1 · Partie 3
+            </p>
+            
+            {/* Surligneur amélioré */}
+            <div className="border border-black bg-[#F8F5E4] p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Highlighter className="w-4 h-4 text-[#032622]" />
+                  <span className="text-xs font-bold uppercase text-[#032622]">
+                    Surligneur intelligent
+                  </span>
+                </div>
+                <div className="text-xs text-[#032622]/70">
+                  {highlights.length} surlignage{highlights.length > 1 ? 's' : ''}
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {highlightColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => applyHighlight(color.value, color.name)}
+                    className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 ${
+                      selectedHighlightColor === color.value ? 'border-[#032622] shadow-lg' : 'border-gray-400'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={`Surligner en ${color.label}`}
+                  />
+                ))}
+                <button
+                  onClick={() => {
+                    setShowHighlightMenu(!showHighlightMenu);
+                  }}
+                  className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center ${
+                    showHighlightMenu ? 'border-red-500 bg-red-100' : 'border-gray-400 bg-gray-100'
+                  }`}
+                  title="Mode gomme - Clique sur un surlignage pour le supprimer"
+                >
+                  <Eraser className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {showHighlightMenu && (
+                  <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
+                    <Eraser className="w-3 h-3" />
+                    <span>Mode gomme actif - Clique sur un surlignage</span>
+                  </div>
+                )}
+                <button
+                  onClick={clearAllHighlights}
+                  className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-red-100 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Effacer tout</span>
+                </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  className={`flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold transition-colors ${
+                    showFavoritesOnly 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-[#F8F5E4] text-[#032622] hover:bg-yellow-100 hover:text-yellow-700'
+                  }`}
+                >
+                  <Star className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  <span>Favoris</span>
+                </button>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <Search className="w-3 h-3 text-[#032622]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border border-black px-2 py-1 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={courseContentRef}
+              className={`space-y-6 text-base text-[#032622] leading-relaxed ${
+                showHighlightMenu ? 'cursor-crosshair' : ''
+              }`}
+              onClick={(e) => {
+                if (showHighlightMenu) {
+                  const target = e.target as HTMLElement;
+                  const highlightElement = target.closest('[data-highlight="true"]');
+                  if (highlightElement) {
+                    const highlightId = highlightElement.getAttribute('data-highlight-id');
+                    if (highlightId) {
+                      removeHighlight(highlightId);
+                      setShowHighlightMenu(false);
+                    }
+                  }
+                }
+              }}
+            >
+              <section className="space-y-4">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  4. L'humain augmenté : liberté ou dépendance ?
+                </h5>
+
+                <p>
+                  Jamais l'humain n'a disposé d'autant d'assistants intellectuels. 
+                  L'IA traduit nos textes, anticipe nos rendez-vous, nous suggère des idées, complète nos phrases. 
+                  Cette assistance permanente peut donner l'impression d'une <strong>libération</strong> : celle du temps, de l'effort, de la contrainte. 
+                  Mais elle installe aussi une nouvelle forme de <strong>dépendance invisible</strong>.
+                </p>
+
+                <p>
+                  Les psychologues parlent de <strong>"paresse cognitive"</strong> : la tendance à déléguer à la machine 
+                  les tâches mentales les plus exigeantes. Nous ne faisons plus l'effort de retenir un itinéraire, d'écrire une introduction, 
+                  de résoudre un calcul, car une IA le fait mieux et plus vite.
+                </p>
+
+                <p>
+                  Cette délégation, à court terme, améliore le confort. Mais à long terme, elle risque d'affaiblir ce que le philosophe Matthew Crawford 
+                  appelle <em>"l'attention incarnée"</em> — cette faculté d'être présent, concentré, pleinement conscient de ce qu'on fait.
+                </p>
+
+                <p>
+                  Pourtant, cette dépendance n'est pas une fatalité. <strong>L'humain augmenté n'est pas un humain diminué</strong>, 
+                  s'il garde la maîtrise du sens. Un chirurgien assisté par une IA ne perd pas son savoir : il le raffine. 
+                  Un artiste qui dialogue avec un modèle génératif ne s'efface pas : il étend son imagination.
+                </p>
+
+                <p className="font-semibold italic">
+                  Le danger n'est pas dans la technologie elle-même, mais dans la perte de conscience de son usage.
+                </p>
+              </section>
+
+              {/* Placeholder vidéo */}
+              <div className="relative my-8">
+                <div className="border-2 border-[#032622] bg-gray-200 p-6 text-center space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="w-16 h-16 bg-[#032622] text-white flex items-center justify-center rounded-full">
+                      <Play className="w-8 h-8" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-[#032622] uppercase">
+                    Vidéo à ajouter prochainement
+                  </p>
+                  <p className="text-xs text-[#032622]/70 italic">
+                    Emplacement réservé pour la vidéo sur l'humain augmenté
+                  </p>
+                </div>
+              </div>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  La culture de l'IA : nouveaux récits, nouvelles identités
+                </h5>
+
+                <p>
+                  La culture contemporaine est en train de se redéfinir autour de l'intelligence artificielle. 
+                  Le cinéma, la littérature et la musique s'en emparent comme d'un miroir de nos angoisses et de nos espoirs.
+                </p>
+
+                <p>
+                  De <em>Her</em> à <em>Ex Machina</em>, de <em>Black Mirror</em> à <em>The Creator</em>, 
+                  les œuvres récentes ne parlent plus de robots menaçants, mais de machines sensibles, presque humaines. 
+                  Cette évolution culturelle traduit une peur plus intime : <strong>celle de disparaître dans ce que nous avons créé</strong>.
+                </p>
+
+                <p>
+                  Mais elle traduit aussi une fascination pour la continuité entre nous et nos inventions. 
+                  Les machines ne sont plus des ennemies : elles deviennent des miroirs émotionnels, des compagnons, parfois des alter ego.
+                </p>
+
+                <p>
+                  Les artistes explorent ce trouble. En 2023, le musée du Louvre-Lens a organisé l'exposition <em>"L'intelligence des machines"</em>, 
+                  mêlant œuvres humaines et créations d'IA sans distinction d'auteur. Les visiteurs devaient deviner lesquelles étaient faites par une main humaine. 
+                  Résultat : <strong>la majorité s'est trompée</strong>.
+                </p>
+
+                <p>
+                  Cette expérience révèle un basculement profond : la frontière entre l'art, la science et la technologie s'efface. 
+                  Nous entrons dans une ère de <strong>co-création entre humains et machines</strong>. 
+                  Et cette hybridation culturelle, loin d'appauvrir la créativité, la rend plus riche, plus réflexive, plus universelle.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <p className="font-semibold">
+                  L'intelligence artificielle n'est pas qu'une révolution économique ou industrielle : elle est une <strong>mutation culturelle</strong>. 
+                  Elle façonne notre manière de penser, de débattre, de créer, d'aimer même. 
+                  Elle amplifie nos libertés tout en menaçant notre autonomie. Elle nous rend plus puissants, mais aussi plus fragiles.
+                </p>
+
+                <p>
+                  Le défi du XXIᵉ siècle ne sera pas de limiter la technologie, mais d'apprendre à vivre avec elle sans s'y dissoudre. 
+                  L'IA n'est pas un ennemi, ni un sauveur : elle est le reflet de nos propres contradictions.
+                </p>
+
+                <p className="text-lg font-bold italic">
+                  Elle nous confronte à une vérité simple, mais essentielle : Plus nos outils deviennent intelligents, 
+                  plus nous devons apprendre à le redevenir nous-mêmes.
+                </p>
+              </section>
+            </div>
+
+            {/* Notes rapides */}
+            <div className="mt-6">
+              <label className="block text-xs font-bold uppercase text-[#032622] mb-2">
+                Notes rapides
+              </label>
+              <textarea
+                rows={4}
+                className="w-full border border-black p-3 text-sm text-[#032622] bg-white focus:outline-none"
+                placeholder="Notez vos réflexions personnelles..."
+              ></textarea>
+            </div>
+          </div>
+
+          {/* Boutons de navigation */}
+          <div className="grid sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setStep("partie3_3")}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>PRÉCÉDENT</span>
+            </button>
+            <button
+              onClick={() => {}}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <PenSquare className="w-4 h-4" />
+              <span>QUIZ DE FIN</span>
+            </button>
+            <button
+              onClick={() => setStep("partie3_5")}
+              className="border border-black bg-[#032622] text-white px-4 py-3 text-sm font-bold flex items-center justify-center space-x-2"
+            >
+              <ChevronRight className="w-4 h-4" />
+              <span>CONTINUER</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Agenda du cours</p>
+            </div>
+            <div className="p-4">
+              <div className="text-xs text-[#032622] space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Date de publication : 30 octobre 2025</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Temps de lecture estimé : 11 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 3</span>
+                <span className="font-bold">92%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '92%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Humain et culture
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">L'attention incarnée - M. Crawford (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">IA & Art - Rapport Louvre-Lens (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Her (Film) - Analyse critique</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendu Partie 3.5 - L'avenir de l'IA et conclusion
+  const renderPartie3_5 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setStep("partie3_4")}
+          className="flex items-center space-x-2 text-sm font-bold text-[#032622]"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>RETOUR</span>
+        </button>
+        <Bookmark className="w-5 h-5 text-[#032622]" />
+      </div>
+
+      {renderProgressBar()}
+
+      <div className="grid lg:grid-cols-[3fr_1.2fr] gap-6">
+        <div className="space-y-6">
+          <div className="border border-black bg-[#F8F5E4] p-6">
+            <p className="text-xs font-semibold text-[#032622] uppercase mb-2">
+              Module 1 · Partie 3
+            </p>
+            
+            {/* Surligneur amélioré */}
+            <div className="border border-black bg-[#F8F5E4] p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Highlighter className="w-4 h-4 text-[#032622]" />
+                  <span className="text-xs font-bold uppercase text-[#032622]">
+                    Surligneur intelligent
+                  </span>
+                </div>
+                <div className="text-xs text-[#032622]/70">
+                  {highlights.length} surlignage{highlights.length > 1 ? 's' : ''}
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {highlightColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => applyHighlight(color.value, color.name)}
+                    className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 ${
+                      selectedHighlightColor === color.value ? 'border-[#032622] shadow-lg' : 'border-gray-400'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={`Surligner en ${color.label}`}
+                  />
+                ))}
+                <button
+                  onClick={() => {
+                    setShowHighlightMenu(!showHighlightMenu);
+                  }}
+                  className={`w-10 h-10 border-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center ${
+                    showHighlightMenu ? 'border-red-500 bg-red-100' : 'border-gray-400 bg-gray-100'
+                  }`}
+                  title="Mode gomme - Clique sur un surlignage pour le supprimer"
+                >
+                  <Eraser className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {showHighlightMenu && (
+                  <div className="flex items-center space-x-1 border border-red-500 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 rounded">
+                    <Eraser className="w-3 h-3" />
+                    <span>Mode gomme actif - Clique sur un surlignage</span>
+                  </div>
+                )}
+                <button
+                  onClick={clearAllHighlights}
+                  className="flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold text-[#032622] bg-[#F8F5E4] hover:bg-red-100 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Effacer tout</span>
+                </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  className={`flex items-center space-x-1 border border-black px-3 py-1 text-xs font-semibold transition-colors ${
+                    showFavoritesOnly 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-[#F8F5E4] text-[#032622] hover:bg-yellow-100 hover:text-yellow-700'
+                  }`}
+                >
+                  <Star className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  <span>Favoris</span>
+                </button>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <Search className="w-3 h-3 text-[#032622]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border border-black px-2 py-1 text-xs bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={courseContentRef}
+              className={`space-y-6 text-base text-[#032622] leading-relaxed ${
+                showHighlightMenu ? 'cursor-crosshair' : ''
+              }`}
+              onClick={(e) => {
+                if (showHighlightMenu) {
+                  const target = e.target as HTMLElement;
+                  const highlightElement = target.closest('[data-highlight="true"]');
+                  if (highlightElement) {
+                    const highlightId = highlightElement.getAttribute('data-highlight-id');
+                    if (highlightId) {
+                      removeHighlight(highlightId);
+                      setShowHighlightMenu(false);
+                    }
+                  }
+                }
+              }}
+            >
+              <section className="space-y-4">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  3.3. L'avenir de l'intelligence artificielle : vers une civilisation augmentée
+                </h4>
+
+                <p>
+                  Toutes les révolutions techniques ont d'abord été perçues comme des menaces avant de devenir des évidences. 
+                  L'électricité effrayait, Internet intriguait, le smartphone inquiétait. L'intelligence artificielle, elle, suscite une émotion différente : 
+                  le <strong>vertige</strong>. Car pour la première fois, l'humanité fait face à une invention qui touche à ce qu'elle a de plus intime — la pensée elle-même.
+                </p>
+
+                <p>
+                  Nous sommes à l'aube d'un tournant de civilisation. L'IA ne se contente plus de transformer les outils : 
+                  elle redessine la frontière entre l'humain et le non-humain, entre le savoir et la conscience. 
+                  Elle devient la matrice d'un monde nouveau où la création, la décision, la médecine, l'éducation et l'économie seront co-produites 
+                  par des intelligences multiples — humaines, artificielles et collectives.
+                </p>
+
+                <p>
+                  Cette transformation ne se mesure pas seulement en termes de productivité ou de croissance : elle engage un <strong>projet de société</strong>. 
+                  Et la question n'est plus <em>"que peut faire l'IA ?"</em>, mais <strong>"quel monde voulons-nous construire avec elle ?"</strong>.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  L'intelligence artificielle et les défis planétaires
+                </h5>
+
+                <p>
+                  L'une des grandes surprises de ces dernières années est la manière dont l'IA s'impose comme un outil majeur 
+                  de <strong>transition écologique et scientifique</strong>. Longtemps accusée d'être énergivore, elle devient aujourd'hui un levier 
+                  pour la durabilité et la préservation de la planète.
+                </p>
+
+                <p>
+                  Dans l'agriculture, par exemple, des entreprises comme John Deere ou Naïo Technologies développent des robots équipés de vision par ordinateur 
+                  capables de détecter les mauvaises herbes et de réduire de 90 % l'usage de pesticides. 
+                  Dans la gestion de l'eau, des modèles prédictifs aident à anticiper les sécheresses et à optimiser les réseaux d'irrigation. 
+                  Et dans le domaine de l'énergie, Google DeepMind a permis de diminuer de 40 % la consommation électrique de ses data centers 
+                  en ajustant les systèmes de refroidissement via des algorithmes d'apprentissage.
+                </p>
+
+                <p>
+                  Mais l'IA n'est pas seulement un outil de mesure ou d'optimisation : elle devient un instrument de <strong>connaissance planétaire</strong>. 
+                  Des laboratoires utilisent des modèles de simulation climatique capables de prédire des phénomènes météorologiques extrêmes 
+                  dix fois plus rapidement que les modèles traditionnels. Dans la recherche médicale, des IA comme <strong>AlphaFold</strong> 
+                  ont résolu en quelques mois le mystère de la structure de plus de 200 millions de protéines, ouvrant la voie à de nouveaux traitements 
+                  contre le cancer ou les maladies rares.
+                </p>
+
+                <p className="font-semibold">
+                  Ces avancées montrent que la technologie, quand elle est dirigée avec sens, peut devenir un outil de soin du monde. 
+                  Mais elles rappellent aussi une évidence : plus la puissance de l'IA grandit, plus elle exige une conscience collective pour la gouverner.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  Vers une intelligence collective : fusion des savoirs humains et artificiels
+                </h5>
+
+                <p>
+                  Pendant des siècles, la connaissance a été <em>cumulative</em> : l'humain apprenait, enseignait, transmettait. 
+                  Aujourd'hui, elle devient <strong>interactive</strong>. Nous ne consultons plus la connaissance, nous dialoguons avec elle. 
+                  Cette transformation bouleverse la manière dont la science, l'éducation et même la culture se construisent.
+                </p>
+
+                <p>
+                  Imaginons un étudiant qui travaille sur la Renaissance italienne. Grâce à une IA, il peut interroger en temps réel des milliers d'archives, 
+                  croiser des œuvres, analyser des lettres traduites et obtenir des hypothèses inédites. 
+                  Mais s'il n'a pas l'esprit critique pour interpréter ces réponses, il reste passif. 
+                  L'intelligence collective du futur ne reposera donc pas sur l'accumulation de données, mais sur la <strong>collaboration des intelligences</strong> — 
+                  humaines pour le sens, artificielles pour la vitesse.
+                </p>
+
+                <p>
+                  Ce modèle est déjà visible. Des entreprises comme Hugging Face ou OpenAI développent des plateformes d'apprentissage collaboratif 
+                  où les modèles sont améliorés par des communautés mondiales d'utilisateurs. Dans la science, des projets ouverts comme <em>Climate Change AI</em> 
+                  rassemblent chercheurs, climatologues et ingénieurs pour mutualiser les données et les modèles.
+                </p>
+
+                <p>
+                  C'est l'émergence d'une <strong>science augmentée</strong>, où la connaissance devient un bien commun partagé entre l'homme et la machine. 
+                  Mais cette fusion pose aussi une exigence nouvelle : <em>il faut apprendre à penser ensemble sans se confondre</em>. 
+                  L'IA sait répondre ; nous devons rester capables de questionner. C'est cette dialectique qui définira la vraie intelligence collective du XXIᵉ siècle.
+                </p>
+              </section>
+
+              {/* Lien vers article gouvernement */}
+              <div className="my-8">
+                <div className="border-2 border-[#032622] bg-white p-4 space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <ExternalLink className="w-6 h-6 text-[#032622]" />
+                    <h6 className="text-sm font-bold text-[#032622] uppercase">Ressource externe</h6>
+                  </div>
+                  <a 
+                    href="https://www.info.gouv.fr/actualite/intelligence-artificielle-va-t-elle-remplacer-l-humain" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block text-sm text-[#6B8E23] underline hover:text-[#032622] transition-colors"
+                  >
+                    L'intelligence artificielle va-t-elle remplacer l'humain ? - Gouvernement français
+                  </a>
+                </div>
+              </div>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  L'humain créateur : redéfinir la valeur du sens
+                </h5>
+
+                <p>
+                  Si l'IA apprend à tout faire — écrire, coder, composer, peindre —, que reste-t-il à l'humain ? 
+                  La réponse tient en un mot : <strong>le sens</strong>.
+                </p>
+
+                <p>
+                  Ce que la machine ne peut pas produire, c'est l'intention derrière le geste. 
+                  Elle peut créer une mélodie, mais pas décider pourquoi elle doit être triste ou joyeuse. 
+                  Elle peut écrire un poème, mais pas en comprendre la nostalgie.
+                </p>
+
+                <p>
+                  Le philosophe <strong>Bernard Stiegler</strong> rappelait que <em>"la technique ne remplace pas l'humain, elle l'oblige à devenir plus humain encore."</em> 
+                  Face à l'IA, notre rôle n'est pas de rivaliser, mais de recentrer la valeur sur ce que la machine ne possède pas : 
+                  la conscience, l'empathie, la créativité incarnée, la responsabilité.
+                </p>
+
+                <p>
+                  Cette mutation revalorise des compétences longtemps jugées "molles" : la culture, la communication, l'imagination, la pensée critique. 
+                  Elles deviennent le socle d'une nouvelle <strong>économie du sens</strong>. L'entrepreneur de demain ne vendra plus seulement des produits, 
+                  mais des expériences intelligentes et émotionnelles. L'artiste ne cherchera plus à produire plus vite, mais à créer plus juste. 
+                  Et le citoyen, pour rester libre, devra apprendre à penser la technologie comme une extension de son esprit, non comme une autorité supérieure.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  L'IA et la gouvernance mondiale : entre compétition et conscience
+                </h5>
+
+                <p>
+                  L'intelligence artificielle est devenue le cœur d'une compétition mondiale entre puissances. 
+                  Les États-Unis, la Chine et l'Union européenne se livrent une bataille stratégique pour la maîtrise des données, des infrastructures et des talents. 
+                  Mais cette rivalité ne se joue plus seulement sur le terrain économique : elle concerne le <strong>modèle de société</strong> que chaque région souhaite promouvoir.
+                </p>
+
+                <p>
+                  Les États-Unis défendent une approche libérale fondée sur l'innovation rapide et la régulation a posteriori. 
+                  La Chine privilégie une IA d'État, centralisée, utilisée pour la surveillance et la planification sociale. 
+                  L'Europe, quant à elle, tente d'imposer une <strong>éthique de la responsabilité</strong> avec des lois comme le <em>AI Act</em>, 
+                  qui encadrent les usages à risque.
+                </p>
+
+                <p>
+                  Cette diversité des approches traduit une tension fondamentale : voulons-nous une IA <em>utile</em>, <em>contrôlante</em> ou <em>humaine</em> ? 
+                  La réponse ne peut venir d'un seul pays : elle devra émerger d'une <strong>gouvernance mondiale</strong>, 
+                  à la croisée du droit, de la philosophie et de la diplomatie.
+                </p>
+
+                <p>
+                  Des institutions comme l'ONU ou l'UNESCO travaillent déjà à un cadre commun. Mais au-delà des traités, 
+                  c'est une culture universelle de la conscience technologique qu'il faut bâtir. 
+                  Une culture où la puissance ne serait plus mesurée à la vitesse du calcul, mais à la qualité du discernement.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8">
+                <h5 className="font-bold text-xl text-[#032622]">
+                  Vers une civilisation augmentée : l'alliance de la technique et de l'humain
+                </h5>
+
+                <p>
+                  L'avenir de l'intelligence artificielle ne sera pas une domination, mais une <strong>co-évolution</strong>. 
+                  Comme l'écriture, l'imprimerie ou Internet avant elle, elle finira par se fondre dans le quotidien, 
+                  au point de disparaître derrière ses usages. Nous ne parlerons plus d'"intelligence artificielle", 
+                  mais simplement d'<em>intelligence ambiante</em> — une couche invisible qui reliera tous les systèmes, tous les objets, tous les esprits.
+                </p>
+
+                <p>
+                  Cette perspective ouvre la voie à une <strong>civilisation augmentée</strong> : où la technologie prolonge la conscience 
+                  plutôt qu'elle ne la remplace ; où la créativité devient collective ; où le progrès ne se mesure plus seulement à la croissance, 
+                  mais à la qualité de la connaissance et du bien-être.
+                </p>
+
+                <p>
+                  L'écrivain <strong>Yuval Noah Harari</strong> résume bien cet horizon : 
+                  <em>"L'intelligence artificielle ne nous détruira pas. Elle nous transformera — la seule question est : en quoi ?"</em>
+                </p>
+
+                <p>
+                  C'est donc moins une peur qu'une <strong>responsabilité</strong>. Nous avons entre les mains le pouvoir d'inventer 
+                  une nouvelle alliance entre l'intelligence technique et l'intelligence morale. 
+                  C'est cette alliance — fragile, exigeante, mais féconde — qui déterminera le visage du XXIᵉ siècle.
+                </p>
+              </section>
+
+              <section className="space-y-4 mt-8 border-t-2 border-[#032622] pt-8">
+                <h4 className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  Conclusion générale du cours
+                </h4>
+
+                <p>
+                  L'intelligence artificielle n'est pas un accident de la modernité : elle en est l'héritière et le miroir. 
+                  Elle prolonge toutes les révolutions passées — industrielle, numérique, cognitive — et les rassemble dans un même projet : 
+                  celui de <strong>comprendre le monde en l'imitant</strong>. Mais cette imitation, en devenant création, nous oblige à regarder en face ce que nous sommes.
+                </p>
+
+                <p>
+                  L'IA n'est ni un monstre, ni un miracle : elle est le <strong>révélateur de notre intelligence collective</strong>. 
+                  Elle nous montre ce que nous savons faire, mais aussi ce que nous avons encore à apprendre.
+                </p>
+
+                <p>
+                  L'avenir ne sera pas celui des machines dominantes, ni celui des humains dépassés, mais celui d'une <strong>humanité augmentée</strong> 
+                  par sa propre invention — une humanité plus lucide, plus responsable, et, espérons-le, plus sage.
+                </p>
+
+                <p className="text-xl font-bold italic text-center mt-8 p-6 bg-white border-2 border-[#032622]">
+                  L'intelligence artificielle ne nous remplace pas moralement ; elle nous rappelle simplement à quel point il est urgent de redevenir responsables.
+                </p>
+              </section>
+            </div>
+
+            {/* Notes rapides */}
+            <div className="mt-6">
+              <label className="block text-xs font-bold uppercase text-[#032622] mb-2">
+                Notes rapides
+              </label>
+              <textarea
+                rows={4}
+                className="w-full border border-black p-3 text-sm text-[#032622] bg-white focus:outline-none"
+                placeholder="Notez vos réflexions personnelles..."
+              ></textarea>
+            </div>
+          </div>
+
+          {/* Boutons de navigation */}
+          <div className="grid sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setStep("partie3_4")}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>PRÉCÉDENT</span>
+            </button>
+            <button
+              onClick={() => {}}
+              className="border border-black bg-[#F8F5E4] px-4 py-3 text-sm font-bold text-[#032622] flex items-center justify-center space-x-2"
+            >
+              <PenSquare className="w-4 h-4" />
+              <span>QUIZ DE FIN</span>
+            </button>
+            <button
+              onClick={() => setStep("quizPartie3")}
+              className="border border-black bg-[#032622] text-white px-4 py-3 text-sm font-bold flex items-center justify-center space-x-2"
+            >
+              <ChevronRight className="w-4 h-4" />
+              <span>QUIZ PARTIE 3</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Agenda du cours</p>
+            </div>
+            <div className="p-4">
+              <div className="text-xs text-[#032622] space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Date de publication : 30 octobre 2025</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Temps de lecture estimé : 16 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progression du module */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Votre progression</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs text-[#032622]">
+                <span>Partie 3</span>
+                <span className="font-bold">94%</span>
+              </div>
+              <div className="w-full bg-[#032622]/20 h-2 rounded-full overflow-hidden">
+                <div className="bg-[#6B8E23] h-full" style={{ width: '94%' }}></div>
+              </div>
+              <p className="text-[10px] text-[#032622]/70 italic">
+                Dernière section - Avenir et conclusion
+              </p>
+            </div>
+          </div>
+
+          {/* Outils d'apprentissage */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Outils d'étude</p>
+            </div>
+            <div className="p-3 space-y-2">
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <BookOpen className="w-3 h-3" />
+                <span>Mes Notes</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <Lightbulb className="w-3 h-3" />
+                <span>Flashcards</span>
+              </button>
+              <button className="w-full border border-[#032622] bg-white hover:bg-[#6B8E23] hover:text-white hover:border-[#6B8E23] transition-all px-3 py-2 text-xs font-bold text-[#032622] flex items-center space-x-2">
+                <FileText className="w-3 h-3" />
+                <span>Résumé IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ressources complémentaires */}
+          <div className="border border-black bg-[#F8F5E4]">
+            <div className="border-b border-black p-4 bg-[#032622]">
+              <p className="text-white text-xs font-bold uppercase">Ressources</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">AI Act - Texte intégral (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">Yuval Noah Harari - 21 Lessons (PDF)</span>
+                </a>
+                <a href="#" className="flex items-start space-x-2 text-xs text-[#032622] hover:text-[#6B8E23] transition-colors">
+                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="underline">AlphaFold - Recherche scientifique</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendu Quiz Partie 3
+  const renderQuizPartie3 = () => {
+    const currentQuestion = quizPartie3Questions[currentQuizQuestion];
+
+    const handleAnswer = (answerIndex: number) => {
+      setQuizPartie3Answers({
+        ...quizPartie3Answers,
+        [currentQuestion.id]: answerIndex
+      });
+    };
+
+    const handleNext = () => {
+      if (currentQuizQuestion < quizPartie3Questions.length - 1) {
+        setCurrentQuizQuestion(currentQuizQuestion + 1);
+      } else {
+        // Calculer le score
+        let score = 0;
+        quizPartie3Questions.forEach(q => {
+          if (quizPartie3Answers[q.id] === q.correctAnswer) {
+            score++;
+          }
+        });
+        setQuizScore(score);
+        setShowQuizResults(true);
+        setStep("resultsPartie3");
+      }
+    };
+
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <h2 className="text-4xl font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+              QUIZ PARTIE 3
+            </h2>
+            <p className="text-lg text-[#032622]/70">
+              Éthique, société et avenir de l'intelligence artificielle
+            </p>
+          </div>
+
+          {/* Progression */}
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-bold text-[#032622]">
+                Question {currentQuizQuestion + 1} sur {quizPartie3Questions.length}
+              </span>
+              <span className="text-sm font-bold text-[#032622]">
+                {Math.round(((currentQuizQuestion + 1) / quizPartie3Questions.length) * 100)}%
+              </span>
+            </div>
+            <div className="h-2 bg-gray-300 border border-black">
+              <div
+                className="h-full bg-[#032622] transition-all duration-300"
+                style={{ width: `${((currentQuizQuestion + 1) / quizPartie3Questions.length) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Question */}
+          <div className="border-2 border-[#032622] bg-[#F8F5E4] p-8 space-y-6">
+            <h3 className="text-2xl font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+              {currentQuestion.question}
+            </h3>
+
+            <div className="space-y-4">
+              {currentQuestion.options.map((option, index) => {
+                const isSelected = quizPartie3Answers[currentQuestion.id] === index;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswer(index)}
+                    className={`w-full text-left border-2 p-4 transition-all ${
+                      isSelected
+                        ? 'border-[#032622] bg-[#032622] text-white'
+                        : 'border-[#032622] bg-white text-[#032622] hover:bg-[#032622]/10'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        isSelected ? 'border-white bg-white' : 'border-[#032622]'
+                      }`}>
+                        {isSelected && <div className="w-3 h-3 rounded-full bg-[#032622]"></div>}
+                      </div>
+                      <span className="font-medium">{option}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={handleNext}
+              disabled={quizPartie3Answers[currentQuestion.id] === undefined}
+              className="border-2 border-[#032622] bg-[#032622] text-white px-6 py-3 text-sm font-bold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors"
+            >
+              <span>{currentQuizQuestion < quizPartie3Questions.length - 1 ? 'QUESTION SUIVANTE' : 'VOIR LES RÉSULTATS'}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Rendu Résultats Partie 3
+  const renderResultsPartie3 = () => {
+    const percentage = Math.round((quizScore / quizPartie3Questions.length) * 100);
+    const passed = percentage >= 70;
+
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="space-y-8">
+          {/* Résultats */}
+          <div className={`border-2 ${passed ? 'border-green-600 bg-green-50' : 'border-orange-600 bg-orange-50'} p-8 text-center space-y-4`}>
+            <div className={`text-6xl font-black ${passed ? 'text-green-600' : 'text-orange-600'}`} style={{ fontFamily: "var(--font-termina-bold)" }}>
+              {percentage}%
+            </div>
+            <h2 className="text-3xl font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+              {passed ? '✓ BRAVO !' : '⚠ PRESQUE !'}
+            </h2>
+            <p className="text-lg text-[#032622]">
+              Vous avez répondu correctement à <strong>{quizScore} sur {quizPartie3Questions.length}</strong> questions
+            </p>
+            {passed ? (
+              <p className="text-base text-[#032622]">
+                Excellente maîtrise des enjeux éthiques de l'intelligence artificielle !
+              </p>
+            ) : (
+              <p className="text-base text-[#032622]">
+                Révisez les concepts clés et retentez le quiz pour valider cette partie.
+              </p>
+            )}
+          </div>
+
+          {/* Détails des réponses */}
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
+              Détails des réponses
+            </h3>
+            {quizPartie3Questions.map((question, index) => {
+              const userAnswer = quizPartie3Answers[question.id];
+              const isCorrect = userAnswer === question.correctAnswer;
+              
+              return (
+                <div 
+                  key={question.id}
+                  className={`border-2 p-6 ${
+                    isCorrect ? 'border-green-600 bg-green-50' : 'border-red-600 bg-red-50'
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`text-2xl ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                      {isCorrect ? '✓' : '✗'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-[#032622] mb-2">
+                        Question {index + 1}: {question.question}
+                      </p>
+                      <p className={`text-sm mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                        Votre réponse : {userAnswer !== undefined && userAnswer !== null ? question.options[userAnswer] : "Non répondu"}
+                      </p>
+                      {!isCorrect && (
+                        <p className="text-sm text-green-700 mb-2">
+                          Bonne réponse : {question.options[question.correctAnswer]}
+                        </p>
+                      )}
+                      <p className="text-sm text-[#032622]/70 italic">
+                        {question.explanation}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Boutons d'action */}
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => {
+                setCurrentQuizQuestion(0);
+                setQuizPartie3Answers({});
+                setShowQuizResults(false);
+                setStep("quizPartie3");
+              }}
+              className="border-2 border-[#032622] bg-[#F8F5E4] px-8 py-4 text-sm font-bold text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+            >
+              REFAIRE LE QUIZ
+            </button>
+            <button
+              onClick={() => setStep("courseFinal")}
+              className="border-2 border-[#032622] bg-[#032622] text-white px-8 py-4 text-sm font-bold hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center space-x-2"
+            >
+              <span>TERMINER LE COURS</span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Rendu Page Finale du Cours
   const renderCourseFinal = () => {
     return (
@@ -6801,7 +9187,7 @@ export default function MesFormationsPage() {
                         <div className="grid grid-cols-3 gap-4 pt-6 max-w-2xl mx-auto">
                           <div className="border-2 border-[#032622] bg-white p-4 transform hover:scale-105 transition-transform">
                             <div className="text-3xl font-black text-[#032622] mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                              2
+                              3
                             </div>
                             <div className="h-1 w-8 bg-[#032622] mx-auto mb-2"></div>
                             <p className="text-xs text-[#032622] uppercase font-bold tracking-wide">Parties</p>
@@ -6809,7 +9195,7 @@ export default function MesFormationsPage() {
 
                           <div className="border-2 border-[#032622] bg-white p-4 transform hover:scale-105 transition-transform">
                             <div className="text-3xl font-black text-[#032622] mb-2" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                              30
+                              60
                             </div>
                             <div className="h-1 w-8 bg-[#032622] mx-auto mb-2"></div>
                             <p className="text-xs text-[#032622] uppercase font-bold tracking-wide">Questions</p>
@@ -7030,6 +9416,13 @@ export default function MesFormationsPage() {
         {step === "partie2_3_suite" && renderPartie2_3_Suite()}
         {step === "quizPartie2" && renderQuizPartie2()}
         {step === "resultsPartie2" && renderResultsPartie2()}
+        {step === "partie3_1" && renderPartie3_1()}
+        {step === "partie3_2" && renderPartie3_2()}
+        {step === "partie3_3" && renderPartie3_3()}
+        {step === "partie3_4" && renderPartie3_4()}
+        {step === "partie3_5" && renderPartie3_5()}
+        {step === "quizPartie3" && renderQuizPartie3()}
+        {step === "resultsPartie3" && renderResultsPartie3()}
         {step === "courseFinal" && renderCourseFinal()}
         {step === "quiz" && renderQuizView()}
         {step === "results" && renderResultsView()}

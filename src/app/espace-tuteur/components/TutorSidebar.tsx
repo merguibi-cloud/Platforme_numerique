@@ -40,6 +40,13 @@ const menuItems = [
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
     href: '/espace-tuteur/messagerie'
+  },
+  { 
+    id: 'vie-etudiante', 
+    label: 'VIE ÉTUDIANTE', 
+    icon: '/images/student-library/VieStudent.png',
+    iconInactive: '/images/student-library/VieStudentpasselectionné.png',
+    href: '/espace-tuteur/vie-etudiante'
   }
 ];
 
@@ -61,18 +68,16 @@ const bottomMenuItems = [
 ];
 
 interface TutorSidebarProps {
-  onCollapseChange?: (isCollapsed: boolean) => void;
+  isCollapsed: boolean;
+  onCollapseChange: (isCollapsed: boolean) => void;
 }
 
-export const TutorSidebar = ({ onCollapseChange }: TutorSidebarProps) => {
+export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleCollapse = () => {
-    const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
-    onCollapseChange?.(newCollapsed);
+    onCollapseChange(!isCollapsed);
   };
 
   const handleItemClick = (itemId: string) => {
@@ -90,6 +95,8 @@ export const TutorSidebar = ({ onCollapseChange }: TutorSidebarProps) => {
       setActiveItem('agenda');
     } else if (pathname.includes('/messagerie')) {
       setActiveItem('messagerie');
+    } else if (pathname.includes('/vie-etudiante')) {
+      setActiveItem('vie-etudiante');
     } else if (pathname.includes('/parametres')) {
       setActiveItem('parametres');
     }
