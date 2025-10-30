@@ -11,49 +11,35 @@ const menuItems = [
     label: 'DASHBOARD', 
     icon: '/menue_etudiant/Dashboard.png',
     iconInactive: '/menue_etudiant/nonselectionner/dashboard.png',
-    href: '/espace-admin/dashboard'
+    href: '/espace-tuteur/dashboard'
   },
   { 
-    id: 'gestion-etudiants', 
-    label: 'GESTION ÉTUDIANTS', 
+    id: 'mes-etudiants', 
+    label: 'MES ÉTUDIANTS', 
     icon: '/menue_etudiant/Etudiant.png',
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/gestion-etudiants'
-  },
-  { 
-    id: 'gestion-formations', 
-    label: 'GESTION FORMATIONS', 
-    icon: '/menue_etudiant/Livre.png',
-    iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
-    href: '/espace-admin/gestion-formations'
+    href: '/espace-tuteur/mes-etudiants'
   },
   { 
     id: 'bibliotheque', 
     label: 'BIBLIOTHÈQUE', 
     icon: '/menue_etudiant/Bibliothèque.png',
     iconInactive: '/menue_etudiant/nonselectionner/bibliothequenumerique.png',
-    href: '/espace-admin/bibliotheque'
+    href: '/espace-tuteur/bibliotheque'
   },
   { 
     id: 'agenda', 
     label: 'AGENDA', 
     icon: '/menue_etudiant/calendrier.png',
     iconInactive: '/menue_etudiant/nonselectionner/calandrier.png',
-    href: '/espace-admin/agenda'
+    href: '/espace-tuteur/agenda'
   },
   { 
     id: 'messagerie', 
     label: 'MESSAGERIE', 
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
-    href: '/espace-admin/messagerie'
-  },
-  { 
-    id: 'vie-etudiante', 
-    label: 'VIE ÉTUDIANTE', 
-    icon: '/images/student-library/VieStudent.png',
-    iconInactive: '/images/student-library/VieStudentpasselectionné.png',
-    href: '/espace-admin/vie-etudiante'
+    href: '/espace-tuteur/messagerie'
   }
 ];
 
@@ -63,7 +49,7 @@ const bottomMenuItems = [
     label: 'PARAMÈTRES', 
     icon: '/menue_etudiant/Support.png',
     iconInactive: '/menue_etudiant/Support.png',
-    href: '/espace-admin/parametres'
+    href: '/espace-tuteur/parametres'
   },
   { 
     id: 'logout', 
@@ -74,11 +60,11 @@ const bottomMenuItems = [
   }
 ];
 
-interface AdminSidebarProps {
+interface TutorSidebarProps {
   onCollapseChange?: (isCollapsed: boolean) => void;
 }
 
-export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
+export const TutorSidebar = ({ onCollapseChange }: TutorSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -91,25 +77,19 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
 
   const handleItemClick = (itemId: string) => {
     setActiveItem(itemId);
-    // Ne pas ouvrir la sidebar automatiquement quand on clique sur un item
   };
 
-  // Déterminer l'élément actif basé sur l'URL
   useEffect(() => {
-    if (pathname === '/espace-admin/dashboard') {
+    if (pathname === '/espace-tuteur/dashboard') {
       setActiveItem('dashboard');
-    } else if (pathname.includes('/gestion-etudiants')) {
-      setActiveItem('gestion-etudiants');
-    } else if (pathname.includes('/gestion-formations')) {
-      setActiveItem('gestion-formations');
+    } else if (pathname.includes('/mes-etudiants')) {
+      setActiveItem('mes-etudiants');
     } else if (pathname.includes('/bibliotheque')) {
       setActiveItem('bibliotheque');
     } else if (pathname.includes('/agenda')) {
       setActiveItem('agenda');
     } else if (pathname.includes('/messagerie')) {
       setActiveItem('messagerie');
-    } else if (pathname.includes('/vie-etudiante')) {
-      setActiveItem('vie-etudiante');
     } else if (pathname.includes('/parametres')) {
       setActiveItem('parametres');
     }
@@ -134,7 +114,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                   ELITE SOCIETY
                 </h1>
                 <p className="text-white text-xs opacity-80">
-                  ADMIN
+                  TUTEUR
                 </p>
               </div>
             )}
@@ -215,3 +195,4 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
     </div>
   );
 };
+

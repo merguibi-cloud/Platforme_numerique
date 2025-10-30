@@ -173,9 +173,6 @@ export default function BibliothequePage() {
           >
             TOUS LES ÉVÉNEMENTS
           </h2>
-          <button className="bg-[#032622] text-white px-6 py-3 text-xs font-semibold uppercase tracking-widest flex items-center gap-2 border border-[#032622]">
-            + CRÉER UN ÉVÉNEMENT
-          </button>
         </div>
 
         {/* Barre de filtres */}

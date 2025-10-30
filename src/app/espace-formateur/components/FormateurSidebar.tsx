@@ -11,49 +11,49 @@ const menuItems = [
     label: 'DASHBOARD', 
     icon: '/menue_etudiant/Dashboard.png',
     iconInactive: '/menue_etudiant/nonselectionner/dashboard.png',
-    href: '/espace-admin/dashboard'
+    href: '/espace-formateur/dashboard'
   },
   { 
     id: 'gestion-etudiants', 
-    label: 'GESTION ÉTUDIANTS', 
+    label: 'MES ÉTUDIANTS', 
     icon: '/menue_etudiant/Etudiant.png',
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/gestion-etudiants'
+    href: '/espace-formateur/gestion-etudiants'
   },
   { 
-    id: 'gestion-formations', 
-    label: 'GESTION FORMATIONS', 
+    id: 'gestion-cours', 
+    label: 'MES COURS', 
     icon: '/menue_etudiant/Livre.png',
     iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
-    href: '/espace-admin/gestion-formations'
+    href: '/espace-formateur/gestion-cours'
   },
   { 
     id: 'bibliotheque', 
     label: 'BIBLIOTHÈQUE', 
     icon: '/menue_etudiant/Bibliothèque.png',
     iconInactive: '/menue_etudiant/nonselectionner/bibliothequenumerique.png',
-    href: '/espace-admin/bibliotheque'
+    href: '/espace-formateur/bibliotheque'
   },
   { 
     id: 'agenda', 
     label: 'AGENDA', 
     icon: '/menue_etudiant/calendrier.png',
     iconInactive: '/menue_etudiant/nonselectionner/calandrier.png',
-    href: '/espace-admin/agenda'
+    href: '/espace-formateur/agenda'
   },
   { 
     id: 'messagerie', 
     label: 'MESSAGERIE', 
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
-    href: '/espace-admin/messagerie'
+    href: '/espace-formateur/messagerie'
   },
   { 
     id: 'vie-etudiante', 
     label: 'VIE ÉTUDIANTE', 
     icon: '/images/student-library/VieStudent.png',
     iconInactive: '/images/student-library/VieStudentpasselectionné.png',
-    href: '/espace-admin/vie-etudiante'
+    href: '/espace-formateur/vie-etudiante'
   }
 ];
 
@@ -63,7 +63,7 @@ const bottomMenuItems = [
     label: 'PARAMÈTRES', 
     icon: '/menue_etudiant/Support.png',
     iconInactive: '/menue_etudiant/Support.png',
-    href: '/espace-admin/parametres'
+    href: '/espace-formateur/parametres'
   },
   { 
     id: 'logout', 
@@ -74,11 +74,11 @@ const bottomMenuItems = [
   }
 ];
 
-interface AdminSidebarProps {
+interface FormateurSidebarProps {
   onCollapseChange?: (isCollapsed: boolean) => void;
 }
 
-export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
+export const FormateurSidebar = ({ onCollapseChange }: FormateurSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -94,14 +94,13 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
     // Ne pas ouvrir la sidebar automatiquement quand on clique sur un item
   };
 
-  // Déterminer l'élément actif basé sur l'URL
   useEffect(() => {
-    if (pathname === '/espace-admin/dashboard') {
+    if (pathname === '/espace-formateur/dashboard') {
       setActiveItem('dashboard');
     } else if (pathname.includes('/gestion-etudiants')) {
       setActiveItem('gestion-etudiants');
-    } else if (pathname.includes('/gestion-formations')) {
-      setActiveItem('gestion-formations');
+    } else if (pathname.includes('/gestion-cours')) {
+      setActiveItem('gestion-cours');
     } else if (pathname.includes('/bibliotheque')) {
       setActiveItem('bibliotheque');
     } else if (pathname.includes('/agenda')) {
@@ -117,7 +116,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
 
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
-      {/* Logo et titre */}
       <div className="p-6 border-b border-gray-600">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -134,7 +132,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                   ELITE SOCIETY
                 </h1>
                 <p className="text-white text-xs opacity-80">
-                  ADMIN
+                  FORMATEUR
                 </p>
               </div>
             )}
@@ -148,7 +146,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
         </div>
       </div>
 
-      {/* Menu principal */}
       <div className="flex-1 py-6">
         <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
           {menuItems.map((item) => (
@@ -183,7 +180,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
         </nav>
       </div>
 
-      {/* Menu du bas */}
       <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
         <nav className="space-y-2">
           {bottomMenuItems.map((item) => (
@@ -215,3 +211,4 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
     </div>
   );
 };
+
