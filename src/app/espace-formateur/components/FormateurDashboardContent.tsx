@@ -857,7 +857,7 @@ const MessagerieCard = () => {
 const AgendaCard = () => {
   const weekDays = ["L", "M", "M", "J", "V", "S", "D"];
   const currentDate = new Date();
-  const weekDates = [];
+  const weekDates: Date[] = [];
   
   // Calculer les dates de la semaine courante (lundi au dimanche)
   const startOfWeek = new Date(currentDate);
