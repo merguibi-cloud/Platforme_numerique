@@ -8664,20 +8664,23 @@ export default function MesFormationsPage() {
                 </p>
               </section>
 
-              {/* Placeholder vidéo */}
-              <div className="relative my-8">
-                <div className="border-2 border-[#032622] bg-gray-200 p-6 text-center space-y-4">
-                  <div className="flex items-center justify-center">
-                    <div className="w-16 h-16 bg-[#032622] text-white flex items-center justify-center rounded-full">
-                      <Play className="w-8 h-8" />
+              {/* Vidéo Episode 6 - Humain augmenté */}
+              <div className="relative mt-8 mb-6">
+                <div className="border-2 border-[#032622] bg-white p-4 space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#032622] text-white flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                      </svg>
                     </div>
+                    <h5 className="text-lg font-bold text-[#032622] uppercase" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                      Vidéo : Culture de l'IA - Épisode 6
+                    </h5>
                   </div>
-                  <p className="text-sm font-bold text-[#032622] uppercase">
-                    Vidéo à ajouter prochainement
-                  </p>
-                  <p className="text-xs text-[#032622]/70 italic">
-                    Emplacement réservé pour la vidéo sur l'humain augmenté
-                  </p>
+                  <video controls className="w-full border-2 border-[#032622]">
+                    <source src="/video/Culture De L'ia - Episode 6.mp4" type="video/mp4" />
+                    Votre navigateur ne supporte pas la lecture de vidéos.
+                  </video>
                 </div>
               </div>
 
