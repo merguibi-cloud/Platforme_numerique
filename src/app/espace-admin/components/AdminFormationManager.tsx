@@ -46,7 +46,7 @@ interface AntiCheatEvent {
   status: 'pending' | 'resolved';
 }
 
-interface BlockItem {
+interface ModulekItem {
   id: string;
   title: string;
   description: string;
@@ -93,10 +93,10 @@ const defaultModuleDraft = () => ({
   fileSize: ''
 });
 
-const initialBlocks: BlockItem[] = [
+const initialModuleks: ModulekItem[] = [
   {
     id: createId(),
-    title: 'Bloc 1 - Stratégie organisationnelle',
+    title: 'Module 1 - Stratégie organisationnelle',
     description: "Contribuer à la stratégie de développement de l'organisation",
     antiCheatEnabled: true,
     modules: [
@@ -173,7 +173,7 @@ const initialBlocks: BlockItem[] = [
   },
   {
     id: createId(),
-    title: 'Bloc 2 - Pilotage de la performance',
+    title: 'Module 2 - Pilotage de la performance',
     description: 'Suivre et optimiser les indicateurs clés de performance',
     antiCheatEnabled: true,
     modules: [
@@ -218,7 +218,7 @@ const initialBlocks: BlockItem[] = [
   },
   {
     id: createId(),
-    title: "Bloc 3 - Management de l'innovation",
+    title: "Module 3 - Management de l'innovation",
     description: "Impulser une culture d'innovation durable",
     antiCheatEnabled: false,
     modules: [
@@ -291,13 +291,13 @@ const formatStatusColor = (status: StudentProgress['status']) => {
 };
 
 export default function AdminFormationManager() {
-  const [blocks, setBlocks] = useState<BlockItem[]>(initialBlocks);
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(initialBlocks[0]?.id ?? null);
+  const [blocks, setModuleks] = useState<ModulekItem[]>(initialModuleks);
+  const [selectedModulekId, setSelectedModulekId] = useState<string | null>(initialModuleks[0]?.id ?? null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newBlockTitle, setNewBlockTitle] = useState('');
-  const [newBlockDescription, setNewBlockDescription] = useState('');
-  const [newBlockAntiCheat, setNewBlockAntiCheat] = useState(true);
-  const [newBlockModules, setNewBlockModules] = useState<Array<{ id: string; title: string; type: ModuleType; duration: string; fileName?: string; fileSize?: string }>>([
+  const [newModulekTitle, setNewModulekTitle] = useState('');
+  const [newModulekDescription, setNewModulekDescription] = useState('');
+  const [newModulekAntiCheat, setNewModulekAntiCheat] = useState(true);
+  const [newModulekModules, setNewModulekModules] = useState<Array<{ id: string; title: string; type: ModuleType; duration: string; fileName?: string; fileSize?: string }>>([
     {
       id: createId(),
       title: '',
@@ -307,10 +307,10 @@ export default function AdminFormationManager() {
       fileSize: ''
     }
   ]);
-  const [addingModuleForBlock, setAddingModuleForBlock] = useState<string | null>(null);
+  const [addingModuleForModulek, setAddingModuleForModulek] = useState<string | null>(null);
   const [moduleDraft, setModuleDraft] = useState(defaultModuleDraft());
 
-  const selectedBlock = blocks.find((block) => block.id === selectedBlockId) ?? null;
+  const selectedModulek = blocks.find((block) => block.id === selectedModulekId) ?? null;
 
   const totalModules = useMemo(
     () => blocks.reduce((acc, block) => acc + block.modules.length, 0),
@@ -340,11 +340,11 @@ export default function AdminFormationManager() {
     [blocks]
   );
 
-  const resetNewBlockForm = () => {
-    setNewBlockTitle('');
-    setNewBlockDescription('');
-    setNewBlockAntiCheat(true);
-    setNewBlockModules([
+  const resetNewModulekForm = () => {
+    setNewModulekTitle('');
+    setNewModulekDescription('');
+    setNewModulekAntiCheat(true);
+    setNewModulekModules([
       {
         id: createId(),
         title: '',
@@ -358,22 +358,22 @@ export default function AdminFormationManager() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    resetNewBlockForm();
+    resetNewModulekForm();
   };
 
-  const handleCreateBlock = () => {
-    if (!newBlockTitle.trim() || newBlockModules.some((module) => !module.title.trim())) {
+  const handleCreateModulek = () => {
+    if (!newModulekTitle.trim() || newModulekModules.some((module) => !module.title.trim())) {
       return;
     }
 
-    const newBlockId = createId();
+    const newModulekId = createId();
 
-    const newBlock: BlockItem = {
-      id: newBlockId,
-      title: newBlockTitle.trim(),
-      description: newBlockDescription.trim() || 'Description à compléter',
-      antiCheatEnabled: newBlockAntiCheat,
-      modules: newBlockModules.map((module) => ({
+    const newModulek: ModulekItem = {
+      id: newModulekId,
+      title: newModulekTitle.trim(),
+      description: newModulekDescription.trim() || 'Description à compléter',
+      antiCheatEnabled: newModulekAntiCheat,
+      modules: newModulekModules.map((module) => ({
         ...module,
         id: createId(),
         title: module.title.trim(),
@@ -385,13 +385,13 @@ export default function AdminFormationManager() {
       flags: []
     };
 
-    setBlocks((prev) => [...prev, newBlock]);
-    setSelectedBlockId(newBlockId);
+    setModuleks((prev) => [...prev, newModulek]);
+    setSelectedModulekId(newModulekId);
     closeModal();
   };
 
   const handleToggleAntiCheat = (blockId: string) => {
-    setBlocks((prev) =>
+    setModuleks((prev) =>
       prev.map((block) =>
         block.id === blockId
           ? {
@@ -404,7 +404,7 @@ export default function AdminFormationManager() {
   };
 
   const handleResolveFlag = (blockId: string, flagId: string) => {
-    setBlocks((prev) =>
+    setModuleks((prev) =>
       prev.map((block) =>
         block.id === blockId
           ? {
@@ -423,12 +423,12 @@ export default function AdminFormationManager() {
     );
   };
 
-  const handleAddModuleToBlock = (blockId: string) => {
+  const handleAddModuleToModulek = (blockId: string) => {
     if (!moduleDraft.title.trim()) {
       return;
     }
 
-    setBlocks((prev) =>
+    setModuleks((prev) =>
       prev.map((block) =>
         block.id === blockId
           ? {
@@ -449,12 +449,12 @@ export default function AdminFormationManager() {
       )
     );
 
-    setAddingModuleForBlock(null);
+    setAddingModuleForModulek(null);
     setModuleDraft(defaultModuleDraft());
   };
 
   const handleRemoveModule = (blockId: string, moduleId: string) => {
-    setBlocks((prev) =>
+    setModuleks((prev) =>
       prev.map((block) =>
         block.id === blockId
           ? {
@@ -466,25 +466,25 @@ export default function AdminFormationManager() {
     );
   };
 
-  const handleDeleteBlock = (blockId: string) => {
+  const handleDeleteModulek = (blockId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce bloc ? Cette action est irréversible.')) {
-      setBlocks((prev) => prev.filter((block) => block.id !== blockId));
+      setModuleks((prev) => prev.filter((block) => block.id !== blockId));
       // Si le bloc supprimé était sélectionné, sélectionner le premier bloc restant
-      if (selectedBlockId === blockId) {
-        const remainingBlocks = blocks.filter((block) => block.id !== blockId);
-        setSelectedBlockId(remainingBlocks.length > 0 ? remainingBlocks[0].id : null);
+      if (selectedModulekId === blockId) {
+        const remainingModuleks = blocks.filter((block) => block.id !== blockId);
+        setSelectedModulekId(remainingModuleks.length > 0 ? remainingModuleks[0].id : null);
       }
     }
   };
 
-  const isCreateDisabled = !newBlockTitle.trim() || newBlockModules.some((module) => !module.title.trim());
+  const isCreateDisabled = !newModulekTitle.trim() || newModulekModules.some((module) => !module.title.trim());
 
   return (
     <div className={'space-y-6'}>
       <div className={'grid gap-4 md:grid-cols-3 xl:grid-cols-4'}>
         <div className={'border border-[#032622] bg-[#F8F5E4] p-4 shadow-sm'}>
           <div className={'flex items-center justify-between'}>
-            <span className={'text-xs uppercase tracking-wide text-[#032622]/70'}>Blocs actifs</span>
+            <span className={'text-xs uppercase tracking-wide text-[#032622]/70'}>Modules actifs</span>
             <BookOpen className={'h-5 w-5 text-[#032622]'} />
           </div>
           <p className={'mt-2 text-3xl font-semibold text-[#032622]'}>{blocks.length}</p>
@@ -511,14 +511,14 @@ export default function AdminFormationManager() {
 
         <div className={'hidden border border-[#032622] bg-[#F8F5E4] p-4 shadow-sm xl:block'}>
           <div className={'flex items-center justify-between'}>
-            <span className={'text-xs uppercase tracking-wide text-[#032622]/70'}>Bloc sélectionné</span>
+            <span className={'text-xs uppercase tracking-wide text-[#032622]/70'}>Module sélectionné</span>
             <UserCheck className={'h-5 w-5 text-[#032622]'} />
           </div>
           <p className={'mt-2 text-lg font-semibold text-[#032622]'}>
-            {selectedBlock ? selectedBlock.title : 'Aucun bloc'}
+            {selectedModulek ? selectedModulek.title : 'Aucun bloc'}
           </p>
           <p className={'text-sm text-[#032622]/70'}>
-            {selectedBlock ? `${selectedBlock.modules.length} module(s) actifs` : 'Sélectionnez un bloc'}
+            {selectedModulek ? `${selectedModulek.modules.length} module(s) actifs` : 'Sélectionnez un bloc'}
           </p>
         </div>
       </div>
@@ -537,9 +537,9 @@ export default function AdminFormationManager() {
             <div
               key={block.id}
               className={`cursor-pointer border border-[#032622] bg-[#F8F5E4] p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                block.id === selectedBlockId ? 'ring-2 ring-[#032622]' : ''
+                block.id === selectedModulekId ? 'ring-2 ring-[#032622]' : ''
               }`}
-              onClick={() => setSelectedBlockId(block.id)}
+              onClick={() => setSelectedModulekId(block.id)}
             >
               <div className={'flex items-start justify-between gap-4'}>
                 <div className={'flex-1'}>
@@ -554,7 +554,7 @@ export default function AdminFormationManager() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteBlock(block.id);
+                        handleDeleteModulek(block.id);
                       }}
                       className={'rounded border border-[#732f2f]/30 p-1.5 text-[#732f2f]/70 transition hover:border-[#732f2f] hover:bg-[#732f2f]/10 hover:text-[#732f2f]'}
                       title={'Supprimer le bloc'}
@@ -610,27 +610,27 @@ export default function AdminFormationManager() {
         </div>
 
         <div className={'flex-1 space-y-4'}>
-          {selectedBlock ? (
+          {selectedModulek ? (
             <div className={'border border-[#032622] bg-[#F8F5E4] p-6 shadow-sm'}>
               <div className={'flex flex-col gap-4 md:flex-row md:items-start md:justify-between'}>
                 <div>
-                  <h2 className={'text-2xl font-semibold text-[#032622]'}>{selectedBlock.title}</h2>
-                  <p className={'mt-2 text-sm leading-relaxed text-[#032622]/80'}>{selectedBlock.description}</p>
+                  <h2 className={'text-2xl font-semibold text-[#032622]'}>{selectedModulek.title}</h2>
+                  <p className={'mt-2 text-sm leading-relaxed text-[#032622]/80'}>{selectedModulek.description}</p>
                 </div>
                 <div className={'flex flex-col items-start gap-2'}>
                   <div className={'flex items-center gap-2 text-sm font-semibold text-[#032622]'}>
                     <ShieldAlert className={'h-4 w-4'} />
-                    {selectedBlock.antiCheatEnabled ? 'Anti-triche activée' : 'Anti-triche désactivée'}
+                    {selectedModulek.antiCheatEnabled ? 'Anti-triche activée' : 'Anti-triche désactivée'}
                   </div>
                   <button
-                    onClick={() => handleToggleAntiCheat(selectedBlock.id)}
+                    onClick={() => handleToggleAntiCheat(selectedModulek.id)}
                     className={`relative inline-flex h-8 w-16 items-center rounded-full border border-[#032622] transition ${
-                      selectedBlock.antiCheatEnabled ? 'bg-[#032622]' : 'bg-[#F8F5E4]'
+                      selectedModulek.antiCheatEnabled ? 'bg-[#032622]' : 'bg-[#F8F5E4]'
                     }`}
                   >
                     <span
                       className={`inline-block h-6 w-6 transform rounded-full bg-[#F8F5E4] transition ${
-                        selectedBlock.antiCheatEnabled ? 'translate-x-8' : 'translate-x-1'
+                        selectedModulek.antiCheatEnabled ? 'translate-x-8' : 'translate-x-1'
                       }`}
                     />
                   </button>
@@ -641,10 +641,10 @@ export default function AdminFormationManager() {
                 <section>
                   <div className={'flex items-center justify-between'}>
                     <h3 className={'text-lg font-semibold text-[#032622]'}>Modules du bloc</h3>
-                    {addingModuleForBlock === selectedBlock.id ? null : (
+                    {addingModuleForModulek === selectedModulek.id ? null : (
                       <button
                         onClick={() => {
-                          setAddingModuleForBlock(selectedBlock.id);
+                          setAddingModuleForModulek(selectedModulek.id);
                           setModuleDraft(defaultModuleDraft());
                         }}
                         className={'flex items-center gap-2 text-sm font-semibold text-[#032622] transition hover:underline'}
@@ -656,7 +656,7 @@ export default function AdminFormationManager() {
                   </div>
 
                   <div className={'mt-3 space-y-3'}>
-                    {selectedBlock.modules.map((module) => {
+                    {selectedModulek.modules.map((module) => {
                       const Icon = moduleTypeIcon[module.type];
                       return (
                         <div
@@ -683,7 +683,7 @@ export default function AdminFormationManager() {
                             </div>
                           </div>
                           <button
-                            onClick={() => handleRemoveModule(selectedBlock.id, module.id)}
+                            onClick={() => handleRemoveModule(selectedModulek.id, module.id)}
                             className={'rounded border border-[#032622]/30 p-2 text-[#032622]/70 transition hover:border-[#032622] hover:text-[#032622]'}
                             title={'Supprimer le module'}
                           >
@@ -694,7 +694,7 @@ export default function AdminFormationManager() {
                     })}
                   </div>
 
-                  {addingModuleForBlock === selectedBlock.id && (
+                  {addingModuleForModulek === selectedModulek.id && (
                     <div className={'mt-4 space-y-3 rounded border border-[#032622]/30 bg-[#F8F5E4] p-4'}>
                       <div className={'grid gap-3 md:grid-cols-3'}>
                         <div className={'md:col-span-2'}>
@@ -747,7 +747,7 @@ export default function AdminFormationManager() {
                       <div className={'flex justify-end gap-2 text-sm'}>
                         <button
                           onClick={() => {
-                            setAddingModuleForBlock(null);
+                            setAddingModuleForModulek(null);
                             setModuleDraft(defaultModuleDraft());
                           }}
                           className={'rounded border border-[#032622]/40 px-4 py-2 text-[#032622]/70 transition hover:border-[#032622] hover:text-[#032622]'}
@@ -755,7 +755,7 @@ export default function AdminFormationManager() {
                           Annuler
                         </button>
                         <button
-                          onClick={() => handleAddModuleToBlock(selectedBlock.id)}
+                          onClick={() => handleAddModuleToModulek(selectedModulek.id)}
                           className={'rounded bg-[#032622] px-4 py-2 font-semibold text-[#F8F5E4] transition hover:bg-[#032622]/90'}
                           disabled={!moduleDraft.title.trim()}
                         >
@@ -769,16 +769,16 @@ export default function AdminFormationManager() {
                 <section>
                   <div className={'flex items-center justify-between'}>
                     <h3 className={'text-lg font-semibold text-[#032622]'}>Suivi des étudiants</h3>
-                    <span className={'text-xs text-[#032622]/70'}>{selectedBlock.students.length} inscrit(s)</span>
+                    <span className={'text-xs text-[#032622]/70'}>{selectedModulek.students.length} inscrit(s)</span>
                   </div>
 
                   <div className={'mt-3 space-y-3'}>
-                    {selectedBlock.students.length === 0 ? (
+                    {selectedModulek.students.length === 0 ? (
                       <div className={'rounded border border-dashed border-[#032622]/30 p-4 text-center text-sm text-[#032622]/70'}>
                         Aucun étudiant inscrit pour le moment.
                       </div>
                     ) : (
-                      selectedBlock.students.map((student) => (
+                      selectedModulek.students.map((student) => (
                         <div
                           key={student.id}
                           className={`rounded border border-[#032622]/20 bg-[#F8F5E4] p-4 ${
@@ -821,12 +821,12 @@ export default function AdminFormationManager() {
                   </div>
 
                   <div className={'mt-3 space-y-3'}>
-                    {selectedBlock.flags.filter((flag) => flag.status === 'pending').length === 0 ? (
+                    {selectedModulek.flags.filter((flag) => flag.status === 'pending').length === 0 ? (
                       <div className={'rounded border border-dashed border-[#032622]/40 p-4 text-sm text-[#032622]/70'}>
                         Aucune alerte en attente pour ce bloc.
                       </div>
                     ) : (
-                      selectedBlock.flags
+                      selectedModulek.flags
                         .filter((flag) => flag.status === 'pending')
                         .map((flag) => (
                           <div
@@ -840,7 +840,7 @@ export default function AdminFormationManager() {
                             <p className={'text-sm text-[#032622]/80'}>{flag.reason}</p>
                             <div className={'flex justify-end'}>
                               <button
-                                onClick={() => handleResolveFlag(selectedBlock.id, flag.id)}
+                                onClick={() => handleResolveFlag(selectedModulek.id, flag.id)}
                                 className={'flex items-center gap-2 rounded border border-[#032622] px-3 py-1 text-xs font-semibold text-[#032622] transition hover:bg-[#032622] hover:text-[#F8F5E4]'}
                               >
                                 <CheckCircle className={'h-4 w-4'} />
@@ -882,7 +882,7 @@ export default function AdminFormationManager() {
                         <p className={'font-semibold text-[#032622]'}>{event.blockTitle}</p>
                       </div>
                       <button
-                        onClick={() => setSelectedBlockId(event.blockId)}
+                        onClick={() => setSelectedModulekId(event.blockId)}
                         className={'rounded border border-[#032622] px-3 py-1 text-xs font-semibold text-[#032622] transition hover:bg-[#032622] hover:text-[#F8F5E4]'}
                       >
                         Voir le bloc
@@ -913,11 +913,11 @@ export default function AdminFormationManager() {
             <div className={'space-y-6 px-6 py-6'}>
               <div className={'space-y-2'}>
                 <label className={'text-xs font-semibold uppercase tracking-wide text-[#032622]/70'}>
-                  Bloc de compétence
+                  Module de compétence
                 </label>
                 <input
-                  value={newBlockTitle}
-                  onChange={(event) => setNewBlockTitle(event.target.value)}
+                  value={newModulekTitle}
+                  onChange={(event) => setNewModulekTitle(event.target.value)}
                   placeholder={'Libellé du bloc'}
                   className={'w-full border border-[#032622] bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]'}
                 />
@@ -928,8 +928,8 @@ export default function AdminFormationManager() {
                   Description
                 </label>
                 <textarea
-                  value={newBlockDescription}
-                  onChange={(event) => setNewBlockDescription(event.target.value)}
+                  value={newModulekDescription}
+                  onChange={(event) => setNewModulekDescription(event.target.value)}
                   rows={3}
                   placeholder={'Objectifs, compétences ciblées, etc.'}
                   className={'w-full border border-[#032622] bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]'}
@@ -941,7 +941,7 @@ export default function AdminFormationManager() {
                   <h3 className={'text-lg font-semibold text-[#032622]'}>Modules du bloc</h3>
                   <button
                     onClick={() =>
-                      setNewBlockModules((prev) => [
+                      setNewModulekModules((prev) => [
                         ...prev,
                         { id: createId(), title: '', type: 'cours', duration: '', fileName: '', fileSize: '' }
                       ])
@@ -954,7 +954,7 @@ export default function AdminFormationManager() {
                 </div>
 
                 <div className={'space-y-3'}>
-                  {newBlockModules.map((module, index) => (
+                  {newModulekModules.map((module, index) => (
                     <div
                       key={module.id}
                       className={'grid gap-3 rounded border border-[#032622]/20 bg-[#F8F5E4] px-4 py-4 md:grid-cols-6'}
@@ -963,7 +963,7 @@ export default function AdminFormationManager() {
                         <input
                           value={module.title}
                           onChange={(event) =>
-                            setNewBlockModules((prev) =>
+                            setNewModulekModules((prev) =>
                               prev.map((item, i) =>
                                 i === index ? { ...item, title: event.target.value } : item
                               )
@@ -977,7 +977,7 @@ export default function AdminFormationManager() {
                         <select
                           value={module.type}
                           onChange={(event) =>
-                            setNewBlockModules((prev) =>
+                            setNewModulekModules((prev) =>
                               prev.map((item, i) =>
                                 i === index
                                   ? { ...item, type: event.target.value as ModuleType }
@@ -998,7 +998,7 @@ export default function AdminFormationManager() {
                         <input
                           value={module.duration}
                           onChange={(event) =>
-                            setNewBlockModules((prev) =>
+                            setNewModulekModules((prev) =>
                               prev.map((item, i) =>
                                 i === index ? { ...item, duration: event.target.value } : item
                               )
@@ -1007,10 +1007,10 @@ export default function AdminFormationManager() {
                           placeholder={'Durée'}
                           className={'w-full border border-[#032622] bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]'}
                         />
-                        {newBlockModules.length > 1 && (
+                        {newModulekModules.length > 1 && (
                           <button
                             onClick={() =>
-                              setNewBlockModules((prev) => prev.filter((item) => item.id !== module.id))
+                              setNewModulekModules((prev) => prev.filter((item) => item.id !== module.id))
                             }
                             className={'rounded border border-[#032622]/30 p-2 text-[#032622]/70 transition hover:border-[#032622] hover:text-[#032622]'}
                             aria-label={'Supprimer'}
@@ -1030,14 +1030,14 @@ export default function AdminFormationManager() {
                   Activer la surveillance anti-triche
                 </div>
                 <button
-                  onClick={() => setNewBlockAntiCheat((prev) => !prev)}
+                  onClick={() => setNewModulekAntiCheat((prev) => !prev)}
                   className={`relative inline-flex h-8 w-16 items-center rounded-full border border-[#032622] transition ${
-                    newBlockAntiCheat ? 'bg-[#032622]' : 'bg-[#F8F5E4]'
+                    newModulekAntiCheat ? 'bg-[#032622]' : 'bg-[#F8F5E4]'
                   }`}
                 >
                   <span
                     className={`inline-block h-6 w-6 transform rounded-full bg-[#F8F5E4] transition ${
-                      newBlockAntiCheat ? 'translate-x-8' : 'translate-x-1'
+                      newModulekAntiCheat ? 'translate-x-8' : 'translate-x-1'
                     }`}
                   />
                 </button>
@@ -1051,7 +1051,7 @@ export default function AdminFormationManager() {
                   Annuler
                 </button>
                 <button
-                  onClick={handleCreateBlock}
+                  onClick={handleCreateModulek}
                   disabled={isCreateDisabled}
                   className={`rounded px-5 py-2 font-semibold transition ${
                     isCreateDisabled

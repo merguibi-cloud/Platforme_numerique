@@ -21,13 +21,13 @@ const AgendaComponent = () => {
   // Données d'exemple pour les événements
   const events: Event[] = [
     { id: "1", title: "Visio tuteur – suivi individuel Chadi", type: "important", date: "2025-10-15", time: "09:00" },
-    { id: "2", title: "Comité pédagogique · Bloc 2", type: "normal", date: "2025-10-16", time: "14:00" },
-    { id: "3", title: "Correction devoir Bloc 2", type: "late", date: "2025-10-18", time: "16:30" },
+    { id: "2", title: "Comité pédagogique · Module 2", type: "normal", date: "2025-10-16", time: "14:00" },
+    { id: "3", title: "Correction devoir Module 2", type: "late", date: "2025-10-18", time: "16:30" },
     { id: "4", title: "Visio groupe promo Digital Legacy", type: "normal", date: "2025-10-19", time: "11:00" },
     { id: "5", title: "Préparation masterclass marketing", type: "important", date: "2025-10-21", time: "17:00" },
     { id: "6", title: "Suivi projets étudiants", type: "normal", date: "2025-10-23", time: "10:30" },
-    { id: "7", title: "Point formateurs Bloc 3", type: "normal", date: "2025-10-24", time: "15:00" },
-    { id: "8", title: "Review anti-triche Bloc 1", type: "important", date: "2025-10-25", time: "09:30" },
+    { id: "7", title: "Point formateurs Module 3", type: "normal", date: "2025-10-24", time: "15:00" },
+    { id: "8", title: "Review anti-triche Module 1", type: "important", date: "2025-10-25", time: "09:30" },
   ];
 
   const getDaysInMonth = (date: Date) => {
@@ -408,7 +408,7 @@ const EventDetailsModal = ({ event, onClose }: { event: Event; onClose: () => vo
       { name: "Nicolas Bernard", role: "Coach référent" },
     ],
     description:
-      "Session de suivi focalisée sur l'avancement des livrables Bloc 2, points bloquants et plan d'action jusqu'au prochain jalon.",
+      "Session de suivi focalisée sur l'avancement des livrables Module 2, points bloquants et plan d'action jusqu'au prochain jalon.",
     attachments: [
       { name: "Ordre du jour.pdf", size: "232 Ko" },
       { name: "Liste des livrables.xlsx", size: "89 Ko" },

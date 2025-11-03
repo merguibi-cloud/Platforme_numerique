@@ -21,11 +21,11 @@ export default function TutorDashboard() {
 
   // Données des notes
   const notes = [
-    { bloc: "BLOC 1", note: "19,5", subject: "14", duration: "20H" },
-    { bloc: "BLOC 2", note: "-", subject: "11", duration: "13H" },
-    { bloc: "BLOC 3", note: "-", subject: "17", duration: "OH" },
-    { bloc: "BLOC 4", note: "-", subject: "12", duration: "OH" },
-    { bloc: "BLOC 5", note: "-", subject: "14", duration: "OH" }
+    { bloc: "MODULE 1", note: "19,5", subject: "14", duration: "20H" },
+    { bloc: "MODULE 2", note: "-", subject: "11", duration: "13H" },
+    { bloc: "MODULE 3", note: "-", subject: "17", duration: "OH" },
+    { bloc: "MODULE 4", note: "-", subject: "12", duration: "OH" },
+    { bloc: "MODULE 5", note: "-", subject: "14", duration: "OH" }
   ];
 
   // Données temps de connexion (barres du graphique)

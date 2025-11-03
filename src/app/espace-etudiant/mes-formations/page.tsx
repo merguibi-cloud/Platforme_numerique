@@ -47,7 +47,7 @@ const heroCourse = {
 const courseBlocks = [
   {
     id: "bloc-1",
-    title: "Bloc 1",
+    title: "Module 1",
     subtitle: "Culture de l'intelligence artificielle",
     progress: 10,
     cta: "REPRENDRE",
@@ -145,12 +145,12 @@ const upcomingEvents = eventsByDay[18] || [];
 
 const latestGrades = [
   {
-    title: "Bloc 1 - Module 1",
+    title: "Module 1 - Module 1",
     label: "Quizz",
     grade: "9,5",
   },
   {
-    title: "Bloc 1",
+    title: "Module 1",
     label: "Étude de cas",
     grade: "13",
   },
@@ -1705,7 +1705,7 @@ export default function MesFormationsPage() {
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-[#032622]">
-          Bloc 1 · Contribuer à la stratégie de développement de l'organisation
+          Module 1 · Contribuer à la stratégie de développement de l'organisation
         </span>
         <span className="text-sm font-semibold text-[#032622]">
           {progressMap[step]}%
@@ -2384,7 +2384,7 @@ export default function MesFormationsPage() {
           <div className="bg-[#F8F5E4] border border-black w-full max-w-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                Notes du bloc 1
+                Notes du module 1
               </h3>
               <button
                 onClick={() => setIsNotebookOpen(false)}
@@ -2987,7 +2987,7 @@ export default function MesFormationsPage() {
         <div className="flex items-center space-x-3 mb-2">
           <BookOpen className="w-8 h-8 text-[#032622]" />
           <span className="text-xs font-bold uppercase tracking-wider text-[#032622]/70">
-            Bloc 1 · Module 1
+            Module 1 · Module 1
           </span>
         </div>
         <h1

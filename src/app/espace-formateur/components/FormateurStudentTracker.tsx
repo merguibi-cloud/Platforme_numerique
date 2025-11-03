@@ -72,7 +72,7 @@ const mockStudents: Student[] = [
     progress: 72,
     lastLogin: "Aujourd'hui · 08h47",
     nextDeadline: {
-      label: "Devoir Bloc 2",
+      label: "Devoir Module 2",
       date: "18 octobre 2025",
       status: "on_time"
     },
@@ -80,7 +80,7 @@ const mockStudents: Student[] = [
       label: "Visio tuteur",
       date: "15 octobre 2025 · 09h00"
     },
-    notes: "Chadi maintient un rythme régulier. Relance prévue sur les livrables Bloc 2 et préparation du quiz final.",
+    notes: "Chadi maintient un rythme régulier. Relance prévue sur les livrables Module 2 et préparation du quiz final.",
     status: "online",
     modules: [
       { id: "1", name: "Module 1 - Fondamentaux", progress: 100, status: "completed", grade: 18 },
@@ -107,7 +107,7 @@ const mockStudents: Student[] = [
     progress: 58,
     lastLogin: "Hier · 16h30",
     nextDeadline: {
-      label: "Devoir Bloc 1",
+      label: "Devoir Module 1",
       date: "20 octobre 2025",
       status: "warning"
     },
