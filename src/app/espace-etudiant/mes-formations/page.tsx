@@ -299,6 +299,8 @@ export default function MesFormationsPage() {
   const [moduleNotes, setModuleNotes] = useState("");
   const [selectedDay, setSelectedDay] = useState(18);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
+  const highlightOverlayRef = useRef<HTMLDivElement | null>(null);
+  const secureHighlightModeRef = useRef<boolean>(true);
 
   // Scroll vers le haut à chaque changement de page
   useEffect(() => {
@@ -578,73 +580,442 @@ export default function MesFormationsPage() {
   // Fonction de surlignage optimisée et sans espaces bizarres
   const applyHighlight = useCallback((color: string, colorName: string) => {
     if (!courseContentRef.current || typeof window === "undefined") return;
+
+    // MODE SÉCURISÉ: surlignage par CALQUE sans modifier le DOM du texte
+    if (secureHighlightModeRef.current) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+      const range = selection.getRangeAt(0);
+      if (!courseContentRef.current.contains(range.commonAncestorContainer)) return;
+
+      const overlay = highlightOverlayRef.current;
+      if (!overlay) return;
+
+      const contentRect = courseContentRef.current.getBoundingClientRect();
+
+      const rects = Array.from(range.getClientRects());
+      if (rects.length === 0) return;
+
+      rects.forEach((r) => {
+        const block = document.createElement('div');
+        block.className = 'highlight-overlay-block';
+        block.style.position = 'absolute';
+        block.style.left = `${r.left - contentRect.left + courseContentRef.current!.scrollLeft}px`;
+        block.style.top = `${r.top - contentRect.top + courseContentRef.current!.scrollTop}px`;
+        block.style.width = `${r.width}px`;
+        block.style.height = `${r.height}px`;
+        block.style.backgroundColor = color;
+        block.style.opacity = '0.6';
+        block.style.pointerEvents = 'none';
+        block.style.borderRadius = '3px';
+        overlay.appendChild(block);
+      });
+
+      // Enregistrer un objet highlight minimal (sans toucher au texte)
+      const highlightId = `overlay-${Date.now()}`;
+      const highlight: Highlight = {
+        id: highlightId,
+        text: selection.toString(),
+        color: color,
+        colorName: colorName,
+        timestamp: new Date(),
+        position: 0,
+      };
+      setHighlights(prev => [...prev, highlight]);
+      selection.removeAllRanges();
+      showNotification(`Texte surligné (mode sécurisé) en ${colorName}`, 'success');
+      return;
+    }
     
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       return;
     }
     
-    const range = selection.getRangeAt(0);
+    let range = selection.getRangeAt(0);
     if (!courseContentRef.current.contains(range.commonAncestorContainer)) return;
     
-    const text = selection.toString().trim();
-    if (!text || text.length < 2) return;
+    // Garder le texte complet avec espaces pour l'affichage
+    const text = selection.toString();
+    if (!text || text.trim().length < 2) return;
 
     const highlightId = `highlight-${Date.now()}`;
     
     try {
-      // Méthode optimisée pour éviter les espaces bizarres
-      const span = document.createElement("span");
-      span.className = "highlight-marker";
-      span.style.backgroundColor = color;
-      span.style.padding = "1px 2px";
-      span.style.borderRadius = "3px";
-      span.style.display = "inline";
-      span.style.margin = "0";
-      span.style.lineHeight = "inherit";
-      span.dataset.highlight = "true";
-      span.dataset.highlightId = highlightId;
-      span.dataset.highlightColor = colorName;
-      
-      // Extraire le contenu et le nettoyer
-      const contents = range.extractContents();
-      
-      // Nettoyer les espaces en début/fin et préserver la structure
-      const cleanContents = (node: Node): Node | null => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const textNode = node as Text;
-          const cleanedText = textNode.textContent?.trim();
-          if (cleanedText) {
-            const newTextNode = document.createTextNode(cleanedText);
-            return newTextNode;
-          }
-          return null;
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          const element = node as Element;
-          const cleanedElement = element.cloneNode(false) as Element;
-          
-          // Traiter les enfants
-          Array.from(element.childNodes).forEach(child => {
-            const cleanedChild = cleanContents(child);
-            if (cleanedChild && cleanedChild.textContent?.trim()) {
-              cleanedElement.appendChild(cleanedChild);
-            }
-          });
-          
-          return cleanedElement.childNodes.length > 0 ? cleanedElement : null;
+      // Empêcher tout chevauchement avec un surlignage existant (au milieu de la sélection)
+      try {
+        const cloned = range.cloneContents();
+        const intersectsExisting = !!cloned.querySelector?.('[data-highlight="true"]');
+        if (intersectsExisting) {
+          showNotification("Impossible de surligner: chevauche un surlignage existant", 'error');
+          selection.removeAllRanges();
+          return;
         }
-        return node;
-      };
-      
-      const cleanedContents = cleanContents(contents);
-      if (cleanedContents) {
-        span.appendChild(cleanedContents);
+      } catch {}
+      // Vérifier si la sélection est déjà dans un surlignage existant
+      const existingHighlight = range.commonAncestorContainer.parentElement?.closest('[data-highlight="true"]');
+      if (existingHighlight) {
+        // Ne pas surligner sur un surlignage existant
+        selection.removeAllRanges();
+        return;
       }
+
+      // MÉTHODE ULTRA-SÉCURISÉE : Utilise splitText() native du DOM pour diviser les nœuds
+      // Le texte ne sera JAMAIS supprimé, seulement divisé et réorganisé
+      const mergeAdjacentHighlights = (el: HTMLSpanElement) => {
+        // Fusionner avec le précédent si même couleur
+        const prev = el.previousSibling as HTMLElement | null;
+        if (prev && prev.nodeType === Node.ELEMENT_NODE) {
+          const prevEl = prev as HTMLElement;
+          if (prevEl.dataset?.highlight === 'true' && prevEl.dataset.highlightColor === el.dataset.highlightColor) {
+            while (el.firstChild) prevEl.appendChild(el.firstChild);
+            el.replaceWith(prevEl);
+            el = prevEl as unknown as HTMLSpanElement;
+          }
+        }
+        // Fusionner avec le suivant si même couleur
+        const next = el.nextSibling as HTMLElement | null;
+        if (next && next.nodeType === Node.ELEMENT_NODE) {
+          const nextEl = next as HTMLElement;
+          if (nextEl.dataset?.highlight === 'true' && nextEl.dataset.highlightColor === el.dataset.highlightColor) {
+            while (nextEl.firstChild) el.appendChild(nextEl.firstChild);
+            nextEl.remove();
+          }
+        }
+      };
+
+      const wrapRangeWithHighlight = (range: Range) => {
+        const span = document.createElement("span");
+        span.className = "highlight-marker";
+        span.style.backgroundColor = color;
+        span.style.padding = "1px 2px";
+        span.style.borderRadius = "3px";
+        span.style.display = "inline";
+        span.style.margin = "0";
+        span.style.lineHeight = "inherit";
+        span.style.wordSpacing = "normal";
+        span.style.whiteSpace = "pre-wrap";
+        span.dataset.highlight = "true";
+        span.dataset.highlightId = highlightId;
+        span.dataset.highlightColor = colorName;
+
+        // CAS 1 : Sélection dans un seul nœud de texte (le plus courant) - 90% des cas
+        if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+          // SAUVEGARDE : Sauvegarder le texte AVANT toute manipulation
+          const savedText = range.toString();
+          const textNode = range.startContainer as Text;
+          const startOffset = range.startOffset;
+          const endOffset = range.endOffset;
+          
+          // Vérification de sécurité
+          const nodeText = textNode.textContent || '';
+          if (startOffset < 0 || endOffset > nodeText.length || startOffset >= endOffset) {
+            console.warn('Offsets invalides pour le surlignage');
+          mergeAdjacentHighlights(span);
+          return span;
+          }
+          
+          try {
+            // Utiliser splitText() pour diviser le nœud - méthode native et sûre
+            // splitText() retourne le nouveau nœud (partie droite)
+            let middleNode: Text = textNode;
+            
+            // Premier split : séparer la partie avant (si nécessaire)
+            if (startOffset > 0) {
+              middleNode = textNode.splitText(startOffset);
+              // Après splitText, textNode contient [0..startOffset], middleNode contient [startOffset..fin]
+            }
+            
+            // Vérifier que middleNode existe et a du contenu
+            if (!middleNode || !middleNode.textContent) {
+              console.warn('Nœud du milieu invalide après split');
+              // RESTAURATION : recréer le texte si nécessaire
+              span.textContent = savedText;
+              const parent = textNode.parentNode;
+              if (parent) {
+                parent.insertBefore(span, textNode);
+              }
+          mergeAdjacentHighlights(span);
+          return span;
+            }
+            
+            // Deuxième split : séparer la partie après (si nécessaire)
+            const endOffsetInMiddle = endOffset - startOffset;
+            const middleTextLength = middleNode.textContent.length;
+            
+            if (endOffsetInMiddle > 0 && endOffsetInMiddle < middleTextLength) {
+              middleNode.splitText(endOffsetInMiddle);
+              // Après ce split, middleNode contient [0..endOffsetInMiddle], et le nouveau nœud contient le reste
+            }
+            
+            // Maintenant on a : [avant] [milieu] [après]
+            // Le "milieu" (middleNode) est ce qu'on veut surligner
+            const parent = middleNode.parentNode;
+            if (!parent) {
+              console.warn('Pas de parent trouvé pour insérer le surlignage');
+              // RESTAURATION : recréer le texte
+              span.textContent = savedText;
+              const fallbackParent = textNode.parentNode || range.commonAncestorContainer.parentNode;
+              if (fallbackParent) {
+                fallbackParent.insertBefore(span, textNode);
+              }
+          mergeAdjacentHighlights(span);
+          return span;
+            }
+            
+            // Insérer le span AVANT le nœud du milieu
+            parent.insertBefore(span, middleNode);
+            // Déplacer le nœud du milieu DANS le span (ceci le retire automatiquement de sa position actuelle)
+            span.appendChild(middleNode);
+            // L'après reste automatiquement en place après le span grâce à splitText()
+            
+            // VÉRIFICATION FINALE : s'assurer que le texte est présent
+            if (!span.textContent || span.textContent.trim().length === 0) {
+              console.error('ERREUR : Le texte a disparu dans le CAS 1 ! Restauration...');
+              // RESTAURATION D'URGENCE
+              span.textContent = savedText;
+            }
+            
+            return span;
+          } catch (error) {
+            console.error('Erreur critique dans le CAS 1:', error);
+            // RESTAURATION D'URGENCE : recréer le texte sauvegardé
+            span.textContent = savedText;
+            const parent = textNode.parentNode || range.commonAncestorContainer.parentNode;
+            if (parent) {
+              try {
+                parent.insertBefore(span, textNode);
+              } catch (e) {
+                parent.appendChild(span);
+              }
+            }
+            return span;
+          }
+        }
+
+        // CAS 2 : Sélection complexe (multiples nœuds ou coupe d'éléments)
+        // SAUVEGARDE CRITIQUE : Sauvegarder le texte AVANT toute manipulation
+        const savedText = range.toString();
+        const startContainer = range.startContainer;
+        const startOffset = range.startOffset;
+        const endContainer = range.endContainer;
+        const endOffset = range.endOffset;
+        
+        // Essayer d'abord surroundContents() qui fonctionne dans la plupart des cas
+        try {
+          range.surroundContents(span);
+          // Vérifier que le texte est toujours là après surroundContents
+          if (!span.textContent || span.textContent.trim().length === 0) {
+            throw new Error('Le texte a disparu après surroundContents');
+          }
+          return span;
+        } catch (surroundError) {
+          console.log('surroundContents a échoué, utilisation de la méthode fallback sécurisée');
+          
+          // MÉTHODE FALLBACK ULTRA-SÉCURISÉE : Traiter chaque nœud individuellement
+          // Cette méthode ne retire JAMAIS le texte sans s'assurer de le réinsérer
+          
+          // Reconstruire la range au cas où elle aurait été invalidée
+          try {
+            const newRange = document.createRange();
+            newRange.setStart(startContainer, startOffset);
+            newRange.setEnd(endContainer, endOffset);
+            range = newRange;
+          } catch (e) {
+            console.error('Impossible de reconstruire la range');
+          }
+          
+          // Récupérer tous les nœuds de texte dans la sélection en utilisant une méthode sûre
+          const textNodes: { node: Text; startOffset: number; endOffset: number }[] = [];
+          
+          // Créer un TreeWalker pour trouver tous les nœuds de texte
+          const walker = document.createTreeWalker(
+            range.commonAncestorContainer,
+            NodeFilter.SHOW_TEXT,
+            {
+              acceptNode: (node) => {
+                try {
+                  const nodeRange = document.createRange();
+                  nodeRange.selectNodeContents(node);
+                  if (range.intersectsNode(node)) {
+                    return NodeFilter.FILTER_ACCEPT;
+                  }
+                } catch (e) {
+                  // Ignorer les erreurs
+                }
+                return NodeFilter.FILTER_REJECT;
+              }
+            }
+          );
+          
+          let walkerNode;
+          while (walkerNode = walker.nextNode()) {
+            if (walkerNode.nodeType === Node.TEXT_NODE) {
+              const textNode = walkerNode as Text;
+              const isStart = textNode === range.startContainer;
+              const isEnd = textNode === range.endContainer;
+              
+              textNodes.push({
+                node: textNode,
+                startOffset: isStart ? range.startOffset : 0,
+                endOffset: isEnd ? range.endOffset : (textNode.textContent?.length || 0)
+              });
+            }
+          }
+          
+          // Si aucun nœud trouvé, utiliser une méthode de dernière chance
+          if (textNodes.length === 0) {
+            console.warn('Aucun nœud de texte trouvé, utilisation de la méthode de dernière chance');
+            // Créer un nœud de texte avec le texte sauvegardé et l'entourer
+            const textNode = document.createTextNode(savedText);
+            span.appendChild(textNode);
+            
+            // Insérer AVANT la sélection sans rien retirer
+            try {
+              range.insertNode(span);
+            } catch (e) {
+              // Si l'insertion échoue, insérer à la fin du conteneur parent
+              const parent = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+                ? range.commonAncestorContainer.parentNode
+                : range.commonAncestorContainer as Element;
+              if (parent) {
+                parent.appendChild(span);
+              }
+            }
+            return span;
+          }
+          
+          // Traiter le premier nœud
+          const first = textNodes[0];
+          const firstNode = first.node;
+          const firstStart = first.startOffset;
+          const firstEnd = first.endOffset;
+          
+          let workingSpan = span;
+          
+          if (firstStart > 0 || firstEnd < (firstNode.textContent?.length || 0)) {
+            // Le nœud est partiellement sélectionné, utiliser splitText()
+            try {
+              let selectedPart: Text;
+              
+              if (firstStart > 0) {
+                selectedPart = firstNode.splitText(firstStart);
+              } else {
+                selectedPart = firstNode;
+              }
+              
+              if (firstEnd < selectedPart.textContent!.length) {
+                selectedPart.splitText(firstEnd - firstStart);
+              }
+              
+              const parent = selectedPart.parentNode;
+              if (parent) {
+                parent.insertBefore(workingSpan, selectedPart);
+                workingSpan.appendChild(selectedPart);
+              }
+            } catch (e) {
+              console.error('Erreur lors du traitement du premier nœud:', e);
+              // Fallback : créer un nouveau nœud avec le texte sauvegardé
+              workingSpan.textContent = savedText;
+              try {
+                range.insertNode(workingSpan);
+              } catch (e2) {
+                const parent = firstNode.parentNode;
+                if (parent) {
+                  parent.insertBefore(workingSpan, firstNode);
+                }
+              }
+            }
+          } else {
+            // Tout le nœud est sélectionné
+            const parent = firstNode.parentNode;
+            if (parent) {
+              parent.insertBefore(workingSpan, firstNode);
+              workingSpan.appendChild(firstNode);
+            }
+          }
+          
+          // Traiter les nœuds du milieu (tous entièrement sélectionnés)
+          for (let i = 1; i < textNodes.length - 1; i++) {
+            const textNode = textNodes[i].node;
+            if (!workingSpan.contains(textNode)) {
+              const parent = textNode.parentNode;
+              if (parent) {
+                // Déplacer le nœud dans le span
+                workingSpan.appendChild(textNode);
+              }
+            }
+          }
+          
+          // Traiter le dernier nœud (si différent du premier)
+          if (textNodes.length > 1) {
+            const last = textNodes[textNodes.length - 1];
+            const lastNode = last.node;
+            const lastEnd = last.endOffset;
+            
+            if (!workingSpan.contains(lastNode)) {
+              const lastFullLength = lastNode.textContent?.length || 0;
+              
+              if (lastEnd < lastFullLength) {
+                // Le dernier nœud est partiellement sélectionné
+                try {
+                  lastNode.splitText(lastEnd);
+                  // La partie sélectionnée est maintenant le previousSibling
+                  const selectedPart = lastNode.previousSibling as Text;
+                  if (selectedPart && selectedPart.nodeType === Node.TEXT_NODE) {
+                    const parent = selectedPart.parentNode;
+                    if (parent) {
+                      parent.removeChild(selectedPart);
+                      workingSpan.appendChild(selectedPart);
+                    }
+                  }
+                } catch (e) {
+                  console.error('Erreur lors du traitement du dernier nœud:', e);
+                }
+              } else {
+                // Tout le dernier nœud est sélectionné
+                const parent = lastNode.parentNode;
+                if (parent) {
+                  parent.removeChild(lastNode);
+                  workingSpan.appendChild(lastNode);
+                }
+              }
+            }
+          }
+          
+          // VÉRIFICATION FINALE CRITIQUE : s'assurer que le texte est présent
+          const finalText = workingSpan.textContent || '';
+          if (!finalText || finalText.trim().length === 0) {
+            console.error('ERREUR CRITIQUE : Le texte a disparu ! Restauration depuis la sauvegarde...');
+            // RESTAURATION D'URGENCE : remplacer le contenu par le texte sauvegardé
+            workingSpan.textContent = savedText;
+            
+            // Si le span n'est pas dans le DOM, l'insérer
+            if (!workingSpan.parentNode) {
+              try {
+                const newRange = document.createRange();
+                newRange.setStart(startContainer, startOffset);
+                newRange.setEnd(endContainer, endOffset);
+                newRange.insertNode(workingSpan);
+              } catch (e) {
+                // Dernière tentative : insérer à la fin du conteneur
+                const parent = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+                  ? range.commonAncestorContainer.parentNode
+                  : range.commonAncestorContainer as Element;
+                if (parent) {
+                  parent.appendChild(workingSpan);
+                }
+              }
+            }
+          }
+          
+          return workingSpan;
+        }
+      };
+
+      const highlightSpan = wrapRangeWithHighlight(range);
       
-      // Insérer le surlignage
-      range.insertNode(span);
-      
-      // Créer l'objet highlight
+      // Créer l'objet highlight avec le texte complet préservé
       const highlight: Highlight = {
         id: highlightId,
         text: text,
@@ -1620,7 +1991,7 @@ export default function MesFormationsPage() {
             </h3>
             <div
               ref={courseContentRef}
-              className={`space-y-6 text-base text-[#032622] leading-relaxed ${
+              className={`relative space-y-6 text-base text-[#032622] leading-relaxed ${
                 showHighlightMenu ? 'cursor-crosshair' : ''
               }`}
               onClick={(e) => {
@@ -1637,6 +2008,12 @@ export default function MesFormationsPage() {
                 }
               }}
             >
+              {/* Calque d'overlay pour le mode sécurisé (ne modifie jamais le texte) */}
+              <div
+                ref={highlightOverlayRef}
+                className="pointer-events-none absolute inset-0 z-10"
+                aria-hidden="true"
+              />
               <section className="space-y-4">
                 <h4 className="font-bold text-lg text-[#032622]">Présentation du cours : pourquoi parler de culture de l'IA ?</h4>
                 <p>

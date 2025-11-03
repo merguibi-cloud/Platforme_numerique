@@ -21,13 +21,6 @@ const menuItems = [
     href: '/espace-tuteur/mes-etudiants'
   },
   { 
-    id: 'bibliotheque', 
-    label: 'BIBLIOTHÈQUE', 
-    icon: '/menue_etudiant/Bibliothèque.png',
-    iconInactive: '/menue_etudiant/nonselectionner/bibliothequenumerique.png',
-    href: '/espace-tuteur/bibliotheque'
-  },
-  { 
     id: 'agenda', 
     label: 'AGENDA', 
     icon: '/menue_etudiant/calendrier.png',
@@ -40,13 +33,6 @@ const menuItems = [
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
     href: '/espace-tuteur/messagerie'
-  },
-  { 
-    id: 'vie-etudiante', 
-    label: 'VIE ÉTUDIANTE', 
-    icon: '/images/student-library/VieStudent.png',
-    iconInactive: '/images/student-library/VieStudentpasselectionné.png',
-    href: '/espace-tuteur/vie-etudiante'
   }
 ];
 
@@ -89,14 +75,10 @@ export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProp
       setActiveItem('dashboard');
     } else if (pathname.includes('/mes-etudiants')) {
       setActiveItem('mes-etudiants');
-    } else if (pathname.includes('/bibliotheque')) {
-      setActiveItem('bibliotheque');
     } else if (pathname.includes('/agenda')) {
       setActiveItem('agenda');
     } else if (pathname.includes('/messagerie')) {
       setActiveItem('messagerie');
-    } else if (pathname.includes('/vie-etudiante')) {
-      setActiveItem('vie-etudiante');
     } else if (pathname.includes('/parametres')) {
       setActiveItem('parametres');
     }

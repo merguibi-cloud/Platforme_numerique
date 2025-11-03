@@ -136,3 +136,19 @@ h1, h2, h3, h4, h5, h6 {
 .animate-scroll:hover {
   animation-play-state: paused;
 }
+
+/* Styles pour le surligneur intelligent - préserve les espaces */
+.highlight-marker {
+  white-space: pre-wrap !important;
+  word-spacing: normal !important;
+  display: inline !important;
+}
+.highlight-marker:hover {
+  outline: 2px dashed #6b7280; /* gris */
+  outline-offset: 1px;
+}
+
+/* Blocs d'overlay (mode sécurisé) */
+.highlight-overlay-block {
+  box-shadow: 0 0 0 1px rgba(3,38,34,0.15) inset;
+}
