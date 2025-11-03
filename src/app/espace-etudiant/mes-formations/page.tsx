@@ -55,15 +55,15 @@ const courseBlocks = [
   },
   {
     id: "bloc-2",
-    title: "Bloc 2",
-    subtitle: "Définir et planifier des actions marketing et de développement",
+    title: "Module 1",
+    subtitle: "ÉLABORER LA STRATÉGIE COMMERCIALE & MARKETING",
     progress: 0,
     cta: "COMMENCER",
     locked: true,
   },
   {
     id: "bloc-3",
-    title: "Bloc 3",
+    title: "Module 3",
     subtitle: "Piloter un projet de développement",
     progress: 0,
     cta: "COMMENCER",
@@ -71,7 +71,7 @@ const courseBlocks = [
   },
   {
     id: "bloc-4",
-    title: "Bloc 4",
+    title: "Module 4",
     subtitle: "Manager durablement une équipe dans le cadre du développement",
     progress: 0,
     cta: "COMMENCER",
