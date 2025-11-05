@@ -547,7 +547,7 @@ export const StudentDashboard = () => {
             <div className="bg-[#032622] border-b border-black">
               <div className="flex">
                 <div className="flex-1 p-4 border-r border-[#F8F5E4]">
-                  <div className="text-xs text-white mb-1">Module 1-Module 1</div>
+                  <div className="text-xs text-white mb-1">Bloc 1-Module 1</div>
                   <div className="text-sm font-bold text-white">Quizz</div>
                 </div>
                 <div className="w-20 p-4 flex items-center justify-center bg-[#F8F5E4]">
@@ -559,7 +559,7 @@ export const StudentDashboard = () => {
             <div className="bg-[#032622]">
               <div className="flex">
                 <div className="flex-1 p-4 border-r border-[#F8F5E4]">
-                  <div className="text-xs text-white mb-1">Module 1</div>
+                  <div className="text-xs text-white mb-1">Bloc 1</div>
                   <div className="text-sm font-bold text-white">Etude de cas</div>
                 </div>
                 <div className="w-20 p-4 flex items-center justify-center bg-[#F8F5E4]">

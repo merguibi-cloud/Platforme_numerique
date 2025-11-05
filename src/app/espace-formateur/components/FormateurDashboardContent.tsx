@@ -161,7 +161,7 @@ const formationsData: Record<FormationId, FormationData> = {
         author: "Chadi El Assowad",
         role: "Étudiant",
         excerpt:
-          "Bonjour Sophie, j'ai déposé le devoir du Module 1. Peux-tu me confirmer sa bonne réception ?",
+          "Bonjour Sophie, j'ai déposé le devoir du Bloc 1. Peux-tu me confirmer sa bonne réception ?",
         timeAgo: "Il y a 2 h",
       },
       {
@@ -186,7 +186,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-1",
           blockName:
-            "Module 2 - Contribuer à la stratégie de développement de l'organisation",
+            "Bloc 2 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "07/10/2025",
           assignedTo: "Samantha Leroy",
           status: "en_retard",
@@ -194,7 +194,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-2",
           blockName:
-            "Module 4 - Contribuer à la stratégie de développement de l'organisation",
+            "Bloc 4 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "05/10/2025",
           assignedTo: "Samantha Leroy",
           status: "en_retard",
@@ -204,7 +204,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-3",
           blockName:
-            "Module 1 - Contribuer à la stratégie de développement de l'organisation",
+            "Bloc 1 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "10/10/2025",
           assignedTo: "Nicolas Bernard",
           status: "corrige",
@@ -212,7 +212,7 @@ const formationsData: Record<FormationId, FormationData> = {
         {
           id: "corr-4",
           blockName:
-            "Module 3 - Contribuer à la stratégie de développement de l'organisation",
+            "Bloc 3 - Contribuer à la stratégie de développement de l'organisation",
           submissionDate: "09/10/2025",
           assignedTo: "Nicolas Bernard",
           status: "corrige",
@@ -228,7 +228,7 @@ const formationsData: Record<FormationId, FormationData> = {
       },
       {
         id: "agenda-2",
-        title: "Correction devoir Module 2",
+        title: "Correction devoir Bloc 2",
         date: "2025-10-18",
         status: "normal",
       },
@@ -262,11 +262,11 @@ const formationsData: Record<FormationId, FormationData> = {
         campus: "Campus Paris La Défense",
         school: "KEOS Business School",
         track: "BACHELOR · Responsable du développement des activités",
-        focus: "Module 2 · Pilotage de la performance",
+        focus: "Bloc 2 · Pilotage de la performance",
         progress: 72,
         lastLogin: "Aujourd'hui · 08h47",
         nextDeadline: {
-          label: "Devoir Module 2",
+          label: "Devoir Bloc 2",
           date: "18 octobre 2025",
         },
         upcomingSession: {
@@ -276,7 +276,7 @@ const formationsData: Record<FormationId, FormationData> = {
         email: "chadi.elassowad@elite-society.fr",
         phone: "+33 6 12 34 56 78",
         notes:
-          "Chadi maintient un rythme régulier. Relance prévue sur les livrables Module 2 et préparation du quiz final.",
+          "Chadi maintient un rythme régulier. Relance prévue sur les livrables Bloc 2 et préparation du quiz final.",
         avatar: "/images/student-library/IMG_1719 2.PNG",
       },
     ],
@@ -322,7 +322,7 @@ const formationsData: Record<FormationId, FormationData> = {
       late: [
         {
           id: "corr-5",
-          blockName: "Module 1 - Audit de marque",
+          blockName: "Bloc 1 - Audit de marque",
           submissionDate: "04/10/2025",
           assignedTo: "Pauline Rey",
           status: "en_retard",
@@ -331,7 +331,7 @@ const formationsData: Record<FormationId, FormationData> = {
       recent: [
         {
           id: "corr-6",
-          blockName: "Module 3 - Tunnel d'acquisition",
+          blockName: "Bloc 3 - Tunnel d'acquisition",
           submissionDate: "09/10/2025",
           assignedTo: "Pauline Rey",
           status: "corrige",
@@ -410,7 +410,7 @@ const formationsData: Record<FormationId, FormationData> = {
       late: [
         {
           id: "corr-7",
-          blockName: "Module 5 - Vision par ordinateur",
+          blockName: "Bloc 5 - Vision par ordinateur",
           submissionDate: "02/10/2025",
           assignedTo: "Nadia Slimani",
           status: "en_retard",
@@ -419,7 +419,7 @@ const formationsData: Record<FormationId, FormationData> = {
       recent: [
         {
           id: "corr-8",
-          blockName: "Module 2 - Statistiques avancées",
+          blockName: "Bloc 2 - Statistiques avancées",
           submissionDate: "08/10/2025",
           assignedTo: "Alexandre Petit",
           status: "corrige",
@@ -487,7 +487,7 @@ const formationsData: Record<FormationId, FormationData> = {
       recent: [
         {
           id: "corr-9",
-          blockName: "Module 1 - Parcours utilisateur",
+          blockName: "Bloc 1 - Parcours utilisateur",
           submissionDate: "11/10/2025",
           assignedTo: "Sophie Nicolas",
           status: "corrige",
@@ -966,7 +966,7 @@ const PromoCard = () => {
       status: "online",
       progress: 85,
       lastLogin: "Aujourd'hui 14h30",
-      nextDeadline: "Devoir Module 3 - 25 Mars",
+      nextDeadline: "Devoir Bloc 3 - 25 Mars",
       upcomingSession: "Visio tuteur - 22 Mars 10h00",
       email: "peak.f@elite-society.fr",
       notes: "Excellent travail sur le projet final. Progression constante."
