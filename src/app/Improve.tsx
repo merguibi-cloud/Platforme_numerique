@@ -7,7 +7,7 @@ export const Improve = () => {
       <div className="w-full px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
           
-          {/* Section gauche - Texte */}
+          {/* Section gauche - Titre et texte */}
           <div className="text-left ml-0 sm:ml-10 md:ml-20 lg:ml-40 px-4 md:px-8 lg:px-12 xl:px-16">
             <h2 
               className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight"
