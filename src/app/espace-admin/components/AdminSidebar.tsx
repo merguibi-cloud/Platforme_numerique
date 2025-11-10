@@ -51,8 +51,8 @@ const menuItems = [
   { 
     id: 'vie-etudiante', 
     label: 'VIE ÉTUDIANTE', 
-    icon: '/images/student-library/VieStudent.png',
-    iconInactive: '/images/student-library/VieStudentpasselectionné.png',
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
     href: '/espace-admin/vie-etudiante'
   }
 ];
@@ -87,11 +87,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     onCollapseChange?.(newCollapsed);
-  };
-
-  const handleItemClick = (itemId: string) => {
-    setActiveItem(itemId);
-    // Ne pas ouvrir la sidebar automatiquement quand on clique sur un item
   };
 
   // Déterminer l'élément actif basé sur l'URL
@@ -155,7 +150,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
             <Link
               key={item.id}
               href={item.href}
-              onClick={() => handleItemClick(item.id)}
+              onClick={() => setActiveItem(item.id)}
               className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
                 activeItem === item.id
                   ? 'text-[#F8F5E4]'

@@ -68,18 +68,16 @@ const bottomMenuItems = [
 ];
 
 interface StudentSidebarProps {
-  onCollapseChange?: (isCollapsed: boolean) => void;
+  isCollapsed: boolean;
+  onCollapseChange: (isCollapsed: boolean) => void;
 }
 
-export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
+export const StudentSidebar = ({ isCollapsed, onCollapseChange }: StudentSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleCollapse = () => {
-    const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
-    onCollapseChange?.(newCollapsed);
+    onCollapseChange(!isCollapsed);
   };
 
   const handleItemClick = (itemId: string) => {

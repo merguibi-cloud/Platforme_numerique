@@ -75,18 +75,16 @@ const bottomMenuItems = [
 ];
 
 interface FormateurSidebarProps {
-  onCollapseChange?: (isCollapsed: boolean) => void;
+  isCollapsed: boolean;
+  onCollapseChange: (isCollapsed: boolean) => void;
 }
 
-export const FormateurSidebar = ({ onCollapseChange }: FormateurSidebarProps) => {
+export const FormateurSidebar = ({ isCollapsed, onCollapseChange }: FormateurSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleCollapse = () => {
-    const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
-    onCollapseChange?.(newCollapsed);
+    onCollapseChange(!isCollapsed);
   };
 
   const handleItemClick = (itemId: string) => {
