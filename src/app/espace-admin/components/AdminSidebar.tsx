@@ -75,17 +75,29 @@ const bottomMenuItems = [
 ];
 
 interface AdminSidebarProps {
+  isCollapsed?: boolean;
+  defaultCollapsed?: boolean;
   onCollapseChange?: (isCollapsed: boolean) => void;
 }
 
-export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
+export const AdminSidebar = ({ isCollapsed, defaultCollapsed = false, onCollapseChange }: AdminSidebarProps) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('dashboard');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const isControlled = typeof isCollapsed === 'boolean';
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(defaultCollapsed);
+  const currentIsCollapsed = isControlled ? isCollapsed : internalIsCollapsed;
+
+  useEffect(() => {
+    if (!isControlled) {
+      setInternalIsCollapsed(defaultCollapsed);
+    }
+  }, [defaultCollapsed, isControlled]);
 
   const handleCollapse = () => {
-    const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
+    const newCollapsed = !currentIsCollapsed;
+    if (!isControlled) {
+      setInternalIsCollapsed(newCollapsed);
+    }
     onCollapseChange?.(newCollapsed);
   };
 
@@ -111,7 +123,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   }, [pathname]);
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
+    <div className={`${currentIsCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
       {/* Logo et titre */}
       <div className="p-6 border-b border-gray-600">
         <div className="flex items-center justify-between">
@@ -123,7 +135,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
               height={40}
               className="w-10 h-10"
             />
-            {!isCollapsed && (
+            {!currentIsCollapsed && (
               <div>
                 <h1 className="text-white text-sm font-bold uppercase tracking-wide">
                   ELITE SOCIETY
@@ -138,34 +150,34 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
             onClick={handleCollapse}
             className="text-white hover:bg-gray-700 p-1 rounded transition-colors"
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {currentIsCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {/* Menu principal */}
       <div className="flex-1 py-6">
-        <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+        <nav className={`space-y-2 ${currentIsCollapsed ? 'px-2' : 'px-4'}`}>
           {menuItems.map((item) => (
             <Link
               key={item.id}
               href={item.href}
               onClick={() => setActiveItem(item.id)}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
+              className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
                 activeItem === item.id
                   ? 'text-[#F8F5E4]'
                   : 'text-white hover:bg-gray-700'
               }`}
-              title={isCollapsed ? item.label : undefined}
+              title={currentIsCollapsed ? item.label : undefined}
             >
               <Image 
                 src={activeItem === item.id ? item.icon : item.iconInactive} 
                 alt={item.label} 
                 width={24} 
                 height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                className={`${currentIsCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
               />
-              {!isCollapsed && (
+              {!currentIsCollapsed && (
                 <span 
                   className="text-sm font-medium"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
@@ -179,23 +191,23 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       </div>
 
       {/* Menu du bas */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
+      <div className={`${currentIsCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
         <nav className="space-y-2">
           {bottomMenuItems.map((item) => (
             <Link
               key={item.id}
               href={item.href}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
-              title={isCollapsed ? item.label : undefined}
+              className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
+              title={currentIsCollapsed ? item.label : undefined}
             >
               <Image 
                 src={activeItem === item.id ? item.icon : item.iconInactive} 
                 alt={item.label} 
                 width={24} 
                 height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                className={`${currentIsCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
               />
-              {!isCollapsed && (
+              {!currentIsCollapsed && (
                 <span 
                   className="text-sm font-medium"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
