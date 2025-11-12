@@ -1,4 +1,5 @@
 import { AdminSidebar } from '../components/AdminSidebar';
+import AdminTopBar from '../components/AdminTopBar';
 import MessagerieComponent from '../components/MessagerieComponent';
 
 export default function AdminMessagerie() {
@@ -9,6 +10,7 @@ export default function AdminMessagerie() {
       
       {/* Contenu principal */}
       <div className="flex-1 p-6">
+        <AdminTopBar notificationCount={0} className="mb-6" />
         <div className="space-y-6">
           <h1 
             className="text-3xl font-bold text-[#032622]"

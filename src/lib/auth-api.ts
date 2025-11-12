@@ -14,6 +14,8 @@ export interface AuthResponse {
   success: boolean;
   user?: any;
   profile_completed?: boolean;
+  role?: string;
+  redirectTo?: string;
   message?: string;
   error?: string;
 }
@@ -148,6 +150,28 @@ export async function getUserProfile(): Promise<{ success: boolean; profile?: an
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur lors de la récupération du profil'
+    };
+  }
+}
+
+export async function getSessionRole(): Promise<{ success: boolean; role?: string; redirectTo?: string; error?: string }> {
+  try {
+    const response = await fetch('/api/auth/session', {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Erreur lors de la récupération du rôle');
+    }
+
+    return result;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors de la récupération du rôle',
     };
   }
 }

@@ -1,7 +1,9 @@
 'use client';
-import { AdminSidebar } from './components/AdminSidebar';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { AdminSidebar } from './components/AdminSidebar';
+import { AdminUserProvider } from './components/AdminUserProvider';
+import { getSessionRole } from '@/lib/auth-api';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -16,35 +18,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     const checkAdminAccess = async (): Promise<void> => {
       try {
-        // Utiliser les APIs pour vérifier l'authentification et le rôle
-        const userResponse = await fetch('/api/auth/user');
-        const userData = await userResponse.json();
-        
-        if (!userData.success || !userData.user) {
-          router.push('/');
+        const sessionResult = await getSessionRole();
+
+        if (!sessionResult.success || !sessionResult.role) {
+          router.replace('/');
           return;
         }
 
-        // Récupérer le profil pour vérifier le rôle
-        const profileResponse = await fetch('/api/user/ensure-profile');
-        const profileData = await profileResponse.json();
-        
-        if (!profileData.success || !profileData.profile) {
-          router.push('/');
-          return;
-        }
-
-        const userRole = profileData.profile.role;
-        
-        if (!['admin', 'superadmin'].includes(userRole)) {
-          router.push('/');
+        if (sessionResult.role !== 'admin') {
+          router.replace(sessionResult.redirectTo ?? '/');
           return;
         }
 
         setIsAuthorized(true);
       } catch (error) {
         console.error('Erreur vérification admin:', error);
-        router.push('/');
+        router.replace('/');
       } finally {
         setIsLoading(false);
       }
@@ -76,12 +65,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8F5E4]">
-      <AdminSidebar onCollapseChange={setIsCollapsed} />
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {children}
-      </main>
-    </div>
+    <AdminUserProvider>
+      <div className="flex min-h-screen bg-[#F8F5E4]">
+        <AdminSidebar onCollapseChange={setIsCollapsed} />
+        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
+          {children}
+        </main>
+      </div>
+    </AdminUserProvider>
   );
 }
 

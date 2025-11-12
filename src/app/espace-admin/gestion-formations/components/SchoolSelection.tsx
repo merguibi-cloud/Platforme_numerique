@@ -1,7 +1,5 @@
 'use client';
 
-import { Formation } from '@/types/formations';
-
 interface SchoolConfig {
   id: string;
   name: string;
@@ -56,13 +54,19 @@ export const SchoolSelection = ({ schools, onSchoolSelect }: SchoolSelectionProp
                 : 'bg-[#F8F5E4] text-[#032622] border-[#032622]'
               }
             `}
+            onClick={() => onSchoolSelect(school.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSchoolSelect(school.id);
+              }
+            }}
+            tabIndex={0}
+            role="button"
             style={{
               borderColor: school.isSelected ? (school.color || '#032622') : '#032622',
               boxShadow: school.isSelected ? `0 4px 6px -1px ${school.color || '#032622'}20, 0 2px 4px -1px ${school.color || '#032622'}10` : 'none'
             }}
-              onClick={() => {
-                // TODO: Implémenter la sélection d'école
-              }}
           >
             <div className="flex flex-col items-center justify-center h-full p-4">
               <div className="mb-2">

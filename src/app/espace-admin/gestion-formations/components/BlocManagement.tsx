@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BlocksListView } from './BlocksListView';
-import { FormationHeader } from './FormationHeader';
+import AdminTopBar from '../../components/AdminTopBar';
 import { EditBloc } from './EditBloc';
 import { Modal } from '@/app/Modal';
 import { getFormationById } from '@/lib/formations';
@@ -195,7 +195,7 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
     <div className="min-h-screen bg-[#F8F5E4] flex">
       <div className="flex-1 p-6">
         <div className="space-y-8">
-          <FormationHeader />
+          <AdminTopBar notificationCount={0} className="mb-6" />
           
           <div className="space-y-4">
             <div className="flex items-center gap-4">

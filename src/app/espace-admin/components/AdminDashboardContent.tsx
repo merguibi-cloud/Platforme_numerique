@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
-import { Bell, ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
+import { ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
 import { getAllFormations, getFormationsByEcole } from "@/lib/formations";
 import { Formation } from "@/types/formations";
+import AdminTopBar from "./AdminTopBar";
 
 // Types pour les données dynamiques de la base de données
 type SchoolId = string;
@@ -528,15 +529,7 @@ const AdminDashboardContent = () => {
 
   return (
     <div className="flex-1 p-10 bg-[#F8F5E4]">
-      <div className="flex justify-end items-center space-x-4 mb-8">
-        <div className="relative">
-          <Bell className="w-6 h-6 text-[#032622]" />
-          <span className="absolute -top-2 -right-2 bg-[#D96B6B] text-white text-xs rounded-full px-1.5 py-0.5">
-            6
-          </span>
-        </div>
-        <ProfileDropdown />
-      </div>
+      <AdminTopBar notificationCount={6} className="mb-8" />
 
       <div className="space-y-8">
         <div className="space-y-3">
@@ -827,39 +820,6 @@ const ProfileCard = () => (
   <section className="border border-[#032622] bg-[#F8F5E4] p-6">
     <div className="w-full aspect-square border border-[#032622]/50 bg-[#C9C6B4]" />
   </section>
-);
-
-const ProfileDropdown = () => (
-  <div className="relative group">
-    <div className="flex items-center space-x-3 cursor-pointer">
-      <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
-        YF
-      </div>
-      <div>
-        <p
-          className="text-[#032622] font-semibold text-sm"
-          style={{ fontFamily: "var(--font-termina-bold)" }}
-        >
-          Ymir Fritz
-        </p>
-        <p className="text-xs text-[#032622]/70">Administrateur</p>
-      </div>
-    </div>
-
-    <div className="absolute right-0 mt-3 w-52 border border-[#032622] bg-[#F8F5E4] shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
-      <nav className="flex flex-col divide-y divide-[#032622]/20 text-sm text-[#032622]">
-        <Link href="/espace-admin/compte" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
-          Mon compte
-        </Link>
-        <Link href="/espace-admin/parametres" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
-          Paramètres
-        </Link>
-        <button className="px-4 py-3 text-left hover:bg-[#eae5cf] transition-colors">
-          Se déconnecter
-        </button>
-      </nav>
-    </div>
-  </div>
 );
 
 const PromoCard = ({

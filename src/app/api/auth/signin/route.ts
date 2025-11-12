@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/supabase';
 import { cookies } from 'next/headers';
+import { resolveRoleForUser } from '@/lib/auth-role';
 // Route pour la connexion
 export async function POST(request: NextRequest) {
   try {
@@ -28,10 +29,21 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const roleResolution = await resolveRoleForUser(data.user.id);
+
+    if (!roleResolution.role || !roleResolution.redirectTo) {
+      return NextResponse.json(
+        { success: false, error: 'Aucun rôle associé à cet utilisateur.' },
+        { status: 403 }
+      );
+    }
+
     // Définir les cookies de session
     const response = NextResponse.json({
       success: true,
       user: data.user,
+      role: roleResolution.role,
+      redirectTo: roleResolution.redirectTo,
       message: 'Connexion réussie'
     });
     // Stocker la session dans les cookies

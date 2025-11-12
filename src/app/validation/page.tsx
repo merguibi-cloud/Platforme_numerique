@@ -9,7 +9,7 @@ import { Documents } from './components/Documents';
 import { Recap } from './components/Recap';
 import { Validation } from './components/Validation';
 import ContratStep from './components/ContratStep';
-import { getCurrentUser } from '@/lib/auth-api';
+import { getCurrentUser, getSessionRole } from '@/lib/auth-api';
 import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 import { CandidatureProvider, useCandidature } from '@/contexts/CandidatureContext';
 import { StudentGuard } from '@/components/RoleGuard';
@@ -31,6 +31,20 @@ const ValidationContent = () => {
 
   const loadUserData = async () => {
     try {
+      const sessionResult = await getSessionRole();
+
+      if (!sessionResult.success || !sessionResult.role) {
+        router.replace('/');
+        setIsLoading(false);
+        return;
+      }
+
+      if (sessionResult.role !== 'validation') {
+        router.replace(sessionResult.redirectTo ?? '/');
+        setIsLoading(false);
+        return;
+      }
+
       // Vérification utilisateur
       const userResult = await getCurrentUser();
       

@@ -26,6 +26,7 @@ export interface CandidatureData {
   releves_paths?: string[];
   piece_identite_paths?: string[];
   lettre_motivation_path?: string;
+  entreprise_accueil?: string;
   accept_conditions?: boolean;
   attest_correct?: boolean;
   created_at?: string;

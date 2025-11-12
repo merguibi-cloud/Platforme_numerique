@@ -5,7 +5,7 @@ import { getAllFormations } from '@/lib/formations';
 import { Formation } from '@/types/formations';
 import { SchoolSelection, getSchoolConfig } from './SchoolSelection';
 import { FormationSelection } from './FormationSelection';
-import { FormationHeader } from './FormationHeader';
+import AdminTopBar from '../../components/AdminTopBar';
 import { BlocksListView } from './BlocksListView';
 import { Modal } from '../../../validation/components/Modal';
 
@@ -171,7 +171,7 @@ export const FormationManagement = () => {
       <div className="flex-1 p-6">
         <div className="space-y-8">
           {/* Header avec notifications et profil */}
-          <FormationHeader />
+          <AdminTopBar notificationCount={0} className="mb-6" />
 
           {!selectedFormation ? (
             <>

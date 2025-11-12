@@ -6,13 +6,13 @@ import { CreateModule } from './CreateModule';
 
 interface ModuleWithStatus {
   id: string;
-  type: string;
-  cours: string;
+  moduleName: string;
+  cours: string[];
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
   cours_count?: number;
-  cours_status?: 'brouillon' | 'en_cours_examen' | 'en_ligne' | 'manquant';
+  cours_actifs?: number;
   ordre_affichage?: number;
   numero_module?: number;
 }
@@ -59,23 +59,9 @@ export const ModuleManagement = ({
     setIsCreateModalOpen(false);
   };
 
-  // Grouper les modules par statut en tenant compte des cours
-  const modulesEnLigne = modules.filter(m => {
-    if (m.cours_status === 'en_ligne') return true;
-    if (m.cours_count === 0) return false; // Pas de cours = manquant
-    return m.statut === 'en_ligne';
-  });
-  
-  const modulesBrouillon = modules.filter(m => {
-    if (m.cours_status === 'brouillon' || m.cours_status === 'en_cours_examen') return true;
-    if (m.cours_count === 0) return false; // Pas de cours = manquant
-    return m.statut === 'brouillon';
-  });
-  
-  const modulesManquant = modules.filter(m => {
-    if (m.cours_count === 0) return true; // Pas de cours = manquant
-    return m.statut === 'manquant';
-  });
+  const modulesEnLigne = modules.filter(m => m.statut === 'en_ligne');
+  const modulesBrouillon = modules.filter(m => m.statut === 'brouillon');
+  const modulesManquant = modules.filter(m => m.statut === 'manquant');
 
   const ModuleTable = ({ modules, title, color, emptyMessage }: { modules: ModuleWithStatus[]; title: string; color: string; emptyMessage: string }) => {
     return (
@@ -95,9 +81,9 @@ export const ModuleManagement = ({
             <thead>
               <tr className="bg-[#F8F5E4]">
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">TITRE</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">MATIÈRE</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">COURS</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉER PAR</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
@@ -113,11 +99,26 @@ export const ModuleManagement = ({
               ) : (
                 modules.map((module) => (
                   <tr key={module.id} className="bg-[#032622]/10">
-                    <td className="border border-[#032622] p-3 font-semibold text-[#032622] uppercase">
-                      {module.type}
+                    <td className="border border-[#032622] p-3 text-[#032622]">
+                      <p className="font-semibold uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                        {module.moduleName || 'Module sans titre'}
+                      </p>
+                      {module.numero_module && (
+                        <p className="text-xs text-[#032622]/70 mt-1">Module #{module.numero_module}</p>
+                      )}
                     </td>
                     <td className="border border-[#032622] p-3 text-[#032622] uppercase">
-                      {module.cours}
+                      {module.cours.length > 0 ? (
+                        <div className="space-y-1">
+                          {module.cours.map((coursTitle, index) => (
+                            <p key={index} className="text-sm normal-case text-[#032622]">
+                              • {coursTitle}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm italic text-[#032622]/70">Aucun cours</span>
+                      )}
                     </td>
                     <td className="border border-[#032622] p-3 text-[#032622]">
                       {module.creationModification || '-'}
@@ -221,6 +222,10 @@ export const ModuleManagement = ({
         isOpen={isCreateModalOpen}
         onClose={handleCloseModal}
         onSave={handleSaveModule}
+        existingModules={modules.map((module) => ({
+          id: module.id,
+          titre: module.moduleName || `Module ${module.numero_module ?? ''}`.trim()
+        }))}
       />
     </>
   );

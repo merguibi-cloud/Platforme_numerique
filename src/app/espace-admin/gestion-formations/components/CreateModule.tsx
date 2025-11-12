@@ -7,9 +7,11 @@ interface CreateModuleProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (moduleData: { titre: string; cours: string[] }) => void;
+  existingModules?: Array<{ id: string; titre: string }>;
 }
 
-export const CreateModule = ({ isOpen, onClose, onSave }: CreateModuleProps) => {
+export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: CreateModuleProps) => {
+  const [selectedModuleId, setSelectedModuleId] = useState('');
   const [titreModule, setTitreModule] = useState('');
   const [cours, setCours] = useState<string[]>(['']);
 
@@ -40,6 +42,7 @@ export const CreateModule = ({ isOpen, onClose, onSave }: CreateModuleProps) => 
   };
 
   const handleClose = () => {
+    setSelectedModuleId('');
     setTitreModule('');
     setCours(['']);
     onClose();
@@ -69,21 +72,57 @@ export const CreateModule = ({ isOpen, onClose, onSave }: CreateModuleProps) => 
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Module */}
-          <div className="space-y-2">
-            <label 
-              className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              MODULE
-            </label>
-            <input
-              type="text"
-              value={titreModule}
-              onChange={(e) => setTitreModule(e.target.value)}
-              placeholder="Nom du module"
-              className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label 
+                className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                MODULE
+              </label>
+              <input
+                type="text"
+                value={titreModule}
+                onChange={(e) => {
+                  setTitreModule(e.target.value);
+                  setSelectedModuleId('');
+                }}
+                placeholder="Nom du module"
+                className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              />
+            </div>
+
+            {existingModules.length > 0 && (
+              <div className="space-y-2">
+                <label 
+                  className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                >
+                  MODULE EXISTANT
+                </label>
+                <select
+                  value={selectedModuleId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setSelectedModuleId(value);
+                    const selectedModule = existingModules.find((module) => module.id === value);
+                    if (selectedModule) {
+                      setTitreModule(selectedModule.titre);
+                    }
+                  }}
+                  className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                >
+                  <option value="">Sélectionner un module existant</option>
+                  {existingModules.map((module) => (
+                    <option key={module.id} value={module.id}>
+                      {module.titre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Cours */}

@@ -88,7 +88,8 @@ export async function POST(request: NextRequest) {
       type_module: 'cours', // Default type
       ordre_affichage: index + 1,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      created_by: user.id
     }));
     const { data: modules, error: modulesError } = await supabase
       .from('modules_apprentissage')

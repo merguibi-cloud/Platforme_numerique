@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TiptapEditor } from './TiptapEditor';
-import { FormationHeader } from './FormationHeader';
+import AdminTopBar from '../../components/AdminTopBar';
 import { Cours, FichierElement } from '../../../../types/cours';
 
 interface CoursEditorProps {
@@ -162,7 +162,7 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
           </div>
           
           {/* Header avec notifications et profil */}
-          <FormationHeader />
+          <AdminTopBar notificationCount={0} className="mb-6" />
         </div>
       </div>
       {/* Main Content */}

@@ -113,52 +113,15 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
         return;
       }
 
-      // Connexion réussie - redirection intelligente selon le rôle
-      // Redirection directe selon le rôle après connexion
-      try {
-        // Récupérer le rôle de l'utilisateur pour redirection directe
-        const response = await fetch('/api/auth/user');
-        const userData = await response.json();
-        
-        if (userData.success && userData.user) {
-          // Récupérer le profil pour obtenir le rôle
-          const profileResponse = await fetch('/api/user/ensure-profile');
-          const profileData = await profileResponse.json();
-          
-          if (profileData.success && profileData.profile) {
-            const userRole = profileData.profile.role;
-            
-            // Fermer le modal avant la redirection
-            onCloseAction();
-            
-            // Redirection selon le rôle
-            switch (userRole) {
-              case 'admin':
-              case 'superadmin':
-                router.push('/espace-admin/dashboard');
-                break;
-              case 'animateur':
-                router.push('/espace-animateur');
-                break;
-              case 'etudiant':
-                router.push('/validation');
-                break;
-              default:
-                router.push('/validation');
-            }
-          } else {
-            onCloseAction();
-            router.push('/validation');
-          }
-        } else {
-          onCloseAction();
-          router.push('/validation');
-        }
-      } catch (error) {
-        // En cas d'erreur lors de la récupération du profil, afficher l'erreur et rester sur la page
-        console.error('Erreur lors de la récupération du profil:', error);
-        setError('Erreur lors de la récupération de votre profil. Veuillez réessayer.');
+      const redirectTarget = result.redirectTo;
+
+      if (!redirectTarget) {
+        setError('Aucune vue disponible pour votre compte. Contactez le support.');
+        return;
       }
+
+      onCloseAction();
+      router.push(redirectTarget);
     } catch (error) {
       console.error('Erreur connexion');
       setError('Une erreur est survenue lors de la connexion.');

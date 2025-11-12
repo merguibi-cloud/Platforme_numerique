@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModuleManagement } from '../../components/ModuleManagement';
-import { FormationHeader } from '../../components/FormationHeader';
+import AdminTopBar from '../../../components/AdminTopBar';
 
 interface ModuleManagementPageProps {
   params: Promise<{
@@ -14,11 +14,13 @@ interface ModuleManagementPageProps {
 
 interface ModuleWithStatus {
   id: string;
-  type: string;
-  cours: string;
+  moduleName: string;
+  cours: string[];
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
+  cours_count?: number;
+  cours_actifs?: number;
   ordre_affichage?: number;
   numero_module?: number;
 }
@@ -160,7 +162,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     <div className="min-h-screen bg-[#F8F5E4] flex">
       <div className="flex-1 p-6">
         <div className="space-y-8">
-          <FormationHeader />
+          <AdminTopBar notificationCount={0} className="mb-6" />
           
           <div className="space-y-4">
             <button
