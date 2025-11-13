@@ -25,7 +25,7 @@ interface ModuleManagementProps {
   modules: ModuleWithStatus[];
   formationId: string;
   blocId: string;
-  onAddModule: (moduleData: { titre: string; cours: string[] }) => void;
+  onAddModule: (moduleData: { titre: string; cours: string[]; moduleId?: string }) => void;
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
   onAssignModule: (moduleId: string) => void;
@@ -83,7 +83,7 @@ export const ModuleManagement = ({
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveModule = (moduleData: { titre: string; cours: string[] }) => {
+  const handleSaveModule = (moduleData: { titre: string; cours: string[]; moduleId?: string }) => {
     onAddModule(moduleData);
     setIsCreateModalOpen(false);
   };

@@ -6,7 +6,7 @@ import { X, Plus, Minus } from 'lucide-react';
 interface CreateModuleProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (moduleData: { titre: string; cours: string[] }) => void;
+  onSave: (moduleData: { titre: string; cours: string[]; moduleId?: string }) => void;
   existingModules?: Array<{ id: string; titre: string }>;
 }
 
@@ -32,10 +32,14 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
   };
 
   const handleSave = () => {
-    if (titreModule.trim() && cours.some(coursItem => coursItem.trim())) {
+    const hasExistingModule = Boolean(selectedModuleId);
+    const moduleTitle = titreModule.trim();
+
+    if ((moduleTitle || hasExistingModule) && cours.some(coursItem => coursItem.trim())) {
       onSave({
-        titre: titreModule.trim(),
-        cours: cours.filter(coursItem => coursItem.trim())
+        titre: moduleTitle,
+        cours: cours.filter(coursItem => coursItem.trim()),
+        moduleId: hasExistingModule ? selectedModuleId : undefined
       });
       handleClose();
     }
@@ -173,11 +177,14 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
         <div className="p-6 border-t-2 border-[#032622]">
           <button
             onClick={handleSave}
-            disabled={!titreModule.trim() || !cours.some(coursItem => coursItem.trim())}
+            disabled={
+              !(titreModule.trim() || selectedModuleId) ||
+              !cours.some(coursItem => coursItem.trim())
+            }
             className="w-full bg-[#032622] text-[#F8F5E4] py-3 text-lg font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            CRÉER LE MODULE
+            {selectedModuleId ? 'AJOUTER LES COURS' : 'CRÉER LE MODULE'}
           </button>
         </div>
       </div>

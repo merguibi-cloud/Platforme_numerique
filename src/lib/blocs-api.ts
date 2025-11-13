@@ -203,16 +203,38 @@ export async function searchBlocs(query: string, formationId?: number): Promise<
 export async function getUserProfileServer(userId: string): Promise<{ role: string } | null> {
   try {
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
+
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
       .eq('user_id', userId)
-      .single();
-    if (error) {
-      return null;
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Erreur récupération profil utilisateur:', profileError);
     }
-    return data;
+
+    if (profile?.role) {
+      return { role: String(profile.role).toLowerCase() };
+    }
+
+    const { data: adminRecord, error: adminError } = await supabase
+      .from('administrateurs')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (adminError) {
+      console.error('Erreur récupération administrateur:', adminError);
+    }
+
+    if (adminRecord) {
+      return { role: 'admin' };
+    }
+
+    return null;
   } catch (error) {
+    console.error('Erreur lors de la récupération du rôle utilisateur:', error);
     return null;
   }
 }

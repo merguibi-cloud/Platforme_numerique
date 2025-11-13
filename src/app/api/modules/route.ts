@@ -200,9 +200,84 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { titre, cours, description, type_module } = body;
+    const { titre, cours, description, type_module, moduleId } = body;
 
-    // Utiliser la fonction CRUD existante
+    if (moduleId) {
+      const moduleIdNumber = parseInt(moduleId, 10);
+      if (Number.isNaN(moduleIdNumber)) {
+        return NextResponse.json({ error: 'ID de module invalide' }, { status: 400 });
+      }
+
+      const { data: existingModule, error: moduleFetchError } = await supabase
+        .from('modules_apprentissage')
+        .select('id, bloc_id, titre, numero_module, ordre_affichage, created_by, created_at, updated_at')
+        .eq('id', moduleIdNumber)
+        .maybeSingle();
+
+      if (moduleFetchError) {
+        console.error('Erreur lors de la récupération du module:', moduleFetchError);
+        return NextResponse.json({ error: 'Erreur lors de la récupération du module' }, { status: 500 });
+      }
+
+      if (!existingModule) {
+        return NextResponse.json({ error: 'Module introuvable' }, { status: 404 });
+      }
+
+      if (existingModule.bloc_id !== parseInt(blocId, 10)) {
+        return NextResponse.json({ error: 'Module non associé à ce bloc' }, { status: 400 });
+      }
+
+      const { data: existingCours, error: existingCoursError } = await supabase
+        .from('cours_contenu')
+        .select('ordre_affichage')
+        .eq('module_id', moduleIdNumber)
+        .order('ordre_affichage', { ascending: true });
+
+      if (existingCoursError) {
+        console.error('Erreur lors de la récupération des cours existants:', existingCoursError);
+      }
+
+      const baseOrder = existingCours?.length ?? 0;
+
+      const coursToInsert = (cours || [])
+        .filter((coursTitre: string) => coursTitre.trim())
+        .map((coursTitre: string, index: number) => ({
+          module_id: moduleIdNumber,
+          titre: coursTitre.trim(),
+          type_contenu: 'texte' as const,
+          ordre_affichage: baseOrder + index + 1,
+          actif: false,
+        }));
+
+      if (coursToInsert.length === 0) {
+        return NextResponse.json({
+          success: true,
+          module: existingModule,
+          cours: [],
+          message: 'Aucun cours à ajouter',
+        });
+      }
+
+      const { data: newCours, error: coursInsertError } = await supabase
+        .from('cours_contenu')
+        .insert(coursToInsert)
+        .select();
+
+      if (coursInsertError) {
+        console.error('Erreur lors de l\'ajout des cours:', coursInsertError);
+        return NextResponse.json({ error: 'Erreur lors de l\'ajout des cours' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        module: existingModule,
+        cours: newCours,
+        creatorName: null,
+        message: 'Cours ajoutés au module existant',
+      });
+    }
+
+    // Utiliser la fonction CRUD existante pour créer un module
     const result = await createModuleWithCours({
       bloc_id: parseInt(blocId),
       titre,

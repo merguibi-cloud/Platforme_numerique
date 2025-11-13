@@ -96,7 +96,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     loadData();
   }, [formationId, blocId]);
 
-  const handleAddModule = async (moduleData: { titre: string; cours: string[] }) => {
+  const handleAddModule = async (moduleData: { titre: string; cours: string[]; moduleId?: string }) => {
     try {
       const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`, {
         method: 'POST',
@@ -107,7 +107,8 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
           titre: moduleData.titre,
           cours: moduleData.cours,
           description: '',
-          type_module: 'cours'
+          type_module: 'cours',
+          moduleId: moduleData.moduleId,
         }),
       });
 

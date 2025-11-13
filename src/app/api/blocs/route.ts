@@ -25,15 +25,27 @@ export async function POST(request: NextRequest) {
     }
     // Récupérer le profil utilisateur pour vérifier le rôle
     const profile = await getUserProfileServer(user.id);
-    if (!profile) {
-      return NextResponse.json({
-        success: false,
-        error: 'Profil utilisateur non trouvé'
-      }, { status: 404 });
+    console.log('[POST /api/blocs] profil utilisateur', { userId: user.id, profile });
+    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
+    let isAuthorized = profile?.role ? allowedRoles.has(profile.role.toLowerCase()) : false;
+
+    if (!isAuthorized) {
+      const { data: adminRecord, error: adminError } = await supabase
+        .from('administrateurs')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (adminError) {
+        console.error('Erreur lors de la vérification administrateur (POST blocs):', adminError);
+      }
+
+      if (adminRecord) {
+        isAuthorized = true;
+      }
     }
-    // Vérifier les permissions (admin, superadmin, pedagogie)
-    const allowedRoles = ['admin', 'superadmin', 'pedagogie'];
-    if (!allowedRoles.includes(profile.role)) {
+
+    if (!isAuthorized) {
       return NextResponse.json({
         success: false,
         error: 'Permissions insuffisantes. Seuls les administrateurs peuvent créer des blocs.'
@@ -188,15 +200,26 @@ export async function PUT(request: NextRequest) {
     }
     // Récupérer le profil utilisateur pour vérifier le rôle
     const profile = await getUserProfileServer(user.id);
-    if (!profile) {
-      return NextResponse.json({
-        success: false,
-        error: 'Profil utilisateur non trouvé'
-      }, { status: 404 });
+    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
+    let isAuthorized = profile?.role ? allowedRoles.has(profile.role.toLowerCase()) : false;
+
+    if (!isAuthorized) {
+      const { data: adminRecord, error: adminError } = await supabase
+        .from('administrateurs')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (adminError) {
+        console.error('Erreur lors de la vérification administrateur (PUT blocs):', adminError);
+      }
+
+      if (adminRecord) {
+        isAuthorized = true;
+      }
     }
-    // Vérifier les permissions (admin, superadmin, pedagogie)
-    const allowedRoles = ['admin', 'superadmin', 'pedagogie'];
-    if (!allowedRoles.includes(profile.role)) {
+
+    if (!isAuthorized) {
       return NextResponse.json({
         success: false,
         error: 'Permissions insuffisantes. Seuls les administrateurs peuvent modifier des blocs.'
@@ -253,15 +276,26 @@ export async function DELETE(request: NextRequest) {
     }
     // Récupérer le profil utilisateur pour vérifier le rôle
     const profile = await getUserProfileServer(user.id);
-    if (!profile) {
-      return NextResponse.json({
-        success: false,
-        error: 'Profil utilisateur non trouvé'
-      }, { status: 404 });
+    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
+    let isAuthorized = profile?.role ? allowedRoles.has(profile.role.toLowerCase()) : false;
+
+    if (!isAuthorized) {
+      const { data: adminRecord, error: adminError } = await supabase
+        .from('administrateurs')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (adminError) {
+        console.error('Erreur lors de la vérification administrateur:', adminError);
+      }
+
+      if (adminRecord) {
+        isAuthorized = true;
+      }
     }
-    // Vérifier les permissions (admin, superadmin, pedagogie)
-    const allowedRoles = ['admin', 'superadmin', 'pedagogie'];
-    if (!allowedRoles.includes(profile.role)) {
+
+    if (!isAuthorized) {
       return NextResponse.json({
         success: false,
         error: 'Permissions insuffisantes. Seuls les administrateurs peuvent supprimer des blocs.'
