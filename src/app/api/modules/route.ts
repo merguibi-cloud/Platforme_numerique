@@ -94,7 +94,11 @@ export async function GET(request: NextRequest) {
     // Transformer les données pour l'interface
     const modulesWithStatus = modules.map(module => {
       const coursList = coursByModule.get(module.id) ?? [];
-      const coursTitles = coursList.map((cours) => cours.titre);
+      const coursDetails = coursList.map((cours) => ({
+        id: cours.id.toString(),
+        titre: cours.titre,
+      }));
+      const coursTitles = coursDetails.map((cours) => cours.titre);
       const coursActifs = coursList.filter((cours) => cours.actif).length;
 
       let statut: 'en_ligne' | 'brouillon' | 'manquant' = 'brouillon';
@@ -128,7 +132,8 @@ export async function GET(request: NextRequest) {
         cours_count: coursList.length,
         cours_actifs: coursActifs,
         ordre_affichage: module.ordre_affichage,
-        numero_module: module.numero_module
+        numero_module: module.numero_module,
+        coursDetails,
       };
     });
 
@@ -294,6 +299,118 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Erreur dans l\'API mise à jour module:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+
+// DELETE - Supprimer un module et ses cours
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { searchParams } = new URL(request.url);
+    const moduleIdParam = searchParams.get('moduleId');
+    const scopeParam = searchParams.get('scope');
+    const coursIdParam = searchParams.get('coursId');
+
+    if (!moduleIdParam) {
+      return NextResponse.json({ error: 'ID du module requis' }, { status: 400 });
+    }
+
+    const moduleId = parseInt(moduleIdParam, 10);
+    if (Number.isNaN(moduleId)) {
+      return NextResponse.json({ error: 'ID du module invalide' }, { status: 400 });
+    }
+    const scope = scopeParam === 'cours' ? 'cours' : 'module';
+
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('sb-access-token')?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(accessToken);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
+    }
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
+    let isAuthorized = profile ? allowedRoles.has(profile.role) : false;
+
+    if (!isAuthorized) {
+      const { data: adminRecord } = await supabase
+        .from('administrateurs')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (adminRecord) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+    }
+
+    if (scope === 'cours') {
+      if (!coursIdParam) {
+        return NextResponse.json({ error: 'ID du cours requis pour cette action' }, { status: 400 });
+      }
+
+      const coursId = parseInt(coursIdParam, 10);
+      if (Number.isNaN(coursId)) {
+        return NextResponse.json({ error: 'ID du cours invalide' }, { status: 400 });
+      }
+
+      const { error: singleCoursDeleteError } = await supabase
+        .from('cours_contenu')
+        .delete()
+        .eq('id', coursId)
+        .eq('module_id', moduleId);
+
+      if (singleCoursDeleteError) {
+        console.error('Erreur lors de la suppression du cours:', singleCoursDeleteError);
+        return NextResponse.json({ error: 'Erreur lors de la suppression du cours' }, { status: 500 });
+      }
+    } else {
+      const { error: coursDeleteError } = await supabase
+        .from('cours_contenu')
+        .delete()
+        .eq('module_id', moduleId);
+
+      if (coursDeleteError) {
+        console.error('Erreur lors de la suppression des cours du module:', coursDeleteError);
+        return NextResponse.json({ error: 'Erreur lors de la suppression des cours' }, { status: 500 });
+      }
+
+      const { error: moduleDeleteError } = await supabase
+        .from('modules_apprentissage')
+        .delete()
+        .eq('id', moduleId);
+
+      if (moduleDeleteError) {
+        console.error('Erreur lors de la suppression du module:', moduleDeleteError);
+        return NextResponse.json({ error: 'Erreur lors de la suppression du module' }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      scope,
+    });
+  } catch (error) {
+    console.error('Erreur dans l\'API suppression module:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -16,6 +16,7 @@ interface ModuleWithStatus {
   id: string;
   moduleName: string;
   cours: string[];
+  coursDetails?: { id: string; titre: string }[];
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
@@ -68,7 +69,11 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
       
       if (response.ok) {
         const data = await response.json();
-        setModules(data.modules || []);
+        const formattedModules = (data.modules || []).map((module: any) => ({
+          ...module,
+          coursDetails: module.coursDetails ?? [],
+        }));
+        setModules(formattedModules);
       } else {
         setModules([]);
       }
@@ -147,6 +152,38 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     router.push(`/espace-admin/gestion-formations/${formationId}`);
   };
 
+  const handleDeleteModule = async (moduleId: string, scope: 'module' | 'cours', coursId?: string) => {
+    try {
+      if (scope === 'cours') {
+        if (!coursId) {
+          throw new Error('Cours non précisé pour la suppression');
+        }
+      }
+
+      const url =
+        scope === 'module'
+          ? `/api/modules?moduleId=${moduleId}&scope=module`
+          : `/api/cours?coursId=${coursId}`;
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Erreur HTTP ${response.status}`);
+      }
+
+      await loadModules();
+    } catch (error) {
+      console.error('Erreur lors de la suppression du module:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
@@ -187,6 +224,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
               onAssignModule={handleAssignModule}
               onVisualizeModule={handleVisualizeModule}
               onEditCours={handleEditCours}
+              onDeleteModule={handleDeleteModule}
             />
           </div>
         </div>

@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Edit, FileText, ChevronDown, Eye } from 'lucide-react';
+import { Plus, Edit, FileText, ChevronDown, Trash2 } from 'lucide-react';
 import { CreateModule } from './CreateModule';
+import { Modal } from '@/app/Modal';
 
 interface ModuleWithStatus {
   id: string;
   moduleName: string;
   cours: string[];
+  coursDetails?: { id: string; titre: string }[];
   creationModification?: string;
   creePar?: string;
   statut: 'en_ligne' | 'brouillon' | 'manquant';
@@ -29,6 +31,7 @@ interface ModuleManagementProps {
   onAssignModule: (moduleId: string) => void;
   onVisualizeModule: (moduleId: string) => void;
   onEditCours: (moduleId: string, coursId?: string) => void;
+  onDeleteModule: (moduleId: string, scope: 'module' | 'cours', coursId?: string) => void;
 }
 
 export const ModuleManagement = ({
@@ -42,9 +45,39 @@ export const ModuleManagement = ({
   onAddQuiz,
   onAssignModule,
   onVisualizeModule,
-  onEditCours
+  onEditCours,
+  onDeleteModule,
 }: ModuleManagementProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    title: string;
+    statut: ModuleWithStatus['statut'];
+    cours: { id: string; titre: string }[];
+  } | null>(null);
+  const [selectedCoursId, setSelectedCoursId] = useState<string | null>(null);
+
+  const openDeleteModal = (module: ModuleWithStatus) => {
+    const coursList = module.coursDetails ?? [];
+    setDeleteTarget({
+      id: module.id,
+      title: module.moduleName || 'ce module',
+      statut: module.statut,
+      cours: coursList,
+    });
+
+    if (module.statut === 'manquant') {
+      setSelectedCoursId(null);
+      return;
+    }
+
+    setSelectedCoursId(coursList[0]?.id ?? null);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+    setSelectedCoursId(null);
+  };
 
   const handleAddModuleClick = () => {
     setIsCreateModalOpen(true);
@@ -63,7 +96,19 @@ export const ModuleManagement = ({
   const modulesBrouillon = modules.filter(m => m.statut === 'brouillon');
   const modulesManquant = modules.filter(m => m.statut === 'manquant');
 
-  const ModuleTable = ({ modules, title, color, emptyMessage }: { modules: ModuleWithStatus[]; title: string; color: string; emptyMessage: string }) => {
+  const ModuleTable = ({
+    modules,
+    title,
+    color,
+    emptyMessage,
+    showAssign = false,
+  }: {
+    modules: ModuleWithStatus[];
+    title: string;
+    color: string;
+    emptyMessage: string;
+    showAssign?: boolean;
+  }) => {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -80,19 +125,24 @@ export const ModuleManagement = ({
           <table className="w-full border border-[#032622]">
             <thead>
               <tr className="bg-[#F8F5E4]">
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">TITRE</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">MODULE</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">COURS</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]"></th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉDITER</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">QUIZ</th>
+                {showAssign && (
+                  <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
+                    ATTRIBUER
+                  </th>
+                )}
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">SUPPRIMER</th>
               </tr>
             </thead>
             <tbody>
               {modules.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="border border-[#032622] p-8 text-center text-[#032622]">
+                  <td colSpan={showAssign ? 8 : 7} className="border border-[#032622] p-8 text-center text-[#032622]">
                     <p className="text-lg font-medium">{emptyMessage}</p>
                   </td>
                 </tr>
@@ -107,18 +157,28 @@ export const ModuleManagement = ({
                         <p className="text-xs text-[#032622]/70 mt-1">Module #{module.numero_module}</p>
                       )}
                     </td>
-                    <td className="border border-[#032622] p-3 text-[#032622] uppercase">
-                      {module.cours.length > 0 ? (
-                        <div className="space-y-1">
-                          {module.cours.map((coursTitle, index) => (
-                            <p key={index} className="text-sm normal-case text-[#032622]">
-                              • {coursTitle}
-                            </p>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm italic text-[#032622]/70">Aucun cours</span>
-                      )}
+                    <td className="border border-[#032622] p-3 text-[#032622]">
+                      {(() => {
+                        const coursList =
+                          module.coursDetails && module.coursDetails.length > 0
+                            ? module.coursDetails
+                            : module.cours.map((titre, index) => ({
+                                id: `${module.id}-${index}`,
+                                titre,
+                              }));
+
+                        return coursList.length > 0 ? (
+                          <div className="space-y-1">
+                            {coursList.map((cours) => (
+                              <p key={cours.id} className="text-sm normal-case text-[#032622]">
+                                • {cours.titre}
+                              </p>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm italic text-[#032622]/70">Aucun cours</span>
+                        );
+                      })()}
                     </td>
                     <td className="border border-[#032622] p-3 text-[#032622]">
                       {module.creationModification || '-'}
@@ -146,7 +206,7 @@ export const ModuleManagement = ({
                         {module.statut === 'en_ligne' ? 'MODIFIER LE QUIZ' : 'AJOUTER LE QUIZ'}
                       </button>
                     </td>
-                    {module.statut === 'manquant' ? (
+                    {showAssign && (
                       <td className="border border-[#032622] p-0">
                         <button
                           onClick={() => onAssignModule(module.id)}
@@ -157,10 +217,17 @@ export const ModuleManagement = ({
                           ATTRIBUER
                         </button>
                       </td>
-                    ) : (
-                      <td className="border border-[#032622] p-3">
-                      </td>
                     )}
+                    <td className="border border-[#032622] p-0">
+                      <button
+                        onClick={() => openDeleteModal(module)}
+                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        style={{ fontFamily: 'var(--font-termina-bold)' }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        SUPPRIMER
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -213,6 +280,7 @@ export const ModuleManagement = ({
             title="MANQUANT" 
             color="bg-white border-2 border-gray-400"
             emptyMessage="Aucun module manquant"
+            showAssign
           />
         </div>
       </div>
@@ -226,6 +294,53 @@ export const ModuleManagement = ({
           id: module.id,
           titre: module.moduleName || `Module ${module.numero_module ?? ''}`.trim()
         }))}
+      />
+
+      <Modal
+        isOpen={Boolean(deleteTarget)}
+        onClose={closeDeleteModal}
+        title={
+          deleteTarget?.statut === 'manquant'
+            ? 'Supprimer le module'
+            : 'Supprimer un cours'
+        }
+        message={
+          deleteTarget
+            ? deleteTarget.statut === 'manquant'
+              ? `Voulez-vous vraiment supprimer ${deleteTarget.title} ainsi que tous les cours associés ?`
+              : deleteTarget.cours.length > 0 && selectedCoursId
+                ? `Voulez-vous vraiment supprimer le cours "${deleteTarget.cours.find((cours) => cours.id === selectedCoursId)?.titre ?? 'sélectionné'}" du module ${deleteTarget.title} ?`
+                : `${deleteTarget.title} ne contient aucun cours à supprimer.`
+            : ''
+        }
+        type="warning"
+        isConfirm
+        confirmDisabled={
+          Boolean(
+            deleteTarget &&
+              deleteTarget.statut !== 'manquant' &&
+              (!deleteTarget.cours.length || !selectedCoursId)
+          )
+        }
+        onConfirm={() => {
+          if (!deleteTarget) {
+            return;
+          }
+
+          if (deleteTarget.statut === 'manquant') {
+            onDeleteModule(deleteTarget.id, 'module');
+            closeDeleteModal();
+            return;
+          }
+
+          if (!selectedCoursId) {
+            return;
+          }
+
+          onDeleteModule(deleteTarget.id, 'cours', selectedCoursId);
+          closeDeleteModal();
+        }}
+        onCancel={closeDeleteModal}
       />
     </>
   );

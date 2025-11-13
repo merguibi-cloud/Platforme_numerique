@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -11,6 +11,8 @@ interface ModalProps {
   isConfirm?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
+  children?: ReactNode;
+  confirmDisabled?: boolean;
 }
 
 export const Modal = ({ 
@@ -21,7 +23,9 @@ export const Modal = ({
   type = 'info',
   isConfirm = false,
   onConfirm,
-  onCancel
+  onCancel,
+  children,
+  confirmDisabled = false
 }: ModalProps) => {
   
   useEffect(() => {
@@ -116,13 +120,19 @@ export const Modal = ({
         </div>
         
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 space-y-4">
           <p 
             className="text-[#032622] text-sm leading-relaxed"
             style={{ fontFamily: 'var(--font-termina-medium)' }}
           >
             {message}
           </p>
+
+          {children && (
+            <div className="pt-1">
+              {children}
+            </div>
+          )}
         </div>
         
         {/* Footer */}
@@ -138,7 +148,12 @@ export const Modal = ({
               </button>
               <button
                 onClick={onConfirm}
-                className="bg-[#032622] text-[#F8F5E4] px-6 py-2 font-bold hover:bg-[#032622]/90 transition-colors rounded"
+                disabled={confirmDisabled}
+                className={`bg-[#032622] text-[#F8F5E4] px-6 py-2 font-bold transition-colors rounded ${
+                  confirmDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-[#032622]/90'
+                }`}
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 CONFIRMER
