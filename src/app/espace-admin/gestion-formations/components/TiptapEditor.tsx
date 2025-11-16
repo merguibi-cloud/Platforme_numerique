@@ -11,28 +11,22 @@ import ListItem from '@tiptap/extension-list-item';
 import Placeholder from '@tiptap/extension-placeholder';
 import Heading from '@tiptap/extension-heading';
 import ImageResize from 'tiptap-extension-resize-image';
+import { Video as VideoExtension } from './VideoExtension';
 
 
 
 import { 
-  Save, 
-  Undo, 
-  Bold, 
-  Italic, 
-  Underline, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight,
-  List,
-  ListOrdered,
-  Image as ImageIcon,
   Video,
   Link as LinkIcon,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { ComplementaryFiles } from './ComplementaryFiles';
+import { Chapitrage } from './Chapitrage';
+import { TiptapToolbar } from './TiptapToolbar';
 import { FichierElement } from '../../../../types/cours';
 import { useState, useEffect } from 'react';
+import { Modal } from '../../../Modal';
 import './TiptapEditor.css';
 
 interface TiptapEditorProps {
@@ -42,11 +36,17 @@ interface TiptapEditorProps {
   onSaveDraft?: () => void;
   onNextStep?: () => void;
   isSaving?: boolean;
+  lastAutoSaveTime?: Date | null;
+  isAutoSaving?: boolean;
   fichiers?: FichierElement[];
   onAddFile?: (file: File) => void;
   onRemoveFile?: (fileId: string) => void;
   moduleNumber?: string;
   moduleTitle?: string;
+  moduleId?: number;
+  currentCoursId?: number;
+  currentCoursTitle?: string;
+  onCoursClick?: (coursId: number) => void;
 }
 
 export const TiptapEditor = ({ 
@@ -56,14 +56,18 @@ export const TiptapEditor = ({
   onSaveDraft, 
   onNextStep, 
   isSaving = false,
+  lastAutoSaveTime,
+  isAutoSaving = false,
   fichiers = [],
   onAddFile,
   onRemoveFile,
   moduleNumber,
-  moduleTitle
+  moduleTitle,
+  moduleId,
+  currentCoursId,
+  currentCoursTitle,
+  onCoursClick
 }: TiptapEditorProps) => {
-  const [isMediaMenuOpen, setIsMediaMenuOpen] = useState(false);
-  const [isTextMenuOpen, setIsTextMenuOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -75,33 +79,9 @@ export const TiptapEditor = ({
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [videoPreview, setVideoPreview] = useState<string>('');
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
-  // Fermer les menus quand on clique ailleurs
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      // Ne pas fermer si on clique sur les boutons des menus
-      if (!target.closest('.dropdown-container')) {
-        setIsMediaMenuOpen(false);
-        setIsTextMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
-  // Fonction pour déterminer le texte du header selon le format actuel
-  const getCurrentFormatText = () => {
-    if (!editor) return 'TEXTE▾';
-    
-    if (editor.isActive('heading', { level: 1 })) return 'TITRE 1▾';
-    if (editor.isActive('heading', { level: 2 })) return 'TITRE 2▾';
-    if (editor.isActive('heading', { level: 3 })) return 'TITRE 3▾';
-    if (editor.isActive('paragraph')) return 'PARAGRAPHE▾';
-    
-    return 'TEXTE▾';
-  };
 
   const editor = useEditor({
     extensions: [
@@ -147,6 +127,7 @@ export const TiptapEditor = ({
         emptyEditorClass: 'is-editor-empty',
         emptyNodeClass: 'is-empty',
       }),
+      VideoExtension,
     ],
     content: content,
     onUpdate: ({ editor }) => {
@@ -180,31 +161,6 @@ export const TiptapEditor = ({
     immediatelyRender: false,
   });
 
-  const openImageModal = () => {
-    setIsImageModalOpen(true);
-    setIsMediaMenuOpen(false);
-    // Reset des états
-    setImageUrl('');
-    setSelectedImageFile(null);
-    setImagePreview('');
-  };
-
-  const openVideoModal = () => {
-    setIsVideoModalOpen(true);
-    setIsMediaMenuOpen(false);
-    // Reset des états
-    setVideoUrl('');
-    setSelectedVideoFile(null);
-    setVideoPreview('');
-  };
-
-  const openLinkModal = () => {
-    setIsLinkModalOpen(true);
-    setIsMediaMenuOpen(false);
-    // Reset des états
-    setLinkUrl('');
-    setLinkText('');
-  };
 
   // Fonctions pour gérer l'upload de fichiers
   const handleImageFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,7 +175,7 @@ export const TiptapEditor = ({
         };
         reader.readAsDataURL(file);
       } else {
-        alert('Format de fichier non supporté. Veuillez choisir une image (JPEG, PNG, GIF, WebP).');
+        setErrorModal({ isOpen: true, message: 'Format de fichier non supporté. Veuillez choisir une image (JPEG, PNG, GIF, WebP).' });
       }
     }
   };
@@ -236,7 +192,7 @@ export const TiptapEditor = ({
         };
         reader.readAsDataURL(file);
       } else {
-        alert('Format de fichier non supporté. Veuillez choisir une vidéo (MP4, WebM, OGG, AVI, MOV).');
+        setErrorModal({ isOpen: true, message: 'Format de fichier non supporté. Veuillez choisir une vidéo (MP4, WebM, OGG, AVI, MOV).' });
       }
     }
   };
@@ -291,21 +247,79 @@ export const TiptapEditor = ({
     });
   };
 
-  const insertVideo = () => {
-    if (selectedVideoFile && editor) {
-      // Utiliser le fichier sélectionné avec HTML standard
-      const videoHtml = `<video controls style="max-width: 100%; height: auto; border: 2px solid #032622; border-radius: 4px;"><source src="${videoPreview}" type="${selectedVideoFile.type}"></video>`;
-      editor.chain().focus().insertContent(videoHtml).run();
-    } else if (videoUrl && editor) {
-      // Utiliser l'URL avec HTML standard
-      const videoHtml = `<video controls style="max-width: 100%; height: auto; border: 2px solid #032622; border-radius: 4px;"><source src="${videoUrl}" type="video/mp4"></video>`;
-      editor.chain().focus().insertContent(videoHtml).run();
-    }
+  const insertVideo = async () => {
+    if (!editor) return;
+
+    try {
+      let finalVideoUrl = '';
+
+      // Si un fichier est sélectionné, l'uploader sur Supabase Storage
+      if (selectedVideoFile && currentCoursId) {
+        setIsUploadingVideo(true);
+        const formData = new FormData();
+        formData.append('file', selectedVideoFile);
+        formData.append('coursId', currentCoursId.toString());
+        formData.append('typeMedia', 'video');
+
+        const uploadResponse = await fetch('/api/cours/upload-media', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          finalVideoUrl = uploadData.media?.url || uploadData.media?.publicUrl || '';
+          
+          if (!finalVideoUrl) {
+            setErrorModal({ isOpen: true, message: 'Erreur lors de l\'upload de la vidéo. Aucune URL n\'a été retournée.' });
+            setIsUploadingVideo(false);
+            return;
+          }
+        } else {
+          const errorData = await uploadResponse.json();
+          const errorMessage = errorData.error || 'Erreur inconnue lors de l\'upload de la vidéo';
+          
+          setErrorModal({ isOpen: true, message: errorMessage });
+          setIsUploadingVideo(false);
+          return;
+        }
+        setIsUploadingVideo(false);
+      } else if (videoUrl) {
+        // Utiliser l'URL fournie directement
+        finalVideoUrl = videoUrl;
+      } else if (selectedVideoFile && !currentCoursId) {
+        // Si pas de coursId, utiliser le DataURL temporaire (pour prévisualisation)
+        finalVideoUrl = videoPreview;
+      } else {
+        setErrorModal({ isOpen: true, message: 'Veuillez sélectionner une vidéo ou fournir une URL' });
+        return;
+      }
+
+      // Insérer la vidéo dans l'éditeur en utilisant l'extension Video
+      // Utiliser insertContent avec le format de nœud Tiptap
+      editor.chain().focus().insertContent({
+        type: 'video',
+        attrs: {
+          src: finalVideoUrl,
+          controls: true,
+          style: 'width: 819px; height: 436px; max-width: 819px; max-height: 436px; border: 2px solid #032622; border-radius: 4px; display: block; margin: 10px auto; object-fit: contain;',
+          type: selectedVideoFile?.type || 'video/mp4',
+        },
+      }).run();
+
     // Reset des états
     setVideoUrl('');
     setSelectedVideoFile(null);
     setVideoPreview('');
     setIsVideoModalOpen(false);
+      setIsUploadingVideo(false);
+    } catch (error) {
+      console.error('Erreur lors de l\'insertion de la vidéo:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue lors de l\'insertion de la vidéo';
+      setErrorModal({ isOpen: true, message: errorMessage });
+      setIsUploadingVideo(false);
+    }
   };
 
   const insertLink = () => {
@@ -321,266 +335,52 @@ export const TiptapEditor = ({
     return null;
   }
 
+  const openImageModal = () => {
+    setIsImageModalOpen(true);
+    setImageUrl('');
+    setSelectedImageFile(null);
+    setImagePreview('');
+  };
+
+  const openVideoModal = () => {
+    setIsVideoModalOpen(true);
+    setVideoUrl('');
+    setSelectedVideoFile(null);
+    setVideoPreview('');
+  };
+
+  const openLinkModal = () => {
+    setIsLinkModalOpen(true);
+    setLinkUrl('');
+    setLinkText('');
+  };
+
   return (
-    <div className="bg-[#F8F5E4] border border-[#032622] overflow-hidden">
-      {/* Toolbar and Navigation */}
-      <div className="flex items-stretch w-full">
-        {/* Toolbar */}
-        <div className="bg-[#032622] text-[#F8F5E4] p-3 flex items-center gap-4 flex-[2]">
-        {/* Groupe 1: Save & Undo */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => editor.chain().focus().run()}
-            className="w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors"
-            title="Sauvegarder"
-          >
-            <Save className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => editor.chain().focus().undo().run()}
-            className="w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors"
-            title="Annuler"
-          >
-            <Undo className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Séparateur blanc */}
-        <div className="w-px h-8 bg-white/30"></div>
-
-        {/* Groupe 2: Text Format */}
-        <div className="relative dropdown-container">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsTextMenuOpen(!isTextMenuOpen);
-            }}
-            className="px-4 py-2 bg-[#032622] text-[#F8F5E4] text-sm hover:bg-[#032622]/80 transition-colors"
-          >
-            {getCurrentFormatText()}
-          </button>
-          
-          {isTextMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-gray-100 border border-[#032622] shadow-lg z-10 min-w-[200px]">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editor?.chain().focus().setParagraph().run();
-                  setIsTextMenuOpen(false);
-                }}
-                className={`w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors ${
-                  editor?.isActive('paragraph') ? 'bg-gray-200 font-semibold' : ''
-                }`}
-              >
-                Paragraphe
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editor?.chain().focus().toggleHeading({ level: 1 }).run();
-                  setIsTextMenuOpen(false);
-                }}
-                className={`w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors ${
-                  editor?.isActive('heading', { level: 1 }) ? 'bg-gray-200 font-semibold' : ''
-                }`}
-              >
-                Titre 1
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editor?.chain().focus().toggleHeading({ level: 2 }).run();
-                  setIsTextMenuOpen(false);
-                }}
-                className={`w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors ${
-                  editor?.isActive('heading', { level: 2 }) ? 'bg-gray-200 font-semibold' : ''
-                }`}
-              >
-                Titre 2
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editor?.chain().focus().toggleHeading({ level: 3 }).run();
-                  setIsTextMenuOpen(false);
-                }}
-                className={`w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors ${
-                  editor?.isActive('heading', { level: 3 }) ? 'bg-gray-200 font-semibold' : ''
-                }`}
-              >
-                Titre 3
-              </button>
+    <div className="bg-[#F8F5E4] border border-[#032622] relative">
+      {/* Indicateur de sauvegarde automatique */}
+      {(lastAutoSaveTime || isAutoSaving) && (
+        <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
+          <RefreshCw className={`w-4 h-4 text-[#032622] ${isAutoSaving ? 'animate-spin' : ''}`} />
+          <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+            {isAutoSaving ? (
+              'Enregistrement automatique en cours...'
+            ) : (
+              `Enregistrement automatique - ${lastAutoSaveTime?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+            )}
+          </span>
             </div>
           )}
-        </div>
-        
-        {/* Séparateur blanc */}
-        <div className="w-px h-8 bg-white/30"></div>
-
-        {/* Groupe 3: Formatting Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors font-bold ${
-              editor.isActive('bold') ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Gras"
-          >
-            B
-          </button>
-          <button
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors italic ${
-              editor.isActive('italic') ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Italique"
-          >
-            I
-          </button>
-          <button
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors underline ${
-              editor.isActive('underline') ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Souligné"
-          >
-            U
-          </button>
-        </div>
-
-        
-        {/* Séparateur blanc */}
-        <div className="w-px h-8 bg-white/30"></div>
-
-        {/* Groupe 4: Alignment Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors ${
-              editor.isActive({ textAlign: 'left' }) ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Aligner à gauche"
-          >
-            <AlignLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors ${
-              editor.isActive({ textAlign: 'center' }) ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Centrer"
-          >
-            <AlignCenter className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors ${
-              editor.isActive({ textAlign: 'right' }) ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Aligner à droite"
-          >
-            <AlignRight className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Séparateur blanc */}
-        <div className="w-px h-8 bg-white/30"></div>
-
-        {/* Groupe 5: List Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors ${
-              editor.isActive('bulletList') ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Liste à puces"
-          >
-            <List className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors ${
-              editor.isActive('orderedList') ? 'bg-[#F8F5E4]/30 text-[#032622]' : ''
-            }`}
-            title="Liste numérotée"
-          >
-            <ListOrdered className="w-5 h-5" />
-          </button>
-        </div>
-
-        
-        {/* Séparateur blanc */}
-        <div className="w-px h-8 bg-white/30"></div>
-
-        {/* Groupe 6: Media Dropdown */}
-        <div className="relative dropdown-container">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMediaMenuOpen(!isMediaMenuOpen);
-            }}
-            className="w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors"
-            title="Insérer un média"
-          >
-            <ImageIcon className="w-5 h-5" />
-          </button>
-          
-          {isMediaMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-gray-100 border border-[#032622] shadow-lg z-10 min-w-[200px]">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openImageModal();
-                }}
-                className="w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors"
-              >
-                IMPORTER UNE PHOTO
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openVideoModal();
-                }}
-                className="w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors"
-              >
-                IMPORTER UNE VIDÉO
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openLinkModal();
-                }}
-                className="w-full px-4 py-2 text-left text-[#032622] hover:bg-gray-200 transition-colors"
-              >
-                INSÉRER UN LIEN
-              </button>
-            </div>
-          )}
-        </div>
-        </div>
-
-        {/* Navigation Buttons */}
-        {onSaveDraft && onNextStep && (
-          <div className="flex flex-[1] gap-1">
-            <button
-              onClick={onSaveDraft}
-              disabled={isSaving}
-              className="flex-1 bg-gray-500 text-white text-sm font-semibold uppercase tracking-wider hover:bg-gray-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              {isSaving ? 'Sauvegarde...' : 'METTRE EN BROUILLON'}
-            </button>
-            <button
-              onClick={onNextStep}
-              disabled={isSaving}
-              className="flex-1 bg-gray-500 text-white text-sm font-semibold uppercase tracking-wider hover:bg-gray-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              {isSaving ? 'Envoi...' : 'ÉTAPE SUIVANTE'}
-            </button>
-          </div>
-        )}
-      </div>
+      
+      {/* Toolbar - Sticky */}
+      <TiptapToolbar
+        editor={editor}
+        onSaveDraft={onSaveDraft}
+        onNextStep={onNextStep}
+        isSaving={isSaving}
+        onOpenImageModal={openImageModal}
+        onOpenVideoModal={openVideoModal}
+        onOpenLinkModal={openLinkModal}
+      />
 
       {/* Module Info Display */}
        {(moduleNumber || moduleTitle) && (
@@ -589,26 +389,41 @@ export const TiptapEditor = ({
              {moduleNumber && <span className="font-semibold">Module {moduleNumber}</span>}
              {moduleNumber && moduleTitle && <span className="mx-2">-</span>}
              {moduleTitle && <span>{moduleTitle}</span>}
+             {currentCoursTitle && (
+               <>
+                 <span className="mx-2">|</span>
+                 <span className="font-semibold">{currentCoursTitle}</span>
+               </>
+             )}
            </div>
          </div>
        )}
 
        {/* Editor et Supports complémentaires en flex */}
-      <div className="flex flex-col">
+      <div className="flex flex-col overflow-y-auto">
         {/* Editor */}
-        <div className="flex-1">
+        <div className="flex-1 min-h-[400px]">
           <EditorContent editor={editor} />
         </div>
 
-        {/* Supports complémentaires - En bas à gauche */}
+        {/* Supports complémentaires */}
         {onAddFile && onRemoveFile && (
-          <div className="p-4 flex justify-start">
+          <div className="p-4 flex gap-4 justify-start">
             <ComplementaryFiles
               fichiers={fichiers}
               onAddFile={onAddFile}
               onRemoveFile={onRemoveFile}
             />
           </div>
+        )}
+
+        {/* Chapitrage - Position absolute en bas à droite */}
+        {moduleId && (
+          <Chapitrage
+            moduleId={moduleId}
+            currentCoursId={currentCoursId}
+            onCoursClick={onCoursClick}
+          />
         )}
       </div>
 
@@ -797,17 +612,26 @@ export const TiptapEditor = ({
             <div className="flex justify-end p-4 border-t border-[#032622]">
               <button
                 onClick={() => setIsVideoModalOpen(false)}
-                className="bg-gray-500 text-white px-6 py-2 font-bold hover:bg-gray-600 transition-colors rounded mr-2"
+                disabled={isUploadingVideo}
+                className="bg-gray-500 text-white px-6 py-2 font-bold hover:bg-gray-600 transition-colors rounded mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 ANNULER
               </button>
               <button
                 onClick={insertVideo}
-                className="bg-[#032622] text-[#F8F5E4] px-6 py-2 font-bold hover:bg-[#032622]/90 transition-colors rounded"
+                disabled={isUploadingVideo || (!selectedVideoFile && !videoUrl)}
+                className="bg-[#032622] text-[#F8F5E4] px-6 py-2 font-bold hover:bg-[#032622]/90 transition-colors rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
-                INSÉRER
+                {isUploadingVideo ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    UPLOAD EN COURS...
+                  </>
+                ) : (
+                  'INSÉRER'
+                )}
               </button>
             </div>
           </div>
@@ -888,6 +712,15 @@ export const TiptapEditor = ({
           </div>
         </div>
       )}
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Erreur"
+        message={errorModal.message}
+        type="error"
+      />
     </div>
   );
 };

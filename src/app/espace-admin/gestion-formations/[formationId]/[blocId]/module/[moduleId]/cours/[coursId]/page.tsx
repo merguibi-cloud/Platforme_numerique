@@ -100,6 +100,8 @@ export default function EditCoursPage({ params }: EditCoursPageProps) {
       blocTitle={blocInfo?.titre || "Chargement..."}
       blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
       moduleOrder={moduleInfo?.ordre_affichage || moduleInfo?.numero_module || 1}
+      formationId={formationId}
+      blocId={blocId}
     />
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CoursEditor } from '../../../../../components/CoursEditor';
 
 interface CreateCoursPageProps {
@@ -23,10 +24,12 @@ interface BlocInfo {
 }
 
 export default function CreateCoursPage({ params }: CreateCoursPageProps) {
+  const router = useRouter();
   const { formationId, blocId, moduleId } = use(params);
   const [moduleInfo, setModuleInfo] = useState<ModuleInfo | null>(null);
   const [blocInfo, setBlocInfo] = useState<BlocInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,6 +73,30 @@ export default function CreateCoursPage({ params }: CreateCoursPageProps) {
         } else {
           console.error('Erreur lors du chargement du bloc:', await blocResponse.text());
         }
+
+        // Charger les cours du module pour vérifier s'il y en a
+        const coursResponse = await fetch(`/api/cours?moduleId=${moduleId}`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (coursResponse.ok) {
+          const coursData = await coursResponse.json();
+          const cours = coursData.cours || [];
+          
+          // Si des cours existent, rediriger vers le premier cours (par ordre de création)
+          if (cours.length > 0) {
+            // Les cours sont déjà triés par ordre de création croissant (created_at ASC)
+            const premierCours = cours[0];
+            router.replace(
+              `/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours/${premierCours.id}`
+            );
+            setShouldRedirect(true);
+            return;
+          }
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
       } finally {
@@ -78,9 +105,9 @@ export default function CreateCoursPage({ params }: CreateCoursPageProps) {
     };
 
     loadData();
-  }, [formationId, blocId, moduleId]);
+  }, [formationId, blocId, moduleId, router]);
 
-  if (isLoading) {
+  if (isLoading || shouldRedirect) {
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
         <div className="text-center">
@@ -98,6 +125,8 @@ export default function CreateCoursPage({ params }: CreateCoursPageProps) {
       blocTitle={blocInfo?.titre || "Chargement..."}
       blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
       moduleOrder={moduleInfo?.ordre_affichage || moduleInfo?.numero_module || 1}
+      formationId={formationId}
+      blocId={blocId}
     />
   );
 }

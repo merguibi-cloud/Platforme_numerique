@@ -30,7 +30,7 @@ export async function getCoursByModuleIdServer(moduleId: number): Promise<{ succ
       .from('cours_contenu')
       .select('*')
       .eq('module_id', moduleId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
     if (error) {
       return { success: false, error: error.message };
     }
@@ -51,6 +51,46 @@ export async function getCoursByIdServer(coursId: number): Promise<{ success: bo
       return { success: false, error: error.message };
     }
     return { success: true, cours: data };
+  } catch (error) {
+    return { success: false, error: 'Erreur de traitement' };
+  }
+}
+
+// Fonction pour obtenir un cours avec ses fichiers complémentaires
+export async function getCoursWithDetailsServer(
+  coursId: number
+): Promise<{ 
+  success: boolean; 
+  cours?: Cours; 
+  fichiers?: any[]; 
+  error?: string 
+}> {
+  try {
+    const supabase = getSupabaseServerClient();
+    
+    // Récupérer le cours
+    const { data: cours, error: coursError } = await supabase
+      .from('cours_contenu')
+      .select('*')
+      .eq('id', coursId)
+      .single();
+    
+    if (coursError) {
+      return { success: false, error: coursError.message };
+    }
+
+    // Récupérer les fichiers complémentaires
+    const { data: fichiers, error: fichiersError } = await supabase
+      .from('cours_fichiers_complementaires')
+      .select('*')
+      .eq('cours_id', coursId)
+      .order('ordre_affichage', { ascending: true });
+
+    return { 
+      success: true, 
+      cours, 
+      fichiers: fichiers || [] 
+    };
   } catch (error) {
     return { success: false, error: 'Erreur de traitement' };
   }
