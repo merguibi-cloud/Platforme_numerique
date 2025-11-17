@@ -67,6 +67,25 @@ export async function GET(request: NextRequest) {
       coursByModule.set(cours.module_id, list);
     });
 
+    // Récupérer les études de cas pour chaque module
+    const { data: etudesCasData, error: etudesCasError } =
+      moduleIds.length > 0
+        ? await supabase
+            .from('etudes_cas')
+            .select('id, module_id, actif')
+            .in('module_id', moduleIds)
+            .eq('actif', true)
+        : { data: [], error: null };
+
+    if (etudesCasError) {
+      console.error('Erreur lors de la récupération des études de cas:', etudesCasError);
+    }
+
+    const etudesCasByModule = new Set<number>();
+    etudesCasData?.forEach((etudeCas) => {
+      etudesCasByModule.add(etudeCas.module_id);
+    });
+
     const creatorIds = Array.from(
       new Set(
         (modules || [])
@@ -134,6 +153,7 @@ export async function GET(request: NextRequest) {
         ordre_affichage: module.ordre_affichage,
         numero_module: module.numero_module,
         coursDetails,
+        hasEtudeCas: etudesCasByModule.has(module.id),
       };
     });
 

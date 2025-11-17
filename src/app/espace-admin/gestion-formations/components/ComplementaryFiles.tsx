@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Upload, FileText } from 'lucide-react';
+import { X, Upload, FileText, RefreshCw } from 'lucide-react';
 import { FichierElement } from '../../../../types/cours';
 
 interface ComplementaryFilesProps {
   fichiers: FichierElement[];
   onAddFile: (file: File) => void;
   onRemoveFile: (fileId: string) => void;
+  deletingFileId?: string | null;
 }
 
-export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile }: ComplementaryFilesProps) => {
+export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile, deletingFileId }: ComplementaryFilesProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -81,10 +82,15 @@ export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile }: Comple
                 </div>
                 <button
                   onClick={() => onRemoveFile(fichier.id)}
-                  className="p-1 hover:bg-red-100 transition-colors"
+                  className="p-1 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Supprimer le fichier"
+                  disabled={deletingFileId === fichier.id}
                 >
-                  <X className="w-3 h-3 text-red-600" />
+                  {deletingFileId === fichier.id ? (
+                    <RefreshCw className="w-3 h-3 text-red-600 animate-spin" />
+                  ) : (
+                    <X className="w-3 h-3 text-red-600" />
+                  )}
                 </button>
               </div>
             ))}

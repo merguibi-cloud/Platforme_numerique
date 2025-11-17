@@ -24,6 +24,7 @@ interface TiptapToolbarProps {
   onOpenImageModal?: () => void;
   onOpenVideoModal?: () => void;
   onOpenLinkModal?: () => void;
+  nextStepButtonText?: string;
 }
 
 export const TiptapToolbar = ({
@@ -33,7 +34,8 @@ export const TiptapToolbar = ({
   isSaving = false,
   onOpenImageModal,
   onOpenVideoModal,
-  onOpenLinkModal
+  onOpenLinkModal,
+  nextStepButtonText = 'ÉTAPE SUIVANTE'
 }: TiptapToolbarProps) => {
   const [isTextMenuOpen, setIsTextMenuOpen] = useState(false);
   const [isMediaMenuOpen, setIsMediaMenuOpen] = useState(false);
@@ -323,7 +325,7 @@ export const TiptapToolbar = ({
               className="flex-1 bg-gray-500 text-white text-sm font-semibold uppercase tracking-wider hover:bg-gray-600 transition-colors disabled:opacity-50 flex items-center justify-center"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
-              {isSaving ? 'Envoi...' : 'ÉTAPE SUIVANTE'}
+              {isSaving ? 'Envoi...' : nextStepButtonText}
             </button>
           </div>
         )}

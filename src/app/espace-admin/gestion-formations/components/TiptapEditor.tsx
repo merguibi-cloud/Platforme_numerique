@@ -47,6 +47,7 @@ interface TiptapEditorProps {
   currentCoursId?: number;
   currentCoursTitle?: string;
   onCoursClick?: (coursId: number) => void;
+  nextStepButtonText?: string;
 }
 
 export const TiptapEditor = ({ 
@@ -66,7 +67,8 @@ export const TiptapEditor = ({
   moduleId,
   currentCoursId,
   currentCoursTitle,
-  onCoursClick
+  onCoursClick,
+  nextStepButtonText
 }: TiptapEditorProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -233,9 +235,43 @@ export const TiptapEditor = ({
         
         container.appendChild(deleteButton);
         
-        deleteButton.addEventListener('click', (e) => {
+        deleteButton.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
+          
+          // Récupérer l'URL de l'image avant de la supprimer
+          const imageSrc = (img as HTMLImageElement).src;
+          
+          // Afficher un indicateur de suppression
+          deleteButton.innerHTML = '<span class="animate-spin">⏳</span>';
+          deleteButton.disabled = true;
+          
+          // Supprimer le fichier du storage si c'est une URL Supabase
+          if (imageSrc && (imageSrc.includes('supabase') || imageSrc.includes('storage'))) {
+            try {
+              const { deleteFileFromStorage } = await import('@/lib/storage-utils');
+              const success = await deleteFileFromStorage(imageSrc, 'cours-media');
+              if (success) {
+                // Message de confirmation visuel
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50';
+                notification.textContent = 'Image supprimée avec succès';
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                  notification.remove();
+                }, 3000);
+              }
+            } catch (error) {
+              console.error('Erreur lors de la suppression de l\'image:', error);
+              const notification = document.createElement('div');
+              notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50';
+              notification.textContent = 'Erreur lors de la suppression de l\'image';
+              document.body.appendChild(notification);
+              setTimeout(() => {
+                notification.remove();
+              }, 3000);
+            }
+          }
           
           // Trouver la position de l'image dans l'éditeur
           const pos = editor.view.posAtDOM(img, 0);
@@ -380,6 +416,7 @@ export const TiptapEditor = ({
         onOpenImageModal={openImageModal}
         onOpenVideoModal={openVideoModal}
         onOpenLinkModal={openLinkModal}
+        nextStepButtonText={nextStepButtonText}
       />
 
       {/* Module Info Display */}

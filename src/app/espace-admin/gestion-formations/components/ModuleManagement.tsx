@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Edit, FileText, ChevronDown, Trash2 } from 'lucide-react';
 import { CreateModule } from './CreateModule';
 import { Modal } from '@/app/Modal';
@@ -17,6 +18,7 @@ interface ModuleWithStatus {
   cours_actifs?: number;
   ordre_affichage?: number;
   numero_module?: number;
+  hasEtudeCas?: boolean;
 }
 
 interface ModuleManagementProps {
@@ -48,6 +50,7 @@ export const ModuleManagement = ({
   onEditCours,
   onDeleteModule,
 }: ModuleManagementProps) => {
+  const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
@@ -130,7 +133,7 @@ export const ModuleManagement = ({
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉDITER</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">QUIZ</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉTUDE DE CAS</th>
                 {showAssign && (
                   <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
                     ATTRIBUER
@@ -198,12 +201,14 @@ export const ModuleManagement = ({
                     </td>
                     <td className="border border-[#032622] p-0">
                       <button
-                        onClick={() => onAddQuiz(module.id)}
+                        onClick={() => {
+                          router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${module.id}/etude-cas`);
+                        }}
                         className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
                         <FileText className="w-3 h-3" />
-                        {module.statut === 'en_ligne' ? 'MODIFIER LE QUIZ' : 'AJOUTER LE QUIZ'}
+                        {module.hasEtudeCas ? 'ÉDITER L\'ÉTUDE DE CAS' : 'AJOUTER UNE ÉTUDE DE CAS'}
                       </button>
                     </td>
                     {showAssign && (

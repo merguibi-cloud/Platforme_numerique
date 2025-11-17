@@ -406,8 +406,11 @@ export async function createQuestion(questionData: CreateQuestionData): Promise<
       return null;
     }
 
-    // Si c'est une question à choix multiple, créer les réponses possibles
-    if (questionData.type_question === 'choix_multiple' && questionData.reponses_possibles) {
+    // Si c'est une question avec réponses possibles (choix_unique, choix_multiple, vrai_faux), créer les réponses possibles
+    if ((questionData.type_question === 'choix_unique' || 
+         questionData.type_question === 'choix_multiple' || 
+         questionData.type_question === 'vrai_faux') && 
+        questionData.reponses_possibles) {
       const reponsesData = questionData.reponses_possibles.map(reponse => ({
         question_id: data.id,
         reponse: reponse.reponse,

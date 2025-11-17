@@ -21,6 +21,7 @@ interface CoursEditorProps {
 export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNumber, moduleOrder, formationId, blocId }: CoursEditorProps) => {
   const router = useRouter();
   const [cours, setCours] = useState<Cours | null>(null);
+  const [currentCoursId, setCurrentCoursId] = useState<number | undefined>(coursId);
   const [contenu, setContenu] = useState('');
   const [fichiers, setFichiers] = useState<FichierElement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +32,7 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [existingQuizId, setExistingQuizId] = useState<number | null>(null);
 
   const loadModuleInfo = async () => {
     try {
@@ -72,7 +74,7 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
   };
 
   const loadCours = useCallback(async () => {
-    if (!coursId) {
+    if (!currentCoursId) {
       setIsLoading(false);
       return;
     }
@@ -82,7 +84,7 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
       setCours(null);
       setContenu('');
       
-      const response = await fetch(`/api/cours?coursId=${coursId}`, {
+      const response = await fetch(`/api/cours?coursId=${currentCoursId}`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +104,7 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
     } finally {
       setIsLoading(false);
     }
-  }, [coursId]);
+  }, [currentCoursId]);
 
   // Charger les informations du module une seule fois au montage si nécessaire
   useEffect(() => {
@@ -116,6 +118,34 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
   useEffect(() => {
     loadCours();
   }, [loadCours]);
+
+  // Mettre à jour currentCoursId quand coursId change
+  useEffect(() => {
+    setCurrentCoursId(coursId);
+  }, [coursId]);
+
+  // Vérifier s'il existe un quiz pour ce cours
+  useEffect(() => {
+    const checkQuiz = async () => {
+      if (currentCoursId) {
+        try {
+          const response = await fetch(`/api/quiz?coursId=${currentCoursId}`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.quiz) {
+              setExistingQuizId(data.quiz.id);
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification du quiz:', error);
+        }
+      }
+    };
+    checkQuiz();
+  }, [currentCoursId]);
 
   // Détecter les changements de contenu
   useEffect(() => {
@@ -150,12 +180,12 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
         statut: 'brouillon'
       };
 
-      if (coursId) {
+      if (currentCoursId) {
         // Mise à jour
         const response = await fetch('/api/cours', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ coursId, ...coursData })
+          body: JSON.stringify({ coursId: currentCoursId, ...coursData })
         });
         
         if (response.ok) {
@@ -175,6 +205,8 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
         
         if (response.ok) {
           const data = await response.json();
+          setCurrentCoursId(data.cours.id);
+          setCours(data.cours);
           setLastSavedContent(contenu);
           setHasUnsavedChanges(false);
           if (isAutoSave) {
@@ -195,7 +227,7 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
         setIsSaving(false);
       }
     }
-  }, [contenu, lastSavedContent, isSaving, isAutoSaving, coursId, moduleId, moduleTitle, router]);
+  }, [contenu, lastSavedContent, isSaving, isAutoSaving, currentCoursId, moduleId, moduleTitle, router]);
 
   // Sauvegarde automatique après 5 secondes d'inactivité
   useEffect(() => {
@@ -228,12 +260,14 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
         statut: 'en_cours_examen'
       };
 
-      if (coursId) {
+      let finalCoursId = currentCoursId;
+
+      if (currentCoursId) {
         // Mise à jour
-        const response = await fetch('/api/cours', {
+        await fetch('/api/cours', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ coursId, ...coursData })
+          body: JSON.stringify({ coursId: currentCoursId, ...coursData })
         });
       } else {
         // Création
@@ -245,11 +279,27 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
         
         if (response.ok) {
           const data = await response.json();
-          router.push(`/espace-admin/gestion-formations/${moduleId}/cours/${data.cours.id}`);
+          finalCoursId = data.cours.id;
+          // Mettre à jour le state avec le nouveau cours
+          setCours(data.cours);
+          setCurrentCoursId(finalCoursId);
+          setExistingQuizId(null); // Réinitialiser car c'est un nouveau cours
+          // Mettre à jour l'URL si nécessaire
+          if (finalCoursId) {
+            router.push(`/espace-admin/gestion-formations/${moduleId}/cours/${finalCoursId}`, { scroll: false });
+          }
+        } else {
+          throw new Error('Erreur lors de la création du cours');
         }
+      }
+
+      // Rediriger vers la page d'édition de quiz
+      if (finalCoursId && currentFormationId && currentBlocId) {
+        router.push(`/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/module/${moduleId}/cours/${finalCoursId}/quiz`);
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
+      alert('Erreur lors de la sauvegarde du cours');
     } finally {
       setIsSaving(false);
     }
@@ -267,8 +317,42 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
     setFichiers(prev => [...prev, newFile]);
   };
 
-  const handleRemoveFile = (fileId: string) => {
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
+  const handleRemoveFile = async (fileId: string) => {
+    setDeletingFileId(fileId);
+    // Trouver le fichier à supprimer
+    const fileToDelete = fichiers.find(f => f.id === fileId);
+    
+    // Supprimer le fichier du storage si une URL existe
+    if (fileToDelete?.url) {
+      try {
+        const { deleteFileFromStorage } = await import('@/lib/storage-utils');
+        const success = await deleteFileFromStorage(fileToDelete.url, 'cours-fichiers-complementaires');
+        if (success) {
+          // Message de confirmation visuel
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50';
+          notification.textContent = 'Fichier supprimé avec succès';
+          document.body.appendChild(notification);
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression du fichier:', error);
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50';
+        notification.textContent = 'Erreur lors de la suppression du fichier';
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+    }
+    
     setFichiers(prev => prev.filter(f => f.id !== fileId));
+    setDeletingFileId(null);
   };
 
   const handleCoursClick = (clickedCoursId: number) => {
@@ -334,12 +418,14 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
           fichiers={fichiers}
           onAddFile={handleAddFile}
           onRemoveFile={handleRemoveFile}
+          deletingFileId={deletingFileId}
           moduleNumber={moduleOrder?.toString() || moduleId.toString()}
           moduleTitle={moduleTitle}
           moduleId={moduleId}
-          currentCoursId={coursId}
+          currentCoursId={currentCoursId}
           currentCoursTitle={cours?.titre}
           onCoursClick={handleCoursClick}
+          nextStepButtonText={existingQuizId ? 'ÉDITER LE QUIZ' : 'CRÉER LE QUIZ'}
         />
       </div>
       </div>

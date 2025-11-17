@@ -102,6 +102,7 @@ export interface EtudeCas {
 export interface QuizEvaluation {
   id: number;
   module_id: number;
+  cours_id?: number;
   titre: string;
   description?: string;
   duree_minutes: number;
@@ -122,10 +123,11 @@ export interface QuestionQuiz {
   id: number;
   quiz_id: number;
   question: string;
-  type_question: 'choix_multiple' | 'vrai_faux' | 'texte_libre';
+  type_question: 'choix_unique' | 'choix_multiple' | 'vrai_faux' | 'texte_libre';
   points: number;
   ordre_affichage: number;
   explication?: string;
+  justification?: string;
   actif: boolean;
   created_at: string;
   updated_at: string;
@@ -319,6 +321,7 @@ export interface CreateEtudeCasData {
 
 export interface CreateQuizData {
   module_id: number;
+  cours_id?: number;
   titre: string;
   description?: string;
   duree_minutes: number;
@@ -333,6 +336,7 @@ export interface CreateQuestionData {
   type_question: QuestionQuiz['type_question'];
   points: number;
   explication?: string;
+  justification?: string;
   reponses_possibles?: Omit<ReponsePossible, 'id' | 'question_id' | 'created_at'>[];
 }
 

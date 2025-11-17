@@ -50,12 +50,34 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Vérifier que le fichier appartient bien à l'utilisateur
-    if (!filePath.includes(user.id)) {
+    // Vérifier les permissions
+    // Pour les fichiers utilisateur (user_documents, photo_profil), vérifier que le fichier appartient à l'utilisateur
+    // Pour les fichiers admin (cours, etudes-cas), vérifier que l'utilisateur est admin/pedagogie
+    const isUserFile = bucket === 'user_documents' || bucket === 'photo_profil';
+    const isAdminFile = bucket === 'cours-media' || bucket === 'cours-fichiers-complementaires' || bucket === 'etudes-cas-consignes';
+    
+    if (isUserFile && !filePath.includes(user.id)) {
       return NextResponse.json(
         { error: 'Accès non autorisé à ce fichier' },
         { status: 403 }
       );
+    }
+    
+    if (isAdminFile) {
+      // Vérifier que l'utilisateur est admin/pedagogie
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      const allowedRoles = ['admin', 'superadmin', 'pedagogie'];
+      if (!profile || !allowedRoles.includes(profile.role)) {
+        return NextResponse.json(
+          { error: 'Permissions insuffisantes' },
+          { status: 403 }
+        );
+      }
     }
 
     // Supprimer le fichier du storage
