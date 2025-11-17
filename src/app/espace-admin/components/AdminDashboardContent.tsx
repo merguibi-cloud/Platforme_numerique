@@ -6,6 +6,7 @@ import { ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
 import { getAllFormations, getFormationsByEcole } from "@/lib/formations";
 import { Formation } from "@/types/formations";
 import AdminTopBar from "./AdminTopBar";
+import { useAdminUser } from "./AdminUserProvider";
 
 // Types pour les données dynamiques de la base de données
 type SchoolId = string;
@@ -27,11 +28,16 @@ interface CorrectionItem {
 }
 
 interface CourseItem {
-  id: string;
-  title: string;
-  mentor: string;
-  status: "a_valider" | "en_ligne";
-  actionLabel: string;
+  id: number;
+  titre: string;
+  module: string;
+  bloc: string;
+  statut: "brouillon" | "en_cours_examen" | "en_ligne";
+  module_id?: number | null;
+  bloc_id?: number | null;
+  formation_id?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface MessageItem {
@@ -58,7 +64,13 @@ interface TeacherStatus {
 interface FormationData {
   name: string;
   greeting: string;
-  courses: CourseItem[];
+  courses: Array<{
+    id: string;
+    title: string;
+    mentor: string;
+    status: "a_valider" | "en_ligne";
+    actionLabel: string;
+  }>;
   messages: MessageItem[];
   corrections: {
     late: CorrectionItem[];
@@ -459,22 +471,75 @@ const monthWeeks = [
 ];
 
 const AdminDashboardContent = () => {
+  const adminUser = useAdminUser();
   const [allFormations, setAllFormations] = useState<Formation[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<SchoolId>("");
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [firstBlocId, setFirstBlocId] = useState<number | null>(null);
+  const [firstModuleId, setFirstModuleId] = useState<number | null>(null);
 
-  // Charger toutes les formations au montage du composant
+  // Charger toutes les formations au montage du composant et restaurer les sélections
   useEffect(() => {
     const loadFormations = async () => {
       try {
+        // Charger les valeurs sauvegardées depuis localStorage
+        let savedSchool: SchoolId | null = null;
+        let savedFormation: number | null = null;
+        
+        if (typeof window !== 'undefined') {
+          const savedSchoolStr = localStorage.getItem('admin_selected_school');
+          const savedFormationStr = localStorage.getItem('admin_selected_formation');
+          
+          if (savedSchoolStr) {
+            savedSchool = savedSchoolStr as SchoolId;
+          }
+          
+          if (savedFormationStr) {
+            const formationId = parseInt(savedFormationStr);
+            if (!isNaN(formationId)) {
+              savedFormation = formationId;
+            }
+          }
+        }
+
         const formations = await getAllFormations();
         setAllFormations(formations);
         
-        // Définir la première école comme sélectionnée par défaut
-        if (formations.length > 0) {
-          const firstSchool = formations[0].ecole;
-          setSelectedSchool(firstSchool);
+        if (formations.length === 0) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Vérifier et restaurer l'école sauvegardée
+        let schoolToSet: SchoolId;
+        if (savedSchool && formations.some(f => f.ecole === savedSchool)) {
+          schoolToSet = savedSchool;
+        } else {
+          // Si l'école sauvegardée n'existe plus ou n'est pas définie, prendre la première
+          schoolToSet = formations[0].ecole;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('admin_selected_school', schoolToSet);
+          }
+        }
+        setSelectedSchool(schoolToSet);
+
+        // Vérifier et restaurer la formation sauvegardée
+        if (savedFormation) {
+          const formationExists = formations.some(f => 
+            f.id === savedFormation && f.ecole === schoolToSet
+          );
+          if (formationExists) {
+            setSelectedFormation(savedFormation);
+          } else {
+            // Si la formation sauvegardée n'existe plus, réinitialiser
+            setSelectedFormation(null);
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('admin_selected_formation');
+            }
+          }
         }
       } catch (error) {
         console.error('Erreur lors du chargement des formations:', error);
@@ -510,19 +575,146 @@ const AdminDashboardContent = () => {
   const handleSchoolChange = (schoolId: SchoolId) => {
     setSelectedSchool(schoolId);
     setSelectedFormation(null); // Reset formation selection
+    
+    // Sauvegarder dans localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_selected_school', schoolId);
+      localStorage.removeItem('admin_selected_formation');
+    }
   };
 
   // Gérer le changement de formation
   const handleFormationChange = (formationId: string) => {
-    setSelectedFormation(parseInt(formationId));
+    const formationIdNum = parseInt(formationId);
+    setSelectedFormation(formationIdNum);
+    
+    // Sauvegarder dans localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_selected_formation', formationId);
+    }
   };
+
+  // Charger le premier bloc et module de la formation sélectionnée
+  useEffect(() => {
+    const loadFirstBlocAndModule = async () => {
+      if (!selectedFormation) {
+        setFirstBlocId(null);
+        setFirstModuleId(null);
+        return;
+      }
+
+      try {
+        // Récupérer les blocs de la formation
+        const blocsResponse = await fetch(`/api/blocs?formationId=${selectedFormation}`, {
+          credentials: 'include'
+        });
+        
+        if (blocsResponse.ok) {
+          const blocsData = await blocsResponse.json();
+          const blocs = blocsData.blocs || [];
+          
+          if (blocs.length > 0) {
+            // Prendre le premier bloc (trié par ordre_affichage ou numero_bloc)
+            const firstBloc = blocs.sort((a: any, b: any) => 
+              (a.ordre_affichage || a.numero_bloc || 0) - (b.ordre_affichage || b.numero_bloc || 0)
+            )[0];
+            setFirstBlocId(firstBloc.id);
+
+            // Récupérer les modules du premier bloc
+            const modulesResponse = await fetch(`/api/modules?formationId=${selectedFormation}&blocId=${firstBloc.id}`, {
+              credentials: 'include'
+            });
+            
+            if (modulesResponse.ok) {
+              const modulesData = await modulesResponse.json();
+              const modules = modulesData.modules || [];
+              
+              if (modules.length > 0) {
+                // Prendre le premier module (trié par ordre_affichage ou numero_module)
+                const firstModule = modules.sort((a: any, b: any) => 
+                  (a.ordre_affichage || a.numero_module || 0) - (b.ordre_affichage || b.numero_module || 0)
+                )[0];
+                setFirstModuleId(firstModule.id);
+              } else {
+                setFirstModuleId(null);
+              }
+            } else {
+              setFirstModuleId(null);
+            }
+          } else {
+            setFirstBlocId(null);
+            setFirstModuleId(null);
+          }
+        } else {
+          setFirstBlocId(null);
+          setFirstModuleId(null);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du premier bloc/module:', error);
+        setFirstBlocId(null);
+        setFirstModuleId(null);
+      }
+    };
+
+    loadFirstBlocAndModule();
+  }, [selectedFormation]);
+
+  // Charger les cours de la formation sélectionnée
+  useEffect(() => {
+    const loadCourses = async () => {
+      if (!selectedFormation) {
+        setCourses([]);
+        return;
+      }
+
+      setIsLoadingCourses(true);
+      try {
+        const response = await fetch(`/api/cours/by-formation?formationId=${selectedFormation}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCourses(data.cours || []);
+        } else {
+          console.error('Erreur lors du chargement des cours');
+          setCourses([]);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des cours:', error);
+        setCourses([]);
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+
+    loadCourses();
+  }, [selectedFormation]);
+
+  // Formater les cours pour l'affichage
+  const formattedCourses = useMemo(() => {
+    const toValidate: CourseItem[] = [];
+    const online: CourseItem[] = [];
+
+    courses.forEach(course => {
+      if (course.statut === 'en_cours_examen') {
+        toValidate.push(course);
+      } else if (course.statut === 'en_ligne') {
+        online.push(course);
+      } else {
+        // Les brouillons peuvent aussi être considérés comme "à valider"
+        toValidate.push(course);
+      }
+    });
+
+    return { toValidate, online };
+  }, [courses]);
 
   // Données statiques pour l'affichage (en attendant la vraie intégration)
   const data = useMemo(() => {
     // Pour l'instant, on garde les données statiques pour les autres éléments
-    // TODO: Intégrer les vraies données de formation sélectionnée
     return formationsData["devWeb"]; // Valeur par défaut
-  }, [selectedFormation]);
+  }, []);
 
   const totalStudentsOnline = data.students.filter((s: StudentStatus) => s.status === "online").length;
   const totalTeachersOnline = data.teachers.filter((t: TeacherStatus) => t.status === "online").length;
@@ -537,7 +729,9 @@ const AdminDashboardContent = () => {
             className="text-4xl font-bold text-[#032622]"
             style={{ fontFamily: "var(--font-termina-bold)" }}
           >
-            {data.greeting.toUpperCase()}
+            {adminUser.isLoading 
+              ? "BONJOUR..." 
+              : `BONJOUR, ${adminUser.displayName.toUpperCase()}`}
           </h1>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <DropdownSelector
@@ -557,7 +751,13 @@ const AdminDashboardContent = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <CoursesCard courses={data.courses} />
+            <CoursesCard 
+              courses={formattedCourses} 
+              isLoading={isLoadingCourses}
+              formationId={selectedFormation}
+              blocId={firstBlocId}
+              moduleId={firstModuleId}
+            />
             <CorrectionsCard corrections={data.corrections} />
             <AgendaCard agenda={data.agenda} />
           </div>
@@ -591,10 +791,16 @@ const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorP
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="text-lg font-semibold text-[#032622] bg-transparent focus:outline-none appearance-none w-full pr-8"
+        className="text-lg font-semibold text-[#032622] bg-[#F8F5E4] focus:outline-none appearance-none w-full pr-8 cursor-pointer"
+        style={{ fontFamily: 'var(--font-termina-medium)' }}
       >
         {options.map((option) => (
-          <option key={option.value} value={option.value} className="text-[#032622]">
+          <option 
+            key={option.value} 
+            value={option.value} 
+            className="text-[#032622] bg-[#F8F5E4]"
+            style={{ backgroundColor: '#F8F5E4', color: '#032622' }}
+          >
             {option.label}
           </option>
         ))}
@@ -604,9 +810,20 @@ const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorP
   </div>
 );
 
-const CoursesCard = ({ courses }: { courses: FormationData["courses"] }) => {
-  const toValidate = courses.filter((course) => course.status === "a_valider");
-  const online = courses.filter((course) => course.status === "en_ligne");
+const CoursesCard = ({ 
+  courses, 
+  isLoading, 
+  formationId,
+  blocId,
+  moduleId,
+}: { 
+  courses: { toValidate: CourseItem[]; online: CourseItem[] };
+  isLoading: boolean;
+  formationId: number | null;
+  blocId: number | null;
+  moduleId: number | null;
+}) => {
+  const hasCourses = courses.toValidate.length > 0 || courses.online.length > 0;
 
   return (
     <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
@@ -618,7 +835,13 @@ const CoursesCard = ({ courses }: { courses: FormationData["courses"] }) => {
           COURS
         </h2>
         <Link
-          href="/espace-admin/gestion-formations"
+          href={
+            formationId && blocId
+              ? `/espace-admin/gestion-formations/${formationId}/${blocId}`
+              : formationId
+              ? `/espace-admin/gestion-formations/${formationId}`
+              : "/espace-admin/gestion-formations"
+          }
           className="text-sm font-semibold text-[#032622] border border-[#032622] px-4 py-2 inline-flex items-center space-x-2 hover:bg-[#eae5cf] transition-colors"
         >
           <PencilLine className="w-4 h-4" />
@@ -626,10 +849,30 @@ const CoursesCard = ({ courses }: { courses: FormationData["courses"] }) => {
         </Link>
       </div>
 
-      <div className="space-y-6">
-        <BlockCoursesList title="À VALIDER" colorClass="bg-[#F0C75E]" courses={toValidate} />
-        <BlockCoursesList title="EN LIGNE" colorClass="bg-[#4CAF50]" courses={online} />
-      </div>
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622] mx-auto mb-4"></div>
+          <p className="text-[#032622]">Chargement des cours...</p>
+        </div>
+      ) : !formationId ? (
+        <div className="text-center py-8">
+          <p className="text-[#032622]">Veuillez sélectionner une formation pour voir les cours</p>
+        </div>
+      ) : !hasCourses ? (
+        <div className="text-center py-8">
+          <p className="text-[#032622] text-lg mb-2">Aucun cours disponible</p>
+          <p className="text-[#032622]/70 text-sm">Créez votre premier cours pour commencer</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {courses.toValidate.length > 0 && (
+            <BlockCoursesList title="À VALIDER" colorClass="bg-[#F0C75E]" courses={courses.toValidate} />
+          )}
+          {courses.online.length > 0 && (
+            <BlockCoursesList title="EN LIGNE" colorClass="bg-[#4CAF50]" courses={courses.online} />
+          )}
+        </div>
+      )}
     </section>
   );
 };
@@ -642,34 +885,52 @@ const BlockCoursesList = ({
   title: string;
   colorClass: string;
   courses: CourseItem[];
-}) => (
-  <div className="space-y-3">
-    <div className="flex items-center space-x-2">
-      <span className={`w-2 h-2 rounded-full ${colorClass}`} />
-      <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+}) => {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center space-x-2">
+        <span className={`w-2 h-2 rounded-full ${colorClass}`} />
+        <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+      </div>
+      <div className="space-y-2">
+        {courses.map((course) => {
+          const statusLabel = course.statut === "en_cours_examen" 
+            ? "En cours d'examen" 
+            : course.statut === "en_ligne" 
+            ? "En ligne" 
+            : "Brouillon";
+          
+          // Construire l'URL de redirection vers le cours
+          let courseUrl = "/espace-admin/gestion-formations";
+          if (course.formation_id && course.bloc_id && course.module_id) {
+            courseUrl = `/espace-admin/gestion-formations/${course.formation_id}/${course.bloc_id}/module/${course.module_id}/cours/${course.id}`;
+          } else if (course.formation_id) {
+            courseUrl = `/espace-admin/gestion-formations/${course.formation_id}`;
+          }
+          
+          return (
+            <div
+              key={course.id}
+              className="grid grid-cols-12 items-center border border-[#032622]/40 px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
+            >
+              <span className="col-span-4 uppercase tracking-wide font-semibold">
+                {course.titre}
+              </span>
+              <span className="col-span-3">{statusLabel}</span>
+              <span className="col-span-3">{course.module}</span>
+              <Link
+                href={courseUrl}
+                className="col-span-2 text-right font-semibold text-[#032622] hover:underline"
+              >
+                {course.statut === "en_cours_examen" ? "À vérifier" : "Modifier"}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
     </div>
-    <div className="space-y-2">
-      {courses.map((course) => (
-        <div
-          key={course.id}
-          className="grid grid-cols-12 items-center border border-[#032622]/40 px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
-        >
-          <span className="col-span-3 uppercase tracking-wide font-semibold">
-            {course.title}
-          </span>
-          <span className="col-span-4">{course.status === "a_valider" ? "En cours d’examen" : "En ligne"}</span>
-          <span className="col-span-3">{course.mentor}</span>
-          <Link
-            href="/espace-admin/gestion-formations"
-            className="col-span-2 text-right font-semibold text-[#032622] hover:underline"
-          >
-            {course.actionLabel}
-          </Link>
-        </div>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 const MessagesCard = ({ messages }: { messages: FormationData["messages"] }) => (
   <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">

@@ -49,3 +49,46 @@ h1, h2, h3, h4, h5, h6 {
 .popup-scroll {
   -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
 }
+
+/* Styles pour les dropdowns select - Couleurs du projet (vert au lieu de bleu) */
+select {
+  background-color: #F8F5E4 !important;
+  color: #032622 !important;
+}
+
+/* Focus avec couleur verte au lieu de bleu */
+select:focus {
+  outline: 2px solid #032622 !important;
+  outline-offset: 2px !important;
+  border-color: #032622 !important;
+}
+
+select option {
+  background-color: #F8F5E4 !important;
+  color: #032622 !important;
+}
+
+/* Option sélectionnée avec fond vert au lieu de bleu */
+select option:checked,
+select option[selected] {
+  background-color: #032622 !important;
+  color: #F8F5E4 !important;
+}
+
+/* Hover sur les options */
+select option:hover {
+  background-color: #eae5cf !important;
+  color: #032622 !important;
+}
+
+/* Sélection de texte dans les selects avec couleur verte */
+select::selection {
+  background-color: #032622 !important;
+  color: #F8F5E4 !important;
+}
+
+/* Pour les navigateurs qui utilisent ::-moz-selection */
+select::-moz-selection {
+  background-color: #032622 !important;
+  color: #F8F5E4 !important;
+}
