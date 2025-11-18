@@ -30,7 +30,7 @@ export async function getCoursByModuleIdServer(moduleId: number): Promise<{ succ
       .from('cours_contenu')
       .select('*')
       .eq('module_id', moduleId)
-      .order('created_at', { ascending: true });
+      .order('ordre_affichage', { ascending: true });
     if (error) {
       return { success: false, error: error.message };
     }

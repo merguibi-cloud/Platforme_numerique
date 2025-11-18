@@ -41,6 +41,7 @@ interface TiptapEditorProps {
   fichiers?: FichierElement[];
   onAddFile?: (file: File) => void;
   onRemoveFile?: (fileId: string) => void;
+  deletingFileId?: string | null;
   moduleNumber?: string;
   moduleTitle?: string;
   moduleId?: number;
@@ -62,6 +63,7 @@ export const TiptapEditor = ({
   fichiers = [],
   onAddFile,
   onRemoveFile,
+  deletingFileId,
   moduleNumber,
   moduleTitle,
   moduleId,
@@ -450,6 +452,7 @@ export const TiptapEditor = ({
               fichiers={fichiers}
               onAddFile={onAddFile}
               onRemoveFile={onRemoveFile}
+              deletingFileId={deletingFileId}
             />
           </div>
         )}

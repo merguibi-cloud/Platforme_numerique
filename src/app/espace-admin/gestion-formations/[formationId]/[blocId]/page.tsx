@@ -129,8 +129,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   };
 
   const handleVisualizeModule = (moduleId: string) => {
-    // TODO: Implémenter la navigation vers la page de visualisation
-    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}`);
+    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/preview`);
   };
 
   const handleAssignModule = (moduleId: string) => {

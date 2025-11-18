@@ -71,6 +71,7 @@ export interface CoursContenu {
   contenu?: string;
   url_video?: string;
   duree_video?: number;
+  fichiers_complementaires?: string[];
   ordre_affichage: number;
   actif: boolean;
   created_at: string;

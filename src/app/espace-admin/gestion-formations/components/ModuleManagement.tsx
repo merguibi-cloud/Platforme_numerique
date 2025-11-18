@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, FileText, ChevronDown, Trash2 } from 'lucide-react';
+import { Plus, Edit, FileText, ChevronDown, Trash2, Eye } from 'lucide-react';
 import { CreateModule } from './CreateModule';
 import { Modal } from '@/app/Modal';
 
@@ -133,6 +133,7 @@ export const ModuleManagement = ({
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉDITER</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">VISUALISER</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉTUDE DE CAS</th>
                 {showAssign && (
                   <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
@@ -145,7 +146,7 @@ export const ModuleManagement = ({
             <tbody>
               {modules.length === 0 ? (
                 <tr>
-                  <td colSpan={showAssign ? 8 : 7} className="border border-[#032622] p-8 text-center text-[#032622]">
+                  <td colSpan={showAssign ? 9 : 8} className="border border-[#032622] p-8 text-center text-[#032622]">
                     <p className="text-lg font-medium">{emptyMessage}</p>
                   </td>
                 </tr>
@@ -197,6 +198,16 @@ export const ModuleManagement = ({
                       >
                         <Edit className="w-3 h-3" />
                         ÉDITER LE COURS
+                      </button>
+                    </td>
+                    <td className="border border-[#032622] p-0">
+                      <button
+                        onClick={() => onVisualizeModule(module.id)}
+                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        style={{ fontFamily: 'var(--font-termina-bold)' }}
+                      >
+                        <Eye className="w-3 h-3" />
+                        VISUALISER
                       </button>
                     </td>
                     <td className="border border-[#032622] p-0">
