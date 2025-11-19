@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, ChevronDown, Search, Pencil, Trash2, X } from "lucide-react";
 import { AdminSidebar } from "../components/AdminSidebar";
 import AdminTopBar from "../components/AdminTopBar";
@@ -12,59 +12,8 @@ interface AdminUser {
   mail: string;
   ecole: string;
   role: string;
+  status?: "pending" | "actif";
 }
-
-// Données de démonstration (sera remplacé par le back plus tard)
-const initialAdmins: AdminUser[] = [
-  {
-    id: "1",
-    nom: "DRAKE",
-    prenom: "NATHAN",
-    mail: "NDRAKE@ELITE-SOCIETY.FR",
-    ecole: "LEADER SOCIETY",
-    role: "ADMINISTRATEUR ADV",
-  },
-  {
-    id: "2",
-    nom: "MILLER",
-    prenom: "JOEL",
-    mail: "JMILLER@ELITE-SOCIETY.FR",
-    ecole: "DIGITAL LEGACY",
-    role: "ADMINISTRATEUR COMMERCIAL",
-  },
-  {
-    id: "3",
-    nom: "FISHER",
-    prenom: "SAM",
-    mail: "SFISHER@ELITE-SOCIETY.FR",
-    ecole: "FINANCE SOCIETY",
-    role: "FORMATEUR",
-  },
-  {
-    id: "4",
-    nom: "SNAKE",
-    prenom: "LIQUID",
-    mail: "LSNAKE@ELITE-SOCIETY.FR",
-    ecole: "KEOS",
-    role: "ADMINISTRATEUR",
-  },
-  {
-    id: "5",
-    nom: "PHILIPS",
-    prenom: "TREVOR",
-    mail: "TPHILIPS@ELITE-SOCIETY.FR",
-    ecole: "KEOS",
-    role: "ADMINISTRATEUR COMMERCIAL",
-  },
-  {
-    id: "6",
-    nom: "SAKAI",
-    prenom: "JIN",
-    mail: "JSAKAI@ELITE-SOCIETY.FR",
-    ecole: "1001",
-    role: "FORMATEUR",
-  },
-];
 
 const roles = [
   "ADMINISTRATEUR",
@@ -82,11 +31,13 @@ const ecoles = [
 ];
 
 export default function AttributionPage() {
-  const [admins, setAdmins] = useState<AdminUser[]>(initialAdmins);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -94,6 +45,35 @@ export default function AttributionPage() {
     ecole: "",
     role: "",
   });
+
+  // Charger les administrateurs depuis l'API
+  useEffect(() => {
+    loadAdmins();
+  }, []);
+
+  const loadAdmins = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/admin/administrateurs", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du chargement des administrateurs");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setAdmins(result.administrateurs || []);
+      } else {
+        setError(result.error || "Erreur lors du chargement");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors du chargement");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filtrer les administrateurs selon la recherche
   const filteredAdmins = admins.filter((admin) => {
@@ -131,48 +111,99 @@ export default function AttributionPage() {
     setShowForm(true);
   };
 
-  const handleDeleteClick = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cet administrateur ?")) {
-      setAdmins(admins.filter((admin) => admin.id !== id));
+  const handleDeleteClick = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet administrateur ?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/administrateurs/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de la suppression");
+      }
+
+      // Recharger la liste
+      await loadAdmins();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors de la suppression");
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Si le rôle est ADMINISTRATEUR, on met une valeur vide pour l'école
-    const submitData = {
-      ...formData,
-      ecole: formData.role === "ADMINISTRATEUR" ? "" : formData.ecole,
-    };
-    
-    if (editingAdmin) {
-      // Modifier un administrateur existant
-      setAdmins(
-        admins.map((admin) =>
-          admin.id === editingAdmin.id
-            ? { ...submitData, id: editingAdmin.id }
-            : admin
-        )
-      );
-    } else {
-      // Créer un nouvel administrateur
-      const newAdmin: AdminUser = {
-        ...submitData,
-        id: Date.now().toString(),
-      };
-      setAdmins([...admins, newAdmin]);
-    }
+    setError("");
 
-    setShowForm(false);
-    setEditingAdmin(null);
-    setFormData({
-      nom: "",
-      prenom: "",
-      mail: "",
-      ecole: "",
-      role: "",
-    });
+    try {
+      if (editingAdmin) {
+        // Modifier un administrateur existant
+        const response = await fetch(`/api/admin/administrateurs/${editingAdmin.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            nom: formData.nom,
+            prenom: formData.prenom,
+            email: formData.mail,
+            role: formData.role,
+            ecole: formData.role === "ADMINISTRATEUR" ? "" : formData.ecole,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Erreur lors de la modification");
+        }
+
+        // Recharger la liste
+        await loadAdmins();
+      } else {
+        // Inviter un nouvel administrateur
+        const response = await fetch("/api/admin/invite", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            nom: formData.nom,
+            prenom: formData.prenom,
+            email: formData.mail,
+            role: formData.role,
+            ecole: formData.role === "ADMINISTRATEUR" ? "" : formData.ecole,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Erreur lors de l'invitation");
+        }
+
+        // Recharger la liste
+        await loadAdmins();
+      }
+
+      setShowForm(false);
+      setEditingAdmin(null);
+      setFormData({
+        nom: "",
+        prenom: "",
+        mail: "",
+        ecole: "",
+        role: "",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    }
   };
 
   const handleFormCancel = () => {
@@ -240,6 +271,13 @@ export default function AttributionPage() {
             />
           </div>
 
+          {/* Message d'erreur */}
+          {error && (
+            <div className="bg-[#D96B6B] text-white p-4 border-2 border-[#032622]">
+              <p className="font-semibold">{error}</p>
+            </div>
+          )}
+
           {/* Tableau */}
           <div className="border-2 border-[#032622] bg-[#F8F5E4]">
             <table className="w-full">
@@ -258,15 +296,27 @@ export default function AttributionPage() {
                     ROLE
                   </th>
                   <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                    STATUT
+                  </th>
+                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
                     ÉDITION
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAdmins.length === 0 ? (
+                {isLoading ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
+                      className="text-center py-8 text-[#032622]/70"
+                    >
+                      Chargement...
+                    </td>
+                  </tr>
+                ) : filteredAdmins.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
                       className="text-center py-8 text-[#032622]/70"
                     >
                       Aucun administrateur trouvé
@@ -286,6 +336,17 @@ export default function AttributionPage() {
                         {admin.role === "ADMINISTRATEUR" ? "TOUTES LES ÉCOLES" : admin.ecole}
                       </td>
                       <td className="py-4 px-6 text-[#032622]">{admin.role}</td>
+                      <td className="py-4 px-6">
+                        <span
+                          className={`px-3 py-1 text-xs uppercase font-semibold ${
+                            admin.status === "pending"
+                              ? "bg-[#F0C75E] text-[#032622]"
+                              : "bg-[#4CAF50] text-white"
+                          }`}
+                        >
+                          {admin.status === "pending" ? "EN ATTENTE" : "ACTIF"}
+                        </span>
+                      </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
                           <button

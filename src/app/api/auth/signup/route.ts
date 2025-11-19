@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       .from('user_profiles')
       .insert({
         user_id: data.user.id,
+        email: email.toLowerCase(), // Ajouter l'email car le trigger l'attend
         formation_id: formation_id || null,
         profile_completed: false,
         role: 'etudiant' // Rôle par défaut pour les nouveaux utilisateurs
