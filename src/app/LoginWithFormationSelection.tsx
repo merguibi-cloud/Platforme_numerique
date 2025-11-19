@@ -108,6 +108,13 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
         password: loginPassword,
       });
 
+      // Vérifier si un changement de mot de passe est requis
+      if (result.requiresPasswordChange && result.redirectTo) {
+        onCloseAction();
+        router.push(result.redirectTo);
+        return;
+      }
+
       if (!result.success) {
         setError(result.error || 'Erreur lors de la connexion');
         return;

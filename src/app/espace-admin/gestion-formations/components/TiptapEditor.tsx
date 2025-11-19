@@ -272,7 +272,6 @@ export const TiptapEditor = ({
                 }, 3000);
               }
             } catch (error) {
-              console.error('Erreur lors de la suppression de l\'image:', error);
               const notification = document.createElement('div');
               notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50';
               notification.textContent = 'Erreur lors de la suppression de l\'image';
@@ -361,7 +360,6 @@ export const TiptapEditor = ({
     setIsVideoModalOpen(false);
       setIsUploadingVideo(false);
     } catch (error) {
-      console.error('Erreur lors de l\'insertion de la vidéo:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue lors de l\'insertion de la vidéo';
       setErrorModal({ isOpen: true, message: errorMessage });
       setIsUploadingVideo(false);

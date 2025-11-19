@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminUserProvider } from './components/AdminUserProvider';
-import { getSessionRole } from '@/lib/auth-api';
+import { getSessionRole, getCurrentUser } from '@/lib/auth-api';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -14,10 +14,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkAdminAccess = async (): Promise<void> => {
       try {
+        // Si on est déjà sur la page de changement de mot de passe, ne pas rediriger
+        if (pathname === '/espace-admin/change-password') {
+          setIsAuthorized(true);
+          setIsLoading(false);
+          return;
+        }
+
         const sessionResult = await getSessionRole();
 
         if (!sessionResult.success || !sessionResult.role) {
@@ -30,9 +38,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           return;
         }
 
+        // Vérifier si l'utilisateur doit changer son mot de passe
+        const userResult = await getCurrentUser();
+        if (userResult.success && userResult.user) {
+          const requiresPasswordChange = userResult.user.user_metadata?.requires_password_change;
+          if (requiresPasswordChange === true) {
+            router.replace('/espace-admin/change-password');
+            return;
+          }
+        }
+
         setIsAuthorized(true);
       } catch (error) {
-        console.error('Erreur vérification admin:', error);
         router.replace('/');
       } finally {
         setIsLoading(false);
@@ -40,7 +57,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     };
 
     checkAdminAccess();
-  }, [router]);
+  }, [router, pathname]);
 
   if (isLoading) {
     return (

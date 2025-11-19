@@ -542,7 +542,6 @@ const AdminDashboardContent = () => {
           }
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des formations:', error);
       } finally {
         setIsLoading(false);
       }
@@ -650,7 +649,6 @@ const AdminDashboardContent = () => {
           setFirstModuleId(null);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement du premier bloc/module:', error);
         setFirstBlocId(null);
         setFirstModuleId(null);
       }
@@ -677,11 +675,9 @@ const AdminDashboardContent = () => {
           const data = await response.json();
           setCourses(data.cours || []);
         } else {
-          console.error('Erreur lors du chargement des cours');
           setCourses([]);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des cours:', error);
         setCourses([]);
       } finally {
         setIsLoadingCourses(false);

@@ -38,6 +38,9 @@ export default function AttributionPage() {
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -190,6 +193,15 @@ export default function AttributionPage() {
 
         // Recharger la liste
         await loadAdmins();
+        
+        // Afficher le modal avec les identifiants si disponibles
+        if (result.credentials) {
+          setCredentials(result.credentials);
+          setShowCredentialsModal(true);
+        } else {
+          setSuccessMessage("Administrateur créé avec succès. Un email d'invitation a été envoyé.");
+          setTimeout(() => setSuccessMessage(""), 5000);
+        }
       }
 
       setShowForm(false);
@@ -275,6 +287,13 @@ export default function AttributionPage() {
           {error && (
             <div className="bg-[#D96B6B] text-white p-4 border-2 border-[#032622]">
               <p className="font-semibold">{error}</p>
+            </div>
+          )}
+
+          {/* Message de succès */}
+          {successMessage && (
+            <div className="bg-[#4CAF50] text-white p-4 border-2 border-[#032622]">
+              <p className="font-semibold">{successMessage}</p>
             </div>
           )}
 
@@ -372,6 +391,148 @@ export default function AttributionPage() {
             </table>
           </div>
         </div>
+
+        {/* Modal des identifiants */}
+        {showCredentialsModal && credentials && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2
+                  className="text-2xl font-bold text-[#032622] uppercase"
+                  style={{ fontFamily: "var(--font-termina-bold)" }}
+                >
+                  IDENTIFIANTS ADMINISTRATEUR
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowCredentialsModal(false);
+                    setCredentials(null);
+                  }}
+                  className="text-[#032622] hover:text-[#032622]/70 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <p className="text-[#032622] font-semibold text-center">
+                  Veuillez transmettre ces identifiants à l'administrateur :
+                </p>
+                
+                <div className="bg-white border-2 border-[#032622] p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                      ADRESSE EMAIL
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={credentials.email}
+                        readOnly
+                        className="flex-1 bg-[#F8F5E4] border-2 border-[#032622] px-4 py-3 text-[#032622] font-mono text-lg"
+                      />
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(credentials.email);
+                            alert('Email copié dans le presse-papiers !');
+                          } catch (err) {
+                            // Fallback pour les navigateurs qui ne supportent pas clipboard API
+                            const input = document.createElement('input');
+                            input.value = credentials.email;
+                            document.body.appendChild(input);
+                            input.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(input);
+                            alert('Email copié dans le presse-papiers !');
+                          }
+                        }}
+                        className="px-6 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors whitespace-nowrap"
+                        title="Copier l'email"
+                      >
+                        COPIER
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                      MOT DE PASSE TEMPORAIRE
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={credentials.password}
+                        readOnly
+                        className="flex-1 bg-[#F8F5E4] border-2 border-[#032622] px-4 py-3 text-[#032622] font-mono text-lg font-bold"
+                      />
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(credentials.password);
+                            alert('Mot de passe copié dans le presse-papiers !');
+                          } catch (err) {
+                            // Fallback pour les navigateurs qui ne supportent pas clipboard API
+                            const input = document.createElement('input');
+                            input.value = credentials.password;
+                            document.body.appendChild(input);
+                            input.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(input);
+                            alert('Mot de passe copié dans le presse-papiers !');
+                          }
+                        }}
+                        className="px-6 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors whitespace-nowrap"
+                        title="Copier le mot de passe"
+                      >
+                        COPIER
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#F0C75E] border-2 border-[#032622] p-4">
+                  <p className="text-[#032622] text-sm font-semibold text-center">
+                    ⚠️ IMPORTANT : L'administrateur devra changer ce mot de passe lors de sa première connexion.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-4 border-t-2 border-[#032622]">
+                <button
+                  onClick={async () => {
+                    try {
+                      const textToCopy = `Email: ${credentials.email}\nMot de passe: ${credentials.password}`;
+                      await navigator.clipboard.writeText(textToCopy);
+                      alert('Identifiants copiés dans le presse-papiers !');
+                    } catch (err) {
+                      // Fallback pour les navigateurs qui ne supportent pas clipboard API
+                      const textarea = document.createElement('textarea');
+                      textarea.value = `Email: ${credentials.email}\nMot de passe: ${credentials.password}`;
+                      document.body.appendChild(textarea);
+                      textarea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textarea);
+                      alert('Identifiants copiés dans le presse-papiers !');
+                    }
+                  }}
+                  className="px-6 py-2 border-2 border-[#032622] text-[#032622] font-semibold hover:bg-[#032622]/10 transition-colors"
+                >
+                  TOUT COPIER
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCredentialsModal(false);
+                    setCredentials(null);
+                  }}
+                  className="px-6 py-2 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors"
+                >
+                  FERMER
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal de formulaire */}
         {showForm && (

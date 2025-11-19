@@ -22,7 +22,6 @@ export const AdminProfileDropdown = () => {
         router.refresh();
       }
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
     } finally {
       setIsSigningOut(false);
     }

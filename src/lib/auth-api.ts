@@ -18,6 +18,7 @@ export interface AuthResponse {
   redirectTo?: string;
   message?: string;
   error?: string;
+  requiresPasswordChange?: boolean;
 }
 
 export interface ProfileData {

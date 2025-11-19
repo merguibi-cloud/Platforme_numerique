@@ -117,7 +117,6 @@ async function fetchAdminUserData(): Promise<AdminUserState> {
       isLoading: false,
     };
   } catch (error) {
-    console.error("Erreur lors du chargement du profil admin:", error);
     return {
       ...DEFAULT_STATE,
       isLoading: false,

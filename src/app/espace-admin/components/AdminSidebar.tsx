@@ -122,12 +122,10 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
         router.push('/');
         router.refresh();
       } else {
-        console.error('Erreur lors de la déconnexion:', result.error);
-        setErrorMessage(result.error || 'Erreur lors de la déconnexion. Veuillez réessayer.');
+        setErrorMessage('Erreur lors de la déconnexion. Veuillez réessayer.');
         setShowErrorModal(true);
       }
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
       setErrorMessage('Erreur lors de la déconnexion. Veuillez réessayer.');
       setShowErrorModal(true);
     } finally {
