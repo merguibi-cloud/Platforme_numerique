@@ -30,6 +30,13 @@ const menuItems = [
     href: '/espace-admin/gestion-formations'
   },
   { 
+    id: 'attribution', 
+    label: 'ESPACE D\'ATTRIBUTION', 
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+    href: '/espace-admin/attribution'
+  },
+  { 
     id: 'bibliotheque', 
     label: 'BIBLIOTHÈQUE', 
     icon: '/menue_etudiant/Bibliothèque.png',
@@ -153,6 +160,8 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       setActiveItem('messagerie');
     } else if (pathname.includes('/vie-etudiante')) {
       setActiveItem('vie-etudiante');
+    } else if (pathname.includes('/attribution')) {
+      setActiveItem('attribution');
     } else if (pathname.includes('/parametres')) {
       setActiveItem('parametres');
     }
