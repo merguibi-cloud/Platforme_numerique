@@ -29,6 +29,11 @@ interface ModuleData {
   bloc: { numero_bloc: number; titre: string } | null;
 }
 
+interface QuizData {
+  quiz: QuizEvaluation;
+  questions: any[];
+}
+
 export const ModulePreviewViewer = ({
   moduleId,
   formationId,
@@ -49,6 +54,11 @@ export const ModulePreviewViewer = ({
   const [currentCoursIndex, setCurrentCoursIndex] = useState(0);
   const [allModules, setAllModules] = useState<ModuleApprentissage[]>([]);
   const [isSidebarRightCollapsed, setIsSidebarRightCollapsed] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showEtudeCasModal, setShowEtudeCasModal] = useState(false);
+  const [quizzesByCours, setQuizzesByCours] = useState<Map<number, QuizData>>(new Map());
+  const [currentQuiz, setCurrentQuiz] = useState<QuizData | null>(null);
+  const [quizCompleted, setQuizCompleted] = useState(false);
 
   // Charger les données du module
   useEffect(() => {
@@ -99,19 +109,41 @@ export const ModulePreviewViewer = ({
         );
         cours = coursWithDetails;
 
-        // Charger le quiz du premier cours (s'il existe)
+        // Charger les quiz pour tous les cours
+        const quizzesMap = new Map<number, QuizData>();
+        await Promise.all(
+          cours.map(async (c: CoursContenu) => {
+            try {
+              const quizResponse = await fetch(`/api/quiz?coursId=${c.id}`, {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              if (quizResponse.ok) {
+                const quizData = await quizResponse.json();
+                if (quizData.quiz) {
+                  quizzesMap.set(c.id, {
+                    quiz: quizData.quiz,
+                    questions: quizData.questions || []
+                  });
+                }
+              }
+            } catch (error) {
+              console.error(`Erreur lors du chargement du quiz pour le cours ${c.id}:`, error);
+            }
+          })
+        );
+        setQuizzesByCours(quizzesMap);
+
+        // Charger le quiz du premier cours pour l'affichage initial
         let quiz = null;
         let quizQuestions = [];
-        if (cours.length > 0) {
-          const quizResponse = await fetch(`/api/quiz?coursId=${cours[0].id}`, {
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          if (quizResponse.ok) {
-            const quizData = await quizResponse.json();
-            quiz = quizData.quiz;
-            quizQuestions = quizData.questions || [];
-          }
+        if (cours.length > 0 && quizzesMap.has(cours[0].id)) {
+          const firstQuizData = quizzesMap.get(cours[0].id)!;
+          quiz = firstQuizData.quiz;
+          quizQuestions = firstQuizData.questions;
+          setCurrentQuiz(firstQuizData);
+        } else {
+          setCurrentQuiz(null);
         }
 
         // Charger l'étude de cas du module
@@ -203,25 +235,105 @@ export const ModulePreviewViewer = ({
   const currentCours = data.cours[currentCoursIndex];
   const hasPreviousCours = currentCoursIndex > 0;
   const hasNextCours = currentCoursIndex < data.cours.length - 1;
-  const hasQuiz = data.quiz !== null;
+  const hasQuizForCurrentCours = currentCours ? quizzesByCours.has(currentCours.id) : false;
   const hasEtudeCas = data.etudeCas !== null;
 
+  // Charger le quiz du cours actuel quand on change de cours
+  useEffect(() => {
+    if (currentCours && currentView === 'cours') {
+      const quizData = quizzesByCours.get(currentCours.id);
+      if (quizData) {
+        setCurrentQuiz(quizData);
+      } else {
+        setCurrentQuiz(null);
+      }
+      // Réinitialiser quizCompleted quand on change de cours
+      setQuizCompleted(false);
+    }
+  }, [currentCoursIndex, currentCours, quizzesByCours, currentView]);
+
   const handleNext = () => {
-    if (currentView === 'cours' && hasNextCours) {
-      setCurrentCoursIndex(prev => prev + 1);
-    } else if (currentView === 'cours' && hasQuiz) {
-      setCurrentView('quiz');
-    } else if (currentView === 'quiz' && hasEtudeCas) {
-      setCurrentView('etude-cas');
+    if (currentView === 'cours') {
+      // Si le cours actuel a un quiz, afficher le modal avant de passer au cours suivant
+      if (hasQuizForCurrentCours) {
+        setShowQuizModal(true);
+      } else if (hasNextCours) {
+        // Pas de quiz pour ce cours, passer directement au cours suivant
+        setCurrentCoursIndex(prev => prev + 1);
+      } else if (hasEtudeCas) {
+        // Plus de cours, afficher le modal avant de passer à l'étude de cas
+        setShowEtudeCasModal(true);
+      }
+    } else if (currentView === 'quiz') {
+      // Si le quiz est terminé (showResults), passer au cours suivant ou à l'étude de cas
+      if (quizCompleted) {
+        if (hasNextCours) {
+          setCurrentView('cours');
+          setCurrentCoursIndex(prev => prev + 1);
+          setQuizCompleted(false);
+        } else if (hasEtudeCas) {
+          setShowEtudeCasModal(true);
+          setQuizCompleted(false);
+        } else {
+          // Plus rien après, revenir au cours
+          setCurrentView('cours');
+          setQuizCompleted(false);
+        }
+      } else {
+        // Le quiz n'est pas encore terminé, la navigation sera gérée par QuizViewer
+        // On reste sur le quiz
+      }
+    } else if (currentView === 'etude-cas' && hasEtudeCas) {
+      // Fin de l'étude de cas
+      // Ne rien faire ou gérer selon les besoins
     }
   };
 
+  const handleContinueReading = () => {
+    setShowQuizModal(false);
+    // L'utilisateur reste sur le cours actuel
+  };
+
+  const handleGoToQuiz = () => {
+    setShowQuizModal(false);
+    setCurrentView('quiz');
+    setQuizCompleted(false); // Réinitialiser l'état du quiz
+  };
+
+
+  // Gérer la fermeture des modals avec la touche Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showQuizModal) {
+          setShowQuizModal(false);
+        }
+        if (showEtudeCasModal) {
+          setShowEtudeCasModal(false);
+        }
+      }
+    };
+
+    if (showQuizModal || showEtudeCasModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showQuizModal, showEtudeCasModal]);
+
   const handlePrevious = () => {
-    if (currentView === 'etude-cas' && hasQuiz) {
-      setCurrentView('quiz');
-    } else if (currentView === 'quiz' && data.cours.length > 0) {
+    if (currentView === 'etude-cas' && hasEtudeCas) {
+      // Retourner au dernier quiz ou au dernier cours
+      const lastCours = data.cours[data.cours.length - 1];
+      if (lastCours && quizzesByCours.has(lastCours.id)) {
+        setCurrentView('quiz');
+        setCurrentCoursIndex(data.cours.length - 1);
+      } else {
+        setCurrentView('cours');
+        setCurrentCoursIndex(data.cours.length - 1);
+      }
+    } else if (currentView === 'quiz' && currentCours) {
+      // Retourner au cours actuel
       setCurrentView('cours');
-      setCurrentCoursIndex(data.cours.length - 1);
     } else if (currentView === 'cours' && hasPreviousCours) {
       setCurrentCoursIndex(prev => prev - 1);
     }
@@ -238,6 +350,48 @@ export const ModulePreviewViewer = ({
     }
   };
 
+  const handleQuizClick = (coursId: number) => {
+    // Trouver le cours dans les cours du module actuel
+    const targetIndex = data.cours.findIndex((c: CoursContenu) => c.id === coursId);
+    
+    if (targetIndex !== -1) {
+      // Aller au cours associé
+      setCurrentCoursIndex(targetIndex);
+      setCurrentView('cours');
+      
+      // Vérifier si ce cours a un quiz et afficher le modal de prévention
+      const quizData = quizzesByCours.get(coursId);
+      if (quizData) {
+        setCurrentQuiz(quizData);
+        setShowQuizModal(true);
+      }
+    }
+  };
+
+  const handleEtudeCasClick = (moduleIdClicked: number) => {
+    // Si c'est le module actuel, afficher le modal ou aller directement à l'étude de cas
+    if (moduleIdClicked === moduleId) {
+      // Vérifier si l'étude de cas existe dans les données
+      const etudeCasInData = data.etudeCas;
+      if (etudeCasInData || hasEtudeCas) {
+        // Afficher le modal de confirmation
+        setShowEtudeCasModal(true);
+      } else {
+        // Si l'étude de cas n'existe pas encore, aller quand même à la vue (elle sera chargée)
+        setCurrentView('etude-cas');
+      }
+    }
+  };
+
+  const handleGoToEtudeCas = () => {
+    setShowEtudeCasModal(false);
+    setCurrentView('etude-cas');
+  };
+
+  const handleContinueToEtudeCas = () => {
+    setShowEtudeCasModal(false);
+    // L'utilisateur reste sur le cours actuel
+  };
 
   const handleModuleClick = (clickedModuleId: number) => {
     // Ne rien faire - le clic sur le module ne fait que dérouler les cours
@@ -308,14 +462,14 @@ export const ModulePreviewViewer = ({
 
         {/* Contenu principal avec sidebar droite */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Bouton toggle sidebar droite - visible même quand la sidebar est cachée */}
-          <button
-            onClick={() => setIsSidebarRightCollapsed(prev => !prev)}
-            className={`absolute top-4 z-20 p-2  text-[#032622] border-2 border-[#032622] rounded-lg hover:bg-[#032622]/90 transition-all duration-300 ${
-              isSidebarRightCollapsed ? 'right-4' : 'right-[340px]'
-            }`}
-            aria-label={isSidebarRightCollapsed ? 'Ouvrir la sidebar' : 'Fermer la sidebar'}
-          >
+           {/* Bouton toggle sidebar droite - visible même quand la sidebar est cachée */}
+           <button
+             onClick={() => setIsSidebarRightCollapsed(prev => !prev)}
+             className={`absolute top-4 z-20 p-2  text-[#032622] border-2 border-[#032622] hover:bg-[#032622]/90 transition-all duration-300 ${
+               isSidebarRightCollapsed ? 'right-4' : 'right-[400px]'
+             }`}
+             aria-label={isSidebarRightCollapsed ? 'Ouvrir la sidebar' : 'Fermer la sidebar'}
+           >
             {isSidebarRightCollapsed ? (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -327,50 +481,66 @@ export const ModulePreviewViewer = ({
             )}
           </button>
 
-          {/* Zone de contenu */}
-          <div className="flex-1 overflow-y-auto bg-[#F8F5E4]">
-            <div className={`mx-auto px-6 py-8 min-h-full transition-all duration-300 w-full ${
-              isSidebarRightCollapsed ? 'max-w-full' : 'max-w-6xl'
-            }`}>
-              {currentView === 'cours' && (
-                <div className="relative min-h-[400px]">
-                  {currentCours ? (
-                    <CourseContentViewer cours={currentCours} isPreview={true} />
-                  ) : (
-                    <div className="text-center text-[#032622] py-12">
-                      <p className="text-lg mb-4">Aucun cours disponible dans ce module</p>
-                    </div>
-                  )}
-                </div>
-              )}
+          {/* Zone de contenu avec navigation */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F5E4]">
+            <div className="flex-1 overflow-y-auto">
+              <div className={`mx-auto px-6 py-8 min-h-full transition-all duration-300 w-full ${
+                isSidebarRightCollapsed ? 'max-w-full' : 'max-w-6xl'
+              }`}>
+                {currentView === 'cours' && (
+                  <div className="relative min-h-[400px]">
+                    {currentCours ? (
+                      <CourseContentViewer cours={currentCours} isPreview={true} />
+                    ) : (
+                      <div className="text-center text-[#032622] py-12">
+                        <p className="text-lg mb-4">Aucun cours disponible dans ce module</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {currentView === 'quiz' && data.quiz && (
-                <QuizViewer
-                  quiz={data.quiz}
-                  questions={data.quizQuestions}
-                  isPreview={true}
-                />
-              )}
+                {currentView === 'quiz' && currentQuiz && (
+                  <QuizViewer
+                    quiz={currentQuiz.quiz}
+                    questions={currentQuiz.questions}
+                    isPreview={true}
+                    onQuizComplete={() => {
+                      setQuizCompleted(true);
+                    }}
+                  />
+                )}
 
-              {currentView === 'etude-cas' && data.etudeCas && (
-                <EtudeCasViewer
-                  etudeCas={data.etudeCas}
-                  questions={data.etudeCasQuestions}
-                  isPreview={true}
-                />
-              )}
+                {currentView === 'etude-cas' && data.etudeCas && (
+                  <EtudeCasViewer
+                    etudeCas={data.etudeCas}
+                    questions={data.etudeCasQuestions}
+                    isPreview={true}
+                  />
+                )}
 
-              {currentView === 'cours' && !currentCours && (
-                <div className="text-center text-[#032622] py-12">
-                  <p className="text-lg mb-4">Aucun cours disponible dans ce module</p>
-                </div>
-              )}
+                {currentView === 'cours' && !currentCours && (
+                  <div className="text-center text-[#032622] py-12">
+                    <p className="text-lg mb-4">Aucun cours disponible dans ce module</p>
+                  </div>
+                )}
+              </div>
             </div>
+            
+        {/* Navigation footer */}
+        <ModulePreviewNavigation
+          hasPrevious={currentView === 'cours' ? hasPreviousCours : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
+          hasNext={currentView === 'cours' ? (hasNextCours || hasQuizForCurrentCours || (hasEtudeCas && !hasNextCours && !hasQuizForCurrentCours)) : currentView === 'quiz' ? quizCompleted : currentView === 'etude-cas' ? false : false}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          currentType={currentView}
+          quizCompleted={quizCompleted}
+          showEtudeCasButton={currentView === 'cours' && !hasNextCours && !hasQuizForCurrentCours && hasEtudeCas}
+        />
           </div>
 
           {/* Sidebar droite */}
           <div className={`flex-shrink-0 overflow-hidden bg-[#F8F5E4] border-l border-[#032622]/20 transition-all duration-300 ${
-            isSidebarRightCollapsed ? 'w-0' : 'w-80'
+            isSidebarRightCollapsed ? 'w-0' : 'w-96'
           }`}>
             {!isSidebarRightCollapsed && (
               <div className="h-full overflow-y-auto">
@@ -380,6 +550,8 @@ export const ModulePreviewViewer = ({
                   currentCoursId={currentCours?.id}
                   onModuleClick={handleModuleClick}
                   onCoursClick={handleCoursClick}
+                  onQuizClick={handleQuizClick}
+                  onEtudeCasClick={handleEtudeCasClick}
                   fichiersComplementaires={currentCours?.fichiers_complementaires || []}
                   isCollapsed={isSidebarRightCollapsed}
                   onToggle={() => setIsSidebarRightCollapsed(prev => !prev)}
@@ -388,16 +560,95 @@ export const ModulePreviewViewer = ({
             )}
           </div>
         </div>
-
-        {/* Navigation footer */}
-        <ModulePreviewNavigation
-          hasPrevious={currentView === 'cours' ? hasPreviousCours : currentView === 'quiz' ? true : hasQuiz}
-          hasNext={currentView === 'cours' ? (hasNextCours || hasQuiz) : currentView === 'quiz' ? hasEtudeCas : false}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          currentType={currentView}
-        />
       </div>
+
+      {/* Modal de confirmation pour passer au quiz */}
+      {showQuizModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            // Fermer le modal si on clique sur le fond (pas sur le contenu)
+            if (e.target === e.currentTarget) {
+              setShowQuizModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 
+              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              TU ARRIVES AU QUIZ
+            </h3>
+            <p className="text-[#032622] mb-6 text-center">
+              Prêt à tester tes connaissances ?
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={handleContinueReading}
+                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                RÉVISER ENCORE
+              </button>
+              <button
+                onClick={handleGoToQuiz}
+                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                COMMENCER LE QUIZ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation pour passer à l'étude de cas */}
+      {showEtudeCasModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            // Fermer le modal si on clique sur le fond (pas sur le contenu)
+            if (e.target === e.currentTarget) {
+              setShowEtudeCasModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 
+              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              TU ARRIVES À L'ÉTUDE DE CAS
+            </h3>
+            <p className="text-[#032622] mb-6 text-center">
+              Prêt à commencer l'étude de cas du module ?
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={handleContinueToEtudeCas}
+                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                CONTINUER À RÉVISER
+              </button>
+              <button
+                onClick={handleGoToEtudeCas}
+                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                COMMENCER L'ÉTUDE DE CAS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

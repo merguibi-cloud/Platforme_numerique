@@ -36,6 +36,8 @@ interface EtudeCasViewerProps {
 export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeCasViewerProps) => {
   const [answers, setAnswers] = useState<{ [questionId: number]: any }>({});
   const [uploadedFiles, setUploadedFiles] = useState<{ [questionId: number]: File[] }>({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const handleTextAnswer = (questionId: number, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -83,6 +85,35 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
     }
   });
 
+  const handleConfirmClick = () => {
+    if (allQuestionsAnswered) {
+      setShowConfirmModal(true);
+    } else {
+      setShowWarningModal(true);
+    }
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmModal(false);
+    // Ici on enverrait les réponses à l'API
+    console.log('Réponses soumises:', { answers, uploadedFiles });
+  };
+
+  const handleReturnToQuestions = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleCompleteAnswers = () => {
+    setShowWarningModal(false);
+  };
+
+  const handleSendAnyway = () => {
+    setShowWarningModal(false);
+    // Envoyer directement sans afficher le modal de confirmation
+    console.log('Réponses soumises (incomplètes):', { answers, uploadedFiles });
+    // Ici on enverrait les réponses à l'API directement
+  };
+
   return (
     <div className="space-y-8">
       {/* En-tête */}
@@ -95,14 +126,14 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
         )}
       </div>
 
-      {/* Consigne */}
-      <div className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg p-6">
+      {/* Consigne/Contexte */}
+      <div className="bg-[#F8F5E4] border-2 border-[#032622] p-6">
         <h3 className="text-lg font-bold text-[#032622] uppercase mb-4" style={{ fontFamily: 'var(--font-termina-bold)' }}>
           CONTEXTE
         </h3>
         {etudeCas.fichier_consigne ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-white border-2 border-[#032622] rounded-lg">
+            <div className="flex items-center gap-3 p-4 bg-[#F8F5E4] border-2 border-[#032622]">
               <FileText className="w-6 h-6 text-[#032622]" />
               <span className="text-[#032622] font-bold flex-1">
                 {etudeCas.fichier_consigne.split('/').pop() || 'Fichier consigne'}
@@ -111,7 +142,7 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                 href={etudeCas.fichier_consigne}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-[#032622] text-[#F8F5E4] rounded hover:bg-[#032622]/90 transition-colors"
+                className="px-4 py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 transition-colors"
               >
                 <Download className="w-4 h-4" />
               </a>
@@ -125,10 +156,35 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
         )}
       </div>
 
+      {/* Annexes du module */}
+      {(etudeCas as any).supports_annexes && (etudeCas as any).supports_annexes.length > 0 && (
+        <div className="bg-[#F8F5E4] border-2 border-[#032622] p-6">
+          <h3 className="text-lg font-bold text-[#032622] uppercase mb-4" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+            ANNEXES
+          </h3>
+          <div className="space-y-2">
+            {(etudeCas as any).supports_annexes.map((annexe: string, aIndex: number) => (
+              <a
+                key={aIndex}
+                href={annexe}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 bg-[#F8F5E4] border-2 border-[#032622] hover:bg-[#032622]/5 transition-colors"
+              >
+                <span className="text-[#032622] font-bold text-sm">
+                  Annexe {aIndex + 1}: {annexe.split('/').pop() || `Support ${aIndex + 1}`}
+                </span>
+                <Download className="w-4 h-4 text-[#032622]" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Questions */}
       <div className="space-y-6">
         {questions.map((question, index) => (
-          <div key={question.id} className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg p-6">
+          <div key={question.id} className="bg-[#F8F5E4] border-2 border-[#032622] p-6">
             <h3 className="text-lg font-bold text-[#032622] mb-4" style={{ fontFamily: 'var(--font-termina-bold)' }}>
               QUESTION {index + 1} / {question.question}
             </h3>
@@ -139,9 +195,8 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                 value={answers[question.id] || ''}
                 onChange={(e) => handleTextAnswer(question.id, e.target.value)}
                 placeholder="Écrivez votre réponse ici..."
-                className="w-full min-h-[200px] px-4 py-3 border-2 border-[#032622] bg-white text-[#032622] rounded-lg font-bold"
+                className="w-full min-h-[200px] px-4 py-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] font-bold"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
-                disabled={isPreview}
               />
             )}
 
@@ -151,16 +206,15 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                 {question.contenu_question && (
                   <div className="text-[#032622] mb-4">{question.contenu_question}</div>
                 )}
-                <div className="border-2 border-dashed border-[#032622] p-6 text-center rounded-lg">
+                <div className="border-2 border-dashed border-[#032622] p-6 text-center">
                   {uploadedFiles[question.id] && uploadedFiles[question.id].length > 0 ? (
                     <div className="space-y-2">
                       {uploadedFiles[question.id].map((file, fileIndex) => (
-                        <div key={fileIndex} className="flex items-center justify-between p-3 bg-white border-2 border-[#032622] rounded">
+                        <div key={fileIndex} className="flex items-center justify-between p-3 bg-[#F8F5E4] border-2 border-[#032622]">
                           <span className="text-[#032622] font-bold text-sm">{file.name}</span>
                           <button
                             onClick={() => handleRemoveFile(question.id, fileIndex)}
-                            className="text-red-600 hover:text-red-800"
-                            disabled={isPreview}
+                            className="text-[#D96B6B] hover:text-[#D96B6B]/80"
                           >
                             <X className="w-5 h-5" />
                           </button>
@@ -170,14 +224,13 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                   ) : (
                     <div>
                       <p className="text-[#032622] mb-4">Déposez les fichiers ici ou</p>
-                      <label className="bg-[#032622] text-[#F8F5E4] px-4 py-2 cursor-pointer inline-block rounded">
+                      <label className="bg-[#032622] text-[#F8F5E4] px-4 py-2 cursor-pointer inline-block">
                         <input
                           type="file"
                           multiple
                           accept=".pdf,.docx,.pptx"
                           onChange={(e) => handleFileUpload(question.id, e.target.files)}
                           className="hidden"
-                          disabled={isPreview}
                         />
                         Sélectionnez des fichiers
                       </label>
@@ -200,11 +253,10 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                         <button
                           key={reponse.id}
                           onClick={() => handleChoiceAnswer(question.id, reponse.id, false)}
-                          disabled={isPreview}
-                          className={`px-6 py-4 border-2 rounded-lg font-bold transition-colors ${
+                          className={`px-6 py-4 border-2 font-bold transition-colors ${
                             isSelected
                               ? 'bg-[#032622] text-[#F8F5E4] border-[#032622]'
-                              : 'bg-white text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
+                              : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
                           }`}
                           style={{ fontFamily: 'var(--font-termina-bold)' }}
                         >
@@ -225,11 +277,10 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                       <button
                         key={reponse.id}
                         onClick={() => handleChoiceAnswer(question.id, reponse.id, isMultiple)}
-                        disabled={isPreview}
-                        className={`w-full text-left px-6 py-4 border-2 rounded-lg font-bold transition-colors ${
+                        className={`w-full text-left px-6 py-4 border-2 font-bold transition-colors ${
                           isSelected
                             ? 'bg-[#032622] text-[#F8F5E4] border-[#032622]'
-                            : 'bg-white text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
+                            : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
                         }`}
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
@@ -254,7 +305,7 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                       href={annexe}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 bg-white border-2 border-[#032622] rounded hover:bg-[#032622]/5 transition-colors"
+                      className="flex items-center justify-between p-3 bg-[#F8F5E4] border-2 border-[#032622] hover:bg-[#032622]/5 transition-colors"
                     >
                       <span className="text-[#032622] font-bold text-sm">
                         {annexe.split('/').pop() || `Support ${aIndex + 1}`}
@@ -269,20 +320,103 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
         ))}
       </div>
 
-      {/* Bouton de soumission (désactivé en mode preview) */}
-      {!isPreview && (
-        <div className="flex justify-center">
-          <button
-            disabled={!allQuestionsAnswered}
-            className={`px-8 py-4 rounded-lg font-bold uppercase transition-colors ${
-              allQuestionsAnswered
-                ? 'bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90'
-                : 'bg-[#032622]/50 text-[#F8F5E4]/50 cursor-not-allowed'
-            }`}
-            style={{ fontFamily: 'var(--font-termina-bold)' }}
+      {/* Bouton de soumission */}
+      <div className="w-full">
+        <button
+          onClick={handleConfirmClick}
+          className="w-full px-8 py-4 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+          style={{ fontFamily: 'var(--font-termina-bold)' }}
+        >
+          CONFIRMER LES RÉPONSES
+        </button>
+      </div>
+
+      {/* Modal de confirmation */}
+      {showConfirmModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowConfirmModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            CONFIRMER LES RÉPONSES
-          </button>
+            <h3 
+              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              PRÊT À VALIDER TON ÉTUDE DE CAS ?
+            </h3>
+            <p className="text-[#032622] mb-6 text-center">
+              Assure-toi d'avoir bien relu ton travail avant de l'envoyer. Une fois validé, tu ne pourras plus revenir en arrière.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={handleReturnToQuestions}
+                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                RETOURNER AUX QUESTIONS
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                CONFIRMER L'ENVOI
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'avertissement */}
+      {showWarningModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowWarningModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 
+              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              ATTENTION
+            </h3>
+            <p className="text-[#032622] mb-2 text-center font-bold uppercase">
+              TU N'AS PAS RÉPONDU À TOUTES LES QUESTIONS
+            </p>
+            <p className="text-[#032622] mb-6 text-center">
+              Veux-tu vraiment envoyer ton étude de cas, ou préfères-tu la compléter avant validation ?
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={handleCompleteAnswers}
+                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                COMPLÉTER MES RÉPONSES
+              </button>
+              <button
+                onClick={handleSendAnyway}
+                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                ENVOYER MALGRÉ TOUT
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

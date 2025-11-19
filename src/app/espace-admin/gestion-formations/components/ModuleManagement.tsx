@@ -105,12 +105,14 @@ export const ModuleManagement = ({
     color,
     emptyMessage,
     showAssign = false,
+    showVisualize = false,
   }: {
     modules: ModuleWithStatus[];
     title: string;
     color: string;
     emptyMessage: string;
     showAssign?: boolean;
+    showVisualize?: boolean;
   }) => {
     return (
       <div className="space-y-4">
@@ -133,11 +135,15 @@ export const ModuleManagement = ({
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉDITER</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">VISUALISER</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉTUDE DE CAS</th>
                 {showAssign && (
                   <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
                     ATTRIBUER
+                  </th>
+                )}
+                {showVisualize && (
+                  <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
+                    VISUALISER
                   </th>
                 )}
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">SUPPRIMER</th>
@@ -146,7 +152,7 @@ export const ModuleManagement = ({
             <tbody>
               {modules.length === 0 ? (
                 <tr>
-                  <td colSpan={showAssign ? 9 : 8} className="border border-[#032622] p-8 text-center text-[#032622]">
+                  <td colSpan={showAssign ? (showVisualize ? 9 : 8) : (showVisualize ? 8 : 7)} className="border border-[#032622] p-8 text-center text-[#032622]">
                     <p className="text-lg font-medium">{emptyMessage}</p>
                   </td>
                 </tr>
@@ -197,17 +203,16 @@ export const ModuleManagement = ({
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
                         <Edit className="w-3 h-3" />
-                        ÉDITER LE COURS
-                      </button>
-                    </td>
-                    <td className="border border-[#032622] p-0">
-                      <button
-                        onClick={() => onVisualizeModule(module.id)}
-                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
-                        style={{ fontFamily: 'var(--font-termina-bold)' }}
-                      >
-                        <Eye className="w-3 h-3" />
-                        VISUALISER
+                        {(() => {
+                          const coursList = module.coursDetails && module.coursDetails.length > 0
+                            ? module.coursDetails
+                            : module.cours.map((titre, index) => ({
+                                id: `${module.id}-${index}`,
+                                titre,
+                              }));
+                          const hasCours = coursList.length > 0 || (module.cours_count && module.cours_count > 0);
+                          return hasCours ? 'ÉDITER LE COURS' : 'AJOUTER UN COURS';
+                        })()}
                       </button>
                     </td>
                     <td className="border border-[#032622] p-0">
@@ -231,6 +236,18 @@ export const ModuleManagement = ({
                         >
                           <ChevronDown className="w-3 h-3" />
                           ATTRIBUER
+                        </button>
+                      </td>
+                    )}
+                    {showVisualize && (
+                      <td className="border border-[#032622] p-0">
+                        <button
+                          onClick={() => onVisualizeModule(module.id)}
+                          className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                        >
+                          <Eye className="w-3 h-3" />
+                          VISUALISER
                         </button>
                       </td>
                     )}
@@ -284,12 +301,14 @@ export const ModuleManagement = ({
             title="EN LIGNE" 
             color="bg-green-500"
             emptyMessage="Aucun module en ligne pour le moment"
+            showVisualize={true}
           />
           <ModuleTable 
             modules={modulesBrouillon} 
             title="BROUILLON/EN COURS D'EXAMEN" 
             color="bg-orange-500"
             emptyMessage="Aucun module en cours de développement"
+            showVisualize={true}
           />
           <ModuleTable 
             modules={modulesManquant} 

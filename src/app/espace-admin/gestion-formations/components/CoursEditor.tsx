@@ -363,6 +363,22 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
     }
   };
 
+  const handleQuizClick = (coursId: number, quizId: number) => {
+    if (currentFormationId && currentBlocId) {
+      router.push(
+        `/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/module/${moduleId}/cours/${coursId}/quiz`
+      );
+    }
+  };
+
+  const handleEtudeCasClick = (moduleId: number, etudeCasId: number) => {
+    if (currentFormationId && currentBlocId) {
+      router.push(
+        `/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/module/${moduleId}/etude-cas`
+      );
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
@@ -425,6 +441,10 @@ export const CoursEditor = ({ coursId, moduleId, moduleTitle, blocTitle, blocNum
           currentCoursId={currentCoursId}
           currentCoursTitle={cours?.titre}
           onCoursClick={handleCoursClick}
+          onQuizClick={handleQuizClick}
+          onEtudeCasClick={handleEtudeCasClick}
+          formationId={currentFormationId || undefined}
+          blocId={currentBlocId || undefined}
           nextStepButtonText={existingQuizId ? 'ÉDITER LE QUIZ' : 'CRÉER LE QUIZ'}
         />
       </div>

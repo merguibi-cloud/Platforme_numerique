@@ -32,6 +32,28 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [quizId, setQuizId] = useState<number | null>(existingQuizId || null);
+  const [coursTitre, setCoursTitre] = useState<string>('');
+
+  // Charger le cours pour obtenir son titre
+  useEffect(() => {
+    const loadCours = async () => {
+      try {
+        const response = await fetch(`/api/cours?coursId=${coursId}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.cours) {
+            setCoursTitre(data.cours.titre || '');
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du cours:', error);
+      }
+    };
+    loadCours();
+  }, [coursId]);
 
   // Charger le quiz existant si on est en mode édition
   useEffect(() => {
@@ -135,13 +157,30 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
       // Créer ou mettre à jour le quiz
       let currentQuizId = quizId;
       if (!currentQuizId) {
+        // Charger le titre du cours si pas encore chargé
+        let titreCours = coursTitre;
+        if (!titreCours) {
+          try {
+            const coursResponse = await fetch(`/api/cours?coursId=${coursId}`, {
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+            });
+            if (coursResponse.ok) {
+              const coursData = await coursResponse.json();
+              titreCours = coursData.cours?.titre || '';
+            }
+          } catch (error) {
+            console.error('Erreur lors du chargement du cours:', error);
+          }
+        }
+        
         const quizResponse = await fetch('/api/quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             module_id: moduleId,
             cours_id: coursId,
-            titre: `Quiz - Partie ${coursId}`,
+            titre: `Quiz - ${titreCours || `Partie ${coursId}`}`,
             duree_minutes: 30,
             nombre_tentatives_max: 3,
             seuil_reussite: 50,

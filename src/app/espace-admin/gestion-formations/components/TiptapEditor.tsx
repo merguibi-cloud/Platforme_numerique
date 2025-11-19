@@ -48,6 +48,10 @@ interface TiptapEditorProps {
   currentCoursId?: number;
   currentCoursTitle?: string;
   onCoursClick?: (coursId: number) => void;
+  onQuizClick?: (coursId: number, quizId: number) => void;
+  onEtudeCasClick?: (moduleId: number, etudeCasId: number) => void;
+  formationId?: string;
+  blocId?: string;
   nextStepButtonText?: string;
 }
 
@@ -70,6 +74,10 @@ export const TiptapEditor = ({
   currentCoursId,
   currentCoursTitle,
   onCoursClick,
+  onQuizClick,
+  onEtudeCasClick,
+  formationId,
+  blocId,
   nextStepButtonText
 }: TiptapEditorProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -463,6 +471,10 @@ export const TiptapEditor = ({
             moduleId={moduleId}
             currentCoursId={currentCoursId}
             onCoursClick={onCoursClick}
+            onQuizClick={onQuizClick}
+            onEtudeCasClick={onEtudeCasClick}
+            formationId={formationId}
+            blocId={blocId}
           />
         )}
       </div>
