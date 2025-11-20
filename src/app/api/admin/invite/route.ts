@@ -85,18 +85,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Déterminer le rôle dans user_profiles selon le rôle de l'admin
-    let userProfileRole = 'admin'; // Par défaut
-    if (role === 'ADMINISTRATEUR') {
-      userProfileRole = 'admin';
-    } else if (role === 'ADMINISTRATEUR ADV') {
-      userProfileRole = 'adv';
-    } else if (role === 'ADMINISTRATEUR COMMERCIAL') {
-      userProfileRole = 'commercial';
-    } else if (role === 'FORMATEUR') {
-      userProfileRole = 'formateur';
-    }
-    
     // Générer un mot de passe temporaire
     const tempPassword = Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16).toUpperCase() + '!@#';
     const tempPasswordBase64 = Buffer.from(tempPassword).toString('base64');
@@ -147,99 +135,104 @@ export async function POST(request: NextRequest) {
     }
 
 
-    // IMPORTANT: Créer le user_profile IMMÉDIATEMENT après la création de l'utilisateur
-    // On le fait tout de suite pour éviter qu'un trigger ne le fasse avec des valeurs par défaut
-    const { data: newProfile, error: profileError } = await supabase
+    // IMPORTANT: Ne PAS créer de user_profile pour les admins/formateurs
+    // Les admins/formateurs sont uniquement dans la table administrateurs
+    // user_profiles est réservé uniquement pour lead et candidat
+    // Si un user_profile existe déjà (créé par un trigger), on le supprime car ce n'est pas un lead/candidat
+    const { data: existingProfile } = await supabase
       .from('user_profiles')
+      .select('id')
+      .eq('user_id', createdUser.user.id)
+      .maybeSingle();
+
+    if (existingProfile) {
+      // Supprimer le profil car cet utilisateur est un admin/formateur, pas un lead/candidat
+      await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', createdUser.user.id);
+    }
+
+    // Créer l'administrateur dans la table administrateurs
+    const { data: newAdmin, error: adminError } = await supabase
+      .from('administrateurs')
       .insert({
         user_id: createdUser.user.id,
+        nom,
+        prenom,
         email: email.toLowerCase(),
-        formation_id: null,
-        profile_completed: true,
-        role: userProfileRole as any,
+        niveau: role === 'ADMINISTRATEUR' ? 'admin' : 'admin',
+        role_secondaire: role_secondaire,
+        service: service || null,
       })
       .select()
       .single();
 
-    if (profileError) {
-      // Si le user_profile existe déjà (créé par un trigger), on le met à jour
-      if (profileError.code === '23505') {
-        const { error: updateError } = await supabase
-          .from('user_profiles')
+    let finalAdmin;
+    
+    if (adminError) {
+      // Si l'administrateur existe déjà, on le met à jour
+      if (adminError.code === '23505') {
+        const { data: existingAdmin, error: updateError } = await supabase
+          .from('administrateurs')
           .update({
+            nom: nom.toUpperCase(),
+            prenom: prenom.toUpperCase(),
             email: email.toLowerCase(),
-            role: userProfileRole as any,
-            profile_completed: true,
+            niveau: role === 'ADMINISTRATEUR' ? 'admin' : 'admin',
+            role_secondaire: role_secondaire as any,
+            service: service || null,
           })
           .eq('user_id', createdUser.user.id)
           .select()
           .single();
         
-        if (updateError) {
+        if (updateError || !existingAdmin) {
           return NextResponse.json(
             { 
               success: false, 
-              error: 'Erreur lors de la mise à jour du profil'
+              error: 'Erreur lors de la mise à jour de l\'administrateur'
             },
             { status: 500 }
           );
         }
+        
+        // Utiliser l'administrateur existant mis à jour
+        finalAdmin = existingAdmin;
+
       } else {
+        await logCreate(request, 'administrateurs', 'unknown', {
+          nom, prenom, email, role, ecole
+        }, `Échec de création d'administrateur: ${adminError.message}`).catch(() => {});
+        
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Erreur lors de la création du profil'
+            error: 'Erreur lors de la création de l\'administrateur'
           },
           { status: 500 }
         );
       }
-    }
-
-    // Créer l'entrée dans la table administrateurs
-    const { data: newAdmin, error: adminError } = await supabase
-      .from('administrateurs')
-      .insert({
-        user_id: createdUser.user.id,
-        niveau: 'admin' as any,
-        role_secondaire: role_secondaire as any,
-        service: service,
-        nom: nom.toUpperCase(),
-        prenom: prenom.toUpperCase(),
-        email: email.toLowerCase(),
-      })
-      .select()
-      .single();
-
-    if (adminError) {
-      await logCreate(request, 'administrateurs', 'unknown', {
-        nom, prenom, email, role, ecole
-      }, `Échec de création d'administrateur: ${adminError.message}`).catch(() => {});
-      
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Erreur lors de la création de l\'administrateur'
-        },
-        { status: 500 }
-      );
+    } else {
+      finalAdmin = newAdmin;
     }
     
     // Logger la création
-    await logCreate(request, 'administrateurs', newAdmin.id, {
-      id: newAdmin.id,
-      nom: newAdmin.nom,
-      prenom: newAdmin.prenom,
-      email: newAdmin.email,
-      role_secondaire: newAdmin.role_secondaire,
-      service: newAdmin.service,
-      niveau: newAdmin.niveau,
-    }, `Création d'un nouvel administrateur: ${newAdmin.prenom} ${newAdmin.nom} (${newAdmin.email})`).catch(() => {});
+    await logCreate(request, 'administrateurs', finalAdmin.id, {
+      id: finalAdmin.id,
+      nom: finalAdmin.nom,
+      prenom: finalAdmin.prenom,
+      email: finalAdmin.email,
+      role_secondaire: finalAdmin.role_secondaire,
+      service: finalAdmin.service,
+      niveau: finalAdmin.niveau,
+    }, `Création d'un nouvel administrateur: ${finalAdmin.prenom} ${finalAdmin.nom} (${finalAdmin.email})`).catch(() => {});
     
     // Retourner les identifiants pour affichage dans le modal
     return NextResponse.json({
       success: true,
       message: 'Administrateur créé avec succès. L\'email sera confirmé après la première connexion.',
-      admin: newAdmin,
+      admin: finalAdmin,
       credentials: {
         email: email.toLowerCase(),
         password: tempPassword, // Retourner le mot de passe temporaire pour affichage

@@ -204,6 +204,41 @@ export async function getUserProfileServer(userId: string): Promise<{ role: stri
   try {
     const supabase = getSupabaseServerClient();
 
+    // Vérifier D'ABORD si l'utilisateur est un admin (priorité absolue)
+    const { data: adminRecord, error: adminError } = await supabase
+      .from('administrateurs')
+      .select('user_id, niveau')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (adminError) {
+      console.error('Erreur récupération administrateur:', adminError);
+    }
+
+    if (adminRecord) {
+      // Déterminer le rôle selon le niveau
+      if (adminRecord.niveau === 'superadmin') {
+        return { role: 'superadmin' };
+      }
+      return { role: 'admin' };
+    }
+
+    // Vérifier ensuite si l'utilisateur est un étudiant
+    const { data: studentRecord, error: studentError } = await supabase
+      .from('etudiants')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (studentError) {
+      console.error('Erreur récupération étudiant:', studentError);
+    }
+
+    if (studentRecord) {
+      return { role: 'etudiant' };
+    }
+
+    // Enfin, vérifier user_profiles (uniquement pour lead/candidat)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
@@ -216,20 +251,6 @@ export async function getUserProfileServer(userId: string): Promise<{ role: stri
 
     if (profile?.role) {
       return { role: String(profile.role).toLowerCase() };
-    }
-
-    const { data: adminRecord, error: adminError } = await supabase
-      .from('administrateurs')
-      .select('user_id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (adminError) {
-      console.error('Erreur récupération administrateur:', adminError);
-    }
-
-    if (adminRecord) {
-      return { role: 'admin' };
     }
 
     return null;

@@ -27,6 +27,17 @@ export const Navbar = () => {
     checkAuthStatus();
   }, []);
 
+  // Vérifier le paramètre d'URL pour ouvrir le modal
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const loginParam = searchParams.get('login');
+      if (loginParam === 'true') {
+        setIsLoginOpen(true);
+      }
+    }
+  }, [pathname]);
+
   const checkAuthStatus = async () => {
     setIsLoading(true);
     const result = await getCurrentUser();
@@ -63,10 +74,25 @@ export const Navbar = () => {
 
   const openLogin = () => {
     setIsLoginOpen(true);
+    // Mettre à jour l'URL avec le paramètre login
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('login', 'true');
+      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : `${pathname}?login=true`;
+      router.push(newUrl, { scroll: false });
+    }
   };
 
   const closeLogin = () => {
     setIsLoginOpen(false);
+    // Retirer les paramètres login et step de l'URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('login');
+      params.delete('step');
+      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.push(newUrl, { scroll: false });
+    }
     // Revérifier l'état après la connexion
     checkAuthStatus();
   };

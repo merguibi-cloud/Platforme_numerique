@@ -3,6 +3,7 @@ export interface SignUpData {
   email: string;
   password: string;
   formation_id?: number;
+  telephone: string;
 }
 
 export interface SignInData {

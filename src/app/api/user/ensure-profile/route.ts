@@ -44,15 +44,37 @@ export async function GET(request: NextRequest) {
     }
 
     // Créer le profil s'il n'existe pas
-    // Création profil
+    // Vérifier d'abord si l'utilisateur est un admin ou étudiant (ne doit pas avoir de user_profile)
+    const { data: adminCheck } = await supabase
+      .from('administrateurs')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    const { data: studentCheck } = await supabase
+      .from('etudiants')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    // Si l'utilisateur est admin ou étudiant, ne pas créer de user_profile
+    if (adminCheck || studentCheck) {
+      return NextResponse.json({
+        success: true,
+        profile: null,
+        message: 'Utilisateur admin ou étudiant - pas de user_profile nécessaire'
+      });
+    }
     
     // Utiliser le client Supabase authentifié (les politiques RLS doivent permettre la création)
+    // Créer uniquement pour les leads/candidats avec rôle 'lead' par défaut
     const { data: newProfile, error: createError } = await supabase
       .from('user_profiles')
       .insert({
         user_id: user.id,
         formation_id: null,
-        profile_completed: false
+        profile_completed: false,
+        role: 'lead' // Rôle par défaut pour les nouveaux profils (passerelle lead/candidat)
       })
       .select()
       .single();

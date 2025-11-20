@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, ChevronDown, Check, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Search, ChevronDown, Check, ArrowLeft, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { Formation, categories, niveaux, rythmes } from '@/types/formations';
 import { getAllFormations } from '@/lib/formations';
 import { signIn, signUp } from '@/lib/auth-api';
@@ -18,7 +18,9 @@ type Step = 'login' | 'formation-selection' | 'inscription';
 
 export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteAction }: LoginWithFormationSelectionProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [currentStep, setCurrentStep] = useState<Step>('login');
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [selectedFormation, setSelectedFormation] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('TOUS');
@@ -29,6 +31,7 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [telephone, setTelephone] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   
   // États pour les formations
@@ -58,6 +61,33 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
     loadFormations();
   }, []);
 
+  // Synchroniser l'étape avec l'URL
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isOpen) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const stepParam = searchParams.get('step');
+      if (stepParam === 'formation-selection' || stepParam === 'inscription') {
+        setCurrentStep(stepParam as Step);
+      } else {
+        setCurrentStep('login');
+      }
+    }
+  }, [isOpen]);
+
+  // Mettre à jour l'URL quand l'étape change
+  const updateStepInUrl = (step: Step) => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (step === 'login') {
+        params.delete('step');
+      } else {
+        params.set('step', step);
+      }
+      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.push(newUrl, { scroll: false });
+    }
+  };
+
   // Reset states when popup opens/closes
   useEffect(() => {
     if (isOpen) {
@@ -71,7 +101,9 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
       setEmail('');
       setPassword('');
       setConfirmPassword('');
+      setTelephone('');
       setAcceptTerms(false);
+      setShowSuccessMessage(false);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -148,6 +180,11 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
         return;
       }
 
+      if (!telephone || telephone.trim() === '') {
+        setError('Le numéro de téléphone est obligatoire.');
+        return;
+      }
+
       if (!acceptTerms) {
         setError('Vous devez accepter les conditions d\'utilisation.');
         return;
@@ -157,6 +194,7 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
         email,
         password,
         formation_id: selectedFormation || undefined,
+        telephone: telephone.trim(),
       });
 
       if (!result.success) {
@@ -164,9 +202,16 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
         return;
       }
 
-      // Rediriger vers la page de confirmation
-      router.push(`/confirmation?email=${encodeURIComponent(email)}`);
-      onCloseAction();
+      // Afficher le message de confirmation
+      setShowSuccessMessage(true);
+      setError('');
+
+      // Rediriger vers la page de confirmation après 2 secondes
+      // L'utilisateur devra confirmer son email avant de pouvoir se connecter
+      setTimeout(() => {
+        onCloseAction();
+        router.push(`/confirmation?email=${encodeURIComponent(email)}`);
+      }, 2000); // Afficher le message pendant 2 secondes
     } catch (error) {
       console.error('Erreur d\'inscription:', error);
       setError('Une erreur est survenue lors de l\'inscription.');
@@ -178,6 +223,7 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
   const handleNext = () => {
     if (currentStep === 'formation-selection' && selectedFormation) {
       setCurrentStep('inscription');
+      updateStepInUrl('inscription');
     } else if (currentStep === 'inscription') {
       handleSignUp();
     }
@@ -192,8 +238,10 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
   const goBack = () => {
     if (currentStep === 'formation-selection') {
       setCurrentStep('login');
+      updateStepInUrl('login');
     } else if (currentStep === 'inscription') {
       setCurrentStep('formation-selection');
+      updateStepInUrl('formation-selection');
     } else {
       onCloseAction();
     }
@@ -278,7 +326,10 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                   
                   {/* Bouton */}
                   <button
-                    onClick={() => setCurrentStep('formation-selection')}
+                    onClick={() => {
+                      setCurrentStep('formation-selection');
+                      updateStepInUrl('formation-selection');
+                    }}
                     className="bg-[#F8F5E4] hover:bg-[#F8F5E4]/90 text-[#032622] px-6 py-3 sm:px-8 sm:py-4 font-bold text-base sm:text-lg transition-colors duration-200"
                     style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
                   >
@@ -305,8 +356,19 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                     Connectez-vous si vous avez déjà un compte
                   </p>
 
+                  {/* Message de succès */}
+                  {showSuccessMessage && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3 mb-4">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-green-800 font-semibold text-sm mb-1">Inscription réussie !</p>
+                        <p className="text-green-700 text-sm">Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Message d'erreur */}
-                  {error && (
+                  {error && !showSuccessMessage && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
                       <AlertCircle className="w-5 h-5 text-red-500" />
                       <p className="text-red-600 text-sm">{error}</p>
@@ -606,6 +668,25 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
               <div className="w-full max-w-4xl mx-auto">
                 {/* Formulaire d'inscription */}
                 <form className="space-y-6">
+                  {/* Message de succès */}
+                  {showSuccessMessage && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-green-800 font-semibold text-sm mb-1">Inscription réussie !</p>
+                        <p className="text-green-700 text-sm">Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Message d'erreur */}
+                  {error && !showSuccessMessage && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                  )}
+
                   {/* Email */}
                   <div>
                     <label 
@@ -620,6 +701,24 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-4 py-3 bg-[#032622]/16 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                       placeholder="Votre email"
+                      required
+                    />
+                  </div>
+
+                  {/* Téléphone */}
+                  <div>
+                    <label 
+                      className="block text-[#032622] text-sm font-medium mb-2"
+                      style={{ fontFamily: 'var(--font-termina-medium)', fontWeight: '500' }}
+                    >
+                      TÉLÉPHONE*
+                    </label>
+                    <input
+                      type="tel"
+                      value={telephone}
+                      onChange={(e) => setTelephone(e.target.value)}
+                      className="w-full px-4 py-3 bg-[#032622]/16 text-[#032622] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                      placeholder="Votre numéro de téléphone"
                       required
                     />
                   </div>
@@ -742,11 +841,11 @@ export const LoginWithFormationSelection = ({ isOpen, onCloseAction, onCompleteA
                   onClick={handleNext}
                   disabled={
                     currentStep === 'formation-selection' ? !selectedFormation : 
-                    currentStep === 'inscription' ? !email || !password || !confirmPassword || !acceptTerms || isLoading : false
+                    currentStep === 'inscription' ? !email || !password || !confirmPassword || !telephone || !acceptTerms || isLoading : false
                   }
                   className={`px-8 py-4 font-bold transition-all duration-200 flex items-center gap-3 text-lg ${
                     (currentStep === 'formation-selection' && selectedFormation) ||
-                    (currentStep === 'inscription' && email && password && confirmPassword && acceptTerms && !isLoading)
+                    (currentStep === 'inscription' && email && password && confirmPassword && telephone && acceptTerms && !isLoading)
                       ? 'bg-[#032622] hover:bg-[#044a3a] text-white hover:shadow-lg'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}

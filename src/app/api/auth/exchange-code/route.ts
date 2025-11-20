@@ -52,7 +52,26 @@ export async function GET(request: NextRequest) {
       
       // Déterminer la redirection selon le rôle
       const roleResolution = await resolveRoleForUser(sessionData.user.id);
-      const redirectTo = roleResolution.redirectTo || '/';
+      
+      // Pour les nouveaux utilisateurs (lead), rediriger vers /validation
+      // Pour les autres rôles, utiliser la redirection définie
+      let redirectTo = roleResolution.redirectTo;
+      
+      // Si pas de redirection trouvée, vérifier si c'est un lead/candidat
+      if (!redirectTo) {
+        const supabaseService = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        const { data: profile } = await supabaseService
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', sessionData.user.id)
+          .maybeSingle();
+        
+        if (profile && (profile.role === 'lead' || profile.role === 'candidat')) {
+          redirectTo = '/validation';
+        } else {
+          redirectTo = '/';
+        }
+      }
       
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }

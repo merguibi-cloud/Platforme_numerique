@@ -69,16 +69,35 @@ export async function POST(request: NextRequest) {
      const body = await request.json();
      const { step, data: stepData } = body;
 
-    // Récupérer le formation_id depuis user_profiles
+    // Récupérer le formation_id, le téléphone et le rôle depuis user_profiles
     let profile = await supabase
       .from('user_profiles')
-      .select('formation_id')
+      .select('formation_id, telephone, role, email')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    // Si le profil n'existe pas, le créer
+    // Si le profil n'existe pas, le créer avec rôle 'lead'
     if (!profile.data) {
-      // Création profil automatique
+      // Vérifier d'abord si l'utilisateur est un admin ou étudiant (ne doit pas avoir de user_profile)
+      const { data: adminCheck } = await supabase
+        .from('administrateurs')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      const { data: studentCheck } = await supabase
+        .from('etudiants')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      // Si l'utilisateur est admin ou étudiant, ne pas créer de user_profile
+      if (adminCheck || studentCheck) {
+        return NextResponse.json(
+          { success: false, error: 'Les administrateurs et étudiants ne peuvent pas créer de candidature via user_profiles' },
+          { status: 403 }
+        );
+      }
       
       // Utiliser le client Supabase authentifié (les politiques RLS doivent permettre la création)
       const { data: newProfile, error: createError } = await supabase
@@ -86,9 +105,10 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: user.id,
           formation_id: null,
-          profile_completed: false
+          profile_completed: false,
+          role: 'lead' // Rôle par défaut pour les nouveaux profils
         })
-        .select('formation_id')
+        .select('formation_id, telephone, role, email')
         .single();
 
       if (createError) {
@@ -129,13 +149,18 @@ export async function POST(request: NextRequest) {
 
      // Ajouter les données spécifiques à l'étape
      if (step === 'informations') {
+       // Utiliser le téléphone depuis stepData s'il est fourni, sinon depuis user_profiles
+       const telephone = stepData.telephone || profile.data?.telephone || null;
+       // Utiliser l'email depuis stepData s'il est fourni, sinon depuis user_profiles
+       const email = stepData.email || profile.data?.email || user.email || null;
+       
        updateData = {
          ...updateData,
          civilite: stepData.civilite,
          nom: stepData.nom,
          prenom: stepData.prenom,
-         email: stepData.email,
-         telephone: stepData.telephone,
+         email: email,
+         telephone: telephone,
          adresse: stepData.adresse,
          code_postal: stepData.codePostal,
          ville: stepData.ville,
@@ -151,6 +176,15 @@ export async function POST(request: NextRequest) {
          ...(stepData.photoIdentitePath && { photo_identite_path: stepData.photoIdentitePath }),
          piece_identite_paths: stepData.pieceIdentitePaths || [],
        };
+
+       // Si c'est la première fois qu'on crée la candidature et que l'utilisateur a le rôle 'lead',
+       // changer son rôle en 'candidat'
+       if (!existingCandidature && profile.data?.role === 'lead') {
+         await supabase
+           .from('user_profiles')
+           .update({ role: 'candidat' })
+           .eq('user_id', user.id);
+       }
     } else if (step === 'documents') {
       updateData = {
         ...updateData,

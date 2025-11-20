@@ -70,10 +70,17 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     try {
       setIsLoading(true);
       
-      // S'assurer que le profil utilisateur existe
+      // Récupérer le profil utilisateur pour pré-remplir email et téléphone
+      let profileEmail = userEmail;
+      let profileTelephone = '';
+      
       try {
         const profileCheck = await fetch('/api/user/ensure-profile');
         const profileResult = await profileCheck.json();
+        if (profileResult.success && profileResult.profile) {
+          profileEmail = profileResult.profile.email || userEmail;
+          profileTelephone = profileResult.profile.telephone || '';
+        }
       } catch (error) {
         // Erreur silencieuse
       }
@@ -88,8 +95,8 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
           civilite: candidature.civilite || '',
           nom: candidature.nom || '',
           prenom: candidature.prenom || '',
-          email: candidature.email || userEmail,
-          telephone: candidature.telephone || '',
+          email: candidature.email || profileEmail,
+          telephone: candidature.telephone || profileTelephone,
           adresse: candidature.adresse || '',
           codePostal: candidature.code_postal || '',
           ville: candidature.ville || '',
@@ -137,6 +144,13 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
           }
           setExistingPieceIdentite(pieceIdentiteFiles);
         }
+      } else {
+        // Si pas de candidature existante, pré-remplir avec les données du profil
+        setFormData(prev => ({
+          ...prev,
+          email: profileEmail,
+          telephone: profileTelephone,
+        }));
       }
     } catch (error) {
       // Erreur silencieuse
