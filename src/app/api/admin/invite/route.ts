@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (adminError) {
-      await logCreate(request, 'administrateurs', newAdmin?.id || 'unknown', {
+      await logCreate(request, 'administrateurs', 'unknown', {
         nom, prenom, email, role, ecole
       }, `Échec de création d'administrateur: ${adminError.message}`).catch(() => {});
       
