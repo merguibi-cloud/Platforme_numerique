@@ -243,6 +243,7 @@ export async function DELETE(
 
     const supabase = getSupabaseServerClient();
 
+    const { moduleId } = await params;
     const { searchParams } = new URL(request.url);
     const coursId = searchParams.get('coursId');
 

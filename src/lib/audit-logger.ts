@@ -31,7 +31,7 @@ async function getUserInfoForLog(userId: string): Promise<{
   user_email: string | null;
   user_nom: string | null;
   user_prenom: string | null;
-  user_role: string | null;
+  user_role: string;
   performed_by: string;
 }> {
   try {
@@ -129,7 +129,6 @@ function getRequestContext(request: NextRequest): {
   try {
     const ip = request.headers.get('x-forwarded-for') || 
                request.headers.get('x-real-ip') || 
-               request.ip || 
                null;
     
     const userAgent = request.headers.get('user-agent') || null;

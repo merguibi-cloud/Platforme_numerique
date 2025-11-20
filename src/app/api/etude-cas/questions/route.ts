@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
+import { logCreate, logUpdate } from '@/lib/audit-logger';
 
 // POST - Créer une nouvelle question
 export async function POST(request: NextRequest) {
