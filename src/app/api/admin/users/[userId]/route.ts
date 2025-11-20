@@ -62,34 +62,6 @@ export async function PUT(
 
     const supabase = getSupabaseServerClient();
 
-    const { userId } = await params;
-    const body = await request.json();
-    const { role } = body;
-
-    // Valider le rôle
-    if (!role || !['etudiant', 'animateur', 'admin', 'superadmin'].includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Rôle invalide' },
-        { status: 400 }
-      );
-    }
-
-    // Empêcher un admin de promouvoir quelqu'un en superadmin
-    if (profile.role === 'admin' && role === 'superadmin') {
-      return NextResponse.json(
-        { success: false, error: 'Seuls les super-administrateurs peuvent promouvoir en super-admin' },
-        { status: 403 }
-      );
-    }
-
-    // Empêcher de modifier son propre rôle
-    if (userId === user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vous ne pouvez pas modifier votre propre rôle' },
-        { status: 400 }
-      );
-    }
-
     // Mettre à jour le rôle
     const { data, error } = await supabase
       .from('user_profiles')

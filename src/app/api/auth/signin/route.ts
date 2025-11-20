@@ -79,6 +79,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier si l'utilisateur a un mot de passe temporaire
+    if (!data.user) {
+      return NextResponse.json(
+        { error: 'Erreur lors de la connexion' },
+        { status: 500 }
+      );
+    }
+
     const userMetadata = data.user.user_metadata;
     const requiresPasswordChange = userMetadata?.requires_password_change === true;
     const tempPasswordBase64 = userMetadata?.temp_password;

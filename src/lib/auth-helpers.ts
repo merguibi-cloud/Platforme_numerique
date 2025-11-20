@@ -132,7 +132,7 @@ export async function requireRole(
   try {
     const profileResult = await getUserProfileServer(userId);
     
-    if (!profileResult.success || !profileResult.role) {
+    if (!profileResult || !profileResult.role) {
       return {
         error: NextResponse.json(
           { error: 'Profil utilisateur non trouvé' },
