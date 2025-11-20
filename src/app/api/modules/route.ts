@@ -3,6 +3,8 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 import { createModuleWithCours } from '@/lib/modules-api';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { logCreate, logUpdate, logDelete, logAuditAction } from '@/lib/audit-logger';
+import { getCoursByIdServer } from '@/lib/cours-api';
 
 // GET - Récupérer les modules d'un bloc avec gestion des permissions
 export async function GET(request: NextRequest) {
@@ -265,7 +267,15 @@ export async function POST(request: NextRequest) {
 
       if (coursInsertError) {
         console.error('Erreur lors de l\'ajout des cours:', coursInsertError);
+        await logCreate(request, 'cours_contenu', 'unknown', coursToInsert, `Échec d'ajout de cours au module: ${coursInsertError.message}`).catch(() => {});
         return NextResponse.json({ error: 'Erreur lors de l\'ajout des cours' }, { status: 500 });
+      }
+
+      // Logger l'ajout des cours
+      if (newCours && newCours.length > 0) {
+        for (const cours of newCours) {
+          await logCreate(request, 'cours_contenu', cours.id, cours, `Ajout du cours "${cours.titre}" au module ${existingModule.titre}`).catch(() => {});
+        }
       }
 
       return NextResponse.json({
@@ -302,6 +312,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (result.success) {
+      // Logger la création du module
+      if (result.module) {
+        await logCreate(request, 'modules_apprentissage', result.module.id, result.module, `Création du module "${result.module.titre}"`).catch(() => {});
+      }
+      // Logger la création des cours
+      if (result.cours && result.cours.length > 0) {
+        for (const cours of result.cours) {
+          await logCreate(request, 'cours_contenu', cours.id, cours, `Création du cours "${cours.titre}" dans le module`).catch(() => {});
+        }
+      }
+      
       return NextResponse.json({ 
         success: true,
         module: result.module,
@@ -310,6 +331,7 @@ export async function POST(request: NextRequest) {
         message: 'Module créé avec succès'
       });
     } else {
+      await logCreate(request, 'modules_apprentissage', 'unknown', { titre, description, type_module }, `Échec de création de module: ${result.error}`).catch(() => {});
       return NextResponse.json({ 
         error: result.error || 'Erreur lors de la création du module'
       }, { status: 500 });
@@ -343,6 +365,13 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { moduleId, action } = body;
 
+    // Récupérer le module pour le log
+    const { data: module } = await supabase
+      .from('modules_apprentissage')
+      .select('*')
+      .eq('id', moduleId)
+      .single();
+
     if (action === 'publish') {
       // Publier le module (mettre tous les cours en actif)
       const { error: updateError } = await supabase
@@ -352,8 +381,24 @@ export async function PUT(request: NextRequest) {
 
       if (updateError) {
         console.error('Erreur lors de la publication:', updateError);
+        await logAuditAction(request, {
+          action_type: 'VALIDATE',
+          table_name: 'modules_apprentissage',
+          resource_id: moduleId.toString(),
+          status: 'error',
+          error_message: updateError.message,
+          description: `Échec de publication du module ${module?.titre || moduleId}`
+        }).catch(() => {});
         return NextResponse.json({ error: 'Erreur lors de la publication' }, { status: 500 });
       }
+      
+      await logAuditAction(request, {
+        action_type: 'VALIDATE',
+        table_name: 'modules_apprentissage',
+        resource_id: moduleId.toString(),
+        status: 'success',
+        description: `Publication du module "${module?.titre || moduleId}"`
+      }).catch(() => {});
     } else if (action === 'unpublish') {
       // Dépublier le module (mettre tous les cours en inactif)
       const { error: updateError } = await supabase
@@ -363,8 +408,24 @@ export async function PUT(request: NextRequest) {
 
       if (updateError) {
         console.error('Erreur lors de la dépublication:', updateError);
+        await logAuditAction(request, {
+          action_type: 'REJECT',
+          table_name: 'modules_apprentissage',
+          resource_id: moduleId.toString(),
+          status: 'error',
+          error_message: updateError.message,
+          description: `Échec de dépublication du module ${module?.titre || moduleId}`
+        }).catch(() => {});
         return NextResponse.json({ error: 'Erreur lors de la dépublication' }, { status: 500 });
       }
+      
+      await logAuditAction(request, {
+        action_type: 'REJECT',
+        table_name: 'modules_apprentissage',
+        resource_id: moduleId.toString(),
+        status: 'success',
+        description: `Dépublication du module "${module?.titre || moduleId}"`
+      }).catch(() => {});
     }
 
     return NextResponse.json({ success: true });
@@ -416,6 +477,10 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: 'ID du cours invalide' }, { status: 400 });
       }
 
+      // Récupérer le cours avant suppression
+      const oldCoursResult = await getCoursByIdServer(coursId);
+      const oldCours = oldCoursResult.success ? oldCoursResult.cours : null;
+
       const { error: singleCoursDeleteError } = await supabase
         .from('cours_contenu')
         .delete()
@@ -424,8 +489,11 @@ export async function DELETE(request: NextRequest) {
 
       if (singleCoursDeleteError) {
         console.error('Erreur lors de la suppression du cours:', singleCoursDeleteError);
+        await logDelete(request, 'cours_contenu', coursId, oldCours || { id: coursId }, `Échec de suppression du cours: ${singleCoursDeleteError.message}`).catch(() => {});
         return NextResponse.json({ error: 'Erreur lors de la suppression du cours' }, { status: 500 });
       }
+
+      await logDelete(request, 'cours_contenu', coursId, oldCours || { id: coursId }, `Suppression du cours "${oldCours?.titre || coursId}"`).catch(() => {});
     } else {
       const { error: coursDeleteError } = await supabase
         .from('cours_contenu')

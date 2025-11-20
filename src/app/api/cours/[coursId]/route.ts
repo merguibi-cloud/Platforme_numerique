@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { getCoursByIdServer } from '@/lib/cours-api';
+import { logUpdate, logAuditAction } from '@/lib/audit-logger';
 
 // GET - Récupérer un cours spécifique
 export async function GET(
@@ -82,19 +84,45 @@ export async function PUT(
     const body = await request.json();
     const { actif } = body;
 
+    // Récupérer l'ancien cours pour le log
+    const oldCoursResult = await getCoursByIdServer(parseInt(coursId));
+    const oldCours = oldCoursResult.success ? oldCoursResult.cours : null;
+
     // Mettre à jour le statut du cours
-    const { error: updateError } = await supabase
+    const { data: updatedCours, error: updateError } = await supabase
       .from('cours_contenu')
       .update({ 
         actif: actif,
         updated_at: new Date().toISOString()
       })
-      .eq('id', coursId);
+      .eq('id', coursId)
+      .select()
+      .single();
 
     if (updateError) {
       console.error('Erreur lors de la mise à jour du statut:', updateError);
+      await logUpdate(
+        request,
+        'cours_contenu',
+        coursId,
+        oldCours || {},
+        { actif },
+        ['actif'],
+        `Échec de mise à jour du statut du cours: ${updateError.message}`
+      ).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
     }
+
+    // Logger la mise à jour du statut
+    await logUpdate(
+      request,
+      'cours_contenu',
+      coursId,
+      oldCours || {},
+      updatedCours || { actif },
+      ['actif'],
+      `Mise à jour du statut du cours ${oldCours?.titre || coursId}: ${actif ? 'actif' : 'inactif'}`
+    ).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (error) {

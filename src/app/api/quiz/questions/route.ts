@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { CreateQuestionData, QuestionQuiz } from '@/types/formation-detailed';
+import { logCreate, logUpdate, logDelete } from '@/lib/audit-logger';
 
 // POST - Créer une question
 export async function POST(request: NextRequest) {
@@ -37,8 +38,12 @@ export async function POST(request: NextRequest) {
 
     if (questionError) {
       console.error('Erreur lors de la création de la question:', questionError);
+      await logCreate(request, 'questions_quiz', 'unknown', questionData, `Échec de création de question: ${questionError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la création de la question' }, { status: 500 });
     }
+
+    // Logger la création de la question
+    await logCreate(request, 'questions_quiz', newQuestion.id, newQuestion, `Création d'une question pour le quiz ${quiz_id}`).catch(() => {});
 
     // Si c'est une question avec réponses possibles (choix_unique, choix_multiple, vrai_faux)
     if (reponses_possibles && reponses_possibles.length > 0 && 
@@ -105,8 +110,23 @@ export async function PUT(request: NextRequest) {
 
     if (updateError) {
       console.error('Erreur lors de la mise à jour de la question:', updateError);
+      // Récupérer l'ancienne question pour le log
+      const { data: oldQuestion } = await supabase
+        .from('questions_quiz')
+        .select('*')
+        .eq('id', questionId)
+        .single();
+      await logUpdate(request, 'questions_quiz', questionId, oldQuestion || {}, updateData, Object.keys(updateData), `Échec de mise à jour de question: ${updateError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la mise à jour de la question' }, { status: 500 });
     }
+
+    // Logger la mise à jour
+    const { data: oldQuestion } = await supabase
+      .from('questions_quiz')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+    await logUpdate(request, 'questions_quiz', questionId, oldQuestion || {}, updatedQuestion, Object.keys(updateData), `Mise à jour de la question ${questionId}`).catch(() => {});
 
     // Si des réponses sont fournies, les mettre à jour
     if (reponses_possibles && Array.isArray(reponses_possibles)) {
@@ -163,6 +183,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'questionId est requis' }, { status: 400 });
     }
 
+    // Récupérer la question avant suppression pour le log
+    const { data: oldQuestion } = await supabase
+      .from('questions_quiz')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+
     // Supprimer les réponses possibles associées
     await supabase
       .from('reponses_possibles')
@@ -177,8 +204,12 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error('Erreur lors de la suppression de la question:', error);
+      await logDelete(request, 'questions_quiz', questionId, oldQuestion || { id: questionId }, `Échec de suppression de question: ${error.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la suppression de la question' }, { status: 500 });
     }
+
+    // Logger la suppression réussie
+    await logDelete(request, 'questions_quiz', questionId, oldQuestion || { id: questionId }, `Suppression de la question ${questionId}`).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (error) {

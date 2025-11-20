@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logCreate } from '@/lib/audit-logger';
 
 // POST - Inviter un administrateur
 export async function POST(request: NextRequest) {
@@ -210,6 +211,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (adminError) {
+      await logCreate(request, 'administrateurs', newAdmin?.id || 'unknown', {
+        nom, prenom, email, role, ecole
+      }, `Échec de création d'administrateur: ${adminError.message}`).catch(() => {});
+      
       return NextResponse.json(
         { 
           success: false, 
@@ -218,6 +223,17 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    
+    // Logger la création
+    await logCreate(request, 'administrateurs', newAdmin.id, {
+      id: newAdmin.id,
+      nom: newAdmin.nom,
+      prenom: newAdmin.prenom,
+      email: newAdmin.email,
+      role_secondaire: newAdmin.role_secondaire,
+      service: newAdmin.service,
+      niveau: newAdmin.niveau,
+    }, `Création d'un nouvel administrateur: ${newAdmin.prenom} ${newAdmin.nom} (${newAdmin.email})`).catch(() => {});
     
     // Retourner les identifiants pour affichage dans le modal
     return NextResponse.json({
@@ -231,6 +247,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    await logCreate(request, 'administrateurs', 'unknown', {}, `Erreur lors de la création d'administrateur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`).catch(() => {});
+    
     return NextResponse.json(
       { 
         success: false, 

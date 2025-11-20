@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { logUpdate, logDelete } from '@/lib/audit-logger';
 
 // POST - Changer la formation de l'utilisateur et supprimer la candidature existante
 export async function POST(request: NextRequest) {
@@ -66,8 +67,18 @@ export async function POST(request: NextRequest) {
 
       if (deleteError) {
         // Continuer même si la suppression échoue
+      } else {
+        // Logger la suppression de la candidature
+        await logDelete(request, 'candidatures', existingCandidature.id, existingCandidature, `Suppression de la candidature lors du changement de formation`).catch(() => {});
       }
     }
+
+    // Récupérer l'ancien profil pour le log
+    const { data: oldProfile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
 
     // 2. Mettre à jour la formation dans user_profiles
     const { data: profile, error: updateError } = await supabase
@@ -81,6 +92,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError) {
+      await logUpdate(request, 'user_profiles', user.id, oldProfile || {}, { formation_id }, ['formation_id'], `Échec de changement de formation: ${updateError.message}`).catch(() => {});
       return NextResponse.json(
         { 
           success: false, 
@@ -89,6 +101,9 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Logger le changement de formation
+    await logUpdate(request, 'user_profiles', user.id, oldProfile || {}, profile, ['formation_id', 'profile_completed'], `Changement de formation de ${oldProfile?.formation_id || 'aucune'} vers ${formation_id}`).catch(() => {});
 
     return NextResponse.json({
       success: true,

@@ -3,6 +3,7 @@ import { getAuth, getSupabaseServerClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import { resolveRoleForUser } from '@/lib/auth-role';
 import { createClient } from '@supabase/supabase-js';
+import { logLogin } from '@/lib/audit-logger';
 // Route pour la connexion
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
           });
           
           if (retryError) {
+            await logLogin(request, user.id, email, 'error', retryError.message).catch(() => {});
             return NextResponse.json(
               { error: 'Email ou mot de passe incorrect.' },
               { status: 400 }
@@ -54,12 +56,20 @@ export async function POST(request: NextRequest) {
             Object.assign(data, retryData);
           }
         } else {
+          // Logger l'échec de connexion
+          const userList = await supabaseAdmin.auth.admin.listUsers();
+          const user = userList?.data?.users?.find(u => u.email === email.toLowerCase());
+          if (user) {
+            await logLogin(request, user.id, email, 'error', 'Email non confirmé').catch(() => {});
+          }
           return NextResponse.json(
             { error: 'Veuillez confirmer votre email avant de vous connecter.' },
             { status: 400 }
           );
         }
       } else {
+        // Logger l'échec de connexion (email/mot de passe incorrect)
+        await logLogin(request, 'unknown', email, 'error', error.message).catch(() => {});
         return NextResponse.json(
           { error: 'Email ou mot de passe incorrect.' },
           { status: 400 }
@@ -146,6 +156,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Logger la connexion réussie
+    await logLogin(request, data.user.id, data.user.email || email, 'success').catch(() => {});
+    
     // Définir les cookies de session
     const response = NextResponse.json({
       success: true,

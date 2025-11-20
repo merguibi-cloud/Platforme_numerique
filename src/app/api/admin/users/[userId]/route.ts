@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { logUpdate } from '@/lib/audit-logger';
 
 // PUT - Mettre à jour le rôle d'un utilisateur
 export async function PUT(
@@ -62,6 +63,13 @@ export async function PUT(
 
     const supabase = getSupabaseServerClient();
 
+    // Récupérer l'ancien profil pour le log
+    const { data: oldProfile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
     // Mettre à jour le rôle
     const { data, error } = await supabase
       .from('user_profiles')
@@ -70,11 +78,32 @@ export async function PUT(
       .select();
 
     if (error) {
+      await logUpdate(
+        request,
+        'user_profiles',
+        userId,
+        oldProfile || {},
+        { role },
+        ['role'],
+        `Échec de changement de rôle: ${error.message}`
+      ).catch(() => {});
+      
       return NextResponse.json(
         { success: false, error: 'Erreur lors de la mise à jour du rôle' },
         { status: 500 }
       );
     }
+
+    // Logger le changement de rôle
+    await logUpdate(
+      request,
+      'user_profiles',
+      userId,
+      oldProfile || {},
+      data[0],
+      ['role'],
+      `Changement de rôle de ${oldProfile?.role || 'unknown'} vers ${role} pour l'utilisateur ${userId}`
+    ).catch(() => {});
 
     return NextResponse.json({
       success: true,

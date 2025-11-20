@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { logAuditAction } from '@/lib/audit-logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,6 +85,16 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Erreur upload:', uploadError);
+      await logAuditAction(request, {
+        action_type: 'UPLOAD',
+        table_name: 'storage',
+        resource_id: filePath,
+        status: 'error',
+        error_message: uploadError.message,
+        metadata: { bucket: bucketName, fileName: file.name, coursId },
+        description: `Échec d'upload de fichier complémentaire pour le cours ${coursId}`
+      }).catch(() => {});
+      
       return NextResponse.json(
         {
           error: 'Erreur lors de l\'upload du fichier',
@@ -92,6 +103,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Logger l'upload réussi
+    await logAuditAction(request, {
+      action_type: 'UPLOAD',
+      table_name: 'storage',
+      resource_id: filePath,
+      status: 'success',
+      metadata: { bucket: bucketName, fileName: file.name, coursId, fileSize: file.size },
+      description: `Upload de fichier complémentaire "${file.name}" pour le cours ${coursId}`
+    }).catch(() => {});
 
     // Obtenir l'URL publique du fichier
     const { data: urlData } = supabase.storage

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { logAuditAction } from '@/lib/audit-logger';
 
 // Route pour l'upload de fichiers
 export async function POST(request: NextRequest) {
@@ -49,6 +50,16 @@ export async function POST(request: NextRequest) {
       .upload(filePath, file);
 
     if (uploadError) {
+      await logAuditAction(request, {
+        action_type: 'UPLOAD',
+        table_name: 'storage',
+        resource_id: filePath,
+        status: 'error',
+        error_message: uploadError.message,
+        metadata: { bucket: bucketName, fileName: file.name, type },
+        description: `Échec d'upload du fichier ${file.name}`
+      }).catch(() => {});
+      
       return NextResponse.json(
         { 
           error: 'Erreur lors de l\'upload du fichier',
@@ -57,6 +68,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Logger l'upload réussi
+    await logAuditAction(request, {
+      action_type: 'UPLOAD',
+      table_name: 'storage',
+      resource_id: filePath,
+      status: 'success',
+      metadata: { bucket: bucketName, fileName: file.name, type, fileSize: file.size },
+      description: `Upload du fichier ${file.name} dans ${bucketName}`
+    }).catch(() => {});
 
     // Fichier uploadé
 

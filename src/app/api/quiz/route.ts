@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { QuizEvaluation, CreateQuizData } from '@/types/formation-detailed';
+import { logCreate, logUpdate, logDelete } from '@/lib/audit-logger';
 
 // GET - Récupérer un quiz par cours_id ou module_id
 export async function GET(request: NextRequest) {
@@ -128,8 +129,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Erreur lors de la création du quiz:', error);
+      await logCreate(request, 'quiz_evaluations', 'unknown', quizData, `Échec de création de quiz: ${error.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la création du quiz' }, { status: 500 });
     }
+
+    await logCreate(request, 'quiz_evaluations', quiz.id, quiz, `Création du quiz "${quiz.titre}"`).catch(() => {});
 
     return NextResponse.json({ quiz }, { status: 201 });
   } catch (error) {
@@ -149,6 +153,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'quizId est requis' }, { status: 400 });
     }
 
+    // Récupérer l'ancien quiz pour le log
+    const { data: oldQuiz } = await supabase
+      .from('quiz_evaluations')
+      .select('*')
+      .eq('id', quizId)
+      .single();
+
     const { data: quiz, error } = await supabase
       .from('quiz_evaluations')
       .update(updates)
@@ -158,8 +169,11 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       console.error('Erreur lors de la mise à jour du quiz:', error);
+      await logUpdate(request, 'quiz_evaluations', quizId, oldQuiz || {}, updates, Object.keys(updates), `Échec de mise à jour du quiz: ${error.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la mise à jour du quiz' }, { status: 500 });
     }
+
+    await logUpdate(request, 'quiz_evaluations', quizId, oldQuiz || {}, quiz, Object.keys(updates), `Mise à jour du quiz "${quiz.titre || quizId}"`).catch(() => {});
 
     return NextResponse.json({ quiz });
   } catch (error) {

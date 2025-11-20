@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { getCoursByIdServer } from '@/lib/cours-api';
+import { logCreate, logUpdate, logDelete, logAuditAction } from '@/lib/audit-logger';
 
 // GET - Récupérer les détails d'un module avec ses cours
 export async function GET(
@@ -145,8 +147,12 @@ export async function POST(
 
     if (coursError) {
       console.error('Erreur lors de la création du cours:', coursError);
+      await logCreate(request, 'cours_contenu', 'unknown', body, `Échec de création de cours: ${coursError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la création du cours' }, { status: 500 });
     }
+
+    // Logger la création du cours
+    await logCreate(request, 'cours_contenu', cours.id, cours, `Création du cours "${cours.titre}" dans le module ${moduleId}`).catch(() => {});
 
     return NextResponse.json({ 
       success: true, 
@@ -185,19 +191,29 @@ export async function PUT(
     const body = await request.json();
     const { coursId, ...updateData } = body;
 
+    // Récupérer l'ancien cours pour le log
+    const oldCoursResult = await getCoursByIdServer(coursId);
+    const oldCours = oldCoursResult.success ? oldCoursResult.cours : null;
+
     // Mettre à jour le cours
-    const { error: updateError } = await supabase
+    const { data: updatedCours, error: updateError } = await supabase
       .from('cours_contenu')
       .update({
         ...updateData,
         updated_at: new Date().toISOString()
       })
-      .eq('id', coursId);
+      .eq('id', coursId)
+      .select()
+      .single();
 
     if (updateError) {
       console.error('Erreur lors de la mise à jour du cours:', updateError);
+      await logUpdate(request, 'cours_contenu', coursId, oldCours || {}, updateData, Object.keys(updateData), `Échec de mise à jour du cours: ${updateError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
     }
+
+    // Logger la mise à jour
+    await logUpdate(request, 'cours_contenu', coursId, oldCours || {}, updatedCours || updateData, Object.keys(updateData), `Mise à jour du cours "${oldCours?.titre || coursId}"`).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -234,6 +250,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'ID du cours requis' }, { status: 400 });
     }
 
+    // Récupérer le cours avant suppression pour le log
+    const oldCoursResult = await getCoursByIdServer(parseInt(coursId));
+    const oldCours = oldCoursResult.success ? oldCoursResult.cours : null;
+
     // Supprimer le cours
     const { error: deleteError } = await supabase
       .from('cours_contenu')
@@ -242,8 +262,12 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Erreur lors de la suppression du cours:', deleteError);
+      await logDelete(request, 'cours_contenu', coursId, oldCours || { id: coursId }, `Échec de suppression du cours: ${deleteError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur lors de la suppression' }, { status: 500 });
     }
+
+    // Logger la suppression
+    await logDelete(request, 'cours_contenu', coursId, oldCours || { id: coursId }, `Suppression du cours "${oldCours?.titre || coursId}" du module ${moduleId}`).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (error) {

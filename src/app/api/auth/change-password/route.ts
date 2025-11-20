@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/supabase';
 import { cookies } from 'next/headers';
+import { logPasswordChange } from '@/lib/audit-logger';
 
 // POST - Changer le mot de passe (pour les utilisateurs avec mot de passe temporaire)
 export async function POST(request: NextRequest) {
@@ -83,11 +84,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (updateError) {
+      await logPasswordChange(request, user.id, 'error', updateError.message).catch(() => {});
       return NextResponse.json(
         { error: 'Erreur lors de la mise à jour du mot de passe' },
         { status: 500 }
       );
     }
+
+    // Logger le changement de mot de passe réussi
+    await logPasswordChange(request, user.id, 'success').catch(() => {});
 
     return NextResponse.json({
       success: true,

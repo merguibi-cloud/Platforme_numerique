@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logUpdate, logDelete } from '@/lib/audit-logger';
 
 // PUT - Modifier un administrateur
 export async function PUT(
@@ -47,7 +48,7 @@ export async function PUT(
     // Récupérer l'admin à modifier
     const { data: adminToUpdate, error: fetchError } = await supabase
       .from('administrateurs')
-      .select('user_id, email')
+      .select('*')
       .eq('id', id)
       .maybeSingle();
 
@@ -113,11 +114,33 @@ export async function PUT(
 
     if (updateError) {
       console.error('Erreur mise à jour admin:', updateError);
+      await logUpdate(request, 'administrateurs', id, adminToUpdate, {
+        nom, prenom, email, role, ecole
+      }, undefined, `Échec de mise à jour d'administrateur: ${updateError.message}`).catch(() => {});
+      
       return NextResponse.json(
         { success: false, error: `Erreur lors de la mise à jour: ${updateError.message}` },
         { status: 500 }
       );
     }
+
+    // Logger la mise à jour
+    const changedFields: string[] = [];
+    if (adminToUpdate.nom !== nom.toUpperCase()) changedFields.push('nom');
+    if (adminToUpdate.prenom !== prenom.toUpperCase()) changedFields.push('prenom');
+    if (adminToUpdate.email !== email.toLowerCase()) changedFields.push('email');
+    if (adminToUpdate.role_secondaire !== role_secondaire) changedFields.push('role_secondaire');
+    if (adminToUpdate.service !== service) changedFields.push('service');
+    
+    await logUpdate(
+      request,
+      'administrateurs',
+      id,
+      adminToUpdate,
+      updatedAdmin,
+      changedFields,
+      `Mise à jour de l'administrateur ${updatedAdmin.prenom} ${updatedAdmin.nom}`
+    ).catch(() => {});
 
     return NextResponse.json({
       success: true,
@@ -160,7 +183,7 @@ export async function DELETE(
     // Récupérer l'admin à supprimer avec toutes les informations nécessaires
     const { data: adminToDelete, error: fetchError } = await supabase
       .from('administrateurs')
-      .select('id, user_id, email')
+      .select('*')
       .eq('id', id)
       .maybeSingle();
 
@@ -250,6 +273,15 @@ export async function DELETE(
     }
     console.log('✓ Utilisateur supprimé de auth.users');
     console.log('=== SUPPRESSION COMPLÈTE ===');
+
+    // Logger la suppression
+    await logDelete(
+      request,
+      'administrateurs',
+      id,
+      adminToDelete,
+      `Suppression de l'administrateur ${adminToDelete.nom} ${adminToDelete.prenom} (${adminToDelete.email})`
+    ).catch(() => {});
 
     return NextResponse.json({
       success: true,

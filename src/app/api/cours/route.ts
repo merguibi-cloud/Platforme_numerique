@@ -10,6 +10,7 @@ import {
 } from '../../../lib/cours-api';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { logCreate, logUpdate, logDelete, logAuditAction } from '@/lib/audit-logger';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -69,9 +70,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const result = await createCoursServer(body, user.id);
-    if (result.success) {
+    if (result.success && result.cours) {
+      await logCreate(
+        request,
+        'cours_contenu',
+        result.cours.id,
+        result.cours,
+        `Création d'un nouveau cours: ${result.cours.titre}`
+      ).catch(() => {});
       return NextResponse.json({ cours: result.cours });
     } else {
+      await logCreate(
+        request,
+        'cours_contenu',
+        'unknown',
+        body,
+        `Échec de création de cours: ${result.error}`
+      ).catch(() => {});
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
   } catch (error) {
@@ -95,10 +110,39 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { coursId, ...updates } = body;
+    
+    // Récupérer l'ancien cours pour le log
+    const oldCoursResult = await getCoursByIdServer(coursId);
+    const oldCours = oldCoursResult.success ? oldCoursResult.cours : null;
+    
     const result = await updateCoursServer(coursId, updates, user.id);
     if (result.success) {
+      // Récupérer le cours mis à jour
+      const updatedCoursResult = await getCoursByIdServer(coursId);
+      const updatedCours = updatedCoursResult.success ? updatedCoursResult.cours : null;
+      
+      const changedFields = Object.keys(updates);
+      await logUpdate(
+        request,
+        'cours_contenu',
+        coursId,
+        oldCours || {},
+        updatedCours || updates,
+        changedFields,
+        `Mise à jour du cours: ${oldCours?.titre || coursId}`
+      ).catch(() => {});
+      
       return NextResponse.json({ success: true });
     } else {
+      await logUpdate(
+        request,
+        'cours_contenu',
+        coursId,
+        oldCours || {},
+        updates,
+        Object.keys(updates),
+        `Échec de mise à jour du cours: ${result.error}`
+      ).catch(() => {});
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
   } catch (error) {
@@ -124,10 +168,29 @@ export async function DELETE(request: NextRequest) {
     if (!coursId) {
       return NextResponse.json({ error: 'ID du cours manquant' }, { status: 400 });
     }
+    
+    // Récupérer le cours avant suppression pour le log
+    const oldCoursResult = await getCoursByIdServer(parseInt(coursId));
+    const oldCours = oldCoursResult.success ? oldCoursResult.cours : null;
+    
     const result = await deleteCoursServer(parseInt(coursId));
     if (result.success) {
+      await logDelete(
+        request,
+        'cours_contenu',
+        coursId,
+        oldCours || { id: coursId },
+        `Suppression du cours: ${oldCours?.titre || coursId}`
+      ).catch(() => {});
       return NextResponse.json({ success: true });
     } else {
+      await logDelete(
+        request,
+        'cours_contenu',
+        coursId,
+        oldCours || { id: coursId },
+        `Échec de suppression du cours: ${result.error}`
+      ).catch(() => {});
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
   } catch (error) {

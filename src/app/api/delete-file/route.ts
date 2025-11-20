@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
+import { logAuditAction } from '@/lib/audit-logger';
 
 // Route pour la suppression de fichiers du storage
 export async function DELETE(request: NextRequest) {
@@ -58,11 +59,30 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       // Si le fichier n'existe pas, on considère que c'est un succès
       if (deleteError.message.includes('not found') || deleteError.message.includes('does not exist')) {
+        await logAuditAction(request, {
+          action_type: 'DELETE',
+          table_name: 'storage',
+          resource_id: filePath,
+          status: 'success',
+          metadata: { bucket },
+          description: `Suppression du fichier ${filePath} (déjà supprimé ou inexistant)`
+        }).catch(() => {});
+        
         return NextResponse.json({
           success: true,
           message: 'Fichier déjà supprimé ou inexistant'
         });
       }
+
+      await logAuditAction(request, {
+        action_type: 'DELETE',
+        table_name: 'storage',
+        resource_id: filePath,
+        status: 'error',
+        error_message: deleteError.message,
+        metadata: { bucket },
+        description: `Échec de suppression du fichier ${filePath}`
+      }).catch(() => {});
 
       return NextResponse.json(
         { 
@@ -72,6 +92,16 @@ export async function DELETE(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Logger la suppression réussie
+    await logAuditAction(request, {
+      action_type: 'DELETE',
+      table_name: 'storage',
+      resource_id: filePath,
+      status: 'success',
+      metadata: { bucket },
+      description: `Suppression du fichier ${filePath} du bucket ${bucket}`
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

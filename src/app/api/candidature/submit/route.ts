@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { logUpdate, logAuditAction } from '@/lib/audit-logger';
 
 // POST - Soumettre la candidature (changer le statut de draft à submitted)
 export async function POST(request: NextRequest) {
@@ -64,11 +65,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError) {
+      await logUpdate(request, 'candidatures', candidature.id, candidature, { status: 'submitted' }, ['status'], `Échec de soumission de candidature: ${updateError.message}`).catch(() => {});
       return NextResponse.json(
         { success: false, error: 'Erreur lors de la soumission de la candidature' },
         { status: 500 }
       );
     }
+
+    // Logger la soumission de candidature
+    await logUpdate(request, 'candidatures', candidature.id, candidature, updatedCandidature, ['status', 'submitted_at'], `Soumission de la candidature pour ${candidature.nom} ${candidature.prenom}`).catch(() => {});
 
     // TODO: Envoyer un email de confirmation
     // await sendConfirmationEmail(user.email, updatedCandidature);

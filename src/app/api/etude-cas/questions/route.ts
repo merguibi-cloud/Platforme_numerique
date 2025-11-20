@@ -34,8 +34,12 @@ export async function POST(request: NextRequest) {
 
     if (questionError) {
       console.error('Erreur lors de la création de la question:', questionError);
+      await logCreate(request, 'questions_etude_cas', 'unknown', { etude_cas_id, question, type_question }, `Échec de création de question: ${questionError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
+
+    // Logger la création de la question
+    await logCreate(request, 'questions_etude_cas', questionData.id, questionData, `Création d'une question pour l'étude de cas ${etude_cas_id}`).catch(() => {});
 
     // Créer les réponses possibles si nécessaire
     if (reponses_possibles && reponses_possibles.length > 0) {
@@ -104,10 +108,28 @@ export async function PUT(request: NextRequest) {
       .update(updateData)
       .eq('id', questionId);
 
+    // Récupérer l'ancienne question pour le log (avant l'update)
+    const { data: oldQuestion } = await supabase
+      .from('questions_etude_cas')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+
     if (questionError) {
       console.error('Erreur lors de la mise à jour de la question:', questionError);
+      await logUpdate(request, 'questions_etude_cas', questionId, oldQuestion || {}, updateData, Object.keys(updateData), `Échec de mise à jour de question: ${questionError.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
+
+    // Récupérer la question mise à jour pour le log
+    const { data: updatedQuestion } = await supabase
+      .from('questions_etude_cas')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+    
+    // Logger la mise à jour
+    await logUpdate(request, 'questions_etude_cas', questionId, oldQuestion || {}, updatedQuestion || updateData, Object.keys(updateData), `Mise à jour de la question ${questionId}`).catch(() => {});
 
     // Supprimer les anciennes réponses et créer les nouvelles
     if (reponses_possibles !== undefined) {

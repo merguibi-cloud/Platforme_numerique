@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
+import { logCreate, logUpdate } from '@/lib/audit-logger';
 
 // GET - Récupérer une étude de cas par module
 export async function GET(request: NextRequest) {
@@ -89,8 +90,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Erreur lors de la création de l\'étude de cas:', error);
+      await logCreate(request, 'etudes_cas', 'unknown', { module_id, titre, description }, `Échec de création d'étude de cas: ${error.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
+
+    await logCreate(request, 'etudes_cas', etudeCas.id, etudeCas, `Création de l'étude de cas "${etudeCas.titre}"`).catch(() => {});
 
     return NextResponse.json({ etudeCas });
   } catch (error) {
@@ -110,6 +114,13 @@ export async function PUT(request: NextRequest) {
     if (!etudeCasId) {
       return NextResponse.json({ error: 'etudeCasId requis' }, { status: 400 });
     }
+
+    // Récupérer l'ancienne étude de cas pour le log
+    const { data: oldEtudeCas } = await supabase
+      .from('etudes_cas')
+      .select('*')
+      .eq('id', etudeCasId)
+      .single();
 
     const updateData: any = {
       updated_at: new Date().toISOString(),
@@ -132,8 +143,11 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       console.error('Erreur lors de la mise à jour de l\'étude de cas:', error);
+      await logUpdate(request, 'etudes_cas', etudeCasId, oldEtudeCas || {}, updateData, Object.keys(updateData), `Échec de mise à jour d'étude de cas: ${error.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
+
+    await logUpdate(request, 'etudes_cas', etudeCasId, oldEtudeCas || {}, etudeCas, Object.keys(updateData), `Mise à jour de l'étude de cas "${etudeCas.titre || etudeCasId}"`).catch(() => {});
 
     return NextResponse.json({ etudeCas });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { logCreate, logUpdate } from '@/lib/audit-logger';
 
 // GET - Récupérer la candidature de l'utilisateur
 export async function GET(request: NextRequest) {
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
         .single();
 
        if (error) {
+         await logUpdate(request, 'candidatures', existingCandidature.id, existingCandidature, updateData, Object.keys(updateData), `Échec de mise à jour de candidature: ${error.message}`).catch(() => {});
          return NextResponse.json(
            { 
              success: false, 
@@ -185,6 +187,8 @@ export async function POST(request: NextRequest) {
          );
        }
 
+      // Logger la mise à jour
+      await logUpdate(request, 'candidatures', existingCandidature.id, existingCandidature, data, Object.keys(updateData), `Mise à jour de la candidature - étape ${step}`).catch(() => {});
       result = data;
     } else {
       // Créer une nouvelle candidature
@@ -203,6 +207,7 @@ export async function POST(request: NextRequest) {
         .single();
 
        if (error) {
+         await logCreate(request, 'candidatures', 'unknown', createData, `Échec de création de candidature: ${error.message}`).catch(() => {});
          return NextResponse.json(
            { 
              success: false, 
@@ -212,6 +217,8 @@ export async function POST(request: NextRequest) {
          );
        }
 
+      // Logger la création
+      await logCreate(request, 'candidatures', data.id, data, `Création d'une nouvelle candidature - étape ${step}`).catch(() => {});
       result = data;
     }
 

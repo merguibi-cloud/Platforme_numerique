@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { logCreate } from '@/lib/audit-logger';
 
 /**
  * Route pour s'assurer que l'utilisateur a un profil
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Profil créé
+    await logCreate(request, 'user_profiles', newProfile.id, newProfile, `Création automatique du profil utilisateur pour ${user.email}`).catch(() => {});
 
     return NextResponse.json({
       success: true,

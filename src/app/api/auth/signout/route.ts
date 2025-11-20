@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { logAuditAction } from '@/lib/audit-logger';
 
 // Route pour la déconnexion
 export async function POST(request: NextRequest) {
@@ -21,9 +22,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Récupérer l'utilisateur avant de supprimer les cookies
+    let userId: string | null = null;
+    if (accessToken) {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: `Bearer ${accessToken}` } }
+        });
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) userId = user.id;
+      } catch (e) {
+        // Ignorer les erreurs
+      }
+    }
+
     // Supprimer les cookies de session
     cookieStore.delete('sb-access-token');
     cookieStore.delete('sb-refresh-token');
+
+    // Logger la déconnexion
+    if (userId) {
+      await logAuditAction(request, {
+        action_type: 'LOGOUT',
+        table_name: 'auth.users',
+        resource_id: userId,
+        status: 'success',
+        description: 'Déconnexion réussie'
+      }).catch(() => {});
+    }
 
     return NextResponse.json(
       {
