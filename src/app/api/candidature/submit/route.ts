@@ -1,41 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServerClient } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
 
 // POST - Soumettre la candidature (changer le statut de draft à submitted)
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    
-    // Créer le client avec le token d'authentification dans les headers
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    });
-
-    // Obtenir l'utilisateur connecté
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
-    }
+    const supabase = getSupabaseServerClient();
 
     // Récupérer la candidature de l'utilisateur
     const { data: candidature, error: getCandidatureError } = await supabase

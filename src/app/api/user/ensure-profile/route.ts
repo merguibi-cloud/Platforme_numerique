@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServerClient } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
 
 /**
  * Route pour s'assurer que l'utilisateur a un profil
@@ -8,40 +8,14 @@ import { createClient } from '@supabase/supabase-js';
  */
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    
-    // Créer le client avec le service role key pour bypass RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Créer un client temporaire pour vérifier l'authentification
-    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    });
-
-    // Obtenir l'utilisateur connecté
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
-    }
+    const supabase = getSupabaseServerClient();
 
     // Utilisateur authentifié
 

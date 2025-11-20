@@ -1,63 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdmin } from '@/lib/auth-helpers';
 
 // GET - Récupérer la liste des administrateurs
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+    const { user } = authResult;
 
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
+    // Vérification des permissions (admin ou superadmin requis)
+    const adminResult = await requireAdmin(user.id);
+    if ('error' in adminResult) {
+      return adminResult.error;
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabase = getSupabaseServerClient();
-    
-    // Vérifier que l'utilisateur est admin/superadmin
-    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    });
-
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
-    }
-
-    // Vérifier que l'utilisateur a les permissions dans la table administrateurs
-    const { data: currentAdmin, error: checkError } = await supabase
-      .from('administrateurs')
-      .select('niveau')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error('Erreur vérification permissions:', checkError);
-      return NextResponse.json(
-        { success: false, error: 'Erreur lors de la vérification des permissions' },
-        { status: 500 }
-      );
-    }
-
-    if (!currentAdmin || !['admin', 'superadmin'].includes(currentAdmin.niveau)) {
-      return NextResponse.json(
-        { success: false, error: 'Permissions insuffisantes' },
-        { status: 403 }
-      );
-    }
 
     // Récupérer tous les administrateurs
     const { data: admins, error } = await supabase

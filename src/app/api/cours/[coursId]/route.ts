@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdminOrRole } from '@/lib/auth-helpers';
 
 // GET - Récupérer un cours spécifique
 export async function GET(
@@ -7,24 +9,20 @@ export async function GET(
   { params }: { params: Promise<{ coursId: string }> }
 ) {
   try {
-    const supabase = getSupabaseServerClient();
-    
-    // Vérifier l'authentification
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    // Vérifier le rôle de l'utilisateur
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !['admin', 'superadmin', 'pedagogie'].includes(profile.role)) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
+
+    const supabase = getSupabaseServerClient();
 
     const { coursId } = await params;
 
@@ -65,24 +63,20 @@ export async function PUT(
   { params }: { params: Promise<{ coursId: string }> }
 ) {
   try {
-    const supabase = getSupabaseServerClient();
-    
-    // Vérifier l'authentification
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    // Vérifier le rôle de l'utilisateur
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !['admin', 'superadmin', 'pedagogie'].includes(profile.role)) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
+
+    const supabase = getSupabaseServerClient();
 
     const { coursId } = await params;
     const body = await request.json();

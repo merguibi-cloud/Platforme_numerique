@@ -1,47 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-import { getUserProfileServer } from '../../../../lib/cours-api';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getSupabaseServerClient } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdminOrRole } from '@/lib/auth-helpers';
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    // Vérifier l'authentification
-    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    });
-
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
-    }
-
-    // Vérifier les permissions
-    const profileResult = await getUserProfileServer(user.id);
-    if (!profileResult.success || !profileResult.role) {
-      return NextResponse.json({ error: 'Profil utilisateur non trouvé' }, { status: 403 });
-    }
-
-    const allowedRoles = ['admin', 'superadmin', 'pedagogie'];
-    if (!allowedRoles.includes(profileResult.role)) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 
-    // Créer le client Supabase avec service role pour l'upload
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getSupabaseServerClient();
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

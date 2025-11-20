@@ -66,15 +66,47 @@ function resolveRoleLabel(role?: string): string {
 
 async function fetchAdminUserData(): Promise<AdminUserState> {
   try {
-    const [sessionResponse, profileResponse] = await Promise.all([
+    const [sessionResponse, profileResponse, adminResponse] = await Promise.all([
       fetch("/api/auth/session", { credentials: "include" }),
       fetch("/api/user/ensure-profile", { credentials: "include" }),
+      fetch("/api/admin/me", { credentials: "include" }),
     ]);
 
     let roleLabel = DEFAULT_STATE.roleLabel;
     let displayName = "";
 
-    if (sessionResponse.ok) {
+    // Priorité 1: Récupérer depuis la table administrateurs
+    if (adminResponse.ok) {
+      const adminData = await adminResponse.json();
+      if (adminData?.success && adminData?.admin) {
+        const adminName = [adminData.admin.prenom, adminData.admin.nom]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        
+        if (adminName) {
+          displayName = adminName;
+        }
+      }
+    }
+
+    // Priorité 2: Récupérer depuis le profil utilisateur
+    if (!displayName && profileResponse.ok) {
+      const profilePayload = await profileResponse.json();
+      if (profilePayload?.profile) {
+        const profileName = [profilePayload.profile.prenom, profilePayload.profile.nom]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        if (profileName) {
+          displayName = profileName;
+        }
+      }
+    }
+
+    // Priorité 3: Récupérer depuis les metadata de session
+    if (!displayName && sessionResponse.ok) {
       const sessionData = await sessionResponse.json();
       roleLabel = resolveRoleLabel(sessionData?.role);
 
@@ -90,20 +122,6 @@ async function fetchAdminUserData(): Promise<AdminUserState> {
           sessionData.user.email?.split("@")[0] ||
           "";
         displayName = metaName || fallbackName;
-      }
-    }
-
-    if (profileResponse.ok) {
-      const profilePayload = await profileResponse.json();
-      if (profilePayload?.profile) {
-        const profileName = [profilePayload.profile.prenom, profilePayload.profile.nom]
-          .filter(Boolean)
-          .join(" ")
-          .trim();
-
-        if (profileName) {
-          displayName = profileName;
-        }
       }
     }
 

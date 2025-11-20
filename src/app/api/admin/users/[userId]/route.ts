@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServerClient } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdminOrRole } from '@/lib/auth-helpers';
 
 // PUT - Mettre à jour le rôle d'un utilisateur
 export async function PUT(
@@ -8,52 +9,58 @@ export async function PUT(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+    const { user } = authResult;
 
-    if (!accessToken) {
+    // Vérification des permissions (admin ou superadmin requis)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin']);
+    if ('error' in permissionResult) {
+      return permissionResult.error;
+    }
+
+    // Récupérer le profil pour vérifier si c'est un superadmin
+    const currentProfile = 'profile' in permissionResult 
+      ? permissionResult.profile 
+      : await getSupabaseServerClient()
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single()
+          .then(r => r.data);
+
+    const { userId } = await params;
+    const body = await request.json();
+    const { role } = body;
+
+    // Valider le rôle
+    if (!role || !['etudiant', 'animateur', 'admin', 'superadmin'].includes(role)) {
       return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
+        { success: false, error: 'Rôle invalide' },
+        { status: 400 }
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Vérifier que l'utilisateur est admin/superadmin
-    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    });
-
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
-
-    if (authError || !user) {
+    // Empêcher un admin de promouvoir quelqu'un en superadmin
+    if (currentProfile?.role === 'admin' && role === 'superadmin') {
       return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
-    }
-
-    // Vérifier le rôle de l'utilisateur
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
-      return NextResponse.json(
-        { success: false, error: 'Permissions insuffisantes' },
+        { success: false, error: 'Seuls les super-administrateurs peuvent promouvoir en super-admin' },
         { status: 403 }
       );
     }
+
+    // Empêcher de modifier son propre rôle
+    if (userId === user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vous ne pouvez pas modifier votre propre rôle' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseServerClient();
 
     const { userId } = await params;
     const body = await request.json();

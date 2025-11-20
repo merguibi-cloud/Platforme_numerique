@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { createModuleWithCours } from '@/lib/modules-api';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdminOrRole } from '@/lib/auth-helpers';
 
 // GET - Récupérer les modules d'un bloc avec gestion des permissions
 export async function GET(request: NextRequest) {
@@ -176,47 +177,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID du bloc requis' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
-    let isAuthorized = profile ? allowedRoles.has(profile.role) : false;
-    let adminProfile: { nom?: string; prenom?: string } | null = null;
-
-    if (!isAuthorized) {
-      const { data: adminRecord } = await supabase
-        .from('administrateurs')
-        .select('nom, prenom')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (adminRecord) {
-        isAuthorized = true;
-        adminProfile = adminRecord;
-      }
-    }
-
-    if (!isAuthorized) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+    }
+
+    // Récupérer le profil admin pour le nom du créateur
+    let adminProfile: { nom?: string; prenom?: string } | null = null;
+    if ('admin' in permissionResult) {
+      adminProfile = {
+        nom: permissionResult.admin.nom,
+        prenom: permissionResult.admin.prenom
+      };
     }
 
     const body = await request.json();
@@ -345,24 +325,20 @@ export async function POST(request: NextRequest) {
 // PUT - Mettre à jour le statut d'un module
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
-    
-    // Vérifier l'authentification
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    // Vérifier le rôle de l'utilisateur
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !['admin', 'superadmin', 'pedagogie'].includes(profile.role)) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
+
+    const supabase = getSupabaseServerClient();
 
     const body = await request.json();
     const { moduleId, action } = body;
@@ -417,44 +393,16 @@ export async function DELETE(request: NextRequest) {
     }
     const scope = scopeParam === 'cours' ? 'cours' : 'module';
 
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
-    let isAuthorized = profile ? allowedRoles.has(profile.role) : false;
-
-    if (!isAuthorized) {
-      const { data: adminRecord } = await supabase
-        .from('administrateurs')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (adminRecord) {
-        isAuthorized = true;
-      }
-    }
-
-    if (!isAuthorized) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 

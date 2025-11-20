@@ -1,56 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { updateBlocServer, deleteBlocServer, getBlocsByFormationIdServer, getModulesByBlocIdServer, getUserProfileServer } from '@/lib/blocs-api';
-import { cookies } from 'next/headers';
+import { updateBlocServer, deleteBlocServer, getBlocsByFormationIdServer, getModulesByBlocIdServer } from '@/lib/blocs-api';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdminOrRole } from '@/lib/auth-helpers';
+
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
-    const body = await request.json();
-    // Récupérer le token d'accès depuis les cookies
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-    if (!accessToken) {
-      return NextResponse.json({
-        success: false,
-        error: 'Non authentifié'
-      }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
-    // Vérifier l'authentification avec le token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-    if (authError || !user) {
-      return NextResponse.json({
-        success: false,
-        error: 'Token invalide'
-      }, { status: 401 });
-    }
-    // Récupérer le profil utilisateur pour vérifier le rôle
-    const profile = await getUserProfileServer(user.id);
-    console.log('[POST /api/blocs] profil utilisateur', { userId: user.id, profile });
-    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
-    let isAuthorized = profile?.role ? allowedRoles.has(profile.role.toLowerCase()) : false;
+    const { user } = authResult;
 
-    if (!isAuthorized) {
-      const { data: adminRecord, error: adminError } = await supabase
-        .from('administrateurs')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (adminError) {
-        console.error('Erreur lors de la vérification administrateur (POST blocs):', adminError);
-      }
-
-      if (adminRecord) {
-        isAuthorized = true;
-      }
-    }
-
-    if (!isAuthorized) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({
         success: false,
         error: 'Permissions insuffisantes. Seuls les administrateurs peuvent créer des blocs.'
       }, { status: 403 });
     }
+
+    const supabase = getSupabaseServerClient();
+    const body = await request.json();
     // Vérifier que la formation existe
     const { data: formation, error: formationError } = await supabase
       .from('formations')
@@ -122,53 +95,29 @@ export async function POST(request: NextRequest) {
 }
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+
     const { searchParams } = new URL(request.url);
     const formationId = searchParams.get('formationId');
     const blocId = searchParams.get('blocId');
+    
     // Si blocId est fourni, récupérer les modules du bloc
     if (blocId) {
-      // Récupérer le token d'accès depuis les cookies
-      const cookieStore = await cookies();
-      const accessToken = cookieStore.get('sb-access-token')?.value;
-      if (!accessToken) {
-        return NextResponse.json({
-          error: 'Non authentifié'
-        }, { status: 401 });
-      }
-      // Vérifier l'authentification avec le token
-      const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-      if (authError || !user) {
-        return NextResponse.json({
-          error: 'Token invalide'
-        }, { status: 401 });
-      }
-      // Récupérer les modules via fonction côté serveur
       const modules = await getModulesByBlocIdServer(parseInt(blocId));
       return NextResponse.json({ modules: modules || [] });
     }
+    
     // Sinon, récupérer les blocs de la formation
     if (!formationId) {
       return NextResponse.json({
         error: 'ID de formation requis'
       }, { status: 400 });
     }
-    // Récupérer le token d'accès depuis les cookies
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-    if (!accessToken) {
-      return NextResponse.json({
-        error: 'Non authentifié'
-      }, { status: 401 });
-    }
-    // Vérifier l'authentification avec le token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-    if (authError || !user) {
-      return NextResponse.json({
-        error: 'Token invalide'
-      }, { status: 401 });
-    }
-    // Récupérer les blocs via fonction côté serveur
+    
     const blocs = await getBlocsByFormationIdServer(parseInt(formationId));
     return NextResponse.json({ blocs: blocs || [] });
   } catch (error) {
@@ -179,52 +128,23 @@ export async function GET(request: NextRequest) {
 }
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
-    const body = await request.json();
-    // Récupérer le token d'accès depuis les cookies
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-    if (!accessToken) {
-      return NextResponse.json({
-        success: false,
-        error: 'Non authentifié'
-      }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
-    // Vérifier l'authentification avec le token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-    if (authError || !user) {
-      return NextResponse.json({
-        success: false,
-        error: 'Token invalide'
-      }, { status: 401 });
-    }
-    // Récupérer le profil utilisateur pour vérifier le rôle
-    const profile = await getUserProfileServer(user.id);
-    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
-    let isAuthorized = profile?.role ? allowedRoles.has(profile.role.toLowerCase()) : false;
+    const { user } = authResult;
 
-    if (!isAuthorized) {
-      const { data: adminRecord, error: adminError } = await supabase
-        .from('administrateurs')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (adminError) {
-        console.error('Erreur lors de la vérification administrateur (PUT blocs):', adminError);
-      }
-
-      if (adminRecord) {
-        isAuthorized = true;
-      }
-    }
-
-    if (!isAuthorized) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({
         success: false,
         error: 'Permissions insuffisantes. Seuls les administrateurs peuvent modifier des blocs.'
       }, { status: 403 });
     }
+
+    const body = await request.json();
     // Mettre à jour le bloc
     const result = await updateBlocServer(body.blocId, {
       titre: body.titre,
@@ -248,7 +168,22 @@ export async function PUT(request: NextRequest) {
 }
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+    const { user } = authResult;
+
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
+      return NextResponse.json({
+        success: false,
+        error: 'Permissions insuffisantes. Seuls les administrateurs peuvent supprimer des blocs.'
+      }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const blocId = searchParams.get('blocId');
     if (!blocId) {
@@ -256,50 +191,6 @@ export async function DELETE(request: NextRequest) {
         success: false,
         error: 'ID de bloc requis'
       }, { status: 400 });
-    }
-    // Récupérer le token d'accès depuis les cookies
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-    if (!accessToken) {
-      return NextResponse.json({
-        success: false,
-        error: 'Non authentifié'
-      }, { status: 401 });
-    }
-    // Vérifier l'authentification avec le token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-    if (authError || !user) {
-      return NextResponse.json({
-        success: false,
-        error: 'Token invalide'
-      }, { status: 401 });
-    }
-    // Récupérer le profil utilisateur pour vérifier le rôle
-    const profile = await getUserProfileServer(user.id);
-    const allowedRoles = new Set(['admin', 'superadmin', 'pedagogie']);
-    let isAuthorized = profile?.role ? allowedRoles.has(profile.role.toLowerCase()) : false;
-
-    if (!isAuthorized) {
-      const { data: adminRecord, error: adminError } = await supabase
-        .from('administrateurs')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (adminError) {
-        console.error('Erreur lors de la vérification administrateur:', adminError);
-      }
-
-      if (adminRecord) {
-        isAuthorized = true;
-      }
-    }
-
-    if (!isAuthorized) {
-      return NextResponse.json({
-        success: false,
-        error: 'Permissions insuffisantes. Seuls les administrateurs peuvent supprimer des blocs.'
-      }, { status: 403 });
     }
     // Supprimer le bloc
     const result = await deleteBlocServer(parseInt(blocId), user.id);

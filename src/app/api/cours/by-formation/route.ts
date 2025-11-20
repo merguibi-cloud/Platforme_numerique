@@ -1,46 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
+import { requireAdminOrRole } from '@/lib/auth-helpers';
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    const { user } = authResult;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Vérifier l'authentification
-    const authClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    });
-
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
-    }
-
-    // Vérifier les permissions
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !['admin', 'superadmin', 'pedagogie'].includes(profile.role)) {
+    // Vérification des permissions (admin ou rôles pédagogie)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
+
+    const supabase = getSupabaseServerClient();
 
     const { searchParams } = new URL(request.url);
     const formationId = searchParams.get('formationId');
