@@ -41,8 +41,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         // Vérifier si l'utilisateur doit changer son mot de passe
         const userResult = await getCurrentUser();
         if (userResult.success && userResult.user) {
-          const requiresPasswordChange = userResult.user.user_metadata?.requires_password_change;
-          if (requiresPasswordChange === true) {
+          const userMetadata = userResult.user.user_metadata;
+          const requiresPasswordChange = userMetadata?.requires_password_change === true;
+          const hasTempPassword = !!userMetadata?.temp_password;
+          
+          // Si l'utilisateur a un mot de passe temporaire ou le flag est activé, forcer le changement
+          if (requiresPasswordChange || hasTempPassword) {
             router.replace('/espace-admin/change-password');
             return;
           }

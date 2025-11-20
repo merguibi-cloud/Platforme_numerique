@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
         password: tempPassword,
         user_metadata: {
           temp_password: tempPasswordBase64,
+          requires_password_change: true, // Forcer le changement de mot de passe à la première connexion
         },
       });
     } else {

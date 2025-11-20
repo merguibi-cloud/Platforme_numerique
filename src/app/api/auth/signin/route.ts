@@ -87,14 +87,25 @@ export async function POST(request: NextRequest) {
     }
 
     const userMetadata = data.user.user_metadata;
-    const requiresPasswordChange = userMetadata?.requires_password_change === true;
     const tempPasswordBase64 = userMetadata?.temp_password;
 
     // Si un mot de passe temporaire est stocké, vérifier si le mot de passe utilisé correspond
-    if (requiresPasswordChange && tempPasswordBase64) {
+    if (tempPasswordBase64) {
       const tempPassword = Buffer.from(tempPasswordBase64, 'base64').toString('utf-8');
       if (password === tempPassword) {
-        // L'utilisateur utilise le mot de passe temporaire, il doit le changer
+        // L'utilisateur utilise le mot de passe temporaire, définir le flag et forcer le changement
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        
+        // Mettre à jour les metadata pour forcer le changement de mot de passe
+        await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
+          user_metadata: {
+            ...userMetadata,
+            requires_password_change: true,
+          },
+        });
+        
         // Définir les cookies de session pour qu'il puisse changer son mot de passe
         const response = NextResponse.json({
           success: false,

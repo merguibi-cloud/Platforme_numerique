@@ -7,10 +7,8 @@ import { getCurrentUser } from "@/lib/auth-api";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
@@ -48,11 +46,6 @@ export default function ChangePasswordPage() {
     setError("");
 
     // Validation
-    if (!currentPassword) {
-      setError("Veuillez saisir votre mot de passe temporaire");
-      return;
-    }
-
     if (newPassword.length < 8) {
       setError("Le nouveau mot de passe doit contenir au moins 8 caractères");
       return;
@@ -60,11 +53,6 @@ export default function ChangePasswordPage() {
 
     if (newPassword !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas");
-      return;
-    }
-
-    if (newPassword === currentPassword) {
-      setError("Le nouveau mot de passe doit être différent du mot de passe temporaire");
       return;
     }
 
@@ -77,7 +65,6 @@ export default function ChangePasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          currentPassword,
           newPassword,
         }),
       });
@@ -117,11 +104,11 @@ export default function ChangePasswordPage() {
             className="text-3xl font-bold text-[#032622] mb-6 text-center"
             style={{ fontFamily: "var(--font-termina-bold)" }}
           >
-            CHANGER VOTRE MOT DE PASSE
+            CRÉER VOTRE MOT DE PASSE
           </h1>
 
           <p className="text-[#032622]/70 mb-6 text-center">
-            Pour des raisons de sécurité, vous devez changer votre mot de passe temporaire.
+            Pour des raisons de sécurité, vous devez créer un nouveau mot de passe pour accéder à votre espace administrateur.
           </p>
 
           {error && (
@@ -133,30 +120,7 @@ export default function ChangePasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
-                MOT DE PASSE TEMPORAIRE
-              </label>
-              <div className="relative">
-                <input
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 pr-12 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
-                  placeholder="Saisissez votre mot de passe temporaire"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70"
-                >
-                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
-                NOUVEAU MOT DE PASSE
+                CRÉER UN MOT DE PASSE
               </label>
               <div className="relative">
                 <input
@@ -180,7 +144,7 @@ export default function ChangePasswordPage() {
 
             <div>
               <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
-                CONFIRMER LE NOUVEAU MOT DE PASSE
+                CONFIRMER LE MOT DE PASSE
               </label>
               <div className="relative">
                 <input
@@ -207,7 +171,7 @@ export default function ChangePasswordPage() {
               disabled={isLoading}
               className="w-full bg-[#032622] text-[#F8F5E4] px-6 py-3 font-semibold hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "CHANGEMENT EN COURS..." : "CHANGER MON MOT DE PASSE"}
+              {isLoading ? "CRÉATION EN COURS..." : "CRÉER MON MOT DE PASSE"}
             </button>
           </form>
         </div>

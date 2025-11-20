@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { newPassword, currentPassword } = body;
+    const { newPassword } = body;
 
     if (!newPassword) {
       return NextResponse.json(
@@ -70,20 +70,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Si un mot de passe actuel est fourni, vérifier qu'il correspond au mot de passe temporaire
-    if (currentPassword) {
-      const tempPasswordBase64 = userMetadata?.temp_password;
-      if (tempPasswordBase64) {
-        const tempPassword = Buffer.from(tempPasswordBase64, 'base64').toString('utf-8');
-        
-        if (currentPassword !== tempPassword) {
-          return NextResponse.json(
-            { error: 'Mot de passe actuel incorrect' },
-            { status: 400 }
-          );
-        }
-      }
-    }
+    // Pas besoin de vérifier le mot de passe temporaire car l'utilisateur est déjà authentifié
+    // et on sait qu'il utilise un mot de passe temporaire grâce au flag requires_password_change
 
     // Mettre à jour le mot de passe
     const { error: updateError } = await supabase.auth.updateUser({
