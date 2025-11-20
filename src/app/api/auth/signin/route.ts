@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth, getSupabaseServerClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import { resolveRoleForUser } from '@/lib/auth-role';
+import { createClient } from '@supabase/supabase-js';
 // Route pour la connexion
 export async function POST(request: NextRequest) {
   try {
@@ -18,16 +19,63 @@ export async function POST(request: NextRequest) {
       password,
     });
     if (error) {
+      // Si l'email n'est pas confirmé, on le confirme automatiquement après la première connexion
       if (error.message.includes('Email not confirmed')) {
+        // Utiliser le service role key pour confirmer l'email
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        
+        // Récupérer l'utilisateur par email
+        const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+        const user = userList?.users?.find(u => u.email === email.toLowerCase());
+        
+        if (user && !user.email_confirmed_at) {
+          // Confirmer l'email
+          await supabaseAdmin.auth.admin.updateUserById(user.id, {
+            email_confirm: true,
+          });
+          
+          // Réessayer la connexion
+          const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          if (retryError) {
+            return NextResponse.json(
+              { error: 'Email ou mot de passe incorrect.' },
+              { status: 400 }
+            );
+          }
+          
+          // Utiliser les données de la nouvelle tentative
+          if (retryData) {
+            Object.assign(data, retryData);
+          }
+        } else {
+          return NextResponse.json(
+            { error: 'Veuillez confirmer votre email avant de vous connecter.' },
+            { status: 400 }
+          );
+        }
+      } else {
         return NextResponse.json(
-          { error: 'Veuillez confirmer votre email avant de vous connecter.' },
+          { error: 'Email ou mot de passe incorrect.' },
           { status: 400 }
         );
       }
-      return NextResponse.json(
-        { error: 'Email ou mot de passe incorrect.' },
-        { status: 400 }
-      );
+    }
+    
+    // Si l'email n'est pas encore confirmé, le confirmer maintenant
+    if (data.user && !data.user.email_confirmed_at) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      
+      await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
+        email_confirm: true,
+      });
     }
 
     // Vérifier si l'utilisateur a un mot de passe temporaire

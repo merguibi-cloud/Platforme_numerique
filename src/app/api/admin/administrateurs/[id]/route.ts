@@ -160,7 +160,7 @@ export async function DELETE(
     // Récupérer l'admin à supprimer avec toutes les informations nécessaires
     const { data: adminToDelete, error: fetchError } = await supabase
       .from('administrateurs')
-      .select('user_id, email')
+      .select('id, user_id, email')
       .eq('id', id)
       .maybeSingle();
 
@@ -176,6 +176,14 @@ export async function DELETE(
       return NextResponse.json(
         { success: false, error: 'Administrateur non trouvé' },
         { status: 404 }
+      );
+    }
+
+    // Empêcher un administrateur de se supprimer lui-même
+    if (adminToDelete.user_id === user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vous ne pouvez pas vous supprimer vous-même' },
+        { status: 403 }
       );
     }
 

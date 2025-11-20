@@ -96,110 +96,54 @@ export async function POST(request: NextRequest) {
       userProfileRole = 'formateur';
     }
     
-    // IMPORTANT: Le redirectTo doit être une URL complète et absolue
-    // Rediriger vers la route de callback qui gère la confirmation d'email
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const redirectTo = `${baseUrl}/auth/callback`;
-    
-    // Étape 1: Générer un mot de passe temporaire
+    // Générer un mot de passe temporaire
     const tempPassword = Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16).toUpperCase() + '!@#';
     const tempPasswordBase64 = Buffer.from(tempPassword).toString('base64');
     
-    // Étape 2: Utiliser inviteUserByEmail EN PREMIER pour créer l'utilisateur et envoyer l'email
+    // Vérifier si l'utilisateur existe déjà
+    const { data: existingUserList } = await supabase.auth.admin.listUsers();
+    const existingUser = existingUserList?.users?.find(u => u.email === email.toLowerCase());
     
-    const { data: inviteResult, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-      email.toLowerCase(),
-      {
-        redirectTo: redirectTo,
-      }
-    );
-
     let createdUser;
     
-    if (inviteError) {
-      // Si l'utilisateur existe déjà, récupérer son ID
-      if (inviteError.code === 'email_exists' || inviteError.message?.includes('already registered') || inviteError.message?.includes('already exists')) {
-        // Récupérer l'utilisateur depuis auth.users
-        const { data: existingUserList } = await supabase.auth.admin.listUsers();
-        const existingUser = existingUserList?.users?.find(u => u.email === email.toLowerCase());
-        
-        if (existingUser) {
-          createdUser = { user: existingUser };
-        } else {
-          // Si on ne trouve pas l'utilisateur, essayer de le créer avec createUser
-          const { data: createUserData, error: createUserError } = await supabase.auth.admin.createUser({
-            email: email.toLowerCase(),
-            password: tempPassword,
-            email_confirm: true,
-            user_metadata: {
-              temp_password: tempPasswordBase64,
-              requires_password_change: true,
-            },
-          });
-
-          if (createUserError) {
-            return NextResponse.json(
-              { success: false, error: 'Erreur lors de la création de l\'utilisateur' },
-              { status: 400 }
-            );
-          }
-
-          if (!createUserData?.user) {
-            return NextResponse.json(
-              { success: false, error: 'Erreur lors de la création de l\'utilisateur' },
-              { status: 500 }
-            );
-          }
-          
-          createdUser = createUserData;
-        }
-      } else {
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Impossible d\'envoyer l\'email d\'invitation'
-          },
-          { status: 500 }
-        );
-      }
+    if (existingUser) {
+      createdUser = { user: existingUser };
+      // Mettre à jour le mot de passe si l'utilisateur existe déjà
+      await supabase.auth.admin.updateUserById(existingUser.id, {
+        password: tempPassword,
+        user_metadata: {
+          temp_password: tempPasswordBase64,
+        },
+      });
     } else {
-      // inviteUserByEmail a réussi, récupérer l'utilisateur créé
-      // Récupérer l'utilisateur depuis auth.users (inviteUserByEmail ne retourne pas toujours l'utilisateur directement)
-      const { data: userList, error: listError } = await supabase.auth.admin.listUsers();
-      
-      if (listError) {
-        return NextResponse.json(
-          { success: false, error: 'Erreur lors de la récupération de l\'utilisateur' },
-          { status: 500 }
-        );
-      }
-      
-      const newUser = userList?.users?.find(u => u.email === email.toLowerCase());
-      if (newUser) {
-        createdUser = { user: newUser };
-      } else {
-        return NextResponse.json(
-          { success: false, error: 'Utilisateur créé mais non trouvé' },
-          { status: 500 }
-        );
-      }
-    }
-    
-    // Étape 3: Mettre à jour l'utilisateur avec le mot de passe temporaire et les métadonnées
-    const { error: updateError } = await supabase.auth.admin.updateUserById(createdUser.user.id, {
-      password: tempPassword,
-      user_metadata: {
-        temp_password: tempPasswordBase64,
-        requires_password_change: true,
-      },
-    });
+      // Créer l'utilisateur avec email non confirmé
+      // L'email sera confirmé après la première connexion
+      const { data: createUserData, error: createUserError } = await supabase.auth.admin.createUser({
+        email: email.toLowerCase(),
+        password: tempPassword,
+        email_confirm: false, // Sera confirmé après la première connexion
+        user_metadata: {
+          temp_password: tempPasswordBase64,
+        },
+      });
 
-    if (updateError) {
-      return NextResponse.json(
-        { success: false, error: 'Erreur lors de la mise à jour de l\'utilisateur' },
-        { status: 500 }
-      );
+      if (createUserError) {
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de la création de l\'utilisateur' },
+          { status: 400 }
+        );
+      }
+
+      if (!createUserData?.user) {
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de la création de l\'utilisateur' },
+          { status: 500 }
+        );
+      }
+      
+      createdUser = createUserData;
     }
+
 
     // IMPORTANT: Créer le user_profile IMMÉDIATEMENT après la création de l'utilisateur
     // On le fait tout de suite pour éviter qu'un trigger ne le fasse avec des valeurs par défaut
@@ -277,7 +221,7 @@ export async function POST(request: NextRequest) {
     // Retourner les identifiants pour affichage dans le modal
     return NextResponse.json({
       success: true,
-      message: 'Invitation envoyée avec succès',
+      message: 'Administrateur créé avec succès. L\'email sera confirmé après la première connexion.',
       admin: newAdmin,
       credentials: {
         email: email.toLowerCase(),

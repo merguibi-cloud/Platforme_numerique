@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Récupérer les données de l'administrateur depuis la table administrateurs
     const { data: admin, error: adminError } = await supabase
       .from('administrateurs')
-      .select('nom, prenom, email, role_secondaire, niveau, service')
+      .select('id, nom, prenom, email, role_secondaire, niveau, service')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       admin: {
+        id: admin.id,
         nom: admin.nom,
         prenom: admin.prenom,
         email: admin.email,

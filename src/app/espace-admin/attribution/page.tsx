@@ -49,6 +49,7 @@ export default function AttributionPage() {
   const [adminToDelete, setAdminToDelete] = useState<string | null>(null);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -56,6 +57,26 @@ export default function AttributionPage() {
     ecole: "",
     role: "",
   });
+
+  // Charger l'ID de l'administrateur connecté
+  useEffect(() => {
+    const loadCurrentAdmin = async () => {
+      try {
+        const response = await fetch("/api/admin/me", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.admin) {
+            setCurrentAdminId(result.admin.id);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur lors du chargement de l'administrateur connecté:", err);
+      }
+    };
+    loadCurrentAdmin();
+  }, []);
 
   // Charger les administrateurs depuis l'API
   useEffect(() => {
@@ -131,12 +152,25 @@ export default function AttributionPage() {
   };
 
   const handleDeleteClick = (id: string) => {
+    // Empêcher la suppression de l'administrateur connecté
+    if (currentAdminId === id) {
+      setError("Vous ne pouvez pas vous supprimer vous-même");
+      return;
+    }
     setAdminToDelete(id);
     setShowDeleteConfirm(true);
   };
 
   const confirmDelete = async () => {
     if (!adminToDelete) return;
+
+    // Double vérification : empêcher la suppression de l'administrateur connecté
+    if (currentAdminId === adminToDelete) {
+      setError("Vous ne pouvez pas vous supprimer vous-même");
+      setShowDeleteConfirm(false);
+      setAdminToDelete(null);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/admin/administrateurs/${adminToDelete}`, {
@@ -211,7 +245,7 @@ export default function AttributionPage() {
         const result = await response.json();
 
         if (!response.ok || !result.success) {
-          throw new Error(result.error || "Erreur lors de l'invitation");
+          throw new Error(result.error || "Erreur lors de la création de l'administrateur");
         }
 
         // Recharger la liste
@@ -222,7 +256,7 @@ export default function AttributionPage() {
           setCredentials(result.credentials);
           setShowCredentialsModal(true);
         } else {
-          setSuccessMessage("Administrateur créé avec succès. Un email d'invitation a été envoyé.");
+          setSuccessMessage("Administrateur créé avec succès. L'email sera confirmé après la première connexion.");
           setTimeout(() => setSuccessMessage(""), 5000);
         }
       }
@@ -467,8 +501,17 @@ export default function AttributionPage() {
                           </button>
                           <button
                             onClick={() => handleDeleteClick(admin.id)}
-                            className="text-[#032622] hover:text-[#D96B6B] transition-colors"
-                            title="Supprimer"
+                            disabled={currentAdminId === admin.id}
+                            className={`transition-colors ${
+                              currentAdminId === admin.id
+                                ? "text-[#032622]/30 cursor-not-allowed"
+                                : "text-[#032622] hover:text-[#D96B6B]"
+                            }`}
+                            title={
+                              currentAdminId === admin.id
+                                ? "Vous ne pouvez pas vous supprimer vous-même"
+                                : "Supprimer"
+                            }
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -587,7 +630,7 @@ export default function AttributionPage() {
 
                 <div className="bg-[#F0C75E] border-2 border-[#032622] p-4">
                   <p className="text-[#032622] text-sm font-semibold text-center">
-                    ⚠️ IMPORTANT : L'administrateur devra changer ce mot de passe lors de sa première connexion.
+                    ⚠️ IMPORTANT : L'administrateur peut se connecter avec ces identifiants. L'email sera confirmé automatiquement lors de la première connexion.
                   </p>
                 </div>
               </div>
