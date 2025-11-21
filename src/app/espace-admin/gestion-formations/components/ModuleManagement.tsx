@@ -27,7 +27,7 @@ interface ModuleManagementProps {
   modules: ModuleWithStatus[];
   formationId: string;
   blocId: string;
-  onAddModule: (moduleData: { titre: string; cours: string[]; moduleId?: string }) => void;
+  onAddModule: (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => void;
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
   onAssignModule: (moduleId: string) => void;
@@ -69,11 +69,14 @@ export const ModuleManagement = ({
       cours: coursList,
     });
 
-    if (module.statut === 'manquant') {
+    // Pour "manquant" et "brouillon" (enregistré/en cours d'examen), on supprime tout le cours
+    // Pas besoin de sélectionner un chapitre spécifique
+    if (module.statut === 'manquant' || module.statut === 'brouillon') {
       setSelectedCoursId(null);
       return;
     }
 
+    // Pour "en_ligne", on peut sélectionner un chapitre spécifique à supprimer
     setSelectedCoursId(coursList[0]?.id ?? null);
   };
 
@@ -86,7 +89,7 @@ export const ModuleManagement = ({
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveModule = (moduleData: { titre: string; cours: string[]; moduleId?: string }) => {
+  const handleSaveModule = (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
     onAddModule(moduleData);
     setIsCreateModalOpen(false);
   };
@@ -95,9 +98,17 @@ export const ModuleManagement = ({
     setIsCreateModalOpen(false);
   };
 
+  console.log('[ModuleManagement] Modules reçus:', modules.length, modules);
+
   const modulesEnLigne = modules.filter(m => m.statut === 'en_ligne');
   const modulesBrouillon = modules.filter(m => m.statut === 'brouillon');
   const modulesManquant = modules.filter(m => m.statut === 'manquant');
+  
+  console.log('[ModuleManagement] Répartition:', {
+    enLigne: modulesEnLigne.length,
+    brouillon: modulesBrouillon.length,
+    manquant: modulesManquant.length
+  });
 
   const ModuleTable = ({
     modules,
@@ -130,8 +141,8 @@ export const ModuleManagement = ({
           <table className="w-full border border-[#032622]">
             <thead>
               <tr className="bg-[#F8F5E4]">
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">MODULE</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">COURS</th>
+                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CHAPITRES</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉDITER</th>
@@ -161,11 +172,8 @@ export const ModuleManagement = ({
                   <tr key={module.id} className="bg-[#032622]/10">
                     <td className="border border-[#032622] p-3 text-[#032622]">
                       <p className="font-semibold uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
-                        {module.moduleName || 'Module sans titre'}
+                        {module.moduleName || 'Cours sans titre'}
                       </p>
-                      {module.numero_module && (
-                        <p className="text-xs text-[#032622]/70 mt-1">Module #{module.numero_module}</p>
-                      )}
                     </td>
                     <td className="border border-[#032622] p-3 text-[#032622]">
                       {(() => {
@@ -186,7 +194,7 @@ export const ModuleManagement = ({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-sm italic text-[#032622]/70">Aucun cours</span>
+                          <span className="text-sm italic text-[#032622]/70">Aucun chapitre</span>
                         );
                       })()}
                     </td>
@@ -291,7 +299,7 @@ export const ModuleManagement = ({
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
           <Plus className="w-4 h-4" />
-          AJOUTER UN MODULE
+          AJOUTER UN COURS
         </button>
 
         {/* Modules Tables */}
@@ -305,7 +313,7 @@ export const ModuleManagement = ({
           />
           <ModuleTable 
             modules={modulesBrouillon} 
-            title="BROUILLON/EN COURS D'EXAMEN" 
+            title="ENREGISTRÉ/EN COURS D'EXAMEN" 
             color="bg-orange-500"
             emptyMessage="Aucun module en cours de développement"
             showVisualize={true}
@@ -335,39 +343,35 @@ export const ModuleManagement = ({
         isOpen={Boolean(deleteTarget)}
         onClose={closeDeleteModal}
         title={
-          deleteTarget?.statut === 'manquant'
-            ? 'Supprimer le module'
+          deleteTarget?.statut === 'manquant' || deleteTarget?.statut === 'brouillon'
+            ? 'Supprimer le cours'
             : 'Supprimer un cours'
         }
         message={
           deleteTarget
-            ? deleteTarget.statut === 'manquant'
-              ? `Voulez-vous vraiment supprimer ${deleteTarget.title} ainsi que tous les cours associés ?`
+            ? deleteTarget.statut === 'manquant' || deleteTarget.statut === 'brouillon'
+              ? `Voulez-vous vraiment supprimer ${deleteTarget.title} ainsi que tous les éléments associés ?\n\nCette action supprimera également :\n• Tous les chapitres associés\n• Tous les quiz et leurs questions/réponses\n• Toutes les études de cas et leurs questions/réponses\n\nCette action est irréversible.`
               : deleteTarget.cours.length > 0 && selectedCoursId
-                ? `Voulez-vous vraiment supprimer le cours "${deleteTarget.cours.find((cours) => cours.id === selectedCoursId)?.titre ?? 'sélectionné'}" du module ${deleteTarget.title} ?`
+                ? `Voulez-vous vraiment supprimer le cours "${deleteTarget.cours.find((cours) => cours.id === selectedCoursId)?.titre ?? 'sélectionné'}" du module ${deleteTarget.title} ?\n\nCette action supprimera également :\n• Tous les chapitres associés\n• Tous les quiz et leurs questions\n• Toutes les études de cas et leurs questions\n\nCette action est irréversible.`
                 : `${deleteTarget.title} ne contient aucun cours à supprimer.`
             : ''
         }
         type="warning"
         isConfirm
-        confirmDisabled={
-          Boolean(
-            deleteTarget &&
-              deleteTarget.statut !== 'manquant' &&
-              (!deleteTarget.cours.length || !selectedCoursId)
-          )
-        }
+        confirmDisabled={false}
         onConfirm={() => {
           if (!deleteTarget) {
             return;
           }
 
-          if (deleteTarget.statut === 'manquant') {
+          // Pour "manquant" et "brouillon" (enregistré/en cours d'examen), supprimer tout le cours
+          if (deleteTarget.statut === 'manquant' || deleteTarget.statut === 'brouillon') {
             onDeleteModule(deleteTarget.id, 'module');
             closeDeleteModal();
             return;
           }
 
+          // Pour "en_ligne", on peut supprimer un chapitre spécifique si nécessaire
           if (!selectedCoursId) {
             return;
           }

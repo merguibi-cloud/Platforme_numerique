@@ -1,17 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Cours } from '../../../../types/cours';
+import { useEffect, useState, useCallback } from 'react';
+import { Chapitre } from '../../../../types/cours';
 import { FileText } from 'lucide-react';
 
 interface ChapitrageProps {
-  moduleId: number;
-  currentCoursId?: number;
-  onCoursClick?: (coursId: number) => void;
-  onQuizClick?: (coursId: number, quizId: number) => void;
-  onEtudeCasClick?: (moduleId: number, etudeCasId: number) => void;
+  coursId: number;
+  currentChapitreId?: number;
+  onChapitreClick?: (chapitreId: number) => void;
+  onQuizClick?: (chapitreId: number, quizId: number) => void;
+  onEtudeCasClick?: (chapitreId: number, etudeCasId: number) => void;
   formationId?: string;
   blocId?: string;
+  // OPTIMISATION : Permettre de passer les données déjà chargées pour éviter les requêtes
+  preloadedData?: {
+    chapitres?: Chapitre[];
+    quizzes?: Record<number, { quiz: any; questions: any[] }>;
+    etudeCas?: { id: number; titre: string };
+  };
 }
 
 interface QuizData {
@@ -25,59 +31,128 @@ interface EtudeCasData {
   titre: string;
 }
 
-export const Chapitrage = ({ moduleId, currentCoursId, onCoursClick, onQuizClick, onEtudeCasClick, formationId, blocId }: ChapitrageProps) => {
-  const [cours, setCours] = useState<Cours[]>([]);
-  const [quizzesByCours, setQuizzesByCours] = useState<Map<number, QuizData>>(new Map());
+export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuizClick, onEtudeCasClick, formationId, blocId, preloadedData }: ChapitrageProps) => {
+  const [chapitres, setChapitres] = useState<Chapitre[]>([]);
+  const [quizzesByChapitre, setQuizzesByChapitre] = useState<Map<number, QuizData>>(new Map());
   const [etudeCas, setEtudeCas] = useState<EtudeCasData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadCours = async () => {
+  const loadChapitres = useCallback(async () => {
       try {
-        // Charger les cours
-        const response = await fetch(`/api/cours?moduleId=${moduleId}`, {
+        // OPTIMISATION : Si les données sont déjà chargées, les utiliser directement
+        if (preloadedData) {
+          const sortedChapitres = (preloadedData.chapitres || []).sort((a: any, b: any) => 
+            (a.ordre_affichage || 0) - (b.ordre_affichage || 0)
+          );
+          setChapitres(sortedChapitres as Chapitre[]);
+
+          // Extraire les quiz depuis les données préchargées
+          const quizzesMap = new Map<number, QuizData>();
+          if (preloadedData.quizzes) {
+            console.log('[Chapitrage] Extraction des quiz depuis preloadedData:', preloadedData.quizzes);
+            Object.entries(preloadedData.quizzes).forEach(([chapitreIdStr, quizData]: [string, any]) => {
+              const chapitreId = parseInt(chapitreIdStr, 10);
+              // La structure peut être { quiz: {...}, questions: [...] } ou directement { id, chapitre_id, titre, quiz, questions }
+              const quiz = quizData.quiz || quizData;
+              if (quiz && quiz.id) {
+                quizzesMap.set(chapitreId, {
+                  id: quiz.id,
+                  cours_id: quiz.chapitre_id || chapitreId,
+                  titre: quiz.titre || 'Quiz'
+                });
+                console.log(`[Chapitrage] Quiz trouvé pour chapitre ${chapitreId}:`, quiz.titre);
+              } else {
+                console.warn(`[Chapitrage] Structure de quiz invalide pour chapitre ${chapitreId}:`, quizData);
+              }
+            });
+          } else {
+            console.log('[Chapitrage] Aucun quiz dans preloadedData');
+          }
+          console.log(`[Chapitrage] Total quiz extraits: ${quizzesMap.size}`);
+          setQuizzesByChapitre(quizzesMap);
+
+          // Extraire l'étude de cas depuis les données préchargées
+          if (preloadedData.etudeCas) {
+            setEtudeCas(preloadedData.etudeCas);
+          }
+
+          setIsLoading(false);
+          return;
+        }
+
+        // Sinon, utiliser l'endpoint batch optimisé (avec fallback sur l'ancien système)
+        let response;
+        let data;
+        
+        try {
+          response = await fetch(`/api/cours/${coursId}/complete`, {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
         });
+          
+          // Vérifier que la réponse est bien du JSON et non une page HTML
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Endpoint non disponible, utilisation du système de fallback');
+          }
         
         if (response.ok) {
-          const data = await response.json();
-          const sortedCours = (data.cours || []).sort((a: any, b: any) => 
+            data = await response.json();
+          } else {
+            throw new Error('Endpoint retourne une erreur');
+          }
+        } catch (error) {
+          console.warn('[Chapitrage] Endpoint /complete non disponible, utilisation du système de fallback:', error);
+          
+          // FALLBACK : Utiliser l'ancien système
+          const chapitresResponse = await fetch(`/api/chapitres?coursId=${coursId}`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (!chapitresResponse.ok) {
+            throw new Error('Erreur lors du chargement des chapitres');
+          }
+          
+          const chapitresData = await chapitresResponse.json();
+          const sortedChapitres = (chapitresData.chapitres || []).sort((a: any, b: any) => 
             (a.ordre_affichage || 0) - (b.ordre_affichage || 0)
           );
-          setCours(sortedCours as Cours[]);
+          setChapitres(sortedChapitres as Chapitre[]);
 
-          // Charger les quiz pour chaque cours
+          // Charger les quiz pour chaque chapitre (ancien système)
           const quizzesMap = new Map<number, QuizData>();
           await Promise.all(
-            sortedCours.map(async (c: Cours) => {
+            sortedChapitres.map(async (ch: Chapitre) => {
               try {
-                const quizResponse = await fetch(`/api/quiz?coursId=${c.id}`, {
+                const quizResponse = await fetch(`/api/quiz?chapitreId=${ch.id}`, {
                   credentials: 'include',
                   headers: { 'Content-Type': 'application/json' }
                 });
                 if (quizResponse.ok) {
                   const quizData = await quizResponse.json();
                   if (quizData.quiz) {
-                    quizzesMap.set(c.id, {
+                    quizzesMap.set(ch.id, {
                       id: quizData.quiz.id,
-                      cours_id: c.id,
+                      cours_id: ch.id,
                       titre: quizData.quiz.titre || 'Quiz'
                     });
                   }
                 }
               } catch (error) {
-                console.error(`Erreur lors du chargement du quiz pour le cours ${c.id}:`, error);
+                console.error(`Erreur lors du chargement du quiz pour le chapitre ${ch.id}:`, error);
               }
             })
           );
-          setQuizzesByCours(quizzesMap);
+          setQuizzesByChapitre(quizzesMap);
 
-          // Charger l'étude de cas du module
+          // Charger l'étude de cas pour le premier chapitre (ou tous les chapitres)
+          if (sortedChapitres.length > 0) {
           try {
-            const etudeCasResponse = await fetch(`/api/etude-cas?moduleId=${moduleId}`, {
+              const firstChapitreId = sortedChapitres[0].id;
+              const etudeCasResponse = await fetch(`/api/etude-cas?chapitreId=${firstChapitreId}`, {
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' }
             });
@@ -92,21 +167,70 @@ export const Chapitrage = ({ moduleId, currentCoursId, onCoursClick, onQuizClick
             }
           } catch (error) {
             console.error('Erreur lors du chargement de l\'étude de cas:', error);
+            }
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data && data.cours) {
+          const coursData = data.cours;
+          const sortedChapitres = (coursData.chapitres || []).sort((a: any, b: any) => 
+            (a.ordre_affichage || 0) - (b.ordre_affichage || 0)
+          );
+          setChapitres(sortedChapitres as Chapitre[]);
+
+          // Extraire les quiz depuis la réponse batch
+          const quizzesMap = new Map<number, QuizData>();
+          sortedChapitres.forEach((chapitre: any) => {
+            if (chapitre.quizzes && chapitre.quizzes.length > 0) {
+              const quiz = chapitre.quizzes[0];
+              quizzesMap.set(chapitre.id, {
+                id: quiz.id || quiz.quiz?.id,
+                cours_id: chapitre.id,
+                titre: quiz.titre || quiz.quiz?.titre || 'Quiz'
+              });
+            }
+          });
+
+          console.log(`[Chapitrage] Total quiz extraits: ${quizzesMap.size}`);
+          setQuizzesByChapitre(quizzesMap);
+
+          // Extraire l'étude de cas depuis la réponse batch
+          if (coursData.etude_cas) {
+            setEtudeCas({
+              id: coursData.etude_cas.id,
+              titre: coursData.etude_cas.titre || 'Étude de cas'
+            });
           }
         } else {
-          console.error('Erreur lors du chargement des cours:', await response.text());
+          console.error('Erreur lors du chargement des chapitres:', await response.text());
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des cours:', error);
+        console.error('Erreur lors du chargement des chapitres:', error);
       } finally {
         setIsLoading(false);
       }
-    };
+  }, [coursId, preloadedData]);
 
-    if (moduleId) {
-      loadCours();
+  useEffect(() => {
+    if (coursId) {
+      loadChapitres();
     }
-  }, [moduleId]);
+  }, [coursId, preloadedData, loadChapitres]);
+
+  // Exposer une fonction de rafraîchissement via window pour pouvoir la déclencher depuis l'extérieur
+  useEffect(() => {
+    if (typeof window !== 'undefined' && coursId) {
+      (window as any)[`refreshChapitrage_${coursId}`] = loadChapitres;
+    }
+    return () => {
+      if (typeof window !== 'undefined' && coursId) {
+        delete (window as any)[`refreshChapitrage_${coursId}`];
+    }
+    };
+  }, [coursId, loadChapitres]);
 
   if (isLoading) {
     return (
@@ -138,38 +262,38 @@ export const Chapitrage = ({ moduleId, currentCoursId, onCoursClick, onQuizClick
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto">
-        {cours.length === 0 ? (
+        {chapitres.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-[#032622]/70 text-sm text-center">
-              Aucun cours créé pour ce module
+              Aucun chapitre créé pour ce cours
             </p>
           </div>
         ) : (
           <div className="space-y-2">
-            {cours.map((coursItem) => {
-              const hasQuiz = quizzesByCours.has(coursItem.id);
-              const quiz = hasQuiz ? quizzesByCours.get(coursItem.id) : null;
+            {chapitres.map((chapitreItem) => {
+              const hasQuiz = quizzesByChapitre.has(chapitreItem.id);
+              const quiz = hasQuiz ? quizzesByChapitre.get(chapitreItem.id) : null;
               
               return (
-                <div key={coursItem.id} className="space-y-1">
+                <div key={chapitreItem.id} className="space-y-1">
                   <div
-                    onClick={() => onCoursClick?.(coursItem.id)}
+                    onClick={() => onChapitreClick?.(chapitreItem.id)}
                     className={`p-2 border-b border-[#032622]/20 cursor-pointer transition-colors ${
-                      currentCoursId === coursItem.id
+                      currentChapitreId === chapitreItem.id
                         ? 'bg-[#032622]/10 font-semibold'
                         : 'hover:bg-[#032622]/5'
                     }`}
                   >
                     <p 
                       className={`text-[#032622] text-sm ${
-                        currentCoursId === coursItem.id ? 'underline' : ''
+                        currentChapitreId === chapitreItem.id ? 'underline' : ''
                       }`}
                       style={{ 
                         fontFamily: 'var(--font-termina-bold)',
-                        textDecoration: currentCoursId === coursItem.id ? 'underline' : 'none'
+                        textDecoration: currentChapitreId === chapitreItem.id ? 'underline' : 'none'
                       }}
                     >
-                      {coursItem.titre}
+                      {chapitreItem.titre}
                     </p>
                   </div>
                   {quiz && (
@@ -177,7 +301,7 @@ export const Chapitrage = ({ moduleId, currentCoursId, onCoursClick, onQuizClick
                       className="pl-4 py-1 border-b border-[#032622]/10 cursor-pointer hover:bg-[#032622]/5 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onQuizClick?.(coursItem.id, quiz.id);
+                        onQuizClick?.(chapitreItem.id, quiz.id);
                       }}
                     >
                       <div className="flex items-center gap-2">
@@ -198,7 +322,13 @@ export const Chapitrage = ({ moduleId, currentCoursId, onCoursClick, onQuizClick
               <div className="pt-2 mt-2 border-t-2 border-[#032622]/30">
                 <div 
                   className="p-2 cursor-pointer hover:bg-[#032622]/5 transition-colors"
-                  onClick={() => onEtudeCasClick?.(moduleId, etudeCas.id)}
+                  onClick={() => {
+                    // Trouver le chapitre qui a l'étude de cas
+                    const chapitreWithEtudeCas = chapitres.find(ch => ch.id);
+                    if (chapitreWithEtudeCas) {
+                      onEtudeCasClick?.(chapitreWithEtudeCas.id, etudeCas.id);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#032622]" />

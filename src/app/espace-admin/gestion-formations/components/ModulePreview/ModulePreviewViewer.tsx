@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { ModuleApprentissage, CoursContenu, QuizEvaluation, EtudeCas } from '@/types/formation-detailed';
+import { CoursApprentissage, ChapitreCours, QuizEvaluation, EtudeCas } from '@/types/formation-detailed';
 import { CourseContentViewer } from './CourseContentViewer';
 import { QuizViewer } from './QuizViewer';
 import { EtudeCasViewer } from './EtudeCasViewer';
@@ -10,8 +10,8 @@ import { ModulePreviewHeader } from './ModulePreviewHeader';
 import { ModulePreviewSidebar } from './ModulePreviewSidebar';
 import { ModulePreviewNavigation } from './ModulePreviewNavigation';
 
-interface ModulePreviewViewerProps {
-  moduleId: number;
+interface CoursPreviewViewerProps {
+  coursId: number;
   formationId: string;
   blocId: string;
   onBack?: () => void;
@@ -19,9 +19,9 @@ interface ModulePreviewViewerProps {
 
 type ViewType = 'cours' | 'quiz' | 'etude-cas';
 
-interface ModuleData {
-  module: ModuleApprentissage | null;
-  cours: CoursContenu[];
+interface CoursData {
+  cours: CoursApprentissage | null;
+  chapitres: ChapitreCours[];
   quiz: QuizEvaluation | null;
   quizQuestions: any[];
   etudeCas: EtudeCas | null;
@@ -35,15 +35,15 @@ interface QuizData {
 }
 
 export const ModulePreviewViewer = ({
-  moduleId,
+  coursId,
   formationId,
   blocId,
   onBack
-}: ModulePreviewViewerProps) => {
+}: CoursPreviewViewerProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [data, setData] = useState<ModuleData>({
-    module: null,
-    cours: [],
+  const [data, setData] = useState<CoursData>({
+    cours: null,
+    chapitres: [],
     quiz: null,
     quizQuestions: [],
     etudeCas: null,
@@ -51,28 +51,50 @@ export const ModulePreviewViewer = ({
     bloc: null
   });
   const [currentView, setCurrentView] = useState<ViewType>('cours');
-  const [currentCoursIndex, setCurrentCoursIndex] = useState(0);
-  const [allModules, setAllModules] = useState<ModuleApprentissage[]>([]);
+  const [currentChapitreIndex, setCurrentChapitreIndex] = useState(0);
+  const [allCours, setAllCours] = useState<CoursApprentissage[]>([]);
   const [isSidebarRightCollapsed, setIsSidebarRightCollapsed] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [showEtudeCasModal, setShowEtudeCasModal] = useState(false);
-  const [quizzesByCours, setQuizzesByCours] = useState<Map<number, QuizData>>(new Map());
+  const [quizzesByChapitre, setQuizzesByChapitre] = useState<Map<number, QuizData>>(new Map());
   const [currentQuiz, setCurrentQuiz] = useState<QuizData | null>(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
-  // Charger les données du module
+  // Charger les données du cours - OPTIMISÉ : Une seule requête au lieu de 5 + 2N + M
   useEffect(() => {
-    const loadModuleData = async () => {
+    const loadCoursData = async () => {
       setIsLoading(true);
       try {
-        // Charger le module
-        const moduleResponse = await fetch(`/api/modules/${moduleId}`, {
+        // OPTIMISATION : Utiliser l'endpoint batch qui charge tout en une seule requête (avec fallback)
+        let completeData;
+        
+        try {
+          const completeResponse = await fetch(`/api/cours/${coursId}/complete`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          // Vérifier que la réponse est bien du JSON et non une page HTML
+          const contentType = completeResponse.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Endpoint non disponible, utilisation du système de fallback');
+          }
+
+          if (!completeResponse.ok) {
+            throw new Error('Endpoint retourne une erreur');
+          }
+
+          completeData = await completeResponse.json();
+        } catch (error) {
+          console.warn('[CoursPreviewViewer] Endpoint /complete non disponible, utilisation du système de fallback:', error);
+          
+          // FALLBACK : Utiliser l'ancien système avec plusieurs requêtes
+          const coursResponse = await fetch(`/api/cours/${coursId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });
-        const moduleData = moduleResponse.ok ? await moduleResponse.json() : null;
+          const coursData = coursResponse.ok ? await coursResponse.json() : null;
 
-        // Charger le bloc via formationId
         const blocResponse = await fetch(`/api/blocs?formationId=${formationId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
@@ -80,65 +102,59 @@ export const ModulePreviewViewer = ({
         const blocData = blocResponse.ok ? await blocResponse.json() : null;
         const bloc = blocData?.blocs?.find((b: any) => b.id === parseInt(blocId)) || null;
 
-        // Charger les cours du module
-        const coursResponse = await fetch(`/api/cours?moduleId=${moduleId}`, {
+          const chapitresResponse = await fetch(`/api/chapitres?coursId=${coursId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });
-        const coursData = coursResponse.ok ? await coursResponse.json() : null;
-        let cours = coursData?.cours || [];
-        
-        // Charger les détails complets de chaque cours (fichiers complémentaires, etc.)
-        const coursWithDetails = await Promise.all(
-          cours.map(async (c: CoursContenu) => {
-            try {
-              const detailResponse = await fetch(`/api/cours?coursId=${c.id}`, {
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-              });
-              if (detailResponse.ok) {
-                const detailData = await detailResponse.json();
-                return detailData.cours || c;
-              }
-              return c;
-            } catch (error) {
-              console.error(`Erreur lors du chargement des détails du cours ${c.id}:`, error);
-              return c;
-            }
-          })
-        );
-        cours = coursWithDetails;
+          const chapitresData = chapitresResponse.ok ? await chapitresResponse.json() : null;
+          let chapitres = chapitresData?.chapitres || [];
 
-        // Charger les quiz pour tous les cours
         const quizzesMap = new Map<number, QuizData>();
         await Promise.all(
-          cours.map(async (c: CoursContenu) => {
+            chapitres.map(async (ch: ChapitreCours) => {
             try {
-              const quizResponse = await fetch(`/api/quiz?coursId=${c.id}`, {
+                const quizResponse = await fetch(`/api/quiz?chapitreId=${ch.id}`, {
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' }
               });
               if (quizResponse.ok) {
                 const quizData = await quizResponse.json();
                 if (quizData.quiz) {
-                  quizzesMap.set(c.id, {
+                    quizzesMap.set(ch.id, {
                     quiz: quizData.quiz,
                     questions: quizData.questions || []
                   });
                 }
               }
             } catch (error) {
-              console.error(`Erreur lors du chargement du quiz pour le cours ${c.id}:`, error);
+                console.error(`Erreur lors du chargement du quiz pour le chapitre ${ch.id}:`, error);
             }
           })
         );
-        setQuizzesByCours(quizzesMap);
+          setQuizzesByChapitre(quizzesMap);
 
-        // Charger le quiz du premier cours pour l'affichage initial
+          // Charger l'étude de cas pour le premier chapitre
+          let etudeCas = null;
+          let etudeCasQuestions = [];
+          if (chapitres.length > 0) {
+            const firstChapitreId = chapitres[0].id;
+            const etudeCasResponse = await fetch(`/api/etude-cas?chapitreId=${firstChapitreId}`, {
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            if (etudeCasResponse.ok) {
+              const etudeCasData = await etudeCasResponse.json();
+              etudeCas = etudeCasData.etudeCas;
+              etudeCasQuestions = etudeCasData.questions || [];
+            }
+          }
+
+          const sortedChapitres = chapitres.sort((a: ChapitreCours, b: ChapitreCours) => a.ordre_affichage - b.ordre_affichage);
+          
         let quiz = null;
         let quizQuestions = [];
-        if (cours.length > 0 && quizzesMap.has(cours[0].id)) {
-          const firstQuizData = quizzesMap.get(cours[0].id)!;
+          if (chapitres.length > 0 && quizzesMap.has(chapitres[0].id)) {
+            const firstQuizData = quizzesMap.get(chapitres[0].id)!;
           quiz = firstQuizData.quiz;
           quizQuestions = firstQuizData.questions;
           setCurrentQuiz(firstQuizData);
@@ -146,24 +162,76 @@ export const ModulePreviewViewer = ({
           setCurrentQuiz(null);
         }
 
-        // Charger l'étude de cas du module
-        const etudeCasResponse = await fetch(`/api/etude-cas?moduleId=${moduleId}`, {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
+          setData({
+            cours: coursData?.cours || null,
+            chapitres: sortedChapitres,
+            quiz,
+            quizQuestions,
+            etudeCas,
+            etudeCasQuestions,
+            bloc
+          });
+          
+          if (sortedChapitres.length > 0) {
+            setCurrentChapitreIndex(0);
+            setCurrentView('cours');
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        if (completeData && completeData.cours) {
+        
+        console.log('[CoursPreviewViewer] Données reçues:', {
+          chapitresCount: completeData.cours.chapitres?.length || 0,
+          hasEtudeCas: !!completeData.cours.etude_cas
         });
-        let etudeCas = null;
-        let etudeCasQuestions = [];
-        if (etudeCasResponse.ok) {
-          const etudeCasData = await etudeCasResponse.json();
-          etudeCas = etudeCasData.etudeCas;
-          etudeCasQuestions = etudeCasData.questions || [];
+        
+        // Extraire les données de la réponse
+        const cours = completeData.cours;
+        const chapitres = cours.chapitres || [];
+        const etudeCas = cours.etude_cas;
+        const etudeCasQuestions = cours.etude_cas_questions || [];
+
+        // Convertir les quiz des chapitres en Map pour faciliter l'accès
+        const quizzesMap = new Map<number, QuizData>();
+        chapitres.forEach((chapitre: any) => {
+          if (chapitre.quizzes && chapitre.quizzes.length > 0) {
+            const quizData = chapitre.quizzes[0];
+            quizzesMap.set(chapitre.id, {
+              quiz: quizData.quiz || quizData,
+              questions: quizData.questions || []
+            });
+            console.log(`[CoursPreviewViewer] Quiz chargé pour chapitre ${chapitre.id}:`, quizData.quiz?.titre || quizData.titre);
+          }
+        });
+        console.log(`[CoursPreviewViewer] Total quiz chargés: ${quizzesMap.size}`);
+        setQuizzesByChapitre(quizzesMap);
+
+        // Charger le quiz du premier chapitre pour l'affichage initial
+        let quiz = null;
+        let quizQuestions = [];
+        if (chapitres.length > 0 && quizzesMap.has(chapitres[0].id)) {
+          const firstQuizData = quizzesMap.get(chapitres[0].id)!;
+          quiz = firstQuizData.quiz;
+          quizQuestions = firstQuizData.questions;
+          setCurrentQuiz(firstQuizData);
+        } else {
+          setCurrentQuiz(null);
         }
 
-        const sortedCours = cours.sort((a: CoursContenu, b: CoursContenu) => a.ordre_affichage - b.ordre_affichage);
+        // Extraire le bloc depuis les données du cours
+        const bloc = cours.blocs_competences ? {
+          numero_bloc: cours.blocs_competences.numero_bloc,
+          titre: cours.blocs_competences.titre
+        } : null;
+
+        const sortedChapitres = chapitres.sort((a: ChapitreCours, b: ChapitreCours) => a.ordre_affichage - b.ordre_affichage);
         
         setData({
-          module: moduleData?.module || null,
-          cours: sortedCours,
+          cours: cours || null,
+          chapitres: sortedChapitres,
           quiz,
           quizQuestions,
           etudeCas,
@@ -171,10 +239,11 @@ export const ModulePreviewViewer = ({
           bloc
         });
         
-        // Afficher le premier cours par défaut
-        if (sortedCours.length > 0) {
-          setCurrentCoursIndex(0);
+        // Afficher le premier chapitre par défaut
+        if (sortedChapitres.length > 0) {
+          setCurrentChapitreIndex(0);
           setCurrentView('cours');
+        }
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
@@ -183,99 +252,85 @@ export const ModulePreviewViewer = ({
       }
     };
 
-    loadModuleData();
-  }, [moduleId, blocId, formationId]);
+    loadCoursData();
+  }, [coursId, blocId, formationId]);
 
-  // Charger tous les modules du bloc pour la sidebar avec leurs cours
+  // Charger tous les cours du bloc pour la sidebar - OPTIMISÉ : Une seule requête au lieu de M + M×N
   useEffect(() => {
-    const loadAllModules = async () => {
+    const loadAllCours = async () => {
       try {
-        const response = await fetch(`/api/modules?blocId=${blocId}`, {
+        // OPTIMISATION : Utiliser l'endpoint batch qui charge tous les cours avec leurs chapitres en une seule requête
+        const response = await fetch(`/api/blocs/${blocId}/cours-complete`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });
+        
         if (response.ok) {
-          const modulesData = await response.json();
-          const modulesList = modulesData.modules || [];
+          const data = await response.json();
+          const coursList = data.cours || [];
           
-          // Charger les cours pour chaque module
-          const modulesWithCours = await Promise.all(
-            modulesList.map(async (mod: ModuleApprentissage) => {
-              try {
-                const coursResponse = await fetch(`/api/cours?moduleId=${mod.id}`, {
-                  credentials: 'include',
-                  headers: { 'Content-Type': 'application/json' }
-                });
-                if (coursResponse.ok) {
-                  const coursData = await coursResponse.json();
-                  return {
-                    ...mod,
-                    cours: (coursData.cours || []).sort((a: CoursContenu, b: CoursContenu) => 
+          // Les cours sont déjà chargés avec leurs chapitres, quiz et études de cas
+          // Il suffit de formater les données pour la sidebar
+          const coursWithChapitres = coursList.map((c: any) => ({
+            ...c,
+            chapitres: (c.chapitres || []).sort((a: ChapitreCours, b: ChapitreCours) => 
                       a.ordre_affichage - b.ordre_affichage
                     )
-                  };
-                }
-                return { ...mod, cours: [] };
-              } catch (error) {
-                console.error(`Erreur lors du chargement des cours pour le module ${mod.id}:`, error);
-                return { ...mod, cours: [] };
-              }
-            })
-          );
+          }));
           
-          setAllModules(modulesWithCours);
+          setAllCours(coursWithChapitres);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des modules:', error);
+        console.error('Erreur lors du chargement des cours:', error);
       }
     };
-    loadAllModules();
+    loadAllCours();
   }, [blocId]);
 
-  const currentCours = data.cours[currentCoursIndex];
-  const hasPreviousCours = currentCoursIndex > 0;
-  const hasNextCours = currentCoursIndex < data.cours.length - 1;
-  const hasQuizForCurrentCours = currentCours ? quizzesByCours.has(currentCours.id) : false;
+  const currentChapitre = data.chapitres[currentChapitreIndex];
+  const hasPreviousChapitre = currentChapitreIndex > 0;
+  const hasNextChapitre = currentChapitreIndex < data.chapitres.length - 1;
+  const hasQuizForCurrentChapitre = currentChapitre ? quizzesByChapitre.has(currentChapitre.id) : false;
   const hasEtudeCas = data.etudeCas !== null;
 
-  // Charger le quiz du cours actuel quand on change de cours
+  // Charger le quiz du chapitre actuel quand on change de chapitre
   useEffect(() => {
-    if (currentCours && currentView === 'cours') {
-      const quizData = quizzesByCours.get(currentCours.id);
+    if (currentChapitre && currentView === 'cours') {
+      const quizData = quizzesByChapitre.get(currentChapitre.id);
       if (quizData) {
         setCurrentQuiz(quizData);
       } else {
         setCurrentQuiz(null);
       }
-      // Réinitialiser quizCompleted quand on change de cours
+      // Réinitialiser quizCompleted quand on change de chapitre
       setQuizCompleted(false);
     }
-  }, [currentCoursIndex, currentCours, quizzesByCours, currentView]);
+  }, [currentChapitreIndex, currentChapitre, quizzesByChapitre, currentView]);
 
   const handleNext = () => {
     if (currentView === 'cours') {
-      // Si le cours actuel a un quiz, afficher le modal avant de passer au cours suivant
-      if (hasQuizForCurrentCours) {
+      // Si le chapitre actuel a un quiz, afficher le modal avant de passer au chapitre suivant
+      if (hasQuizForCurrentChapitre) {
         setShowQuizModal(true);
-      } else if (hasNextCours) {
-        // Pas de quiz pour ce cours, passer directement au cours suivant
-        setCurrentCoursIndex(prev => prev + 1);
+      } else if (hasNextChapitre) {
+        // Pas de quiz pour ce chapitre, passer directement au chapitre suivant
+        setCurrentChapitreIndex(prev => prev + 1);
       } else if (hasEtudeCas) {
-        // Plus de cours, afficher le modal avant de passer à l'étude de cas
+        // Plus de chapitres, afficher le modal avant de passer à l'étude de cas
         setShowEtudeCasModal(true);
       }
     } else if (currentView === 'quiz') {
-      // Si le quiz est terminé (showResults), passer au cours suivant ou à l'étude de cas
+      // Si le quiz est terminé (showResults), passer au chapitre suivant ou à l'étude de cas
       if (quizCompleted) {
-        if (hasNextCours) {
+        if (hasNextChapitre) {
           setCurrentView('cours');
-          setCurrentCoursIndex(prev => prev + 1);
+          setCurrentChapitreIndex(prev => prev + 1);
           setQuizCompleted(false);
         } else if (hasEtudeCas) {
           setShowEtudeCasModal(true);
           setQuizCompleted(false);
         } else {
-          // Plus rien après, revenir au cours
+          // Plus rien après, revenir au chapitre
           setCurrentView('cours');
           setQuizCompleted(false);
         }
@@ -291,7 +346,7 @@ export const ModulePreviewViewer = ({
 
   const handleContinueReading = () => {
     setShowQuizModal(false);
-    // L'utilisateur reste sur le cours actuel
+    // L'utilisateur reste sur le chapitre actuel
   };
 
   const handleGoToQuiz = () => {
@@ -322,45 +377,45 @@ export const ModulePreviewViewer = ({
 
   const handlePrevious = () => {
     if (currentView === 'etude-cas' && hasEtudeCas) {
-      // Retourner au dernier quiz ou au dernier cours
-      const lastCours = data.cours[data.cours.length - 1];
-      if (lastCours && quizzesByCours.has(lastCours.id)) {
+      // Retourner au dernier quiz ou au dernier chapitre
+      const lastChapitre = data.chapitres[data.chapitres.length - 1];
+      if (lastChapitre && quizzesByChapitre.has(lastChapitre.id)) {
         setCurrentView('quiz');
-        setCurrentCoursIndex(data.cours.length - 1);
+        setCurrentChapitreIndex(data.chapitres.length - 1);
       } else {
         setCurrentView('cours');
-        setCurrentCoursIndex(data.cours.length - 1);
+        setCurrentChapitreIndex(data.chapitres.length - 1);
       }
-    } else if (currentView === 'quiz' && currentCours) {
-      // Retourner au cours actuel
+    } else if (currentView === 'quiz' && currentChapitre) {
+      // Retourner au chapitre actuel
       setCurrentView('cours');
-    } else if (currentView === 'cours' && hasPreviousCours) {
-      setCurrentCoursIndex(prev => prev - 1);
+    } else if (currentView === 'cours' && hasPreviousChapitre) {
+      setCurrentChapitreIndex(prev => prev - 1);
     }
   };
 
-  const handleCoursClick = (coursId: number) => {
-    // Trouver le cours dans les cours du module actuel
-    const targetIndex = data.cours.findIndex((c: CoursContenu) => c.id === coursId);
+  const handleChapitreClick = (chapitreId: number) => {
+    // Trouver le chapitre dans les chapitres du cours actuel
+    const targetIndex = data.chapitres.findIndex((ch: ChapitreCours) => ch.id === chapitreId);
     
     if (targetIndex !== -1) {
-      // Si le cours est dans le module actuel, mettre à jour l'index directement
-      setCurrentCoursIndex(targetIndex);
+      // Si le chapitre est dans le cours actuel, mettre à jour l'index directement
+      setCurrentChapitreIndex(targetIndex);
       setCurrentView('cours');
     }
   };
 
-  const handleQuizClick = (coursId: number) => {
-    // Trouver le cours dans les cours du module actuel
-    const targetIndex = data.cours.findIndex((c: CoursContenu) => c.id === coursId);
+  const handleQuizClick = (chapitreId: number) => {
+    // Trouver le chapitre dans les chapitres du cours actuel
+    const targetIndex = data.chapitres.findIndex((ch: ChapitreCours) => ch.id === chapitreId);
     
     if (targetIndex !== -1) {
-      // Aller au cours associé
-      setCurrentCoursIndex(targetIndex);
+      // Aller au chapitre associé
+      setCurrentChapitreIndex(targetIndex);
       setCurrentView('cours');
       
-      // Vérifier si ce cours a un quiz et afficher le modal de prévention
-      const quizData = quizzesByCours.get(coursId);
+      // Vérifier si ce chapitre a un quiz et afficher le modal de prévention
+      const quizData = quizzesByChapitre.get(chapitreId);
       if (quizData) {
         setCurrentQuiz(quizData);
         setShowQuizModal(true);
@@ -368,9 +423,10 @@ export const ModulePreviewViewer = ({
     }
   };
 
-  const handleEtudeCasClick = (moduleIdClicked: number) => {
-    // Si c'est le module actuel, afficher le modal ou aller directement à l'étude de cas
-    if (moduleIdClicked === moduleId) {
+  const handleEtudeCasClick = (chapitreIdClicked: number) => {
+    // Si c'est un chapitre du cours actuel, afficher le modal ou aller directement à l'étude de cas
+    const chapitreExists = data.chapitres.some((ch: ChapitreCours) => ch.id === chapitreIdClicked);
+    if (chapitreExists) {
       // Vérifier si l'étude de cas existe dans les données
       const etudeCasInData = data.etudeCas;
       if (etudeCasInData || hasEtudeCas) {
@@ -390,17 +446,17 @@ export const ModulePreviewViewer = ({
 
   const handleContinueToEtudeCas = () => {
     setShowEtudeCasModal(false);
-    // L'utilisateur reste sur le cours actuel
+    // L'utilisateur reste sur le chapitre actuel
   };
 
-  const handleModuleClick = (clickedModuleId: number) => {
-    // Ne rien faire - le clic sur le module ne fait que dérouler les cours
-    // La navigation se fait uniquement via les cours
+  const handleCoursClick = (clickedCoursId: number) => {
+    // Ne rien faire - le clic sur le cours ne fait que dérouler les chapitres
+    // La navigation se fait uniquement via les chapitres
   };
 
   // Calculer la progression (simulation)
-  const progress = data.cours.length > 0
-    ? Math.round(((currentCoursIndex + 1) / data.cours.length) * 100)
+  const progress = data.chapitres.length > 0
+    ? Math.round(((currentChapitreIndex + 1) / data.chapitres.length) * 100)
     : 0;
 
   if (isLoading) {
@@ -414,11 +470,11 @@ export const ModulePreviewViewer = ({
     );
   }
 
-  if (!data.module) {
+  if (!data.cours) {
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[#032622] text-lg mb-4">Module non trouvé</p>
+          <p className="text-[#032622] text-lg mb-4">Cours non trouvé</p>
           {onBack && (
             <button
               onClick={onBack}
@@ -454,7 +510,7 @@ export const ModulePreviewViewer = ({
             <ModulePreviewHeader
               blocNumber={data.bloc ? `BLOC ${data.bloc.numero_bloc}` : 'BLOC'}
               blocTitle={data.bloc?.titre || ''}
-              moduleTitle={`MODULE ${data.module.numero_module || data.module.ordre_affichage} - ${data.module.titre}`}
+              moduleTitle={`COURS ${data.cours.numero_cours || data.cours.ordre_affichage} - ${data.cours.titre}`}
               progress={progress}
             />
           </div>
@@ -489,11 +545,11 @@ export const ModulePreviewViewer = ({
               }`}>
                 {currentView === 'cours' && (
                   <div className="relative min-h-[400px]">
-                    {currentCours ? (
-                      <CourseContentViewer cours={currentCours} isPreview={true} />
+                    {currentChapitre ? (
+                      <CourseContentViewer cours={currentChapitre} isPreview={true} />
                     ) : (
                       <div className="text-center text-[#032622] py-12">
-                        <p className="text-lg mb-4">Aucun cours disponible dans ce module</p>
+                        <p className="text-lg mb-4">Aucun chapitre disponible dans ce cours</p>
                       </div>
                     )}
                   </div>
@@ -518,9 +574,9 @@ export const ModulePreviewViewer = ({
                   />
                 )}
 
-                {currentView === 'cours' && !currentCours && (
+                {currentView === 'cours' && !currentChapitre && (
                   <div className="text-center text-[#032622] py-12">
-                    <p className="text-lg mb-4">Aucun cours disponible dans ce module</p>
+                    <p className="text-lg mb-4">Aucun chapitre disponible dans ce cours</p>
                   </div>
                 )}
               </div>
@@ -528,13 +584,13 @@ export const ModulePreviewViewer = ({
             
         {/* Navigation footer */}
         <ModulePreviewNavigation
-          hasPrevious={currentView === 'cours' ? hasPreviousCours : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
-          hasNext={currentView === 'cours' ? (hasNextCours || hasQuizForCurrentCours || (hasEtudeCas && !hasNextCours && !hasQuizForCurrentCours)) : currentView === 'quiz' ? quizCompleted : currentView === 'etude-cas' ? false : false}
+          hasPrevious={currentView === 'cours' ? hasPreviousChapitre : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
+          hasNext={currentView === 'cours' ? (hasNextChapitre || hasQuizForCurrentChapitre || (hasEtudeCas && !hasNextChapitre && !hasQuizForCurrentChapitre)) : currentView === 'quiz' ? quizCompleted : currentView === 'etude-cas' ? false : false}
           onPrevious={handlePrevious}
           onNext={handleNext}
           currentType={currentView}
           quizCompleted={quizCompleted}
-          showEtudeCasButton={currentView === 'cours' && !hasNextCours && !hasQuizForCurrentCours && hasEtudeCas}
+          showEtudeCasButton={currentView === 'cours' && !hasNextChapitre && !hasQuizForCurrentChapitre && hasEtudeCas}
         />
           </div>
 
@@ -545,14 +601,14 @@ export const ModulePreviewViewer = ({
             {!isSidebarRightCollapsed && (
               <div className="h-full overflow-y-auto">
                 <ModulePreviewSidebar
-                  modules={allModules}
-                  currentModuleId={moduleId}
-                  currentCoursId={currentCours?.id}
-                  onModuleClick={handleModuleClick}
+                  cours={allCours}
+                  currentCoursId={coursId}
+                  currentChapitreId={currentChapitre?.id}
                   onCoursClick={handleCoursClick}
+                  onChapitreClick={handleChapitreClick}
                   onQuizClick={handleQuizClick}
                   onEtudeCasClick={handleEtudeCasClick}
-                  fichiersComplementaires={currentCours?.fichiers_complementaires || []}
+                  fichiersComplementaires={currentChapitre?.fichiers_complementaires || []}
                   isCollapsed={isSidebarRightCollapsed}
                   onToggle={() => setIsSidebarRightCollapsed(prev => !prev)}
                 />

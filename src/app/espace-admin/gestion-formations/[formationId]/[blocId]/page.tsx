@@ -60,7 +60,8 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
 
   const loadModules = async () => {
     try {
-      const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`, {
+      console.log(`[Page] Chargement des cours pour bloc ${blocId}...`);
+      const response = await fetch(`/api/cours?formationId=${formationId}&blocId=${blocId}`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -69,15 +70,46 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
       
       if (response.ok) {
         const data = await response.json();
-        const formattedModules = (data.modules || []).map((module: any) => ({
-          ...module,
-          coursDetails: module.coursDetails ?? [],
+        console.log('[Page] Données reçues de l\'API:', { 
+          hasModules: !!data.modules, 
+          hasCours: !!data.cours,
+          modulesCount: data.modules?.length || 0,
+          coursCount: data.cours?.length || 0,
+          rawData: data
+        });
+        
+        // L'API retourne maintenant { cours: [...] } au lieu de { modules: [...] }
+        const coursData = data.cours || data.modules || [];
+        console.log('[Page] Cours data à formater:', coursData.length, coursData);
+        
+        if (coursData.length === 0) {
+          console.warn('[Page] Aucun cours trouvé dans la réponse API');
+        }
+        
+        const formattedModules = coursData.map((cours: any) => ({
+          id: cours.id?.toString() || String(cours.id),
+          moduleName: cours.coursName || cours.titre || 'Cours sans titre',
+          cours: cours.chapitres || cours.cours || [],
+          coursDetails: cours.chapitresDetails || cours.coursDetails || [],
+          creationModification: cours.creationModification,
+          creePar: cours.creePar,
+          statut: cours.statut || 'brouillon',
+          cours_count: cours.chapitres_count || cours.cours_count || 0,
+          cours_actifs: cours.chapitres_actifs || cours.cours_actifs || 0,
+          ordre_affichage: cours.ordre_affichage,
+          numero_module: cours.numero_cours || cours.numero_module,
+          hasEtudeCas: cours.hasEtudeCas || false,
         }));
+        
+        console.log('[Page] Modules formatés:', formattedModules.length, formattedModules);
         setModules(formattedModules);
       } else {
+        const errorText = await response.text();
+        console.error('[Page] Erreur API:', response.status, errorText);
         setModules([]);
       }
     } catch (error) {
+      console.error('[Page] Erreur lors du chargement:', error);
       setModules([]);
     } finally {
       setIsLoading(false);
@@ -96,19 +128,24 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     loadData();
   }, [formationId, blocId]);
 
-  const handleAddModule = async (moduleData: { titre: string; cours: string[]; moduleId?: string }) => {
+  const handleAddModule = async (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
     try {
-      const response = await fetch(`/api/modules?formationId=${formationId}&blocId=${blocId}`, {
+      // Convertir les chapitres en format attendu par l'API
+      const chapitres = Array.isArray(moduleData.cours) && moduleData.cours.length > 0 && typeof moduleData.cours[0] === 'object'
+        ? moduleData.cours
+        : (moduleData.cours as string[]).map(titre => ({ titre }));
+
+      const response = await fetch(`/api/cours?formationId=${formationId}&blocId=${blocId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           titre: moduleData.titre,
-          cours: moduleData.cours,
+          chapitres: chapitres,
           description: '',
           type_module: 'cours',
-          moduleId: moduleData.moduleId,
+          coursId: moduleData.moduleId, // L'API attend coursId, pas moduleId
         }),
       });
 
@@ -128,23 +165,23 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     // TODO: Implémenter l'ajout de quiz
   };
 
-  const handleVisualizeModule = (moduleId: string) => {
-    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/preview`);
+  const handleVisualizeModule = (coursId: string) => {
+    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/preview`);
   };
 
   const handleAssignModule = (moduleId: string) => {
     // TODO: Implémenter l'attribution du module
   };
 
-  const handleEditCours = (moduleId: string, coursId?: string) => {
-    // Trouver le module pour récupérer son ordre d'affichage
-    const module = modules.find(m => m.id === moduleId);
-    const moduleOrder = module?.ordre_affichage || module?.numero_module || 1;
+  const handleEditCours = (coursId: string, chapitreId?: string) => {
+    // Trouver le cours pour récupérer son ordre d'affichage
+    const cours = modules.find(m => m.id === coursId);
+    const coursOrder = cours?.ordre_affichage || cours?.numero_module || 1;
     
-    if (coursId) {
-      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours/${coursId}`);
+    if (chapitreId) {
+      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`);
     } else {
-      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours`);
+      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre`);
     }
   };
 
@@ -152,18 +189,22 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     router.push(`/espace-admin/gestion-formations/${formationId}`);
   };
 
-  const handleDeleteModule = async (moduleId: string, scope: 'module' | 'cours', coursId?: string) => {
+  const handleDeleteModule = async (coursId: string, scope: 'module' | 'cours', chapitreId?: string) => {
     try {
+      console.log('[handleDeleteModule] Début de la suppression:', { coursId, scope, chapitreId });
+      
       if (scope === 'cours') {
-        if (!coursId) {
-          throw new Error('Cours non précisé pour la suppression');
+        if (!chapitreId) {
+          throw new Error('Chapitre non précisé pour la suppression');
         }
       }
 
       const url =
         scope === 'module'
-          ? `/api/modules?moduleId=${moduleId}&scope=module`
-          : `/api/cours?coursId=${coursId}`;
+          ? `/api/cours?coursId=${coursId}&scope=cours`
+          : `/api/chapitres?chapitreId=${chapitreId}`;
+
+      console.log('[handleDeleteModule] URL de suppression:', url);
 
       const response = await fetch(url, {
         method: 'DELETE',
@@ -173,14 +214,22 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
         },
       });
 
+      console.log('[handleDeleteModule] Réponse reçue:', response.status, response.statusText);
+
       if (!response.ok) {
         const message = await response.text();
+        console.error('[handleDeleteModule] Erreur de réponse:', message);
         throw new Error(message || `Erreur HTTP ${response.status}`);
       }
 
+      const result = await response.json();
+      console.log('[handleDeleteModule] Résultat de la suppression:', result);
+
       await loadModules();
+      console.log('[handleDeleteModule] Modules rechargés après suppression');
     } catch (error) {
-      console.error('Erreur lors de la suppression du module:', error);
+      console.error('Erreur lors de la suppression:', error);
+      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   };
 

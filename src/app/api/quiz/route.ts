@@ -3,13 +3,13 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 import { QuizEvaluation, CreateQuizData } from '@/types/formation-detailed';
 import { logCreate, logUpdate, logDelete } from '@/lib/audit-logger';
 
-// GET - Récupérer un quiz par cours_id ou module_id
+// GET - Récupérer un quiz par chapitre_id ou cours_id
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseServerClient();
     const { searchParams } = new URL(request.url);
+    const chapitreId = searchParams.get('chapitreId');
     const coursId = searchParams.get('coursId');
-    const moduleId = searchParams.get('moduleId');
     const quizId = searchParams.get('quizId');
 
     if (quizId) {
@@ -42,12 +42,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ quiz, questions: questions || [] });
     }
 
-    if (coursId) {
-      // Récupérer le quiz pour un cours spécifique
+    if (chapitreId) {
+      // Récupérer le quiz pour un chapitre spécifique
       const { data: quiz, error } = await supabase
         .from('quiz_evaluations')
         .select('*')
-        .eq('cours_id', coursId)
+        .eq('chapitre_id', chapitreId)
         .eq('actif', true)
         .single();
 
@@ -76,12 +76,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (moduleId) {
-      // Récupérer tous les quiz d'un module
+    if (coursId) {
+      // Récupérer tous les quiz d'un cours
       const { data: quizzes, error } = await supabase
         .from('quiz_evaluations')
         .select('*')
-        .eq('module_id', moduleId)
+        .eq('cours_id', coursId)
         .eq('actif', true)
         .order('created_at', { ascending: true });
 
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ quizzes: quizzes || [] });
     }
 
-    return NextResponse.json({ error: 'coursId, moduleId ou quizId requis' }, { status: 400 });
+    return NextResponse.json({ error: 'chapitreId, coursId ou quizId requis' }, { status: 400 });
   } catch (error) {
     console.error('Erreur lors de la récupération du quiz:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -104,15 +104,15 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getSupabaseServerClient();
     const body = await request.json();
-    const { module_id, cours_id, titre, description, duree_minutes, nombre_tentatives_max, seuil_reussite, questions_aleatoires } = body;
+    const { cours_id, chapitre_id, titre, description, duree_minutes, nombre_tentatives_max, seuil_reussite, questions_aleatoires } = body;
 
-    if (!module_id || !titre) {
-      return NextResponse.json({ error: 'module_id et titre sont requis' }, { status: 400 });
+    if (!cours_id || !chapitre_id || !titre) {
+      return NextResponse.json({ error: 'cours_id, chapitre_id et titre sont requis' }, { status: 400 });
     }
 
-    const quizData: CreateQuizData = {
-      module_id,
+    const quizData = {
       cours_id,
+      chapitre_id,
       titre,
       description,
       duree_minutes: duree_minutes || 30,

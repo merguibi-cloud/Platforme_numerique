@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Edit, Eye, Trash2, BookOpen } from 'lucide-react';
 import { getModulesByBlocId } from '@/lib/blocs-api';
-import { ModuleApprentissage } from '@/types/formation-detailed';
+import { CoursApprentissage } from '@/types/formation-detailed';
 
 interface BlockCardProps {
   id: string;
@@ -26,7 +26,7 @@ export const BlockCard = ({
   onDeleteBlock
 }: BlockCardProps) => {
   const router = useRouter();
-  const [modules, setModules] = useState<ModuleApprentissage[]>([]);
+  const [modules, setModules] = useState<CoursApprentissage[]>([]);
   const [isLoadingModules, setIsLoadingModules] = useState(true);
 
   useEffect(() => {

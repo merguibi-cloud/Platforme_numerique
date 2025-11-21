@@ -38,14 +38,14 @@ export interface BlocCompetence {
   updated_at: string;
   
   // Relations
-  modules?: ModuleApprentissage[];
+  cours?: CoursApprentissage[];
   formation?: Formation;
 }
 
-export interface ModuleApprentissage {
+export interface CoursApprentissage {
   id: number;
   bloc_id: number;
-  numero_module: number;
+  numero_cours: number;
   titre: string;
   description?: string;
   type_module: 'cours' | 'etude_cas' | 'quiz' | 'projet';
@@ -57,14 +57,14 @@ export interface ModuleApprentissage {
   
   // Relations
   bloc?: BlocCompetence;
-  cours?: CoursContenu[];
+  chapitres?: ChapitreCours[];
   etude_cas?: EtudeCas[];
   quiz?: QuizEvaluation[];
 }
 
-export interface CoursContenu {
+export interface ChapitreCours {
   id: number;
-  module_id: number;
+  cours_id: number;
   titre: string;
   description?: string;
   type_contenu: 'video' | 'texte' | 'presentation' | 'ressource';
@@ -78,12 +78,12 @@ export interface CoursContenu {
   updated_at: string;
   
   // Relations
-  module?: ModuleApprentissage;
+  cours?: CoursApprentissage;
 }
 
 export interface EtudeCas {
   id: number;
-  module_id: number;
+  chapitre_id: number;
   titre: string;
   description?: string;
   consigne: string;
@@ -96,14 +96,14 @@ export interface EtudeCas {
   updated_at: string;
   
   // Relations
-  module?: ModuleApprentissage;
+  chapitre?: ChapitreCours;
   soumissions?: SoumissionEtudeCas[];
 }
 
 export interface QuizEvaluation {
   id: number;
-  module_id: number;
-  cours_id?: number;
+  cours_id: number;
+  chapitre_id: number;
   titre: string;
   description?: string;
   duree_minutes: number;
@@ -115,7 +115,8 @@ export interface QuizEvaluation {
   updated_at: string;
   
   // Relations
-  module?: ModuleApprentissage;
+  cours?: CoursApprentissage;
+  chapitre?: ChapitreCours;
   questions?: QuestionQuiz[];
   tentatives?: TentativeQuiz[];
 }
@@ -207,8 +208,8 @@ export interface ProgressionEtudiant {
   user_id: string;
   formation_id: number;
   bloc_id?: number;
-  module_id?: number;
   cours_id?: number;
+  chapitre_id?: number;
   etude_cas_id?: number;
   quiz_id?: number;
   statut: 'non_commence' | 'en_cours' | 'termine' | 'abandonne';
@@ -223,8 +224,8 @@ export interface ProgressionEtudiant {
   user?: any; // User profile
   formation?: Formation;
   bloc?: BlocCompetence;
-  module?: ModuleApprentissage;
-  cours?: CoursContenu;
+  cours?: CoursApprentissage;
+  chapitre?: ChapitreCours;
   etude_cas?: EtudeCas;
   quiz?: QuizEvaluation;
 }
@@ -235,8 +236,8 @@ export interface ProgressionEtudiant {
 
 export interface FormationStats {
   total_blocs: number;
-  total_modules: number;
   total_cours: number;
+  total_chapitres: number;
   total_etudes_cas: number;
   total_quiz: number;
   duree_totale: number;
@@ -290,27 +291,27 @@ export interface CreateBlocData {
   duree_estimee?: number;
 }
 
-export interface CreateModuleData {
+export interface CreateCoursData {
   bloc_id: number;
-  numero_module: number;
+  numero_cours: number;
   titre: string;
   description?: string;
-  type_module: ModuleApprentissage['type_module'];
+  type_module: CoursApprentissage['type_module'];
   duree_estimee?: number;
 }
 
-export interface CreateCoursData {
-  module_id: number;
+export interface CreateChapitreData {
+  cours_id: number;
   titre: string;
   description?: string;
-  type_contenu: CoursContenu['type_contenu'];
+  type_contenu: ChapitreCours['type_contenu'];
   contenu?: string;
   url_video?: string;
   duree_video?: number;
 }
 
 export interface CreateEtudeCasData {
-  module_id: number;
+  chapitre_id: number;
   titre: string;
   description?: string;
   consigne: string;
@@ -321,8 +322,8 @@ export interface CreateEtudeCasData {
 }
 
 export interface CreateQuizData {
-  module_id: number;
-  cours_id?: number;
+  cours_id: number;
+  chapitre_id: number;
   titre: string;
   description?: string;
   duree_minutes: number;
@@ -350,12 +351,12 @@ export interface FormationWithStats extends Formation {
   blocs: BlocCompetence[];
 }
 
-export interface BlocWithModules extends BlocCompetence {
-  modules: ModuleApprentissage[];
+export interface BlocWithCours extends BlocCompetence {
+  cours: CoursApprentissage[];
 }
 
-export interface ModuleWithContent extends ModuleApprentissage {
-  cours: CoursContenu[];
+export interface CoursWithContent extends CoursApprentissage {
+  chapitres: ChapitreCours[];
   etude_cas: EtudeCas[];
   quiz: QuizEvaluation[];
 }

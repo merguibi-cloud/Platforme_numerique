@@ -620,7 +620,7 @@ const AdminDashboardContent = () => {
             setFirstBlocId(firstBloc.id);
 
             // Récupérer les modules du premier bloc
-            const modulesResponse = await fetch(`/api/modules?formationId=${selectedFormation}&blocId=${firstBloc.id}`, {
+            const modulesResponse = await fetch(`/api/cours?formationId=${selectedFormation}&blocId=${firstBloc.id}`, {
               credentials: 'include'
             });
             
@@ -841,7 +841,7 @@ const CoursesCard = ({
           className="text-sm font-semibold text-[#032622] border border-[#032622] px-4 py-2 inline-flex items-center space-x-2 hover:bg-[#eae5cf] transition-colors"
         >
           <PencilLine className="w-4 h-4" />
-          <span>Créer un cours</span>
+          <span>Accéder aux cours</span>
         </Link>
       </div>
 
@@ -897,9 +897,10 @@ const BlockCoursesList = ({
             : "Brouillon";
           
           // Construire l'URL de redirection vers le cours
+          // Nouvelle structure: /formationId/blocId/cours/coursId/chapitre
           let courseUrl = "/espace-admin/gestion-formations";
-          if (course.formation_id && course.bloc_id && course.module_id) {
-            courseUrl = `/espace-admin/gestion-formations/${course.formation_id}/${course.bloc_id}/module/${course.module_id}/cours/${course.id}`;
+          if (course.formation_id && course.bloc_id) {
+            courseUrl = `/espace-admin/gestion-formations/${course.formation_id}/${course.bloc_id}/cours/${course.id}/chapitre`;
           } else if (course.formation_id) {
             courseUrl = `/espace-admin/gestion-formations/${course.formation_id}`;
           }

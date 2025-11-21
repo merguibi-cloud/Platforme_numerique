@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { logCreate, logUpdate } from '@/lib/audit-logger';
 
-// GET - Récupérer une étude de cas par module
+// GET - Récupérer une étude de cas par chapitre
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseServerClient();
     const { searchParams } = new URL(request.url);
-    const moduleId = searchParams.get('moduleId');
+    const chapitreId = searchParams.get('chapitreId');
     const etudeCasId = searchParams.get('etudeCasId');
 
-    if (!moduleId && !etudeCasId) {
-      return NextResponse.json({ error: 'moduleId ou etudeCasId requis' }, { status: 400 });
+    if (!chapitreId && !etudeCasId) {
+      return NextResponse.json({ error: 'chapitreId ou etudeCasId requis' }, { status: 400 });
     }
 
     let query = supabase
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (etudeCasId) {
       query = query.eq('id', etudeCasId);
     } else {
-      query = query.eq('module_id', moduleId);
+      query = query.eq('chapitre_id', chapitreId);
     }
 
     const { data: etudeCas, error } = await query.single();
@@ -66,17 +66,17 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     const body = await request.json();
 
-    const { module_id, titre, description, consigne, fichier_consigne, date_limite, points_max, criteres_evaluation } = body;
+    const { chapitre_id, titre, description, consigne, fichier_consigne, date_limite, points_max, criteres_evaluation } = body;
 
-    if (!module_id || !consigne) {
-      return NextResponse.json({ error: 'module_id et consigne requis' }, { status: 400 });
+    if (!chapitre_id || !consigne) {
+      return NextResponse.json({ error: 'chapitre_id et consigne requis' }, { status: 400 });
     }
 
     const { data: etudeCas, error } = await supabase
       .from('etudes_cas')
       .insert({
-        module_id,
-        titre: titre || `Étude de cas - Module ${module_id}`,
+        chapitre_id,
+        titre: titre || `Étude de cas - Chapitre ${chapitre_id}`,
         description,
         consigne,
         fichier_consigne,
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Erreur lors de la création de l\'étude de cas:', error);
-      await logCreate(request, 'etudes_cas', 'unknown', { module_id, titre, description }, `Échec de création d'étude de cas: ${error.message}`).catch(() => {});
+      await logCreate(request, 'etudes_cas', 'unknown', { chapitre_id, titre, description }, `Échec de création d'étude de cas: ${error.message}`).catch(() => {});
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 

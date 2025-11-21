@@ -1,6 +1,6 @@
-export interface Cours {
+export interface Chapitre {
   id: number;
-  module_id: number;
+  cours_id: number;
   titre: string;
   contenu: string;
   statut: 'brouillon' | 'en_cours_examen' | 'en_ligne';
@@ -42,9 +42,9 @@ export interface FichierElement {
 }
 
 // Nouveau type pour les fichiers complémentaires en base de données
-export interface CoursFichierComplementaire {
+export interface ChapitreFichierComplementaire {
   id: number;
-  cours_id: number;
+  chapitre_id: number;
   nom_fichier: string;
   chemin_fichier: string;
   url?: string;
@@ -56,27 +56,27 @@ export interface CoursFichierComplementaire {
   updated_at: string;
 }
 
-export interface CreateCoursRequest {
-  module_id: number;
+export interface CreateChapitreRequest {
+  cours_id: number;
   titre: string;
   contenu?: string;
 }
 
-export interface UpdateCoursRequest {
+export interface UpdateChapitreRequest {
   titre?: string;
   contenu?: string;
   statut?: 'brouillon' | 'en_cours_examen' | 'en_ligne';
 }
 
-export interface CoursValidationRequest {
-  cours_id: number;
+export interface ChapitreValidationRequest {
+  chapitre_id: number;
   action: 'accepter' | 'rejeter';
   commentaire?: string;
 }
 
 // Requêtes pour les fichiers complémentaires
-export interface CreateCoursFichierRequest {
-  cours_id: number;
+export interface CreateChapitreFichierRequest {
+  chapitre_id: number;
   nom_fichier: string;
   chemin_fichier: string;
   url?: string;

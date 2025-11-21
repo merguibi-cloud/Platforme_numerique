@@ -40,40 +40,7 @@ const heroCourse = {
   headline: "Prêt à apprendre quelque chose de nouveau aujourd'hui ?",
 };
 
-const courseBlocks = [
-  {
-    id: "bloc-1",
-    title: "Bloc 1",
-    subtitle: "Contribuer à la stratégie de développement de l'organisation",
-    progress: 10,
-    cta: "REPRENDRE",
-    locked: false,
-  },
-  {
-    id: "bloc-2",
-    title: "Bloc 2",
-    subtitle: "Définir et planifier des actions marketing et de développement",
-    progress: 0,
-    cta: "COMMENCER",
-    locked: true,
-  },
-  {
-    id: "bloc-3",
-    title: "Bloc 3",
-    subtitle: "Piloter un projet de développement",
-    progress: 0,
-    cta: "COMMENCER",
-    locked: true,
-  },
-  {
-    id: "bloc-4",
-    title: "Bloc 4",
-    subtitle: "Manager durablement une équipe dans le cadre du développement",
-    progress: 0,
-    cta: "COMMENCER",
-    locked: true,
-  },
-];
+// Les blocs sont maintenant chargés depuis la base de données
 
 // Type pour les événements
 type Event = {
@@ -283,6 +250,8 @@ export default function MesFormationsPage() {
   const [showHighlightMenu, setShowHighlightMenu] = useState(false);
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [showSmartNotesPanel, setShowSmartNotesPanel] = useState(false);
+  // Les blocs sont maintenant chargés depuis la base de données
+  const [courseBlocks, setCourseBlocks] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [isEditingNote, setIsEditingNote] = useState<string | null>(null);
@@ -645,7 +614,12 @@ export default function MesFormationsPage() {
 
       <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
         <div className="space-y-4">
-          {courseBlocks.map((block) => (
+          {courseBlocks.length === 0 ? (
+            <div className="text-center py-12 border border-black bg-[#F8F5E4]">
+              <p className="text-[#032622]">Aucun bloc disponible</p>
+            </div>
+          ) : (
+            courseBlocks.map((block) => (
             <div
               key={block.id}
               className={`border border-black bg-[#F8F5E4] flex flex-col lg:flex-row ${
@@ -691,7 +665,8 @@ export default function MesFormationsPage() {
                 </button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
         <div className="space-y-4">

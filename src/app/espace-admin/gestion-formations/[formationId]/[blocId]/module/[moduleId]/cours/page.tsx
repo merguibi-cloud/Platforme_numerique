@@ -35,7 +35,7 @@ export default function CreateCoursPage({ params }: CreateCoursPageProps) {
     const loadData = async () => {
       try {
         // Charger les informations du module
-        const moduleResponse = await fetch(`/api/modules/${moduleId}`, {
+        const moduleResponse = await fetch(`/api/cours/${moduleId}`, {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export default function CreateCoursPage({ params }: CreateCoursPageProps) {
         }
 
         // Charger les cours du module pour vérifier s'il y en a
-        const coursResponse = await fetch(`/api/cours?moduleId=${moduleId}`, {
+        const coursResponse = await fetch(`/api/chapitres?coursId=${moduleId}`, {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -120,11 +120,11 @@ export default function CreateCoursPage({ params }: CreateCoursPageProps) {
 
   return (
     <CoursEditor
-      moduleId={parseInt(moduleId)}
-      moduleTitle={moduleInfo?.titre || "Chargement..."}
+      coursId={parseInt(moduleId, 10)}
+      coursTitle={moduleInfo?.titre || "Chargement..."}
       blocTitle={blocInfo?.titre || "Chargement..."}
       blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
-      moduleOrder={moduleInfo?.ordre_affichage || moduleInfo?.numero_module || 1}
+      coursOrder={moduleInfo?.ordre_affichage || moduleInfo?.numero_module || 1}
       formationId={formationId}
       blocId={blocId}
     />

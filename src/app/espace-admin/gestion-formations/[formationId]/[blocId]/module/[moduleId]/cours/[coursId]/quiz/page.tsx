@@ -24,7 +24,7 @@ export default function QuizPage({ params }: QuizPageProps) {
   useEffect(() => {
     const loadCoursInfo = async () => {
       try {
-        const response = await fetch(`/api/cours?coursId=${coursId}`, {
+        const response = await fetch(`/api/chapitres?chapitreId=${coursId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -84,8 +84,8 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       {/* Quiz Editor */}
       <QuizEditorPage
-        coursId={parseInt(coursId)}
-        moduleId={parseInt(moduleId)}
+        chapitreId={parseInt(coursId, 10)}
+        coursId={parseInt(moduleId, 10)}
         formationId={formationId}
         blocId={blocId}
       />

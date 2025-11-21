@@ -44,64 +44,57 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ cours: [] });
     }
 
-    const { data: modules, error: modulesError } = await supabase
-      .from('modules_apprentissage')
-      .select('id, titre, bloc_id')
-      .in('bloc_id', blocIds)
-      .eq('actif', true);
-
-    if (modulesError) {
-      return NextResponse.json({ error: 'Erreur lors de la récupération des modules' }, { status: 500 });
-    }
-
-    const moduleIds = modules?.map(m => m.id) || [];
-    
-    if (moduleIds.length === 0) {
-      return NextResponse.json({ cours: [] });
-    }
-
-    // Récupérer tous les cours avec leurs informations de module
-    const { data: cours, error: coursError } = await supabase
-      .from('cours_contenu')
+    // Récupérer tous les cours des blocs (même inactifs pour le dashboard admin)
+    const { data: coursWithBlocs, error: coursWithBlocsError } = await supabase
+      .from('cours_apprentissage')
       .select(`
         id,
-        module_id,
         titre,
+        bloc_id,
         statut,
+        actif,
         created_at,
         updated_at,
-        modules_apprentissage (
+        blocs_competences (
           id,
           titre,
-          bloc_id,
-          blocs_competences (
-            id,
-            titre,
-            formation_id
-          )
+          formation_id
         )
       `)
-      .in('module_id', moduleIds)
+      .in('bloc_id', blocIds)
+      // Pas de filtre actif pour le dashboard admin - on veut voir tous les cours
       .order('created_at', { ascending: false });
 
-    if (coursError) {
+    if (coursWithBlocsError) {
       return NextResponse.json({ error: 'Erreur lors de la récupération des cours' }, { status: 500 });
     }
 
-    // Formater les cours avec les informations nécessaires
-    const formattedCours = cours?.map(c => {
-      const module = c.modules_apprentissage as any;
-      const bloc = module?.blocs_competences;
+    // Formater les cours avec les informations nécessaires pour le dashboard
+    const formattedCours = coursWithBlocs?.map(c => {
+      const bloc = c.blocs_competences as any;
+      
+      // Déterminer le statut du cours
+      // La table cours_apprentissage a: 'brouillon', 'en_ligne', 'manquant'
+      // Pour le dashboard, on considère:
+      // - 'en_ligne' → 'en_ligne' (affiché dans "EN LIGNE")
+      // - 'brouillon' ou 'manquant' ou actif=false → 'en_cours_examen' (affiché dans "À VALIDER")
+      let statut: 'brouillon' | 'en_cours_examen' | 'en_ligne' = 'en_cours_examen';
+      if (c.statut === 'en_ligne' && c.actif === true) {
+        statut = 'en_ligne';
+      } else {
+        // Tous les autres cas (brouillon, manquant, inactif) → en_cours_examen pour "À VALIDER"
+        statut = 'en_cours_examen';
+      }
       
       return {
         id: c.id,
-        titre: c.titre,
-        statut: c.statut || 'brouillon',
-        module: module?.titre || 'Module inconnu',
+        titre: c.titre || 'Cours sans titre',
+        module: c.titre || 'Cours sans titre', // Le "module" est maintenant le cours lui-même
         bloc: bloc?.titre || 'Bloc inconnu',
-        module_id: module?.id || null,
-        bloc_id: module?.bloc_id || null,
+        statut: statut,
         formation_id: bloc?.formation_id || parseInt(formationId),
+        bloc_id: c.bloc_id || null,
+        module_id: c.id, // Pour la compatibilité avec l'ancien format
         created_at: c.created_at,
         updated_at: c.updated_at,
       };
@@ -109,7 +102,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ cours: formattedCours });
   } catch (error) {
-    console.error('Erreur dans l\'API cours by-formation:', error);
     return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
   }
 }

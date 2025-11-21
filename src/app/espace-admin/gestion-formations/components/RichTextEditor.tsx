@@ -187,7 +187,7 @@ export const RichTextEditor = ({
               className="px-4 py-2 bg-gray-500 text-white text-sm font-semibold uppercase tracking-wider hover:bg-gray-600 transition-colors disabled:opacity-50"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
-              {isSaving ? 'Sauvegarde...' : 'METTRE EN BROUILLON'}
+              {isSaving ? 'Sauvegarde...' : 'ENREGISTRER'}
             </button>
             <button
               onClick={onNextStep}

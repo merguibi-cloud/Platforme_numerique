@@ -23,10 +23,10 @@ export interface FormationInfo {
   levelCode: string;
 }
 
-export interface Module {
+export interface Cours {
   id: string;
   blocId: string;
-  numeroModule: number;
+  numeroCours: number;
   titre: string;
   description?: string;
   typeModule: 'cours' | 'etude_cas' | 'quiz' | 'projet';
@@ -39,9 +39,9 @@ export interface Module {
 
 export interface CreateBlocData {
   titre: string;
-  modules: string[];
+  cours: string[];
 }
 
-export interface BlocWithModules extends Block {
-  modules: Module[];
+export interface BlocWithCours extends Block {
+  cours: Cours[];
 }

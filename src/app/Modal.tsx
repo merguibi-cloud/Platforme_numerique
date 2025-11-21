@@ -122,7 +122,7 @@ export const Modal = ({
         {/* Content */}
         <div className="p-6 space-y-4">
           <p 
-            className="text-[#032622] text-sm leading-relaxed"
+            className="text-[#032622] text-sm leading-relaxed whitespace-pre-line"
             style={{ fontFamily: 'var(--font-termina-medium)' }}
           >
             {message}

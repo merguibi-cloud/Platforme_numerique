@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Play, Download, FileText, Image as ImageIcon, Video } from 'lucide-react';
-import { CoursContenu } from '@/types/formation-detailed';
+import { ChapitreCours } from '@/types/formation-detailed';
 import '../TiptapEditor.css';
 
 interface CourseContentViewerProps {
-  cours: CoursContenu;
+  cours: ChapitreCours;
   isPreview?: boolean; // Mode prévisualisation (pas d'enregistrement)
 }
 

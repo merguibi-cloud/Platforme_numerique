@@ -114,53 +114,39 @@ export const FormationManagement = () => {
     setModalTitle('');
   };
 
-  // Données temporaires pour les blocs
-  const mockBlocks = [
-    {
-      id: 1,
-      formation_id: parseInt(selectedFormation) || 1,
-      numero_bloc: 1,
-      titre: 'BLOC 1',
-      description: 'CONTRIBUER À LA STRATÉGIE DE DÉVELOPPEMENT DE L\'ORGANISATION',
-      ordre_affichage: 1,
-      actif: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      formation_id: parseInt(selectedFormation) || 1,
-      numero_bloc: 2,
-      titre: 'BLOC 2',
-      description: 'DÉFINIR ET PLANIFIER DES ACTIONS MARKETING ET DE DÉVELOPPEMENT',
-      ordre_affichage: 2,
-      actif: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 3,
-      formation_id: parseInt(selectedFormation) || 1,
-      numero_bloc: 3,
-      titre: 'BLOC 3',
-      description: 'PILOTER UN PROJET DE DÉVELOPPEMENT',
-      ordre_affichage: 3,
-      actif: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 4,
-      formation_id: parseInt(selectedFormation) || 1,
-      numero_bloc: 4,
-      titre: 'BLOC 4',
-      description: 'MANAGER DURABLEMENT UNE ÉQUIPE DANS LE CADRE DU DÉVELOPPEMENT',
-      ordre_affichage: 4,
-      actif: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
+  // Charger les blocs depuis la BDD
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
+
+  useEffect(() => {
+    const loadBlocks = async () => {
+      if (!selectedFormation) {
+        setBlocks([]);
+        return;
+      }
+
+      setIsLoadingBlocks(true);
+      try {
+        const response = await fetch(`/api/blocs?formationId=${selectedFormation}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setBlocks(data.blocs || []);
+        } else {
+          setBlocks([]);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des blocs:', error);
+        setBlocks([]);
+      } finally {
+        setIsLoadingBlocks(false);
+      }
+    };
+
+    loadBlocks();
+  }, [selectedFormation]);
 
   // Obtenir la formation sélectionnée
   const currentFormation = availableFormations.find(f => f.id === selectedFormation);
@@ -195,7 +181,7 @@ export const FormationManagement = () => {
                 levelCode: currentFormation?.levelCode || 'FORMATION',
                 title: currentFormation?.title || 'FORMATION SÉLECTIONNÉE'
               }}
-              blocks={mockBlocks}
+              blocks={blocks}
               onViewBlock={handleViewBlock}
               onEditBlock={handleEditBlock}
               onDeleteBlock={handleDeleteBlock}

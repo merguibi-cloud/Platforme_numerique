@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
     if (blocError || !bloc) {
       return NextResponse.json({ success: false, error: 'Erreur lors de la création du bloc' }, { status: 500 });
     }
-    // Créer les modules associés
-    const modulesToInsert = body.modules.map((moduleTitre: string, index: number) => ({
+    // Créer les cours associés
+    const coursToInsert = body.modules.map((moduleTitre: string, index: number) => ({
       bloc_id: bloc.id,
-      numero_module: index + 1,
+      numero_cours: index + 1,
       titre: moduleTitre,
       type_module: 'cours', // Default type
       ordre_affichage: index + 1,
@@ -76,16 +76,16 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
       created_by: user.id
     }));
-    const { data: modules, error: modulesError } = await supabase
-      .from('modules_apprentissage')
-      .insert(modulesToInsert)
+    const { data: cours, error: coursError } = await supabase
+      .from('cours_apprentissage')
+      .insert(coursToInsert)
       .select();
-    if (modulesError) {
-      // Tenter de supprimer le bloc si les modules échouent
+    if (coursError) {
+      // Tenter de supprimer le bloc si les cours échouent
       await supabase.from('blocs_competences').delete().eq('id', bloc.id);
-      return NextResponse.json({ success: false, error: 'Erreur lors de la création des modules' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Erreur lors de la création des cours' }, { status: 500 });
     }
-    return NextResponse.json({ success: true, bloc, modules }, { status: 201 });
+    return NextResponse.json({ success: true, bloc, cours }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Erreur de traitement interne du serveur' },

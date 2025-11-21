@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, ChevronDown, RefreshCw, ArrowLeft, Upload, Image as ImageIcon, Video, FileText, Check } from 'lucide-react';
+import { Modal } from '@/app/Modal';
 
 interface EtudeCasEditorPageProps {
-  moduleId: number;
+  chapitreId: number;
+  coursId: number;
   formationId: string;
   blocId: string;
 }
@@ -35,7 +37,7 @@ interface ReponseData {
   ordre_affichage: number;
 }
 
-export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEditorPageProps) => {
+export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }: EtudeCasEditorPageProps) => {
   const router = useRouter();
   const [consigne, setConsigne] = useState('');
   const [fichierConsigne, setFichierConsigne] = useState<File | null>(null);
@@ -52,13 +54,18 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
   const [lastSavedData, setLastSavedData] = useState<string>('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
+  const [modal, setModal] = useState<{ isOpen: boolean; message: string; type: 'info' | 'success' | 'warning' | 'error'; title?: string }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
 
   // Charger l'étude de cas existante
   useEffect(() => {
     const loadEtudeCas = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/etude-cas?moduleId=${moduleId}`, {
+        const response = await fetch(`/api/etude-cas?chapitreId=${chapitreId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -117,7 +124,7 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
       }
     };
     loadEtudeCas();
-  }, [moduleId]);
+  }, [chapitreId]);
 
   // Détecter les changements
   useEffect(() => {
@@ -281,13 +288,23 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
       } else {
         const errorData = await uploadResponse.json();
         console.error('Erreur upload fichier consigne:', errorData);
-        alert(`Erreur lors de l'upload du fichier: ${errorData.error || 'Erreur inconnue'}`);
+        setModal({
+          isOpen: true,
+          message: `Erreur lors de l'upload du fichier: ${errorData.error || 'Erreur inconnue'}`,
+          type: 'error',
+          title: 'Erreur d\'upload'
+        });
         setFichierConsigne(null);
         setUseFichierConsigne(false);
       }
     } catch (error) {
       console.error('Erreur upload fichier consigne:', error);
-      alert('Erreur lors de l\'upload du fichier');
+      setModal({
+        isOpen: true,
+        message: 'Erreur lors de l\'upload du fichier',
+        type: 'error',
+        title: 'Erreur d\'upload'
+      });
       setFichierConsigne(null);
       setUseFichierConsigne(false);
     } finally {
@@ -310,8 +327,8 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            module_id: moduleId,
-            titre: `Étude de cas - Module ${moduleId}`,
+            chapitre_id: chapitreId,
+            titre: `Étude de cas - Chapitre ${chapitreId}`,
             consigne: consigne,
             fichier_consigne: fichierConsigneUrl,
           }),
@@ -398,7 +415,7 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
     } finally {
       setIsAutoSaving(false);
     }
-  }, [consigne, questions, etudeCasId, moduleId, isSaving, isAutoSaving, hasUnsavedChanges, fichierConsigneUrl]);
+  }, [consigne, questions, etudeCasId, chapitreId, isSaving, isAutoSaving, hasUnsavedChanges, fichierConsigneUrl]);
 
   // Sauvegarde automatique après 5 secondes
   useEffect(() => {
@@ -416,6 +433,76 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
   }, [consigne, questions, hasUnsavedChanges, isSaving, isAutoSaving, handleAutoSave]);
 
   const handleSubmit = async () => {
+    // VALIDATION : Vérifier qu'il y a au moins une question
+    const questionsValides = questions.filter(q => q.question.trim());
+    if (questionsValides.length === 0) {
+      setModal({
+        isOpen: true,
+        message: 'Veuillez ajouter au moins une question avant de soumettre l\'étude de cas',
+        type: 'warning',
+        title: 'Validation requise'
+      });
+      return;
+    }
+    
+    // VALIDATION : Vérifier que toutes les questions ont au moins une bonne réponse
+    const validationErrors: string[] = [];
+    let questionNum = 0;
+    
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.question.trim()) continue; // Ignorer les questions vides
+      
+      questionNum++; // Numéro de la question valide
+      
+      // Filtrer les réponses valides (non vides)
+      const reponsesValides = q.reponses.filter(r => r.reponse.trim());
+      
+      if (reponsesValides.length === 0) {
+        validationErrors.push(`Question ${questionNum}: Aucune réponse valide`);
+        continue;
+      }
+      
+      // Compter les bonnes réponses
+      const bonnesReponses = reponsesValides.filter(r => r.est_correcte).length;
+      
+      if (q.type_question === 'vrai_faux') {
+        // Pour vrai/faux, il faut qu'une des deux réponses soit correcte
+        const vraiCorrect = q.reponses[0]?.est_correcte || false;
+        const fauxCorrect = q.reponses[1]?.est_correcte || false;
+        if (!vraiCorrect && !fauxCorrect) {
+          validationErrors.push(`Question ${questionNum}: Vous devez sélectionner au moins une bonne réponse (Vrai ou Faux)`);
+        }
+      } else if (q.type_question === 'choix_multiple') {
+        // Pour choix multiple, il faut au moins 2 bonnes réponses
+        if (bonnesReponses === 0) {
+          validationErrors.push(`Question ${questionNum}: Vous devez sélectionner au moins une bonne réponse`);
+        } else if (bonnesReponses < 2) {
+          validationErrors.push(`Question ${questionNum}: Pour les questions à choix multiple, vous devez sélectionner au moins 2 bonnes réponses (actuellement: ${bonnesReponses})`);
+        }
+      } else if (q.type_question === 'choix_unique') {
+        // Pour choix unique, il faut exactement 1 bonne réponse
+        if (bonnesReponses === 0) {
+          validationErrors.push(`Question ${questionNum}: Vous devez sélectionner une bonne réponse`);
+        } else if (bonnesReponses > 1) {
+          validationErrors.push(`Question ${questionNum}: Pour les questions à choix unique, vous ne pouvez sélectionner qu'une seule bonne réponse`);
+        }
+      }
+    }
+    
+    // Si des erreurs de validation sont trouvées, afficher un message et empêcher la soumission
+    if (validationErrors.length > 0) {
+      const errorMessage = `Impossible de soumettre l'étude de cas. Veuillez corriger les erreurs suivantes :\n\n${validationErrors.join('\n')}`;
+      setModal({
+        isOpen: true,
+        message: errorMessage,
+        type: 'error',
+        title: 'Erreurs de validation'
+      });
+      setIsSaving(false);
+      return;
+    }
+    
     setIsSaving(true);
     try {
       // Créer ou mettre à jour l'étude de cas
@@ -425,8 +512,8 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            module_id: moduleId,
-            titre: `Étude de cas - Module ${moduleId}`,
+            chapitre_id: chapitreId,
+            titre: `Étude de cas - Chapitre ${chapitreId}`,
             consigne: consigne,
             fichier_consigne: fichierConsigneUrl,
           }),
@@ -512,7 +599,12 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
       router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}`);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de l\'étude de cas:', error);
-      alert('Erreur lors de la sauvegarde de l\'étude de cas');
+      setModal({
+        isOpen: true,
+        message: 'Erreur lors de la sauvegarde de l\'étude de cas',
+        type: 'error',
+        title: 'Erreur'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -920,9 +1012,18 @@ export const EtudeCasEditorPage = ({ moduleId, formationId, blocId }: EtudeCasEd
           className="bg-[#032622] text-[#F8F5E4] px-4 py-2 font-bold uppercase hover:bg-[#032622]/90 transition-colors disabled:opacity-50 text-sm"
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
-          {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON MODULE'}
+          {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON ETUDE DE CAS'}
         </button>
       </div>
+
+      {/* Modal pour les alertes */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        message={modal.message}
+        type={modal.type}
+        title={modal.title}
+      />
     </div>
   );
 };

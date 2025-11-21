@@ -38,7 +38,7 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
   useEffect(() => {
     const loadCours = async () => {
       try {
-        const response = await fetch(`/api/cours?coursId=${coursId}`, {
+        const response = await fetch(`/api/chapitres?chapitreId=${coursId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -110,7 +110,23 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
     ]);
   };
 
-  const removeQuestion = (index: number) => {
+  const removeQuestion = async (index: number) => {
+    const questionToRemove = questions[index];
+    
+    // Si la question a un ID, la supprimer de la base de données
+    if (questionToRemove?.id) {
+      try {
+        await fetch(`/api/quiz/questions?questionId=${questionToRemove.id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        console.error('Erreur lors de la suppression de la question:', error);
+        // Continuer quand même à retirer de l'interface
+      }
+    }
+    
+    // Retirer la question du state
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
@@ -197,6 +213,8 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
       }
 
       // Sauvegarder chaque question
+      const updatedQuestions = [...questions];
+      
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         if (!q.question.trim()) continue;
@@ -219,7 +237,7 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
 
         if (q.id) {
           // Mettre à jour la question existante
-          await fetch('/api/quiz/questions', {
+          const updateResponse = await fetch('/api/quiz/questions', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -228,9 +246,25 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
               reponses_possibles: reponsesData,
             }),
           });
+
+          if (updateResponse.ok) {
+            const updateData = await updateResponse.json();
+            // Mettre à jour les IDs des réponses dans le state
+            if (updateData.question && updateData.question.reponses_possibles) {
+              updatedQuestions[i] = {
+                ...updatedQuestions[i],
+                id: updateData.question.id,
+                reponses: reponsesData.map((r: any, idx: number) => ({
+                  id: updateData.question.reponses_possibles[idx]?.id,
+                  reponse: r.reponse,
+                  est_correcte: r.est_correcte,
+                })),
+              };
+            }
+          }
         } else {
           // Créer une nouvelle question
-          await fetch('/api/quiz/questions', {
+          const createResponse = await fetch('/api/quiz/questions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -238,8 +272,28 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
               reponses_possibles: reponsesData,
             }),
           });
+
+          if (createResponse.ok) {
+            const createData = await createResponse.json();
+            // IMPORTANT : Mettre à jour l'ID de la question créée dans le state
+            if (createData.question) {
+              updatedQuestions[i] = {
+                ...updatedQuestions[i],
+                id: createData.question.id,
+                // Mettre à jour les IDs des réponses
+                reponses: reponsesData.map((r: any, idx: number) => ({
+                  id: createData.question.reponses_possibles?.[idx]?.id,
+                  reponse: r.reponse,
+                  est_correcte: r.est_correcte,
+                })),
+              };
+            }
+          }
         }
       }
+
+      // Mettre à jour le state avec les IDs récupérés
+      setQuestions(updatedQuestions);
 
       onSave();
     } catch (error) {
@@ -424,7 +478,7 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
             className="bg-[#032622] text-[#F8F5E4] px-6 py-3 font-bold uppercase hover:bg-[#032622]/90 transition-colors disabled:opacity-50"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON MODULE'}
+            {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON QUIZ'}
           </button>
         </div>
       </div>

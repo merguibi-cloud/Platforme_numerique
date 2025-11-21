@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Check, X, ChevronDown, RefreshCw, ArrowLeft } from 'lucide-react';
 import { QuestionQuiz, ReponsePossible } from '@/types/formation-detailed';
+import { Modal } from '@/app/Modal';
 
 interface QuizEditorPageProps {
+  chapitreId: number;
   coursId: number;
-  moduleId: number;
   formationId: string;
   blocId: string;
 }
@@ -27,7 +28,7 @@ interface ReponseForm {
   est_correcte: boolean;
 }
 
-export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizEditorPageProps) => {
+export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: QuizEditorPageProps) => {
   const router = useRouter();
   const [questions, setQuestions] = useState<QuestionForm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,34 +39,39 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
   const [coursTitre, setCoursTitre] = useState<string>('');
+  const [modal, setModal] = useState<{ isOpen: boolean; message: string; type: 'info' | 'success' | 'warning' | 'error'; title?: string }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
 
-  // Charger le cours pour obtenir son titre
+  // Charger le chapitre pour obtenir son titre
   useEffect(() => {
-    const loadCours = async () => {
+    const loadChapitre = async () => {
       try {
-        const response = await fetch(`/api/cours?coursId=${coursId}`, {
+        const response = await fetch(`/api/chapitres?chapitreId=${chapitreId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
         if (response.ok) {
           const data = await response.json();
-          if (data.cours) {
-            setCoursTitre(data.cours.titre || '');
+          if (data.chapitre) {
+            setCoursTitre(data.chapitre.titre || '');
           }
         }
       } catch (error) {
-        console.error('Erreur lors du chargement du cours:', error);
+        console.error('Erreur lors du chargement du chapitre:', error);
       }
     };
-    loadCours();
-  }, [coursId]);
+    loadChapitre();
+  }, [chapitreId]);
 
-  // Charger le quiz existant pour ce cours
+  // Charger le quiz existant pour ce chapitre
   useEffect(() => {
     const loadQuiz = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/quiz?coursId=${coursId}`, {
+        const response = await fetch(`/api/quiz?chapitreId=${chapitreId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -117,7 +123,7 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
       }
     };
     loadQuiz();
-  }, [coursId]);
+  }, [chapitreId]);
 
   // Détecter les changements dans les questions
   useEffect(() => {
@@ -146,7 +152,23 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
     ]);
   };
 
-  const removeQuestion = (index: number) => {
+  const removeQuestion = async (index: number) => {
+    const questionToRemove = questions[index];
+    
+    // Si la question a un ID, la supprimer de la base de données
+    if (questionToRemove?.id) {
+      try {
+        await fetch(`/api/quiz/questions?questionId=${questionToRemove.id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        console.error('Erreur lors de la suppression de la question:', error);
+        // Continuer quand même à retirer de l'interface
+      }
+    }
+    
+    // Retirer la question du state
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
@@ -155,18 +177,47 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
     if (field === 'hasJustification') {
       updated[index] = { ...updated[index], hasJustification: value, justification: value ? updated[index].justification : '' };
     } else if (field === 'type_question') {
-      // Si on change vers vrai_faux, initialiser avec Vrai et Faux
-      if (value === 'vrai_faux') {
+      const currentType = updated[index].type_question;
+      const newType = value as 'choix_unique' | 'choix_multiple' | 'vrai_faux';
+      
+      // Si on change le type de question, réinitialiser les réponses selon le nouveau type
+      if (currentType !== newType) {
+        if (newType === 'vrai_faux') {
+          // Passage vers vrai/faux : initialiser avec Vrai et Faux
         updated[index] = {
           ...updated[index],
-          type_question: value,
+            type_question: newType,
           reponses: [
             { reponse: 'Vrai', est_correcte: false },
             { reponse: 'Faux', est_correcte: false },
           ],
         };
+        } else if (currentType === 'vrai_faux') {
+          // Passage de vrai/faux vers choix_unique ou choix_multiple : réinitialiser avec des réponses vides
+          updated[index] = {
+            ...updated[index],
+            type_question: newType,
+            reponses: [
+              { reponse: '', est_correcte: false },
+              { reponse: '', est_correcte: false },
+              { reponse: '', est_correcte: false },
+              { reponse: '', est_correcte: false },
+            ],
+          };
+        } else {
+          // Passage entre choix_unique et choix_multiple : garder les réponses mais réinitialiser les états est_correcte
+          updated[index] = {
+            ...updated[index],
+            type_question: newType,
+            reponses: updated[index].reponses.map(r => ({
+              ...r,
+              est_correcte: false, // Réinitialiser les états corrects lors du changement de type
+            })),
+          };
+        }
       } else {
-        updated[index] = { ...updated[index], [field]: value };
+        // Même type, pas de changement
+        updated[index] = { ...updated[index], type_question: newType };
       }
     } else {
       updated[index] = { ...updated[index], [field]: value };
@@ -212,12 +263,18 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
   // Fonction de sauvegarde automatique
   const handleAutoSave = useCallback(async () => {
     // Ne pas sauvegarder si on est déjà en train de sauvegarder
-    if (isSaving || isAutoSaving || !hasUnsavedChanges) {
+    if (isSaving || isAutoSaving) {
       return;
     }
 
     // Ne pas sauvegarder s'il n'y a pas de questions
     if (questions.length === 0) {
+      return;
+    }
+
+    // Ne pas sauvegarder si rien n'a changé (comparaison directe avec la dernière sauvegarde)
+    const currentQuestionsJson = JSON.stringify(questions);
+    if (currentQuestionsJson === lastSavedQuestions) {
       return;
     }
 
@@ -230,16 +287,16 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
         let titreCours = coursTitre;
         if (!titreCours) {
           try {
-            const coursResponse = await fetch(`/api/cours?coursId=${coursId}`, {
+            const chapitreResponse = await fetch(`/api/chapitres?chapitreId=${chapitreId}`, {
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
             });
-            if (coursResponse.ok) {
-              const coursData = await coursResponse.json();
-              titreCours = coursData.cours?.titre || '';
+            if (chapitreResponse.ok) {
+              const chapitreData = await chapitreResponse.json();
+              titreCours = chapitreData.chapitre?.titre || '';
             }
           } catch (error) {
-            console.error('Erreur lors du chargement du cours:', error);
+            console.error('Erreur lors du chargement du chapitre:', error);
           }
         }
         
@@ -247,9 +304,9 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            module_id: moduleId,
             cours_id: coursId,
-            titre: `Quiz - ${titreCours || `Partie ${coursId}`}`,
+            chapitre_id: chapitreId,
+            titre: `Quiz - ${titreCours || `Chapitre ${chapitreId}`}`,
             duree_minutes: 30,
             nombre_tentatives_max: 3,
             seuil_reussite: 50,
@@ -266,6 +323,8 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
       }
 
       // Sauvegarder chaque question (seulement celles qui ont du contenu)
+      const updatedQuestions = [...questions];
+      
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         if (!q.question.trim()) continue;
@@ -285,9 +344,25 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
             { reponse: 'Faux', est_correcte: q.reponses[1]?.est_correcte || false, ordre_affichage: 2 },
           ];
         } else {
-          reponsesData = q.reponses
-            .filter(r => r.reponse.trim())
-            .map((r, index) => ({
+          // Filtrer seulement les réponses non vides et qui ne sont pas des placeholders
+          const reponsesValides = q.reponses.filter(r => {
+            const reponseTrim = r.reponse.trim();
+            // Exclure les réponses vides et les placeholders
+            return reponseTrim && 
+                   reponseTrim !== 'Ecris une bonne réponse' && 
+                   reponseTrim !== 'Ecris une mauvaise réponse' &&
+                   reponseTrim !== 'Écris une bonne réponse' &&
+                   reponseTrim !== 'Écris une mauvaise réponse';
+          });
+          
+          // Ne pas sauvegarder la question si elle n'a pas au moins une réponse valide
+          if (reponsesValides.length === 0) {
+            console.log(`[AutoSave] Question "${q.question.substring(0, 30)}..." ignorée : aucune réponse valide`);
+            // Garder la question avec toutes ses réponses (y compris vides) dans le state
+            continue;
+          }
+          
+          reponsesData = reponsesValides.map((r, index) => ({
               reponse: r.reponse,
               est_correcte: r.est_correcte,
               ordre_affichage: index + 1,
@@ -296,7 +371,7 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
 
         if (q.id) {
           // Mettre à jour la question existante
-          await fetch('/api/quiz/questions', {
+          const updateResponse = await fetch('/api/quiz/questions', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -305,9 +380,31 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
               reponses_possibles: reponsesData,
             }),
           });
+
+          if (updateResponse.ok) {
+            const updateData = await updateResponse.json();
+            // Mettre à jour les IDs des réponses sauvegardées, mais garder les réponses vides dans le state
+            if (updateData.question && updateData.question.reponses_possibles) {
+              const reponsesSauvegardees = reponsesData.map((r: any, idx: number) => ({
+                id: updateData.question.reponses_possibles[idx]?.id,
+                reponse: r.reponse,
+                est_correcte: r.est_correcte,
+              }));
+              
+              // Garder les réponses vides qui n'ont pas été sauvegardées
+              const reponsesVides = q.reponses.filter(r => !r.reponse.trim());
+              
+              updatedQuestions[i] = {
+                ...updatedQuestions[i],
+                id: updateData.question.id,
+                // Combiner les réponses sauvegardées avec les réponses vides
+                reponses: [...reponsesSauvegardees, ...reponsesVides],
+              };
+            }
+          }
         } else {
           // Créer une nouvelle question
-          await fetch('/api/quiz/questions', {
+          const createResponse = await fetch('/api/quiz/questions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -315,19 +412,46 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
               reponses_possibles: reponsesData,
             }),
           });
+
+          if (createResponse.ok) {
+            const createData = await createResponse.json();
+            // IMPORTANT : Mettre à jour l'ID de la question créée dans le state
+            if (createData.question) {
+              const reponsesSauvegardees = reponsesData.map((r: any, idx: number) => ({
+                id: createData.question.reponses_possibles?.[idx]?.id,
+                reponse: r.reponse,
+                est_correcte: r.est_correcte,
+              }));
+              
+              // Garder les réponses vides qui n'ont pas été sauvegardées
+              const reponsesVides = q.reponses.filter(r => !r.reponse.trim());
+              
+              updatedQuestions[i] = {
+                ...updatedQuestions[i],
+                id: createData.question.id,
+                // Combiner les réponses sauvegardées avec les réponses vides
+                reponses: [...reponsesSauvegardees, ...reponsesVides],
+              };
+            }
+          }
         }
       }
 
+      // Mettre à jour le state avec les IDs récupérés
+      setQuestions(updatedQuestions);
+
       // Mettre à jour lastSavedQuestions après sauvegarde réussie
-      setLastSavedQuestions(JSON.stringify(questions));
+      setLastSavedQuestions(JSON.stringify(updatedQuestions));
       setHasUnsavedChanges(false);
-      setLastAutoSaveTime(new Date());
+      const saveTime = new Date();
+      setLastAutoSaveTime(saveTime);
+      // L'heure de la dernière sauvegarde reste affichée
     } catch (error) {
       console.error('Erreur lors de la sauvegarde automatique:', error);
     } finally {
       setIsAutoSaving(false);
     }
-  }, [questions, quizId, moduleId, coursId, isSaving, isAutoSaving, hasUnsavedChanges]);
+  }, [questions, quizId, coursId, chapitreId, isSaving, isAutoSaving, hasUnsavedChanges]);
 
   // Sauvegarde automatique après 5 secondes d'inactivité
   useEffect(() => {
@@ -347,6 +471,76 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
   }, [questions, hasUnsavedChanges, isSaving, isAutoSaving, handleAutoSave]);
 
   const handleSubmit = async () => {
+    // VALIDATION : Vérifier qu'il y a au moins une question
+    const questionsValides = questions.filter(q => q.question.trim());
+    if (questionsValides.length === 0) {
+      setModal({
+        isOpen: true,
+        message: 'Veuillez ajouter au moins une question avant de soumettre le quiz',
+        type: 'warning',
+        title: 'Validation requise'
+      });
+      return;
+    }
+    
+    // VALIDATION : Vérifier que toutes les questions ont au moins une bonne réponse
+    const validationErrors: string[] = [];
+    let questionNum = 0;
+    
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.question.trim()) continue; // Ignorer les questions vides
+      
+      questionNum++; // Numéro de la question valide
+      
+      // Filtrer les réponses valides (non vides)
+      const reponsesValides = q.reponses.filter(r => r.reponse.trim());
+      
+      if (reponsesValides.length === 0) {
+        validationErrors.push(`Question ${questionNum}: Aucune réponse valide`);
+        continue;
+      }
+      
+      // Compter les bonnes réponses
+      const bonnesReponses = reponsesValides.filter(r => r.est_correcte).length;
+      
+      if (q.type_question === 'vrai_faux') {
+        // Pour vrai/faux, il faut qu'une des deux réponses soit correcte
+        const vraiCorrect = q.reponses[0]?.est_correcte || false;
+        const fauxCorrect = q.reponses[1]?.est_correcte || false;
+        if (!vraiCorrect && !fauxCorrect) {
+          validationErrors.push(`Question ${questionNum}: Vous devez sélectionner au moins une bonne réponse (Vrai ou Faux)`);
+        }
+      } else if (q.type_question === 'choix_multiple') {
+        // Pour choix multiple, il faut au moins 2 bonnes réponses
+        if (bonnesReponses === 0) {
+          validationErrors.push(`Question ${questionNum}: Vous devez sélectionner au moins une bonne réponse`);
+        } else if (bonnesReponses < 2) {
+          validationErrors.push(`Question ${questionNum}: Pour les questions à choix multiple, vous devez sélectionner au moins 2 bonnes réponses (actuellement: ${bonnesReponses})`);
+        }
+      } else if (q.type_question === 'choix_unique') {
+        // Pour choix unique, il faut exactement 1 bonne réponse
+        if (bonnesReponses === 0) {
+          validationErrors.push(`Question ${questionNum}: Vous devez sélectionner une bonne réponse`);
+        } else if (bonnesReponses > 1) {
+          validationErrors.push(`Question ${questionNum}: Pour les questions à choix unique, vous ne pouvez sélectionner qu'une seule bonne réponse`);
+        }
+      }
+    }
+    
+    // Si des erreurs de validation sont trouvées, afficher un message et empêcher la soumission
+    if (validationErrors.length > 0) {
+      const errorMessage = `Impossible de soumettre le quiz. Veuillez corriger les erreurs suivantes :\n\n${validationErrors.join('\n')}`;
+      setModal({
+        isOpen: true,
+        message: errorMessage,
+        type: 'error',
+        title: 'Erreurs de validation'
+      });
+      setIsSaving(false);
+      return;
+    }
+    
     setIsSaving(true);
     try {
       // Créer ou mettre à jour le quiz
@@ -356,9 +550,9 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            module_id: moduleId,
             cours_id: coursId,
-            titre: `Quiz - Partie ${coursId}`,
+            chapitre_id: chapitreId,
+            titre: `Quiz - Chapitre ${chapitreId}`,
             duree_minutes: 30,
             nombre_tentatives_max: 3,
             seuil_reussite: 50,
@@ -375,6 +569,8 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
       }
 
       // Sauvegarder chaque question
+      const updatedQuestions = [...questions];
+      
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         if (!q.question.trim()) continue;
@@ -395,9 +591,25 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
             { reponse: 'Faux', est_correcte: q.reponses[1]?.est_correcte || false, ordre_affichage: 2 },
           ];
         } else {
-          reponsesData = q.reponses
-            .filter(r => r.reponse.trim())
-            .map((r, index) => ({
+          // Filtrer seulement les réponses non vides et qui ne sont pas des placeholders
+          const reponsesValides = q.reponses.filter(r => {
+            const reponseTrim = r.reponse.trim();
+            // Exclure les réponses vides et les placeholders
+            return reponseTrim && 
+                   reponseTrim !== 'Ecris une bonne réponse' && 
+                   reponseTrim !== 'Ecris une mauvaise réponse' &&
+                   reponseTrim !== 'Écris une bonne réponse' &&
+                   reponseTrim !== 'Écris une mauvaise réponse';
+          });
+          
+          // Ne pas sauvegarder la question si elle n'a pas au moins une réponse valide
+          if (reponsesValides.length === 0) {
+            console.log(`[Submit] Question "${q.question.substring(0, 30)}..." ignorée : aucune réponse valide`);
+            // Garder la question avec toutes ses réponses (y compris vides) dans le state
+            continue;
+          }
+          
+          reponsesData = reponsesValides.map((r, index) => ({
               reponse: r.reponse,
               est_correcte: r.est_correcte,
               ordre_affichage: index + 1,
@@ -406,7 +618,7 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
 
         if (q.id) {
           // Mettre à jour la question existante
-          await fetch('/api/quiz/questions', {
+          const updateResponse = await fetch('/api/quiz/questions', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -415,9 +627,31 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
               reponses_possibles: reponsesData,
             }),
           });
+
+          if (updateResponse.ok) {
+            const updateData = await updateResponse.json();
+            // Mettre à jour les IDs des réponses sauvegardées, mais garder les réponses vides dans le state
+            if (updateData.question && updateData.question.reponses_possibles) {
+              const reponsesSauvegardees = reponsesData.map((r: any, idx: number) => ({
+                id: updateData.question.reponses_possibles[idx]?.id,
+                reponse: r.reponse,
+                est_correcte: r.est_correcte,
+              }));
+              
+              // Garder les réponses vides qui n'ont pas été sauvegardées
+              const reponsesVides = q.reponses.filter(r => !r.reponse.trim());
+              
+              updatedQuestions[i] = {
+                ...updatedQuestions[i],
+                id: updateData.question.id,
+                // Combiner les réponses sauvegardées avec les réponses vides
+                reponses: [...reponsesSauvegardees, ...reponsesVides],
+              };
+            }
+          }
         } else {
           // Créer une nouvelle question
-          await fetch('/api/quiz/questions', {
+          const createResponse = await fetch('/api/quiz/questions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -425,19 +659,51 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
               reponses_possibles: reponsesData,
             }),
           });
+
+          if (createResponse.ok) {
+            const createData = await createResponse.json();
+            // IMPORTANT : Mettre à jour l'ID de la question créée dans le state
+            if (createData.question) {
+              const reponsesSauvegardees = reponsesData.map((r: any, idx: number) => ({
+                id: createData.question.reponses_possibles?.[idx]?.id,
+                reponse: r.reponse,
+                est_correcte: r.est_correcte,
+              }));
+              
+              // Garder les réponses vides qui n'ont pas été sauvegardées
+              const reponsesVides = q.reponses.filter(r => !r.reponse.trim());
+              
+              updatedQuestions[i] = {
+                ...updatedQuestions[i],
+                id: createData.question.id,
+                // Combiner les réponses sauvegardées avec les réponses vides
+                reponses: [...reponsesSauvegardees, ...reponsesVides],
+              };
+            }
+          }
         }
       }
 
-      // Mettre à jour l'état de sauvegarde après sauvegarde réussie
-      setLastSavedQuestions(JSON.stringify(questions));
-      setHasUnsavedChanges(false);
-      setLastAutoSaveTime(new Date());
+      // Mettre à jour le state avec les IDs récupérés
+      setQuestions(updatedQuestions);
 
-      // Rediriger vers le cours après sauvegarde
-      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours/${coursId}`);
+      // Mettre à jour l'état de sauvegarde après sauvegarde réussie
+      setLastSavedQuestions(JSON.stringify(updatedQuestions));
+      setHasUnsavedChanges(false);
+      const saveTime = new Date();
+      setLastAutoSaveTime(saveTime);
+      // L'heure de la dernière sauvegarde reste affichée
+
+      // Rediriger vers le chapitre après sauvegarde
+      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du quiz:', error);
-      alert('Erreur lors de la sauvegarde du quiz');
+      setModal({
+        isOpen: true,
+        message: 'Erreur lors de la sauvegarde du quiz',
+        type: 'error',
+        title: 'Erreur'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -460,26 +726,29 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
       <div className="mb-4 space-y-2">
         {/* Flèche retour */}
         <button
-          onClick={() => router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${moduleId}/cours/${coursId}`)}
+          onClick={() => router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`)}
           className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70 transition-colors"
-          title="Retour au cours"
+          title="Retour au chapitre"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
-            Retour au cours
+            Retour au chapitre
           </span>
         </button>
         
-        {/* Indicateur de sauvegarde automatique */}
-        {(lastAutoSaveTime || isAutoSaving) && (
+        {/* Indicateur de sauvegarde automatique - affiché seulement pendant et juste après la sauvegarde */}
+        {isAutoSaving && (
           <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
-            <RefreshCw className={`w-4 h-4 text-[#032622] ${isAutoSaving ? 'animate-spin' : ''}`} />
+            <RefreshCw className="w-4 h-4 text-[#032622] animate-spin" />
             <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
-              {isAutoSaving ? (
-                'Enregistrement automatique en cours...'
-              ) : (
-                `Enregistrement automatique - ${lastAutoSaveTime?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
-              )}
+              Enregistrement automatique en cours...
+            </span>
+          </div>
+        )}
+        {!isAutoSaving && lastAutoSaveTime && (
+          <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
+            <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+              Dernière sauvegarde automatique : {lastAutoSaveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
           </div>
         )}
@@ -517,7 +786,7 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
                 <select
                   value={question.type_question}
                   onChange={(e) => updateQuestion(qIndex, 'type_question', e.target.value)}
-                  className="bg-[#032622] text-[#F8F5E4] px-4 py-3 pr-10 font-bold uppercase appearance-none cursor-pointer"
+                  className="bg-[#032622] border-2 border-[#032622] text-[#F8F5E4] px-4 py-3 pr-10 font-bold uppercase appearance-none cursor-pointer"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   <option value="choix_unique">CHOIX UNIQUE</option>
@@ -656,9 +925,18 @@ export const QuizEditorPage = ({ coursId, moduleId, formationId, blocId }: QuizE
           className="bg-[#032622] text-[#F8F5E4] px-4 py-2 font-bold uppercase hover:bg-[#032622]/90 transition-colors disabled:opacity-50 text-sm"
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
-          {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON MODULE'}
+          {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON QUIZ'}
         </button>
       </div>
+
+      {/* Modal pour les alertes */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        message={modal.message}
+        type={modal.type}
+        title={modal.title}
+      />
     </div>
   );
 };

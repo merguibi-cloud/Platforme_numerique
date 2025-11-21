@@ -1,5 +1,5 @@
 import { getSupabaseClient, getSupabaseServerClient } from './supabase';
-import { BlocCompetence, ModuleApprentissage } from '@/types/formation-detailed';
+import { BlocCompetence, CoursApprentissage } from '@/types/formation-detailed';
 // =============================================
 // API POUR LES BLOCS DE COMPÉTENCES
 // =============================================
@@ -19,7 +19,7 @@ export interface UpdateBlocRequest {
   ordre_affichage?: number;
 }
 export interface BlocWithModules extends BlocCompetence {
-  modules: ModuleApprentissage[];
+  modules: CoursApprentissage[];
 }
 export interface BlocStats {
   total_modules: number;
@@ -30,7 +30,7 @@ export interface BlocStats {
 export interface CreateBlocResponse {
   success: boolean;
   bloc?: BlocCompetence;
-  modules?: ModuleApprentissage[];
+  modules?: CoursApprentissage[];
   error?: string;
 }
 // =============================================
@@ -116,11 +116,11 @@ export async function getBlocWithModules(blocId: number): Promise<BlocWithModule
       return null;
     }
     const { data: modules, error: modulesError } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .select('*')
       .eq('bloc_id', blocId)
       .eq('actif', true)
-      .order('numero_module', { ascending: true });
+      .order('numero_cours', { ascending: true });
     if (modulesError) {
       console.error('Erreur lors de la récupération des modules:', modulesError);
       return { ...bloc, modules: [] };
@@ -135,7 +135,7 @@ export async function getBlocStats(blocId: number): Promise<BlocStats | null> {
   try {
     const supabase = getSupabaseClient();
     const { data: modules, error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .select('actif, duree_estimee')
       .eq('bloc_id', blocId);
     if (error) {
@@ -157,7 +157,7 @@ export async function getBlocStats(blocId: number): Promise<BlocStats | null> {
 // =============================================
 // FONCTIONS UTILITAIRES
 // =============================================
-export async function getModulesByBlocId(blocId: number): Promise<ModuleApprentissage[]> {
+export async function getModulesByBlocId(blocId: number): Promise<CoursApprentissage[]> {
   try {
     const response = await fetch(`/api/blocs?blocId=${blocId}`, {
       method: 'GET',
@@ -279,15 +279,15 @@ export async function getBlocsByFormationIdServer(formationId: number): Promise<
     return [];
   }
 }
-export async function getModulesByBlocIdServer(blocId: number): Promise<ModuleApprentissage[]> {
+export async function getModulesByBlocIdServer(blocId: number): Promise<CoursApprentissage[]> {
   try {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .select('*')
       .eq('bloc_id', blocId)
       .eq('actif', true)
-      .order('numero_module', { ascending: true });
+      .order('numero_cours', { ascending: true });
     if (error) {
       return [];
     }
@@ -325,9 +325,9 @@ export async function updateBlocServer(blocId: number, updates: UpdateBlocReques
 export async function deleteBlocServer(blocId: number, userId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = getSupabaseServerClient();
-    // Supprimer d'abord les modules associés
+    // Supprimer d'abord les cours associés
     const { error: modulesError } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .delete()
       .eq('bloc_id', blocId);
     if (modulesError) {

@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from './supabase';
-import { ModuleApprentissage, CoursContenu } from '@/types/formation-detailed';
+import { CoursApprentissage } from '@/types/formation-detailed';
+import { CoursContenu } from '@/types/cours';
 
 // =============================================
 // API POUR LES MODULES D'APPRENTISSAGE
@@ -17,7 +18,7 @@ export interface CreateModuleRequest {
 
 export interface CreateModuleResponse {
   success: boolean;
-  module?: ModuleApprentissage;
+  module?: CoursApprentissage;
   cours?: CoursContenu[];
   error?: string;
 }
@@ -28,7 +29,7 @@ export async function createModuleWithCours(data: CreateModuleRequest): Promise<
     
     // Calculer le prochain numéro de module pour ce bloc
     const { data: existingModules } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .select('numero_module')
       .eq('bloc_id', data.bloc_id)
       .order('numero_module', { ascending: false })
@@ -40,7 +41,7 @@ export async function createModuleWithCours(data: CreateModuleRequest): Promise<
     
     // Créer le module
     const { data: module, error: moduleError } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .insert({
         bloc_id: data.bloc_id,
         numero_module: nextModuleNumber,
@@ -93,12 +94,12 @@ export async function createModuleWithCours(data: CreateModuleRequest): Promise<
   }
 }
 
-export async function getModulesByBlocId(blocId: number): Promise<ModuleApprentissage[]> {
+export async function getModulesByBlocId(blocId: number): Promise<CoursApprentissage[]> {
   try {
     const supabase = getSupabaseServerClient();
     
     const { data, error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .select('*')
       .eq('bloc_id', blocId)
       .eq('actif', true)
@@ -139,12 +140,12 @@ export async function getCoursByModuleId(moduleId: number): Promise<CoursContenu
   }
 }
 
-export async function updateModule(moduleId: number, updates: Partial<ModuleApprentissage>): Promise<boolean> {
+export async function updateModule(moduleId: number, updates: Partial<CoursApprentissage>): Promise<boolean> {
   try {
     const supabase = getSupabaseServerClient();
     
     const { error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .update(updates)
       .eq('id', moduleId);
 
@@ -166,7 +167,7 @@ export async function deleteModule(moduleId: number): Promise<boolean> {
     
     // Désactiver le module au lieu de le supprimer (soft delete)
     const { error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .update({ actif: false })
       .eq('id', moduleId);
 
@@ -183,7 +184,7 @@ export async function deleteModule(moduleId: number): Promise<boolean> {
 }
 
 // Fonction pour déterminer le statut d'un module
-export function getModuleStatus(module: ModuleApprentissage, cours: CoursContenu[]): 'en_ligne' | 'brouillon' | 'manquant' {
+export function getModuleStatus(module: CoursApprentissage, cours: CoursContenu[]): 'en_ligne' | 'brouillon' | 'manquant' {
   if (cours.length === 0) {
     return 'manquant';
   }

@@ -2,8 +2,7 @@ import { getSupabaseServerClient } from './supabase';
 import { 
   Formation, 
   BlocCompetence, 
-  ModuleApprentissage, 
-  CoursContenu, 
+  CoursApprentissage, 
   EtudeCas, 
   QuizEvaluation, 
   QuestionQuiz, 
@@ -12,12 +11,12 @@ import {
   ProgressionFormation,
   CreateFormationData,
   CreateBlocData,
-  CreateModuleData,
   CreateCoursData,
   CreateEtudeCasData,
   CreateQuizData,
   CreateQuestionData
 } from '@/types/formation-detailed';
+import { CoursContenu } from '@/types/cours';
 
 // =============================================
 // FONCTIONS POUR LES FORMATIONS
@@ -166,11 +165,11 @@ export async function deleteBloc(blocId: number): Promise<boolean> {
 // FONCTIONS POUR LES MODULES D'APPRENTISSAGE
 // =============================================
 
-export async function getModulesByBloc(blocId: number): Promise<ModuleApprentissage[]> {
+export async function getModulesByBloc(blocId: number): Promise<CoursApprentissage[]> {
   try {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .select('*')
       .eq('bloc_id', blocId)
       .eq('actif', true)
@@ -188,11 +187,11 @@ export async function getModulesByBloc(blocId: number): Promise<ModuleApprentiss
   }
 }
 
-export async function createModule(moduleData: CreateModuleData): Promise<ModuleApprentissage | null> {
+export async function createModule(moduleData: CreateCoursData): Promise<CoursApprentissage | null> {
   try {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
-      .from('modules_apprentissage')
+      .from('cours_apprentissage')
       .insert(moduleData)
       .select()
       .single();

@@ -1,44 +1,102 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Minus } from 'lucide-react';
 
 interface CreateModuleProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (moduleData: { titre: string; cours: string[]; moduleId?: string }) => void;
+  onSave: (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }>; moduleId?: string }) => void;
   existingModules?: Array<{ id: string; titre: string }>;
+}
+
+interface ChapitreItem {
+  id?: number;
+  titre: string;
+  isNew?: boolean;
 }
 
 export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: CreateModuleProps) => {
   const [selectedModuleId, setSelectedModuleId] = useState('');
-  const [titreModule, setTitreModule] = useState('');
-  const [cours, setCours] = useState<string[]>(['']);
+  const [titreCours, setTitreCours] = useState('');
+  const [chapitres, setChapitres] = useState<ChapitreItem[]>([{ titre: '', isNew: true }]);
+  const [isLoadingChapitres, setIsLoadingChapitres] = useState(false);
 
-  const handleAddCours = () => {
-    setCours([...cours, '']);
-  };
+  // Charger les chapitres d'un cours existant
+  const loadChapitres = async (coursId: string) => {
+    setIsLoadingChapitres(true);
+    try {
+      const response = await fetch(`/api/chapitres?coursId=${coursId}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-  const handleRemoveCours = (index: number) => {
-    if (cours.length > 1) {
-      setCours(cours.filter((_, i) => i !== index));
+      if (response.ok) {
+        const data = await response.json();
+        const chapitresList = data.chapitres || [];
+        
+        // Convertir les chapitres en format ChapitreItem
+        const formattedChapitres: ChapitreItem[] = chapitresList.map((ch: any) => ({
+          id: ch.id,
+          titre: ch.titre || '',
+          isNew: false,
+        }));
+
+        // Si aucun chapitre, ajouter un champ vide pour en créer un nouveau
+        if (formattedChapitres.length === 0) {
+          setChapitres([{ titre: '', isNew: true }]);
+        } else {
+          setChapitres(formattedChapitres);
+        }
+      } else {
+        console.error('Erreur lors du chargement des chapitres');
+        setChapitres([{ titre: '', isNew: true }]);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des chapitres:', error);
+      setChapitres([{ titre: '', isNew: true }]);
+    } finally {
+      setIsLoadingChapitres(false);
     }
   };
 
-  const handleCoursChange = (index: number, value: string) => {
-    const newCours = [...cours];
-    newCours[index] = value;
-    setCours(newCours);
+  const handleAddChapitre = () => {
+    setChapitres([...chapitres, { titre: '', isNew: true }]);
+  };
+
+  const handleRemoveChapitre = (index: number) => {
+    if (chapitres.length > 1) {
+      setChapitres(chapitres.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleChapitreChange = (index: number, value: string) => {
+    const newChapitres = [...chapitres];
+    newChapitres[index] = {
+      ...newChapitres[index],
+      titre: value,
+    };
+    setChapitres(newChapitres);
   };
 
   const handleSave = () => {
     const hasExistingModule = Boolean(selectedModuleId);
-    const moduleTitle = titreModule.trim();
+    const coursTitle = titreCours.trim();
 
-    if ((moduleTitle || hasExistingModule) && cours.some(coursItem => coursItem.trim())) {
+    // Filtrer les chapitres vides et garder les IDs pour les chapitres existants
+    const chapitresData = chapitres
+      .filter(chapitre => chapitre.titre.trim())
+      .map(chapitre => ({
+        id: chapitre.id,
+        titre: chapitre.titre.trim(),
+      }));
+
+    if ((coursTitle || hasExistingModule) && chapitresData.length > 0) {
       onSave({
-        titre: moduleTitle,
-        cours: cours.filter(coursItem => coursItem.trim()),
+        titre: coursTitle,
+        cours: chapitresData,
         moduleId: hasExistingModule ? selectedModuleId : undefined
       });
       handleClose();
@@ -47,10 +105,21 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
 
   const handleClose = () => {
     setSelectedModuleId('');
-    setTitreModule('');
-    setCours(['']);
+    setTitreCours('');
+    setChapitres([{ titre: '', isNew: true }]);
+    setIsLoadingChapitres(false);
     onClose();
   };
+
+  // Charger les chapitres quand un cours existant est sélectionné
+  useEffect(() => {
+    if (selectedModuleId) {
+      loadChapitres(selectedModuleId);
+    } else {
+      // Réinitialiser les chapitres si aucun cours n'est sélectionné
+      setChapitres([{ titre: '', isNew: true }]);
+    }
+  }, [selectedModuleId]);
 
   if (!isOpen) return null;
 
@@ -63,7 +132,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
             className="text-2xl font-bold text-[#032622] uppercase"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            CRÉATION D'UN MODULE
+            CRÉATION D'UN COURS
           </h2>
           <button
             onClick={handleClose}
@@ -75,24 +144,24 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Module */}
+          {/* Cours */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label 
                 className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
-                MODULE
+                COURS
               </label>
               <input
                 type="text"
-                value={titreModule}
+                value={titreCours}
                 onChange={(e) => {
-                  setTitreModule(e.target.value);
+                  setTitreCours(e.target.value);
                   setSelectedModuleId('');
                 }}
-                placeholder="Nom du module"
-                className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                placeholder="Nom du cours"
+                className="w-full p-4 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               />
             </div>
@@ -103,7 +172,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
                   className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
-                  MODULE EXISTANT
+                  COURS EXISTANT
                 </label>
                 <select
                   value={selectedModuleId}
@@ -112,13 +181,17 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
                     setSelectedModuleId(value);
                     const selectedModule = existingModules.find((module) => module.id === value);
                     if (selectedModule) {
-                      setTitreModule(selectedModule.titre);
+                      setTitreCours(selectedModule.titre);
+                    } else {
+                      setTitreCours('');
+                      setChapitres([{ titre: '', isNew: true }]);
                     }
                   }}
                   className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
+                  disabled={isLoadingChapitres}
                 >
-                  <option value="">Sélectionner un module existant</option>
+                  <option value="">Sélectionner un cours existant</option>
                   {existingModules.map((module) => (
                     <option key={module.id} value={module.id}>
                       {module.titre}
@@ -129,40 +202,51 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
             )}
           </div>
 
-          {/* Cours */}
+          {/* Chapitres */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 
                 className="text-lg font-semibold text-[#032622] uppercase"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
-                COURS
+                CHAPITRES
               </h3>
               <button
-                onClick={handleAddCours}
+                onClick={handleAddChapitre}
                 className="bg-[#032622] text-[#F8F5E4] px-4 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-2"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 <Plus className="w-4 h-4" />
-                AJOUTER UN COURS
+                AJOUTER UN CHAPITRE
               </button>
             </div>
 
+            {isLoadingChapitres ? (
+              <div className="text-center py-4 text-[#032622]">
+                <p style={{ fontFamily: 'var(--font-termina-medium)' }}>Chargement des chapitres...</p>
+              </div>
+            ) : (
             <div className="space-y-3">
-              {cours.map((coursItem, index) => (
-                <div key={index} className="flex items-center gap-3">
+                {chapitres.map((chapitreItem, index) => (
+                  <div key={chapitreItem.id || `new-${index}`} className="flex items-center gap-3">
                   <input
                     type="text"
-                    value={coursItem}
-                    onChange={(e) => handleCoursChange(index, e.target.value)}
-                    placeholder={`Cours ${index + 1}`}
-                    className="flex-1 p-3 border-2 border-[#032622] bg-gray-100 text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                      value={chapitreItem.titre}
+                      onChange={(e) => handleChapitreChange(index, e.target.value)}
+                      placeholder={chapitreItem.isNew ? `Nouveau chapitre ${index + 1}` : `Chapitre ${index + 1}`}
+                      className="flex-1 p-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   />
-                  {cours.length > 1 && (
+                    {!chapitreItem.isNew && (
+                      <span className="text-xs text-gray-500 px-2" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+                        Existant
+                      </span>
+                    )}
+                    {chapitres.length > 1 && (
                     <button
-                      onClick={() => handleRemoveCours(index)}
+                        onClick={() => handleRemoveChapitre(index)}
                       className="w-8 h-8 border-2 border-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-[#F8F5E4] transition-colors flex items-center justify-center"
+                        title={chapitreItem.isNew ? 'Supprimer ce chapitre' : 'Supprimer ce chapitre (sera supprimé lors de la sauvegarde)'}
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -170,6 +254,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
                 </div>
               ))}
             </div>
+            )}
           </div>
         </div>
 
@@ -178,13 +263,14 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
           <button
             onClick={handleSave}
             disabled={
-              !(titreModule.trim() || selectedModuleId) ||
-              !cours.some(coursItem => coursItem.trim())
+              !(titreCours.trim() || selectedModuleId) ||
+              !chapitres.some(chapitreItem => chapitreItem.titre.trim()) ||
+              isLoadingChapitres
             }
             className="w-full bg-[#032622] text-[#F8F5E4] py-3 text-lg font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            {selectedModuleId ? 'AJOUTER LES COURS' : 'CRÉER LE MODULE'}
+            {selectedModuleId ? 'AJOUTER LES CHAPITRES' : 'CRÉER LE COURS'}
           </button>
         </div>
       </div>

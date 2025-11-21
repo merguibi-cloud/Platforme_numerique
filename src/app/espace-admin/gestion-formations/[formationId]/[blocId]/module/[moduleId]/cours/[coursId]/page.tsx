@@ -33,7 +33,7 @@ export default function EditCoursPage({ params }: EditCoursPageProps) {
     const loadData = async () => {
       try {
         // Charger les informations du module
-        const moduleResponse = await fetch(`/api/modules/${moduleId}`, {
+        const moduleResponse = await fetch(`/api/cours/${moduleId}`, {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -94,12 +94,11 @@ export default function EditCoursPage({ params }: EditCoursPageProps) {
 
   return (
     <CoursEditor
-      coursId={parseInt(coursId)}
-      moduleId={parseInt(moduleId)}
-      moduleTitle={moduleInfo?.titre || "Chargement..."}
+      coursId={parseInt(coursId, 10)}
+      coursTitle={moduleInfo?.titre || "Chargement..."}
       blocTitle={blocInfo?.titre || "Chargement..."}
       blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
-      moduleOrder={moduleInfo?.ordre_affichage || moduleInfo?.numero_module || 1}
+      coursOrder={moduleInfo?.ordre_affichage || moduleInfo?.numero_module || 1}
       formationId={formationId}
       blocId={blocId}
     />

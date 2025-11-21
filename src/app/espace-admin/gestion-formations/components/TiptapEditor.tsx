@@ -53,6 +53,11 @@ interface TiptapEditorProps {
   formationId?: string;
   blocId?: string;
   nextStepButtonText?: string;
+  chapitrageData?: {
+    chapitres?: any[];
+    quizzes?: Record<number, { quiz: any; questions: any[] }>;
+    etudeCas?: { id: number; titre: string };
+  };
 }
 
 export const TiptapEditor = ({ 
@@ -78,7 +83,8 @@ export const TiptapEditor = ({
   onEtudeCasClick,
   formationId,
   blocId,
-  nextStepButtonText
+  nextStepButtonText,
+  chapitrageData
 }: TiptapEditorProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -401,19 +407,22 @@ export const TiptapEditor = ({
 
   return (
     <div className="bg-[#F8F5E4] border border-[#032622] relative">
-      {/* Indicateur de sauvegarde automatique */}
-      {(lastAutoSaveTime || isAutoSaving) && (
+      {/* Indicateur de sauvegarde automatique - affiché seulement pendant et juste après la sauvegarde */}
+      {isAutoSaving && (
         <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
-          <RefreshCw className={`w-4 h-4 text-[#032622] ${isAutoSaving ? 'animate-spin' : ''}`} />
+          <RefreshCw className="w-4 h-4 text-[#032622] animate-spin" />
           <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
-            {isAutoSaving ? (
-              'Enregistrement automatique en cours...'
-            ) : (
-              `Enregistrement automatique - ${lastAutoSaveTime?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
-            )}
+            Enregistrement automatique en cours...
           </span>
-            </div>
-          )}
+        </div>
+      )}
+      {!isAutoSaving && lastAutoSaveTime && (
+        <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
+          <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+            Dernière sauvegarde automatique : {lastAutoSaveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        </div>
+      )}
       
       {/* Toolbar - Sticky */}
       <TiptapToolbar
@@ -466,13 +475,14 @@ export const TiptapEditor = ({
         {/* Chapitrage - Position absolute en bas à droite */}
         {moduleId && (
           <Chapitrage
-            moduleId={moduleId}
-            currentCoursId={currentCoursId}
-            onCoursClick={onCoursClick}
+            coursId={moduleId}
+            currentChapitreId={currentCoursId}
+            onChapitreClick={onCoursClick}
             onQuizClick={onQuizClick}
             onEtudeCasClick={onEtudeCasClick}
             formationId={formationId}
             blocId={blocId}
+            preloadedData={chapitrageData}
           />
         )}
       </div>

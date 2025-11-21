@@ -8,13 +8,13 @@ interface PreviewPageProps {
   params: Promise<{
     formationId: string;
     blocId: string;
-    moduleId: string;
+    coursId: string;
   }>;
 }
 
-export default function ModulePreviewPage({ params }: PreviewPageProps) {
+export default function CoursPreviewPage({ params }: PreviewPageProps) {
   const router = useRouter();
-  const { formationId, blocId, moduleId } = use(params);
+  const { formationId, blocId, coursId } = use(params);
 
   const handleBack = () => {
     router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}`);
@@ -22,7 +22,7 @@ export default function ModulePreviewPage({ params }: PreviewPageProps) {
 
   return (
     <ModulePreviewViewer
-      coursId={parseInt(moduleId, 10)}
+      coursId={parseInt(coursId)}
       formationId={formationId}
       blocId={blocId}
       onBack={handleBack}

@@ -2,46 +2,47 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { EtudeCasEditorPage } from '@/app/espace-admin/gestion-formations/components/EtudeCasEditorPage';
+import { QuizEditorPage } from '@/app/espace-admin/gestion-formations/components/QuizEditorPage';
 import AdminTopBar from '@/app/espace-admin/components/AdminTopBar';
 import { ArrowLeft } from 'lucide-react';
 
-interface EtudeCasPageProps {
+interface QuizPageProps {
   params: Promise<{
     formationId: string;
     blocId: string;
-    moduleId: string;
+    coursId: string;
+    chapitreId: string;
   }>;
 }
 
-export default function EtudeCasPage({ params }: EtudeCasPageProps) {
+export default function QuizPage({ params }: QuizPageProps) {
+  const { formationId, blocId, coursId, chapitreId } = use(params);
   const router = useRouter();
-  const { formationId, blocId, moduleId } = use(params);
   const [isLoading, setIsLoading] = useState(true);
-  const [moduleInfo, setModuleInfo] = useState<any>(null);
+  const [chapitreInfo, setChapitreInfo] = useState<any>(null);
 
   useEffect(() => {
-    const loadModuleInfo = async () => {
+    const loadChapitreInfo = async () => {
       try {
-        const response = await fetch(`/api/cours/${moduleId}`, {
+        const response = await fetch(`/api/chapitres?chapitreId=${chapitreId}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
         if (response.ok) {
           const data = await response.json();
-          setModuleInfo(data.module);
+          setChapitreInfo(data.chapitre);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement du module:', error);
+        console.error('Erreur lors du chargement du chapitre:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    loadModuleInfo();
-  }, [moduleId]);
+    loadChapitreInfo();
+  }, [chapitreId]);
 
   const handleBack = () => {
-    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}`);
+    router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`);
   };
 
   if (isLoading) {
@@ -64,16 +65,16 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
             <button
               onClick={handleBack}
               className="flex items-center justify-center w-10 h-10 bg-[#032622] text-[#F8F5E4] rounded hover:bg-[#032622]/80 transition-colors"
-              title="Retour aux modules"
+              title="Retour au chapitre"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <h1 className="text-xl font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
-                CRÉATION DE L'ÉTUDE DE CAS
+                CRÉATION DE QUIZ DU CHAPITRE
               </h1>
-              {moduleInfo && (
-                <p className="text-sm text-[#032622]/70">{moduleInfo.titre}</p>
+              {chapitreInfo && (
+                <p className="text-sm text-[#032622]/70">{chapitreInfo.titre}</p>
               )}
             </div>
           </div>
@@ -81,10 +82,10 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
         </div>
       </div>
 
-      {/* Etude Cas Editor */}
-      <EtudeCasEditorPage
-        chapitreId={0}
-        coursId={parseInt(moduleId, 10)}
+      {/* Quiz Editor */}
+      <QuizEditorPage
+        chapitreId={parseInt(chapitreId)}
+        coursId={parseInt(coursId)}
         formationId={formationId}
         blocId={blocId}
       />

@@ -1,166 +1,207 @@
-import { getSupabaseServerClient } from '../lib/supabase';
-import { Cours, CreateCoursRequest, UpdateCoursRequest, CoursValidationRequest } from '@/types/cours';
-// Fonctions côté serveur pour les cours
-export async function createCoursServer(coursData: CreateCoursRequest, userId: string): Promise<{ success: boolean; cours?: Cours; error?: string }> {
+import { getSupabaseServerClient } from './supabase';
+import { CoursApprentissage, ChapitreCours } from '@/types/formation-detailed';
+
+// =============================================
+// API POUR LES COURS D'APPRENTISSAGE
+// =============================================
+
+export interface CreateCoursRequest {
+  bloc_id: number;
+  numero_cours?: number;
+  titre: string;
+  description?: string;
+  type_module: 'cours' | 'etude_cas' | 'quiz' | 'projet';
+  chapitres: string[];
+  created_by?: string;
+}
+
+export interface CreateCoursResponse {
+  success: boolean;
+  cours?: CoursApprentissage;
+  chapitres?: ChapitreCours[];
+  error?: string;
+}
+
+export async function createCoursWithChapitres(data: CreateCoursRequest): Promise<CreateCoursResponse> {
   try {
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('cours_contenu')
+    
+    // Calculer le prochain numéro de cours pour ce bloc
+    const { data: existingCours } = await supabase
+      .from('cours_apprentissage')
+      .select('numero_cours')
+      .eq('bloc_id', data.bloc_id)
+      .order('numero_cours', { ascending: false })
+      .limit(1);
+    
+    const nextCoursNumber = existingCours && existingCours.length > 0 
+      ? existingCours[0].numero_cours + 1 
+      : 1;
+    
+    // Créer le cours
+    const { data: cours, error: coursError } = await supabase
+      .from('cours_apprentissage')
       .insert({
-        module_id: coursData.module_id,
-        titre: coursData.titre,
-        contenu: coursData.contenu || '',
-        statut: 'brouillon',
-        created_by: userId
+        bloc_id: data.bloc_id,
+        numero_cours: nextCoursNumber,
+        titre: data.titre,
+        description: data.description,
+        type_module: data.type_module,
+        ordre_affichage: nextCoursNumber,
+        duree_estimee: 0,
+        actif: true,
+        created_by: data.created_by || null
       })
       .select()
       .single();
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true, cours: data };
-  } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
-  }
-}
-export async function getCoursByModuleIdServer(moduleId: number): Promise<{ success: boolean; cours?: Cours[]; error?: string }> {
-  try {
-    const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('cours_contenu')
-      .select('*')
-      .eq('module_id', moduleId)
-      .order('ordre_affichage', { ascending: true });
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true, cours: data || [] };
-  } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
-  }
-}
-export async function getCoursByIdServer(coursId: number): Promise<{ success: boolean; cours?: Cours; error?: string }> {
-  try {
-    const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('cours_contenu')
-      .select('*')
-      .eq('id', coursId)
-      .single();
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true, cours: data };
-  } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
-  }
-}
 
-// Fonction pour obtenir un cours avec ses fichiers complémentaires
-export async function getCoursWithDetailsServer(
-  coursId: number
-): Promise<{ 
-  success: boolean; 
-  cours?: Cours; 
-  fichiers?: any[]; 
-  error?: string 
-}> {
-  try {
-    const supabase = getSupabaseServerClient();
-    
-    // Récupérer le cours
-    const { data: cours, error: coursError } = await supabase
-      .from('cours_contenu')
-      .select('*')
-      .eq('id', coursId)
-      .single();
-    
     if (coursError) {
-      return { success: false, error: coursError.message };
+      return { success: false, error: 'Erreur lors de la création du cours' };
     }
 
-    // Récupérer les fichiers complémentaires
-    const { data: fichiers, error: fichiersError } = await supabase
-      .from('cours_fichiers_complementaires')
+    // Créer les chapitres associés
+    const chapitresToCreate = data.chapitres
+      .filter(chapitreTitre => chapitreTitre.trim())
+      .map((chapitreTitre, index) => ({
+        cours_id: cours.id,
+        titre: chapitreTitre.trim(),
+        type_contenu: 'texte' as const,
+        ordre_affichage: index + 1,
+        actif: false
+      }));
+
+    if (chapitresToCreate.length > 0) {
+      const { data: chapitres, error: chapitresError } = await supabase
+        .from('chapitres_cours')
+        .insert(chapitresToCreate)
+        .select();
+
+      if (chapitresError) {
+        return { 
+          success: true, 
+          cours, 
+          error: 'Cours créé mais erreur lors de la création des chapitres' 
+        };
+      }
+
+      return { success: true, cours, chapitres };
+    }
+
+    return { success: true, cours };
+  } catch (error) {
+    return { success: false, error: 'Erreur interne du serveur' };
+  }
+}
+
+export async function getCoursByBlocId(blocId: number): Promise<CoursApprentissage[]> {
+  try {
+    const supabase = getSupabaseServerClient();
+    
+    const { data, error } = await supabase
+      .from('cours_apprentissage')
+      .select('*')
+      .eq('bloc_id', blocId)
+      .eq('actif', true)
+      .order('numero_cours', { ascending: true });
+
+    if (error) {
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function getChapitresByCoursId(coursId: number): Promise<ChapitreCours[]> {
+  try {
+    const supabase = getSupabaseServerClient();
+    
+    const { data, error } = await supabase
+      .from('chapitres_cours')
       .select('*')
       .eq('cours_id', coursId)
+      .eq('actif', true)
       .order('ordre_affichage', { ascending: true });
 
-    return { 
-      success: true, 
-      cours, 
-      fichiers: fichiers || [] 
-    };
+    if (error) {
+      return [];
+    }
+
+    return data || [];
   } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
+    return [];
   }
 }
-export async function updateCoursServer(coursId: number, updates: UpdateCoursRequest, userId: string): Promise<{ success: boolean; error?: string }> {
+
+export async function updateCours(coursId: number, updates: Partial<CoursApprentissage>): Promise<boolean> {
   try {
     const supabase = getSupabaseServerClient();
+    
     const { error } = await supabase
-      .from('cours_contenu')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .from('cours_apprentissage')
+      .update(updates)
       .eq('id', coursId);
+
     if (error) {
-      return { success: false, error: error.message };
+      return false;
     }
-    return { success: true };
+
+    return true;
   } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
+    return false;
   }
 }
-export async function deleteCoursServer(coursId: number): Promise<{ success: boolean; error?: string }> {
+
+export async function deleteCours(coursId: number): Promise<boolean> {
   try {
     const supabase = getSupabaseServerClient();
+    
+    // Désactiver le cours au lieu de le supprimer (soft delete)
     const { error } = await supabase
-      .from('cours_contenu')
-      .delete()
+      .from('cours_apprentissage')
+      .update({ actif: false })
       .eq('id', coursId);
+
     if (error) {
-      return { success: false, error: error.message };
+      return false;
     }
-    return { success: true };
+
+    return true;
   } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
+    return false;
   }
 }
-export async function validateCoursServer(validationData: CoursValidationRequest, userId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const supabase = getSupabaseServerClient();
-    const statut = validationData.action === 'accepter' ? 'en_ligne' : 'brouillon';
-    const { error } = await supabase
-      .from('cours_contenu')
-      .update({
-        statut,
-        validated_by: userId,
-        validated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', validationData.cours_id);
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
+
+// Fonction pour déterminer le statut d'un cours
+export function getCoursStatus(cours: CoursApprentissage, chapitres: ChapitreCours[]): 'en_ligne' | 'brouillon' | 'manquant' {
+  if (chapitres.length === 0) {
+    return 'manquant';
   }
+  
+  // Logique pour déterminer si le cours est en ligne ou en brouillon
+  // Pour l'instant, on considère qu'un cours avec des chapitres est "en ligne"
+  // Vous pouvez ajuster cette logique selon vos besoins
+  return 'en_ligne';
 }
-export async function getUserProfileServer(userId: string): Promise<{ success: boolean; role?: string; error?: string }> {
+
+// Fonction pour récupérer un cours par son ID
+export async function getCoursByIdServer(coursId: number): Promise<{ success: boolean; cours?: CoursApprentissage; error?: string }> {
   try {
     const supabase = getSupabaseServerClient();
+    
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', userId)
+      .from('cours_apprentissage')
+      .select('*')
+      .eq('id', coursId)
       .single();
+
     if (error) {
       return { success: false, error: error.message };
     }
-    return { success: true, role: data.role };
+
+    return { success: true, cours: data };
   } catch (error) {
     return { success: false, error: 'Erreur de traitement' };
   }
