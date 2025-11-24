@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminUserProvider } from './components/AdminUserProvider';
+import { SessionTracker } from '@/components/SessionTracker';
 import { getSessionRole, getCurrentUser } from '@/lib/auth-api';
 
 interface AdminLayoutProps {
@@ -87,6 +88,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <AdminUserProvider>
+      <SessionTracker />
       <div className="flex min-h-screen bg-[#F8F5E4]">
         <AdminSidebar onCollapseChange={setIsCollapsed} />
         <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-24' : 'ml-64'}`}>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StudentSidebar } from './components/StudentSidebar';
+import { SessionTracker } from '@/components/SessionTracker';
 import { getSessionRole } from '@/lib/auth-api';
 
 export default function StudentLayout({
@@ -64,12 +65,15 @@ export default function StudentLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8F5E4]">
-      <StudentSidebar onCollapseChange={setIsCollapsed} />
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {children}
-      </main>
-    </div>
+    <>
+      <SessionTracker />
+      <div className="flex min-h-screen bg-[#F8F5E4]">
+        <StudentSidebar onCollapseChange={setIsCollapsed} />
+        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
+          {children}
+        </main>
+      </div>
+    </>
   );
 }
 

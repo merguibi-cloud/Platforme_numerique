@@ -159,6 +159,24 @@ export async function POST(request: NextRequest) {
     // Logger la connexion réussie
     await logLogin(request, data.user.id, data.user.email || email, 'success').catch(() => {});
     
+    // Enregistrer la session de connexion initiale (1 minute)
+    const supabaseServer = getSupabaseServerClient();
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    await supabaseServer
+      .from('sessions_connexion')
+      .upsert({
+        user_id: data.user.id,
+        date_connexion: aujourdhui,
+        duree_minutes: 1 // Initialiser avec 1 minute
+      }, {
+        onConflict: 'user_id,date_connexion',
+        ignoreDuplicates: false
+      })
+      .catch((err) => {
+        console.error('Erreur enregistrement session initiale:', err);
+        // Ne pas bloquer la connexion si l'enregistrement échoue
+      });
+    
     // Définir les cookies de session
     const response = NextResponse.json({
       success: true,

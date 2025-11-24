@@ -13,6 +13,7 @@ import { getCurrentUser, getSessionRole } from '@/lib/auth-api';
 import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 import { CandidatureProvider, useCandidature } from '@/contexts/CandidatureContext';
 import { StudentGuard } from '@/components/RoleGuard';
+import { SessionTracker } from '@/components/SessionTracker';
 
 const ValidationContent = () => {
   const router = useRouter();
@@ -286,6 +287,7 @@ const ValidationWithAuth = () => {
 
   return (
     <CandidatureProvider userId={user?.id} key={user?.id}>
+      <SessionTracker />
       <ValidationContent />
     </CandidatureProvider>
   );

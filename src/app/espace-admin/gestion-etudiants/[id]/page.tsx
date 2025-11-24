@@ -7,75 +7,153 @@ import { ArrowLeft, User, Mail, Calendar, Clock, MessageSquare, Calendar as Cale
 import AdminTopBar from '../../components/AdminTopBar';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
+interface EtudiantDetails {
+  id: string;
+  user_id: string;
+  id_etudiant: string;
+  nom: string;
+  prenom: string;
+  name: string;
+  email: string;
+  photo_url: string;
+  statut: string;
+  formation: {
+    id: number;
+    titre: string;
+    ecole: string;
+  } | null;
+  formation_titre: string;
+  progression: number;
+  temps_total: string;
+  blocs_completes: number;
+  blocs_totaux: number;
+  quiz_passes: number;
+  derniere_connexion: string | null;
+  membre_depuis: string;
+  derniere_connexion_globale: string | null;
+  temps_global: string;
+  dernieresNotes: Array<{
+    bloc: string;
+    bloc_id: number;
+    note1: string;
+    note2: string;
+    temps: string;
+  }>;
+  tempsConnexionData: Array<{
+    jour: string;
+    temps: number;
+  }>;
+  joursEntreprise: number[];
+  signalements: Array<{
+    id: string;
+    type_signalement: string;
+    description: string;
+    statut: string;
+    created_at: string;
+  }>;
+}
+
 export default function EtudiantDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
 
-  // Données mockées pour l'instant
-  const [etudiantData, setEtudiantData] = useState({
-    id: id,
-    nom: 'BOBINE',
-    prenom: 'Jean',
-    email: 'jean.bobine@example.com',
-    id_etudiant: 'ELSA20251',
-    derniere_connexion: '24/09/2025 À 14H32',
-    membre_depuis: '20/09/2025',
-    derniere_connexion_globale: '01/10/2024 14:35',
-    temps_global: '10H',
-    formation: 'RESPONSABLE DU DÉVELOPPEMENT DES ACTIVITÉS',
-    progression: 10,
-    temps_total: '5H',
-    blocs_completes: 2,
-    blocs_totaux: 19,
-    quiz_passes: 12,
-    photo_url: '', // Sera chargée depuis l'API
-  });
+  const [etudiantData, setEtudiantData] = useState<EtudiantDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const dernieresNotes = [
-    { bloc: 'BLOC 1', note1: '15,5', note2: '14', temps: '20H' },
-    { bloc: 'BLOC 2', note1: '-', note2: '11', temps: '13H' },
-    { bloc: 'BLOC 3', note1: '-', note2: '-', temps: 'OH' },
-    { bloc: 'BLOC 4', note1: '-', note2: '-', temps: 'OH' },
-    { bloc: 'BLOC 5', note1: '-', note2: '-', temps: 'OH' },
-  ];
+  // Charger les données depuis l'API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`/api/admin/etudiants/${id}/details`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setEtudiantData(result.data);
+        } else {
+          console.error('Erreur lors du chargement des données:', result.error);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
 
   const joursSemaine = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
   
-  // Calendrier complet de septembre 2025 avec jours d'août et octobre
-  // Août: 30, 31 | Septembre: 1-30 | Octobre: 1, 2, 3
-  const calendrierDates = [
-    { jour: 30, mois: 'aout', type: 'autre' },
-    { jour: 31, mois: 'aout', type: 'autre' },
-    ...Array.from({ length: 30 }, (_, i) => ({ jour: i + 1, mois: 'septembre', type: 'septembre' })),
-    { jour: 1, mois: 'octobre', type: 'autre' },
-    { jour: 2, mois: 'octobre', type: 'autre' },
-    { jour: 3, mois: 'octobre', type: 'autre' },
-  ];
-  
-  const joursEntreprise = [2, 3, 9, 10, 16, 17, 23, 24, 30];
-  const aujourdhui = 8;
-  
-  // Dates avec points (orange = au-dessus, noir = en-dessous)
-  const datesAvecPoints = {
-    2: { couleur: 'orange', position: 'top' },
-    14: { couleur: 'noir', position: 'bottom' },
-    17: { couleur: 'noir', position: 'bottom' },
-    20: { couleur: 'noir', position: 'bottom' },
-    22: { couleur: 'orange', position: 'top' },
-    26: { couleur: 'orange', position: 'top' },
-    30: { couleur: 'noir', position: 'bottom' },
+  // Générer le calendrier pour le mois actuel
+  const genererCalendrier = () => {
+    const maintenant = new Date();
+    const mois = maintenant.getMonth();
+    const annee = maintenant.getFullYear();
+    
+    // Premier jour du mois
+    const premierJour = new Date(annee, mois, 1);
+    const jourSemainePremier = premierJour.getDay() === 0 ? 6 : premierJour.getDay() - 1; // L = 0
+    
+    // Dernier jour du mois précédent
+    const dernierJourMoisPrecedent = new Date(annee, mois, 0);
+    const joursMoisPrecedent = dernierJourMoisPrecedent.getDate();
+    
+    // Dernier jour du mois actuel
+    const dernierJourMoisActuel = new Date(annee, mois + 1, 0);
+    const joursMoisActuel = dernierJourMoisActuel.getDate();
+    
+    const calendrierDates = [];
+    
+    // Jours du mois précédent
+    for (let i = jourSemainePremier - 1; i >= 0; i--) {
+      const jour = joursMoisPrecedent - i;
+      calendrierDates.push({ jour, mois: 'precedent', type: 'autre' });
+    }
+    
+    // Jours du mois actuel
+    for (let i = 1; i <= joursMoisActuel; i++) {
+      calendrierDates.push({ jour: i, mois: 'actuel', type: 'actuel' });
+    }
+    
+    // Jours du mois suivant pour compléter la grille (jusqu'à 35 cases)
+    const joursRestants = 35 - calendrierDates.length;
+    for (let i = 1; i <= joursRestants; i++) {
+      calendrierDates.push({ jour: i, mois: 'suivant', type: 'autre' });
+    }
+    
+    return calendrierDates;
   };
+  
+  const calendrierDates = genererCalendrier();
+  const aujourdhui = new Date().getDate();
+  
+  // Récupérer les jours en entreprise depuis les données
+  const joursEntreprise = etudiantData?.joursEntreprise || [];
+  
+  // Dates avec points (pour l'instant, on peut les récupérer depuis l'agenda si nécessaire)
+  const datesAvecPoints: Record<number, { couleur: string; position: string }> = {};
 
-  const tempsConnexionData = [
-    { jour: 'L', temps: 3.5 },
-    { jour: 'M', temps: 5.2 },
-    { jour: 'M', temps: 4.8 },
-    { jour: 'J', temps: 6.5 },
-    { jour: 'V', temps: 4.2 },
-    { jour: 'S', temps: 2.1 },
-    { jour: 'D', temps: 1.5 },
-  ];
+  // Utiliser les données de temps de connexion depuis l'API
+  const tempsConnexionData = etudiantData?.tempsConnexionData || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
+        <div className="text-[#032622]">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (!etudiantData) {
+    return (
+      <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
+        <div className="text-[#032622]">Étudiant non trouvé</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen">
@@ -118,10 +196,10 @@ export default function EtudiantDetailPage() {
               className="text-2xl md:text-3xl font-bold text-[#032622] mb-2"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
-              PROFIL DE {etudiantData.prenom} {etudiantData.nom}
+              PROFIL DE {etudiantData.prenom.toUpperCase()} {etudiantData.nom.toUpperCase()}
             </h1>
             <p className="text-sm text-[#032622]/70">
-              DERNIÈRE CONNEXION A LA FORMATION: {etudiantData.derniere_connexion}
+              DERNIÈRE CONNEXION A LA FORMATION: {etudiantData.derniere_connexion || 'Jamais'}
             </p>
           </div>
 
@@ -130,7 +208,7 @@ export default function EtudiantDetailPage() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-[#032622]">
-                  {etudiantData.formation}
+                  {etudiantData.formation_titre}
                 </span>
                 <span className="text-sm font-semibold text-[#032622]">
                   {etudiantData.progression}%
@@ -180,7 +258,7 @@ export default function EtudiantDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dernieresNotes.map((note, index) => (
+                  {etudiantData.dernieresNotes.map((note, index) => (
                     <tr key={index} className="border-b border-[#032622]/20">
                       <td className="px-4 py-3 text-sm font-semibold text-[#032622]">{note.bloc}</td>
                       <td className="px-4 py-3 text-center text-sm text-[#032622]">{note.note1}</td>
@@ -207,7 +285,9 @@ export default function EtudiantDetailPage() {
               </h2>
               <div className="flex items-center space-x-2">
                 <select className="px-3 py-1 border border-[#032622] bg-[#F8F5E4] text-[#032622] text-sm">
-                  <option>SEPTEMBRE 2025</option>
+                  <option>
+                    {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                  </option>
                 </select>
                 <button className="text-sm font-semibold text-[#032622] hover:underline">
                   TOUT VOIR
@@ -223,10 +303,10 @@ export default function EtudiantDetailPage() {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {calendrierDates.map((date, index) => {
-                const isEntreprise = date.mois === 'septembre' && joursEntreprise.includes(date.jour);
-                const isAujourdhui = date.mois === 'septembre' && date.jour === aujourdhui;
-                const pointInfo = date.mois === 'septembre' ? datesAvecPoints[date.jour as keyof typeof datesAvecPoints] : null;
-                const isAutreMois = date.mois !== 'septembre';
+                const isEntreprise = date.mois === 'actuel' && joursEntreprise.includes(date.jour);
+                const isAujourdhui = date.mois === 'actuel' && date.jour === aujourdhui;
+                const pointInfo = date.mois === 'actuel' ? datesAvecPoints[date.jour] : null;
+                const isAutreMois = date.mois !== 'actuel';
                 
                 return (
                   <div
@@ -299,7 +379,10 @@ export default function EtudiantDetailPage() {
 
             {/* Boutons d'action */}
             <div className="space-y-3 mb-4">
-              <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors">
+              <button 
+                onClick={() => router.push(`/espace-admin/gestion-etudiants/${id}/informations`)}
+                className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors"
+              >
                 VOIR INFORMATIONS
               </button>
               <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors">
@@ -324,38 +407,44 @@ export default function EtudiantDetailPage() {
             >
               TEMPS DE CONNEXION
             </h2>
-            <ResponsiveContainer width="100%" height={150}>
-              <BarChart data={tempsConnexionData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                <XAxis 
-                  dataKey="jour" 
-                  tick={{ fontSize: 11, fill: '#032622', fontWeight: 'bold' }}
-                  axisLine={{ stroke: '#032622', strokeWidth: 1 }}
-                  tickLine={{ stroke: '#032622' }}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#032622' }}
-                  axisLine={{ stroke: '#032622', strokeWidth: 1 }}
-                  tickLine={{ stroke: '#032622' }}
-                  width={35}
-                  label={{ value: 'Heures', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#032622', fontSize: 11 } }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#F8F5E4', 
-                    border: '1px solid #032622',
-                    borderRadius: '4px',
-                    padding: '8px 12px'
-                  }}
-                  labelStyle={{ color: '#032622', fontWeight: 'bold', marginBottom: '4px' }}
-                  formatter={(value: number) => [`${value.toFixed(1)}h`, 'Temps']}
-                />
-                <Bar 
-                  dataKey="temps" 
-                  fill="#032622"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {tempsConnexionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={150}>
+                <BarChart data={tempsConnexionData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <XAxis 
+                    dataKey="jour" 
+                    tick={{ fontSize: 11, fill: '#032622', fontWeight: 'bold' }}
+                    axisLine={{ stroke: '#032622', strokeWidth: 1 }}
+                    tickLine={{ stroke: '#032622' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#032622' }}
+                    axisLine={{ stroke: '#032622', strokeWidth: 1 }}
+                    tickLine={{ stroke: '#032622' }}
+                    width={35}
+                    label={{ value: 'Heures', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#032622', fontSize: 11 } }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#F8F5E4', 
+                      border: '1px solid #032622',
+                      borderRadius: '4px',
+                      padding: '8px 12px'
+                    }}
+                    labelStyle={{ color: '#032622', fontWeight: 'bold', marginBottom: '4px' }}
+                    formatter={(value: number) => [`${value.toFixed(1)}h`, 'Temps']}
+                  />
+                  <Bar 
+                    dataKey="temps" 
+                    fill="#032622"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="bg-white border border-[#032622]/30 p-8 text-center text-[#032622]/50">
+                <p className="text-sm">Aucune donnée de connexion disponible</p>
+              </div>
+            )}
           </div>
 
           {/* Signalements */}
@@ -366,9 +455,32 @@ export default function EtudiantDetailPage() {
             >
               SIGNALEMENTS
             </h2>
-            <div className="bg-white border border-[#032622]/30 p-8 text-center text-[#032622]/50">
-              <p className="text-sm">Aucun signalement</p>
-            </div>
+            {etudiantData.signalements && etudiantData.signalements.length > 0 ? (
+              <div className="space-y-3">
+                {etudiantData.signalements.map((signalement) => (
+                  <div key={signalement.id} className="bg-white border border-[#032622]/30 p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-sm font-semibold text-[#032622]">{signalement.type_signalement}</span>
+                      <span className={`text-xs px-2 py-1 ${
+                        signalement.statut === 'ouvert' ? 'bg-red-100 text-red-800' :
+                        signalement.statut === 'en_cours' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {signalement.statut.toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#032622]/70">{signalement.description}</p>
+                    <p className="text-xs text-[#032622]/50 mt-2">
+                      {new Date(signalement.created_at).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-[#032622]/30 p-8 text-center text-[#032622]/50">
+                <p className="text-sm">Aucun signalement</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
