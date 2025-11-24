@@ -30,6 +30,13 @@ const menuItems = [
     href: '/espace-admin/gestion-formations'
   },
   { 
+    id: 'gestion-inscriptions', 
+    label: 'GESTION DES INSCRIPTIONS', 
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+    href: '/espace-admin/gestion-inscriptions'
+  },
+  { 
     id: 'attribution', 
     label: 'ESPACE D\'ATTRIBUTION', 
     icon: '/menue_etudiant/Etudiant.png',
@@ -150,6 +157,8 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       setActiveItem('gestion-etudiants');
     } else if (pathname.includes('/gestion-formations')) {
       setActiveItem('gestion-formations');
+    } else if (pathname.includes('/gestion-inscriptions')) {
+      setActiveItem('gestion-inscriptions');
     } else if (pathname.includes('/bibliotheque')) {
       setActiveItem('bibliotheque');
     } else if (pathname.includes('/agenda')) {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
-import { ChevronDown, MessageCircle, PencilLine, Users } from "lucide-react";
+import { ChevronDown, MessageCircle, PencilLine, Users, UserCog } from "lucide-react";
 import { getAllFormations, getFormationsByEcole } from "@/lib/formations";
 import { Formation } from "@/types/formations";
 import AdminTopBar from "./AdminTopBar";
@@ -754,6 +754,7 @@ const AdminDashboardContent = () => {
               blocId={firstBlocId}
               moduleId={firstModuleId}
             />
+            <UsersManagementCard />
             <CorrectionsCard corrections={data.corrections} />
             <AgendaCard agenda={data.agenda} />
           </div>
@@ -871,6 +872,88 @@ const CoursesCard = ({
       )}
     </section>
   );
+
+};
+
+const UsersManagementCard = () => {
+  const [inscriptions, setInscriptions] = useState<{
+    leads: InscriptionItem[];
+    candidats: InscriptionItem[];
+  }>({
+    leads: [],
+    candidats: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInscriptions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/admin/inscriptions', {
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setInscriptions({
+              leads: data.leads || [],
+              candidats: data.candidats || [],
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des inscriptions:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInscriptions();
+  }, []);
+
+  const hasInscriptions = inscriptions.leads.length > 0 || inscriptions.candidats.length > 0;
+
+  return (
+    <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <h2
+          className="text-2xl font-bold text-[#032622]"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          GESTION DES INSCRIPTIONS
+        </h2>
+        <Link
+          href="/espace-admin/gestion-inscriptions"
+          className="text-sm font-semibold text-[#032622] border border-[#032622] px-4 py-2 inline-flex items-center space-x-2 hover:bg-[#eae5cf] transition-colors"
+        >
+          <UserCog className="w-4 h-4" />
+          <span>Accéder à la gestion</span>
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622] mx-auto mb-4"></div>
+          <p className="text-[#032622]">Chargement des inscriptions...</p>
+        </div>
+      ) : !hasInscriptions ? (
+        <div className="text-center py-8">
+          <p className="text-[#032622] text-lg mb-2">Aucune inscription disponible</p>
+          <p className="text-[#032622]/70 text-sm">Les nouvelles inscriptions apparaîtront ici</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {inscriptions.leads.length > 0 && (
+            <BlockInscriptionsList title="LEADS" colorClass="bg-[#F0C75E]" inscriptions={inscriptions.leads} type="lead" />
+          )}
+          {inscriptions.candidats.length > 0 && (
+            <BlockInscriptionsList title="CANDIDATS" colorClass="bg-[#4CAF50]" inscriptions={inscriptions.candidats} type="candidat" />
+          )}
+        </div>
+      )}
+    </section>
+  );
 };
 
 const BlockCoursesList = ({
@@ -920,6 +1003,99 @@ const BlockCoursesList = ({
                 className="col-span-2 text-right font-semibold text-[#032622] hover:underline"
               >
                 {course.statut === "en_cours_examen" ? "À vérifier" : "Modifier"}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+interface InscriptionItem {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  formation?: string;
+  date?: string;
+}
+
+const BlockInscriptionsList = ({
+  title,
+  colorClass,
+  inscriptions,
+  type,
+}: {
+  title: string;
+  colorClass: string;
+  inscriptions: InscriptionItem[];
+  type: "lead" | "candidat";
+}) => {
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "nouveau":
+        return "Nouveau";
+      case "contacte":
+        return "Contacté";
+      case "en_attente":
+        return "En attente";
+      case "accepte":
+        return "Accepté";
+      case "refuse":
+        return "Refusé";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "nouveau":
+        return "bg-[#F0C75E]";
+      case "contacte":
+        return "bg-[#4CAF50]";
+      case "en_attente":
+        return "bg-[#F0C75E]";
+      case "accepte":
+        return "bg-[#4CAF50]";
+      case "refuse":
+        return "bg-[#D96B6B]";
+      default:
+        return "bg-[#C9C6B4]";
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center space-x-2">
+        <span className={`w-2 h-2 rounded-full ${colorClass}`} />
+        <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+      </div>
+      <div className="space-y-2">
+        {inscriptions.map((inscription) => {
+          const statusLabel = getStatusLabel(inscription.status);
+          const statusColor = getStatusColor(inscription.status);
+          
+          return (
+            <div
+              key={inscription.id}
+              className="grid grid-cols-12 gap-2 md:gap-4 items-center border border-[#032622]/40 px-3 md:px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
+            >
+              <span className="col-span-12 md:col-span-4 uppercase tracking-wide font-semibold truncate">
+                {inscription.name}
+              </span>
+              <span className="col-span-12 md:col-span-4 text-xs md:text-sm truncate">
+                {inscription.formation || "-"}
+              </span>
+              <span className={`col-span-6 md:col-span-2 px-2 py-1 text-xs font-semibold text-white ${statusColor} text-center`}>
+                {statusLabel}
+              </span>
+              <Link
+                href={`/espace-admin/gestion-inscriptions/${type}/${inscription.id}`}
+                className="col-span-6 md:col-span-2 text-right font-semibold text-[#032622] hover:underline"
+              >
+                Voir
               </Link>
             </div>
           );
