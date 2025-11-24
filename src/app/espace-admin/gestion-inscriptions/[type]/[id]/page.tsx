@@ -2,23 +2,54 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ArrowLeft, Download, Eye, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
 
 interface CandidatData {
   id: string;
   user_id: string;
-  name: string;
+  role: 'lead' | 'candidat';
   email: string;
   telephone?: string;
-  date_naissance?: string;
-  adresse?: string;
-  ville?: string;
-  code_postal?: string;
-  pays?: string;
-  formation?: string;
-  type: 'lead' | 'candidat';
-  date_inscription?: string;
+  formation_id?: number;
+  created_at: string;
+  candidature: {
+    id: string;
+    civilite?: string;
+    nom: string;
+    prenom: string;
+    adresse?: string;
+    code_postal?: string;
+    ville?: string;
+    pays?: string;
+    date_naissance?: string;
+    type_formation?: string;
+    etudiant_etranger?: string;
+    a_une_entreprise?: string;
+    current_step?: string;
+    status?: string;
+    photo_identite_path?: string;
+    cv_path?: string;
+    diplome_path?: string;
+    releves_paths?: string[];
+    piece_identite_paths?: string[];
+    lettre_motivation_path?: string;
+    created_at?: string;
+  } | null;
+  formation: {
+    id: number;
+    titre: string;
+    ecole: string;
+  } | null;
 }
+
+const stepsMap: Record<string, number> = {
+  informations: 1,
+  contrat: 2,
+  documents: 3,
+  recap: 4,
+  validation: 5,
+};
 
 export default function CandidatDetailPage() {
   const params = useParams();
@@ -26,84 +57,104 @@ export default function CandidatDetailPage() {
   const type = params.type as 'lead' | 'candidat';
   const id = params.id as string;
 
-  const [candidat, setCandidat] = useState<CandidatData | null>(null);
+  const [data, setData] = useState<CandidatData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Récupérer les données depuis l'API
-    // Pour l'instant, données mockées
-    setTimeout(() => {
-      setCandidat({
-        id: id,
-        user_id: 'mock-user-id',
-        name: 'TOJI ZENIN',
-        email: 'toute.nglu@fr',
-        telephone: '06 12 30 40 40',
-        date_naissance: '28/08/1990',
-        adresse: '85 AVENUE DU FLEUVE VERDE',
-        ville: 'SAINT-PIERRE',
-        code_postal: '97410',
-        pays: 'France',
-        formation: 'COMMUNITY MANAGER',
-        type: type,
-        date_inscription: '10/08/2023',
-      });
-      setIsLoading(false);
-    }, 500);
+    loadData();
   }, [id, type]);
 
-  const steps = [
-    { id: 1, label: 'INFORMATIONS', active: true },
-    { id: 2, label: 'CONTRAT', active: false },
-    { id: 3, label: 'INSCRIPTION', active: false },
-    { id: 4, label: 'DOSSIER', active: false },
-    { id: 5, label: 'VALIDATION', active: false },
-  ];
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/inscriptions/${type}/${id}`, {
+        credentials: 'include',
+      });
 
-  const currentStep = 1;
-  const totalSteps = 5;
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setData(result.data);
+          
+          // Charger la photo si elle existe
+          if (result.data.candidature?.photo_identite_path) {
+            loadPhoto(result.data.candidature.photo_identite_path);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const paiements = [
-    { date: '10 OCTOBRE 2023', statut: 'paye', montant: '950,00€' },
-    { date: '10 NOVEMBRE 2023', statut: 'en_attente', montant: '950,00€' },
-    { date: '10 DÉCEMBRE 2023', statut: 'en_attente', montant: '950,00€' },
-    { date: '10 JANVIER 2024', statut: 'en_attente', montant: '950,00€' },
-  ];
+  const loadPhoto = async (photoPath: string) => {
+    try {
+      // Générer l'URL signée pour la photo
+      const response = await fetch(`/api/photo-url?path=${encodeURIComponent(photoPath)}&bucket=user_documents`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.url) {
+          setPhotoUrl(result.url);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement de la photo:', error);
+    }
+  };
 
-  const documents = [
-    { nom: 'CURRICULUM VITAE', statut: 'envoye' },
-    { nom: "PIÈCE D'IDENTITÉ", statut: 'manquante' },
-    { nom: 'DIPLÔMES', statut: 'manquante' },
-    { nom: 'RELEVÉS DE NOTES', statut: 'manquante' },
-    { nom: 'PHOTO', statut: 'envoye' },
-  ];
+  const handleAction = async (action: string) => {
+    setIsActionLoading(action);
+    try {
+      const response = await fetch(`/api/admin/inscriptions/${type}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action }),
+      });
 
-  const suivi = [
-    {
-      date: 'OCT 10 10H15',
-      type: 'APPEL TÉLÉPHONIQUE',
-      description: 'Durée: 30 min, discussion sur les modalités, documents à fournir et entretien d\'admission.',
-      auteur: 'Par Ymir F.',
-    },
-    {
-      date: 'SEPT 20 13H05',
-      type: 'ENVOI D\'EMAIL DE RELANCE',
-      description: 'Envoi des documents manquants à fournir.',
-      auteur: 'Par Ymir F.',
-    },
-    {
-      date: 'SEPT 12 13H09',
-      type: 'NOTE INTERNE',
-      description: 'Candidature semble prometteuse, à recontacter rapidement.',
-      auteur: 'Par Ymir F.',
-    },
-    {
-      date: 'SEPT 12',
-      type: 'ENVOI D\'EMAIL DE RELANCE',
-      description: '',
-      auteur: 'Par Ymir F.',
-    },
-  ];
+      const result = await response.json();
+      
+      if (result.success) {
+        if (action === 'debloquer_acces' || action === 'supprimer_candidature') {
+          router.push('/espace-admin/gestion-inscriptions');
+        } else {
+          // Recharger les données
+          loadData();
+        }
+      } else {
+        alert(result.error || 'Erreur lors de l\'action');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de l\'action');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleDownloadDocument = async (path: string, bucket: string = 'user_documents') => {
+    try {
+      const response = await fetch(`/api/photo-url?path=${encodeURIComponent(path)}&bucket=${bucket}`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.url) {
+          window.open(result.url, '_blank');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -116,13 +167,13 @@ export default function CandidatDetailPage() {
     );
   }
 
-  if (!candidat) {
+  if (!data) {
     return (
       <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-[#032622] text-lg mb-2">Candidat non trouvé</p>
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/espace-admin/gestion-inscriptions')}
             className="text-[#032622] underline hover:no-underline"
           >
             Retour
@@ -131,6 +182,57 @@ export default function CandidatDetailPage() {
       </div>
     );
   }
+
+  const candidature = data.candidature;
+  const nomComplet = candidature ? `${candidature.prenom} ${candidature.nom}` : data.email.split('@')[0];
+  const dateInscription = candidature?.created_at 
+    ? new Date(candidature.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : new Date(data.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  // Déterminer l'étape actuelle
+  const currentStep = candidature?.current_step ? stepsMap[candidature.current_step] || 1 : 1;
+  const totalSteps = 5;
+  const steps = [
+    { id: 1, label: 'INFORMATIONS', active: currentStep >= 1 },
+    { id: 2, label: 'CONTRAT', active: currentStep >= 2 },
+    { id: 3, label: 'DOCUMENTS', active: currentStep >= 3 },
+    { id: 4, label: 'RECAP', active: currentStep >= 4 },
+    { id: 5, label: 'VALIDATION', active: currentStep >= 5 },
+  ];
+
+  // Documents avec statuts
+  const documents = [
+    { 
+      nom: 'CURRICULUM VITAE', 
+      path: candidature?.cv_path,
+      statut: candidature?.cv_path ? 'envoye' : 'manquante'
+    },
+    { 
+      nom: "PIÈCE D'IDENTITÉ", 
+      path: candidature?.piece_identite_paths?.[0],
+      statut: candidature?.piece_identite_paths && candidature.piece_identite_paths.length > 0 ? 'envoye' : 'manquante'
+    },
+    { 
+      nom: 'DIPLÔMES', 
+      path: candidature?.diplome_path,
+      statut: candidature?.diplome_path ? 'envoye' : 'manquante'
+    },
+    { 
+      nom: 'RELEVÉS DE NOTES', 
+      path: candidature?.releves_paths?.[0],
+      statut: candidature?.releves_paths && candidature.releves_paths.length > 0 ? 'envoye' : 'manquante'
+    },
+    { 
+      nom: 'PHOTO', 
+      path: candidature?.photo_identite_path,
+      statut: candidature?.photo_identite_path ? 'envoye' : 'manquante'
+    },
+    { 
+      nom: 'LETTRE DE MOTIVATION', 
+      path: candidature?.lettre_motivation_path,
+      statut: candidature?.lettre_motivation_path ? 'envoye' : 'manquante'
+    },
+  ];
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen">
@@ -147,60 +249,90 @@ export default function CandidatDetailPage() {
           className="text-3xl md:text-4xl font-bold text-[#032622] mb-2"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
-          PROFIL {type === 'lead' ? 'LEAD' : 'CANDIDAT'} DE {candidat.name.toUpperCase()}
+          PROFIL {type === 'lead' ? 'LEAD' : 'CANDIDAT'} DE {nomComplet.toUpperCase()}
         </h1>
-        {candidat.date_inscription && (
-          <p className="text-[#032622]/70 text-sm md:text-base">
-            CANDIDATURE COMMENCÉE LE {candidat.date_inscription} À 03H32
-          </p>
-        )}
+        <p className="text-[#032622]/70 text-sm md:text-base">
+          CANDIDATURE COMMENCÉE LE {dateInscription}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Carte Informations Candidat */}
+        {/* Carte Informations Personnelles */}
         <div className="lg:col-span-2 border border-[#032622] bg-[#F8F5E4] p-6">
+          <h2
+            className="text-xl font-bold text-[#032622] mb-4 uppercase"
+            style={{ fontFamily: "var(--font-termina-bold)" }}
+          >
+            INFORMATIONS PERSONNELLES
+          </h2>
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Avatar */}
-            <div className="w-32 h-32 border border-[#032622]/50 bg-[#C9C6B4] flex items-center justify-center flex-shrink-0">
-              <User className="w-16 h-16 text-[#032622]/50" />
+            {/* Photo */}
+            <div className="w-32 h-40 border border-[#032622]/50 bg-[#C9C6B4] flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {photoUrl ? (
+                <Image
+                  src={photoUrl}
+                  alt="Photo"
+                  width={128}
+                  height={160}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-16 h-16 text-[#032622]/50" />
+              )}
             </div>
 
-            {/* Informations */}
-            <div className="flex-1 space-y-3">
-              <h2
-                className="text-2xl font-bold text-[#032622] uppercase"
-                style={{ fontFamily: "var(--font-termina-bold)" }}
-              >
-                {candidat.name}
-              </h2>
-
-              <div className="space-y-2 text-sm text-[#032622]">
-                <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4" />
-                  <span>{candidat.email}</span>
+            {/* Informations en 2 colonnes */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-3">
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">CIVILITÉ:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.civilite || '-'}</span>
                 </div>
-                {candidat.telephone && (
-                  <div className="flex items-center space-x-2">
-                    <Phone className="w-4 h-4" />
-                    <span>{candidat.telephone}</span>
-                  </div>
-                )}
-                {candidat.date_naissance && (
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>NÉ LE {candidat.date_naissance} À SEINS</span>
-                  </div>
-                )}
-                {(candidat.adresse || candidat.ville) && (
-                  <div className="flex items-start space-x-2">
-                    <MapPin className="w-4 h-4 mt-1" />
-                    <span>
-                      {candidat.adresse}
-                      {candidat.ville && `, ${candidat.ville}`}
-                      {candidat.code_postal && ` ${candidat.code_postal}`}
-                    </span>
-                  </div>
-                )}
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">NOM:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.nom || '-'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">PRÉNOM:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.prenom || '-'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">TYPE DE FORMATION:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.type_formation || '-'}</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">TÉLÉPHONE:</span>
+                  <span className="ml-2 text-[#032622]">{data.telephone || '-'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">EMAIL:</span>
+                  <span className="ml-2 text-[#032622]">{data.email || '-'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">ADRESSE:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.adresse || '-'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">CODE POSTAL:</span>
+                  <span className="ml-2 text-[#032622]">
+                    {candidature?.code_postal || ''}
+                    {candidature?.ville && `, ${candidature.ville}`}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">PAYS:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.pays || 'France'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">ÉTUDIANT ÉTRANGER:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.etudiant_etranger || 'non'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-[#032622] uppercase">A UNE ENTREPRISE:</span>
+                  <span className="ml-2 text-[#032622]">{candidature?.a_une_entreprise || 'non'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -215,17 +347,37 @@ export default function CandidatDetailPage() {
             ACTION
           </h2>
           <div className="space-y-3">
-            <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm">
-              DÉBLOQUER L'ACCÈS À LA PLATEFORME
+            <button
+              onClick={() => handleAction('debloquer_acces')}
+              disabled={isActionLoading === 'debloquer_acces'}
+              className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50"
+            >
+              {isActionLoading === 'debloquer_acces' ? 'TRAITEMENT...' : "DÉBLOQUER L'ACCÈS À LA PLATEFORME"}
             </button>
-            <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm">
-              DÉBLOQUER L'ÉTAPE SUIVANTE
+            <button
+              onClick={() => handleAction('debloquer_etape')}
+              disabled={isActionLoading === 'debloquer_etape'}
+              className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50"
+            >
+              {isActionLoading === 'debloquer_etape' ? 'TRAITEMENT...' : "DÉBLOQUER L'ÉTAPE SUIVANTE"}
             </button>
-            <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm">
-              RELANCER PAR MAIL
+            <button
+              onClick={() => handleAction('relancer_mail')}
+              disabled={isActionLoading === 'relancer_mail'}
+              className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50"
+            >
+              {isActionLoading === 'relancer_mail' ? 'TRAITEMENT...' : 'RELANCER PAR MAIL'}
             </button>
-            <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm">
-              SUPPRIMER LA CANDIDATURE
+            <button
+              onClick={() => {
+                if (confirm('Êtes-vous sûr de vouloir supprimer cette candidature ?')) {
+                  handleAction('supprimer_candidature');
+                }
+              }}
+              disabled={isActionLoading === 'supprimer_candidature'}
+              className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50"
+            >
+              {isActionLoading === 'supprimer_candidature' ? 'SUPPRESSION...' : 'SUPPRIMER LA CANDIDATURE'}
             </button>
           </div>
         </div>
@@ -275,19 +427,21 @@ export default function CandidatDetailPage() {
       </div>
 
       {/* Formation Choisie */}
-      <div className="border border-[#032622] bg-[#F8F5E4] p-6 mb-6">
-        <h2
-          className="text-xl font-bold text-[#032622] mb-4"
-          style={{ fontFamily: "var(--font-termina-bold)" }}
-        >
-          FORMATION CHOISIE
-        </h2>
-        <div className="space-y-2 text-sm text-[#032622]">
-          <p><span className="font-semibold">ÉCOLE:</span> DOFYL LEGACY</p>
-          <p><span className="font-semibold">TYPE DE FORMATION:</span> FORMATION INITIALE</p>
-          <p><span className="font-semibold">FORMATION:</span> {candidat.formation || '-'}</p>
+      {data.formation && (
+        <div className="border border-[#032622] bg-[#F8F5E4] p-6 mb-6">
+          <h2
+            className="text-xl font-bold text-[#032622] mb-4"
+            style={{ fontFamily: "var(--font-termina-bold)" }}
+          >
+            FORMATION CHOISIE
+          </h2>
+          <div className="space-y-2 text-sm text-[#032622]">
+            <p><span className="font-semibold">ÉCOLE:</span> {data.formation.ecole}</p>
+            <p><span className="font-semibold">TYPE DE FORMATION:</span> {candidature?.type_formation || 'FORMATION INITIALE'}</p>
+            <p><span className="font-semibold">FORMATION:</span> {data.formation.titre}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Contrat */}
@@ -349,7 +503,12 @@ export default function CandidatDetailPage() {
                 <span className="font-semibold">Coût de la Formation:</span> 10 000,00€
               </p>
               <div className="space-y-2">
-                {paiements.map((paiement, index) => (
+                {[
+                  { date: '10 OCTOBRE 2023', statut: 'paye', montant: '950,00€' },
+                  { date: '10 NOVEMBRE 2023', statut: 'en_attente', montant: '950,00€' },
+                  { date: '10 DÉCEMBRE 2023', statut: 'en_attente', montant: '950,00€' },
+                  { date: '10 JANVIER 2024', statut: 'en_attente', montant: '950,00€' },
+                ].map((paiement, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border border-[#032622]/20 bg-[#F8F5E4]"
@@ -403,15 +562,21 @@ export default function CandidatDetailPage() {
                     doc.statut === 'envoye' ? 'bg-[#4CAF50]' : 'bg-[#D96B6B]'
                   }`}
                 >
-                  {doc.statut === 'envoye' ? 'ENVOYÉ' : doc.statut === 'envoye' ? 'ENVOYÉE' : 'MANQUANTE'}
+                  {doc.statut === 'envoye' ? 'ENVOYÉ' : doc.nom === 'PHOTO' ? 'ENVOYÉE' : 'MANQUANTE'}
                 </span>
-                {doc.statut === 'envoye' && (
+                {doc.statut === 'envoye' && doc.path && (
                   <>
-                    <button className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1">
+                    <button
+                      onClick={() => handleDownloadDocument(doc.path!, 'user_documents')}
+                      className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1"
+                    >
                       <Eye className="w-4 h-4" />
                       <span>VOIR</span>
                     </button>
-                    <button className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1">
+                    <button
+                      onClick={() => handleDownloadDocument(doc.path!, 'user_documents')}
+                      className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1"
+                    >
                       <Download className="w-4 h-4" />
                       <span>TÉLÉCHARGER</span>
                     </button>
@@ -437,7 +602,32 @@ export default function CandidatDetailPage() {
           </button>
         </div>
         <div className="space-y-4">
-          {suivi.map((item, index) => (
+          {[
+            {
+              date: 'OCT 10 10H15',
+              type: 'APPEL TÉLÉPHONIQUE',
+              description: 'Durée: 30 min, discussion sur les modalités, documents à fournir et entretien d\'admission.',
+              auteur: 'Par Ymir F.',
+            },
+            {
+              date: 'SEPT 20 13H05',
+              type: 'ENVOI D\'EMAIL DE RELANCE',
+              description: 'Envoi des documents manquants à fournir.',
+              auteur: 'Par Ymir F.',
+            },
+            {
+              date: 'SEPT 12 13H09',
+              type: 'NOTE INTERNE',
+              description: 'Candidature semble prometteuse, à recontacter rapidement.',
+              auteur: 'Par Ymir F.',
+            },
+            {
+              date: 'SEPT 12',
+              type: 'ENVOI D\'EMAIL DE RELANCE',
+              description: '',
+              auteur: 'Par Ymir F.',
+            },
+          ].map((item, index) => (
             <div key={index} className="border-l-4 border-[#032622] pl-4 pb-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -458,4 +648,3 @@ export default function CandidatDetailPage() {
     </div>
   );
 }
-

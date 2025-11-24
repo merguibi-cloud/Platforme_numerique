@@ -25,13 +25,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Vérifier que l'utilisateur a accès à cette photo
-    const userId = (photoPath.split('/'))[1]; // profiles/user_id/photo.jpg
-    if (userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Accès non autorisé à cette photo' },
-        { status: 403 }
-      );
+    // Pour les admins, on autorise l'accès à tous les documents
+    // Vérifier si l'utilisateur est admin
+    const { data: adminCheck } = await supabase
+      .from('administrateurs')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Si ce n'est pas un admin, vérifier que l'utilisateur a accès à cette photo
+    if (!adminCheck) {
+      const userId = (photoPath.split('/'))[1]; // profiles/user_id/photo.jpg
+      if (userId !== user.id) {
+        return NextResponse.json(
+          { error: 'Accès non autorisé à cette photo' },
+          { status: 403 }
+        );
+      }
     }
 
     // Générer l'URL signée (valide 1 heure)
