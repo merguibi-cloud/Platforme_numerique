@@ -160,22 +160,40 @@ export async function POST(request: NextRequest) {
     await logLogin(request, data.user.id, data.user.email || email, 'success').catch(() => {});
     
     // Enregistrer la session de connexion initiale (1 minute)
-    const supabaseServer = getSupabaseServerClient();
-    const aujourdhui = new Date().toISOString().split('T')[0];
-    await supabaseServer
-      .from('sessions_connexion')
-      .upsert({
-        user_id: data.user.id,
-        date_connexion: aujourdhui,
-        duree_minutes: 1 // Initialiser avec 1 minute
-      }, {
-        onConflict: 'user_id,date_connexion',
-        ignoreDuplicates: false
-      })
-      .catch((err) => {
-        console.error('Erreur enregistrement session initiale:', err);
-        // Ne pas bloquer la connexion si l'enregistrement échoue
-      });
+    // Utiliser une approche avec vérification pour éviter les erreurs
+    try {
+      const supabaseServer = getSupabaseServerClient();
+      const aujourdhui = new Date().toISOString().split('T')[0];
+      
+      // Vérifier si une session existe déjà pour aujourd'hui
+      const { data: existingSession } = await supabaseServer
+        .from('sessions_connexion')
+        .select('id, duree_minutes')
+        .eq('user_id', data.user.id)
+        .eq('date_connexion', aujourdhui)
+        .maybeSingle();
+
+      if (existingSession) {
+        // Mettre à jour la durée existante (additionner 1 minute)
+        const nouvelleDuree = (existingSession.duree_minutes || 0) + 1;
+        await supabaseServer
+          .from('sessions_connexion')
+          .update({ duree_minutes: nouvelleDuree })
+          .eq('id', existingSession.id);
+      } else {
+        // Créer une nouvelle session
+        await supabaseServer
+          .from('sessions_connexion')
+          .insert({
+            user_id: data.user.id,
+            date_connexion: aujourdhui,
+            duree_minutes: 1 // Initialiser avec 1 minute
+          });
+      }
+    } catch (err) {
+      console.error('Erreur enregistrement session initiale:', err);
+      // Ne pas bloquer la connexion si l'enregistrement échoue
+    }
     
     // Définir les cookies de session
     const response = NextResponse.json({

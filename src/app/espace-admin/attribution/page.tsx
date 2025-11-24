@@ -833,7 +833,7 @@ export default function AttributionPage() {
           type="success"
         />
         </div>
-    </div>
+        
   );
 }
 
