@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { AdminSidebar } from '../components/AdminSidebar';
 import AdminTopBar from '../components/AdminTopBar';
 import { Search, Filter, UserCog, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -54,7 +53,11 @@ export default function GestionEtudiants() {
 
   // Obtenir les écoles uniques
   const ecoles = useMemo(() => {
-    const uniqueEcoles = Array.from(new Set(etudiants.map(e => e.ecole).filter(Boolean)));
+    const uniqueEcoles = Array.from(new Set(
+      etudiants
+        .map(e => e.ecole)
+        .filter((ecole): ecole is string => Boolean(ecole))
+    ));
     return uniqueEcoles;
   }, [etudiants]);
 
@@ -122,12 +125,7 @@ export default function GestionEtudiants() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F5E4] flex">
-      {/* Sidebar gauche */}
-      <AdminSidebar />
-      
-      {/* Contenu principal */}
-      <div className="flex-1 p-6 md:p-10">
+    <div className="flex-1 p-6 md:p-10">
         <AdminTopBar notificationCount={0} className="mb-6" />
         
         <div className="space-y-6">
@@ -206,7 +204,7 @@ export default function GestionEtudiants() {
                   >
                     <option value="all">Toutes</option>
                     {ecoles.map((ecole) => (
-                      <option key={ecole} value={ecole}>
+                      <option key={ecole} value={ecole || ''}>
                         {ecole}
                       </option>
                     ))}
@@ -291,7 +289,6 @@ export default function GestionEtudiants() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

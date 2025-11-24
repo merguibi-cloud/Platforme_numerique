@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Plus, ChevronDown, Search, Pencil, Trash2, X } from "lucide-react";
-import { AdminSidebar } from "../components/AdminSidebar";
 import AdminTopBar from "../components/AdminTopBar";
 import { Modal } from "@/app/Modal";
 
@@ -288,9 +287,7 @@ export default function AttributionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F5E4] flex">
-      <AdminSidebar />
-      <div className="flex-1 p-10">
+    <div className="flex-1 p-10">
         <AdminTopBar notificationCount={0} className="mb-6" />
         <div className="space-y-6">
           {/* Titre */}
@@ -836,7 +833,7 @@ export default function AttributionPage() {
           type="success"
         />
         </div>
-      </div>
+    </div>
   );
 }
 

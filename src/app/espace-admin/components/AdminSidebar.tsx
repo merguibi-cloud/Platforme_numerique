@@ -180,35 +180,50 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   }, []);
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
+    <div className={`${isCollapsed ? 'w-24' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
       {/* Logo et titre */}
-      <div className="p-6 border-b border-gray-600">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Image 
-              src="/menue_etudiant/ESObeige.png" 
-              alt="ELITE SOCIETY ONLINE" 
-              width={40} 
-              height={40}
-              className="w-10 h-10"
-            />
-            {!isCollapsed && (
-              <div>
-                <h1 className="text-white text-sm font-bold uppercase tracking-wide">
-                  ELITE SOCIETY
-                </h1>
-                <p className="text-white text-xs opacity-80">
-                  ADMIN
-                </p>
+      <div className={`${isCollapsed ? 'p-4' : 'p-6'} border-b border-gray-600`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {isCollapsed ? (
+            <button
+              onClick={handleCollapse}
+              className="flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <Image 
+                src="/menue_etudiant/ESObeige.png" 
+                alt="ELITE SOCIETY ONLINE" 
+                width={36} 
+                height={36}
+                className="w-9 h-9"
+              />
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center space-x-3">
+                <Image 
+                  src="/menue_etudiant/ESObeige.png" 
+                  alt="ELITE SOCIETY ONLINE" 
+                  width={50} 
+                  height={50}
+                  className="w-12 h-12"
+                />
+                <div>
+                  <h1 className="text-white text-sm font-bold uppercase tracking-wide">
+                    ELITE SOCIETY
+                  </h1>
+                  <p className="text-white text-xs opacity-80">
+                    ADMIN
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
-          <button
-            onClick={handleCollapse}
-            className="text-white hover:bg-gray-700 p-1 rounded transition-colors"
-          >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+              <button
+                onClick={handleCollapse}
+                className="text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

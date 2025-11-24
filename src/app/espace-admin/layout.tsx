@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <AdminUserProvider>
       <div className="flex min-h-screen bg-[#F8F5E4]">
         <AdminSidebar onCollapseChange={setIsCollapsed} />
-        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-24' : 'ml-64'}`}>
           {children}
         </main>
       </div>
