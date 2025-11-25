@@ -149,6 +149,29 @@ export async function PUT(request: NextRequest) {
 
     await logUpdate(request, 'etudes_cas', etudeCasId, oldEtudeCas || {}, etudeCas, Object.keys(updateData), `Mise à jour de l'étude de cas "${etudeCas.titre || etudeCasId}"`).catch(() => {});
 
+    // Vérifier si l'étude de cas est vide (sans questions) et la supprimer automatiquement
+    const { data: questions } = await supabase
+      .from('questions_etude_cas')
+      .select('id')
+      .eq('etude_cas_id', etudeCasId)
+      .limit(1);
+
+    if (!questions || questions.length === 0) {
+      // L'étude de cas est vide, la désactiver
+      await supabase
+        .from('etudes_cas')
+        .update({ actif: false })
+        .eq('id', etudeCasId);
+
+      const { logDelete } = await import('@/lib/audit-logger');
+      await logDelete(request, 'etudes_cas', etudeCasId, etudeCas, `Suppression automatique de l'étude de cas vide "${etudeCas.titre || etudeCasId}" (aucune question)`).catch(() => {});
+      
+      return NextResponse.json({ 
+        etudeCas: { ...etudeCas, actif: false },
+        message: 'Étude de cas désactivée automatiquement car vide'
+      });
+    }
+
     return NextResponse.json({ etudeCas });
   } catch (error) {
     console.error('Erreur dans PUT /api/etude-cas:', error);

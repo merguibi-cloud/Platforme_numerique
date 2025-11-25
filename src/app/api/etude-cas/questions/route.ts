@@ -169,6 +169,34 @@ export async function PUT(request: NextRequest) {
       .eq('id', questionId)
       .single();
 
+    // Vérifier si l'étude de cas est maintenant vide (si la question mise à jour est vide)
+    if (questionWithReponses?.etude_cas_id && (!questionWithReponses.actif || !questionWithReponses.question?.trim())) {
+      const { data: remainingQuestions } = await supabase
+        .from('questions_etude_cas')
+        .select('id')
+        .eq('etude_cas_id', questionWithReponses.etude_cas_id)
+        .limit(1);
+
+      // Si aucune question ne reste, supprimer l'étude de cas
+      if (!remainingQuestions || remainingQuestions.length === 0) {
+        const { data: etudeCasToDelete } = await supabase
+          .from('etudes_cas')
+          .select('*')
+          .eq('id', questionWithReponses.etude_cas_id)
+          .single();
+
+        if (etudeCasToDelete) {
+          await supabase
+            .from('etudes_cas')
+            .update({ actif: false })
+            .eq('id', questionWithReponses.etude_cas_id);
+
+          const { logDelete } = await import('@/lib/audit-logger');
+          await logDelete(request, 'etudes_cas', questionWithReponses.etude_cas_id, etudeCasToDelete, `Suppression automatique de l'étude de cas vide "${etudeCasToDelete.titre || questionWithReponses.etude_cas_id}" après mise à jour de toutes les questions`).catch(() => {});
+        }
+      }
+    }
+
     return NextResponse.json({ question: questionWithReponses });
   } catch (error) {
     console.error('Erreur dans PUT /api/etude-cas/questions:', error);
@@ -187,11 +215,35 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'questionId requis' }, { status: 400 });
     }
 
-    // Supprimer les réponses associées
-    await supabase
+    // Récupérer la question avant suppression pour le log et l'étude de cas ID
+    const { data: questionToDelete } = await supabase
+      .from('questions_etude_cas')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+
+    if (!questionToDelete) {
+      return NextResponse.json({ error: 'Question non trouvée' }, { status: 404 });
+    }
+
+    // Supprimer les réponses associées AVANT de supprimer la question
+    // Compter d'abord les réponses à supprimer
+    const { count: reponsesCount } = await supabase
+      .from('reponses_possibles_etude_cas')
+      .select('*', { count: 'exact', head: true })
+      .eq('question_id', questionId);
+
+    const { error: reponsesDeleteError } = await supabase
       .from('reponses_possibles_etude_cas')
       .delete()
       .eq('question_id', questionId);
+
+    if (reponsesDeleteError) {
+      console.error('Erreur lors de la suppression des réponses:', reponsesDeleteError);
+      // Continuer quand même la suppression de la question
+    } else {
+      console.log(`Suppression de ${reponsesCount || 0} réponse(s) pour la question ${questionId}`);
+    }
 
     // Supprimer la question
     const { error } = await supabase
@@ -202,6 +254,34 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       console.error('Erreur lors de la suppression de la question:', error);
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    }
+
+    // Vérifier si l'étude de cas est maintenant vide et la supprimer automatiquement
+    if (questionToDelete?.etude_cas_id) {
+      const { data: remainingQuestions } = await supabase
+        .from('questions_etude_cas')
+        .select('id')
+        .eq('etude_cas_id', questionToDelete.etude_cas_id)
+        .limit(1);
+
+      // Si aucune question ne reste, supprimer l'étude de cas
+      if (!remainingQuestions || remainingQuestions.length === 0) {
+        const { data: etudeCasToDelete } = await supabase
+          .from('etudes_cas')
+          .select('*')
+          .eq('id', questionToDelete.etude_cas_id)
+          .single();
+
+        if (etudeCasToDelete) {
+          await supabase
+            .from('etudes_cas')
+            .update({ actif: false })
+            .eq('id', questionToDelete.etude_cas_id);
+
+          const { logDelete } = await import('@/lib/audit-logger');
+          await logDelete(request, 'etudes_cas', questionToDelete.etude_cas_id, etudeCasToDelete, `Suppression automatique de l'étude de cas vide "${etudeCasToDelete.titre || questionToDelete.etude_cas_id}" après suppression de toutes les questions`).catch(() => {});
+        }
+      }
     }
 
     return NextResponse.json({ success: true });

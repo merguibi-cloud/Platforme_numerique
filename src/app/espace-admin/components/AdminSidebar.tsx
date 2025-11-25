@@ -3,11 +3,29 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { signOut } from '@/lib/auth-api';
 import { Modal } from '../../validation/components/Modal';
 
-const menuItems = [
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: string;
+  iconInactive: string;
+  href: string;
+  children?: MenuItem[];
+}
+
+interface MenuGroup {
+  type: 'group';
+  id: string;
+  label: string;
+  icon: string;
+  iconInactive: string;
+  children: MenuItem[];
+}
+
+const menuItems: (MenuItem | MenuGroup)[] = [
   { 
     id: 'dashboard', 
     label: 'DASHBOARD', 
@@ -15,33 +33,42 @@ const menuItems = [
     iconInactive: '/menue_etudiant/nonselectionner/dashboard.png',
     href: '/espace-admin/dashboard'
   },
-  { 
-    id: 'gestion-etudiants', 
-    label: 'GESTION ÉTUDIANTS', 
-    icon: '/menue_etudiant/Etudiant.png',
-    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/gestion-etudiants'
-  },
-  { 
-    id: 'gestion-formations', 
-    label: 'GESTION FORMATIONS', 
+  {
+    type: 'group',
+    id: 'gestion',
+    label: 'GESTION',
     icon: '/menue_etudiant/Livre.png',
     iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
-    href: '/espace-admin/gestion-formations'
-  },
-  { 
-    id: 'gestion-inscriptions', 
-    label: 'GESTION DES INSCRIPTIONS', 
-    icon: '/menue_etudiant/Etudiant.png',
-    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/gestion-inscriptions'
-  },
-  { 
-    id: 'attribution', 
-    label: 'ESPACE D\'ATTRIBUTION', 
-    icon: '/menue_etudiant/Etudiant.png',
-    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/attribution'
+    children: [
+      { 
+        id: 'gestion-etudiants', 
+        label: 'GESTION ÉTUDIANTS', 
+        icon: '/menue_etudiant/Etudiant.png',
+        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+        href: '/espace-admin/gestion-etudiants'
+      },
+      { 
+        id: 'gestion-formations', 
+        label: 'GESTION FORMATIONS', 
+        icon: '/menue_etudiant/Livre.png',
+        iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
+        href: '/espace-admin/gestion-formations'
+      },
+      { 
+        id: 'gestion-inscriptions', 
+        label: 'GESTION DES INSCRIPTIONS', 
+        icon: '/menue_etudiant/Etudiant.png',
+        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+        href: '/espace-admin/gestion-inscriptions'
+      },
+      { 
+        id: 'attribution', 
+        label: 'ESPACE D\'ATTRIBUTION', 
+        icon: '/menue_etudiant/Etudiant.png',
+        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+        href: '/espace-admin/attribution'
+      }
+    ]
   },
   { 
     id: 'bibliotheque', 
@@ -100,6 +127,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['gestion'])); // Par défaut ouvert
   
   // États pour le modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -111,6 +139,20 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
     setIsCollapsed(newCollapsed);
     onCollapseChange?.(newCollapsed);
   };
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+
+  const isGroupOpen = (groupId: string) => openGroups.has(groupId);
 
   const handleLogoutClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Empêcher tout comportement par défaut
@@ -155,10 +197,16 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       setActiveItem('dashboard');
     } else if (pathname.includes('/gestion-etudiants')) {
       setActiveItem('gestion-etudiants');
+      setOpenGroups(prev => new Set(prev).add('gestion'));
     } else if (pathname.includes('/gestion-formations')) {
       setActiveItem('gestion-formations');
+      setOpenGroups(prev => new Set(prev).add('gestion'));
     } else if (pathname.includes('/gestion-inscriptions')) {
       setActiveItem('gestion-inscriptions');
+      setOpenGroups(prev => new Set(prev).add('gestion'));
+    } else if (pathname.includes('/attribution')) {
+      setActiveItem('attribution');
+      setOpenGroups(prev => new Set(prev).add('gestion'));
     } else if (pathname.includes('/bibliotheque')) {
       setActiveItem('bibliotheque');
     } else if (pathname.includes('/agenda')) {
@@ -167,8 +215,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       setActiveItem('messagerie');
     } else if (pathname.includes('/vie-etudiante')) {
       setActiveItem('vie-etudiante');
-    } else if (pathname.includes('/attribution')) {
-      setActiveItem('attribution');
     } else if (pathname.includes('/parametres')) {
       setActiveItem('parametres');
     }
@@ -228,37 +274,154 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       </div>
 
       {/* Menu principal */}
-      <div className="flex-1 py-6">
+      <div className="flex-1 py-6 overflow-y-auto">
         <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={() => setActiveItem(item.id)}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
-                activeItem === item.id
-                  ? 'text-[#F8F5E4]'
-                  : 'text-white hover:bg-gray-700'
-              }`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Image 
-                src={activeItem === item.id ? item.icon : item.iconInactive} 
-                alt={item.label} 
-                width={24} 
-                height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
-              />
-              {!isCollapsed && (
-                <span 
-                  className="text-sm font-medium"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+          {menuItems.map((item) => {
+            // Gestion des groupes avec sous-menus
+            if ('type' in item && item.type === 'group') {
+              const isOpen = isGroupOpen(item.id);
+              const hasActiveChild = item.children?.some(child => 
+                pathname.includes(child.href) || activeItem === child.id
+              );
+              
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => toggleGroup(item.id)}
+                    className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-3'} rounded-lg transition-colors duration-200 w-full ${
+                      hasActiveChild
+                        ? 'text-[#F8F5E4]'
+                        : 'text-white hover:bg-gray-700'
+                    }`}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Image 
+                        src={hasActiveChild ? item.icon : item.iconInactive} 
+                        alt={item.label} 
+                        width={24} 
+                        height={24}
+                        className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                      />
+                      {!isCollapsed && (
+                        <span 
+                          className="text-sm font-medium"
+                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                        >
+                          {item.label}
+                        </span>
+                      )}
+                    </div>
+                    {!isCollapsed && (
+                      isOpen ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )
+                    )}
+                  </button>
+                  
+                  {/* Sous-menus */}
+                  {!isCollapsed && isOpen && item.children && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      {item.children.map((child) => {
+                        const isActive = activeItem === child.id || pathname.includes(child.href);
+                        return (
+                          <Link
+                            key={child.id}
+                            href={child.href}
+                            onClick={() => setActiveItem(child.id)}
+                            className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors duration-200 ${
+                              isActive
+                                ? 'text-[#F8F5E4] bg-gray-700'
+                                : 'text-gray-300 hover:bg-gray-700'
+                            }`}
+                          >
+                            <Image 
+                              src={isActive ? child.icon : child.iconInactive} 
+                              alt={child.label} 
+                              width={20} 
+                              height={20}
+                              className="w-5 h-5"
+                            />
+                            <span 
+                              className="text-sm font-medium"
+                              style={{ fontFamily: 'var(--font-termina-bold)' }}
+                            >
+                              {child.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {isCollapsed && isOpen && item.children && (
+                    <div className="mt-2 flex flex-col items-center gap-2">
+                      <div className="w-px h-4 bg-gray-600" />
+                      {item.children.map((child) => {
+                        const isActive = activeItem === child.id || pathname.includes(child.href);
+                        return (
+                          <div key={child.id} className="flex flex-col items-center gap-1">
+                            <div className="w-px h-3 bg-gray-600" />
+                            <Link
+                              href={child.href}
+                              onClick={() => setActiveItem(child.id)}
+                              className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
+                                isActive ? 'bg-gray-700 text-[#F8F5E4]' : 'text-gray-200 hover:bg-gray-700'
+                              }`}
+                              title={child.label}
+                            >
+                              <Image 
+                                src={isActive ? child.icon : child.iconInactive} 
+                                alt={child.label} 
+                                width={20} 
+                                height={20}
+                                className="w-5 h-5"
+                              />
+                            </Link>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            
+            // Gestion des items normaux
+            if ('href' in item) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setActiveItem(item.id)}
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
+                    activeItem === item.id
+                      ? 'text-[#F8F5E4]'
+                      : 'text-white hover:bg-gray-700'
+                  }`}
+                  title={isCollapsed ? item.label : undefined}
                 >
-                  {item.label}
-                </span>
-              )}
-            </Link>
-          ))}
+                  <Image 
+                    src={activeItem === item.id ? item.icon : item.iconInactive} 
+                    alt={item.label} 
+                    width={24} 
+                    height={24}
+                    className={`${isCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
+                  />
+                  {!isCollapsed && (
+                    <span 
+                      className="text-sm font-medium"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                </Link>
+              );
+            }
+            return null;
+          })}
         </nav>
       </div>
 
@@ -281,7 +444,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                     alt={item.label} 
                     width={24} 
                     height={24}
-                    className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                    className={`${isCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
                   />
                   {!isCollapsed && (
                     <span 
@@ -310,7 +473,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                   alt={item.label} 
                   width={24} 
                   height={24}
-                  className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                  className={`${isCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
                 />
                 {!isCollapsed && (
                   <span 

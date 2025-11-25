@@ -38,9 +38,10 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
         const chapitresList = data.chapitres || [];
         
         // Convertir les chapitres en format ChapitreItem
+        // IMPORTANT: Ne jamais utiliser le titre du cours comme titre de chapitre
         const formattedChapitres: ChapitreItem[] = chapitresList.map((ch: any) => ({
           id: ch.id,
-          titre: ch.titre || '',
+          titre: (ch.titre && ch.titre.trim()) || '', // S'assurer que le titre n'est pas vide ou juste des espaces
           isNew: false,
         }));
 
@@ -86,16 +87,25 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
     const coursTitle = titreCours.trim();
 
     // Filtrer les chapitres vides et garder les IDs pour les chapitres existants
+    // IMPORTANT: Ne jamais utiliser le titre du cours comme titre de chapitre
     const chapitresData = chapitres
-      .filter(chapitre => chapitre.titre.trim())
+      .filter(chapitre => chapitre.titre && chapitre.titre.trim())
       .map(chapitre => ({
         id: chapitre.id,
-        titre: chapitre.titre.trim(),
+        titre: chapitre.titre.trim(), // Utiliser uniquement le titre du chapitre, jamais le titre du cours
       }));
 
+    // Validation: s'assurer qu'on a au moins un chapitre avec un titre valide
+    if (chapitresData.length === 0) {
+      console.error('Aucun chapitre valide à sauvegarder');
+      return;
+    }
+
+    // Pour un cours existant, le titre n'est pas nécessaire car il est déjà dans la base
+    // Pour un nouveau cours, le titre est requis
     if ((coursTitle || hasExistingModule) && chapitresData.length > 0) {
       onSave({
-        titre: coursTitle,
+        titre: coursTitle || undefined, // Ne pas envoyer de titre vide
         cours: chapitresData,
         moduleId: hasExistingModule ? selectedModuleId : undefined
       });
@@ -181,7 +191,9 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
                     setSelectedModuleId(value);
                     const selectedModule = existingModules.find((module) => module.id === value);
                     if (selectedModule) {
-                      setTitreCours(selectedModule.titre);
+                      // Ne pas modifier titreCours quand on sélectionne un cours existant
+                      // Le titre du cours est déjà dans le select, pas besoin de le mettre dans le champ input
+                      // setTitreCours(selectedModule.titre);
                     } else {
                       setTitreCours('');
                       setChapitres([{ titre: '', isNew: true }]);

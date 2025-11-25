@@ -175,6 +175,29 @@ export async function PUT(request: NextRequest) {
 
     await logUpdate(request, 'quiz_evaluations', quizId, oldQuiz || {}, quiz, Object.keys(updates), `Mise à jour du quiz "${quiz.titre || quizId}"`).catch(() => {});
 
+    // Vérifier si le quiz est vide (sans questions actives) et le supprimer automatiquement
+    const { data: questions } = await supabase
+      .from('questions_quiz')
+      .select('id')
+      .eq('quiz_id', quizId)
+      .eq('actif', true)
+      .limit(1);
+
+    if (!questions || questions.length === 0) {
+      // Le quiz est vide, le désactiver
+      await supabase
+        .from('quiz_evaluations')
+        .update({ actif: false })
+        .eq('id', quizId);
+
+      await logDelete(request, 'quiz_evaluations', quizId, quiz, `Suppression automatique du quiz vide "${quiz.titre || quizId}" (aucune question active)`).catch(() => {});
+      
+      return NextResponse.json({ 
+        quiz: { ...quiz, actif: false },
+        message: 'Quiz désactivé automatiquement car vide'
+      });
+    }
+
     return NextResponse.json({ quiz });
   } catch (error) {
     console.error('Erreur lors de la mise à jour du quiz:', error);
