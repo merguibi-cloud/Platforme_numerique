@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from '../lib/supabase';
+import { getSupabaseServerClient, withRetry } from '../lib/supabase';
 import { Chapitre, CreateChapitreRequest, UpdateChapitreRequest, ChapitreValidationRequest } from '@/types/cours';
 
 // Fonctions côté serveur pour les chapitres
@@ -28,11 +28,16 @@ export async function createChapitreServer(chapitreData: CreateChapitreRequest, 
 export async function getChapitresByCoursIdServer(coursId: number): Promise<{ success: boolean; chapitres?: Chapitre[]; error?: string }> {
   try {
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('chapitres_cours')
-      .select('*')
-      .eq('cours_id', coursId)
-      .order('ordre_affichage', { ascending: true });
+    const { data, error } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from('chapitres_cours')
+          .select('*')
+          .eq('cours_id', coursId)
+          .order('ordre_affichage', { ascending: true });
+        return result;
+      }
+    );
     if (error) {
       return { success: false, error: error.message };
     }
@@ -45,11 +50,16 @@ export async function getChapitresByCoursIdServer(coursId: number): Promise<{ su
 export async function getChapitreByIdServer(chapitreId: number): Promise<{ success: boolean; chapitre?: Chapitre; error?: string }> {
   try {
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('chapitres_cours')
-      .select('*')
-      .eq('id', chapitreId)
-      .single();
+    const { data, error } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from('chapitres_cours')
+          .select('*')
+          .eq('id', chapitreId)
+          .single();
+        return result;
+      }
+    );
     if (error) {
       return { success: false, error: error.message };
     }

@@ -29,7 +29,7 @@ interface ModuleManagementProps {
   modules: ModuleWithStatus[];
   formationId: string;
   blocId: string;
-  onAddModule: (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => void;
+  onAddModule: (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => void;
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
   onAssignModule: (moduleId: string) => void;
@@ -115,7 +115,7 @@ export const ModuleManagement = ({
     }
   };
 
-  const handleSaveModule = (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
+  const handleSaveModule = (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
     onAddModule(moduleData);
     setIsCreateModalOpen(false);
     setPreselectedCoursId(null);

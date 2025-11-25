@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseServerClient } from '@/lib/supabase';
+import { getSupabaseServerClient, withRetry } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
 import { getCoursByIdServer } from '@/lib/cours-api';
@@ -29,39 +29,49 @@ export async function GET(
 
     const { coursId } = await params;
 
-    // Récupérer le cours avec ses chapitres
-    const { data: cours, error: coursError } = await supabase
-      .from('cours_apprentissage')
-      .select(`
-          id,
-        bloc_id,
-        numero_cours,
-          titre,
-        description,
-        type_module,
-        duree_estimee,
-        ordre_affichage,
-        actif,
-        created_at,
-        updated_at,
-        chapitres_cours (
+    // Récupérer le cours avec ses chapitres (avec retry automatique)
+    const { data: cours, error: coursError } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from('cours_apprentissage')
+          .select(`
             id,
+            bloc_id,
+            numero_cours,
             titre,
-          description,
-          type_contenu,
-          contenu,
-          url_video,
-          duree_video,
-          ordre_affichage,
-          actif,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('id', coursId)
-      .single();
+            description,
+            type_module,
+            duree_estimee,
+            ordre_affichage,
+            actif,
+            created_at,
+            updated_at,
+            chapitres_cours (
+              id,
+              titre,
+              description,
+              type_contenu,
+              contenu,
+              url_video,
+              duree_video,
+              ordre_affichage,
+              actif,
+              created_at,
+              updated_at
+            )
+          `)
+          .eq('id', coursId)
+          .single();
+        return result;
+      },
+      {
+        onRetry: (attempt, error) => {
+          console.warn(`[Retry ${attempt}] Erreur lors de la récupération du cours (${error.code || 'unknown'}):`, error.message);
+        }
+      }
+    );
 
-    if (coursError) {
+    if (coursError || !cours) {
       console.error('Erreur lors de la récupération du cours:', coursError);
       return NextResponse.json({ error: 'Cours non trouvé' }, { status: 404 });
     }

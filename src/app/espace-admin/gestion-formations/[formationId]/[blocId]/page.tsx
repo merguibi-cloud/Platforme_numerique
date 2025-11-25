@@ -145,7 +145,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     loadData();
   }, [formationId, blocId]);
 
-  const handleAddModule = async (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
+  const handleAddModule = async (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
     try {
       // Convertir les chapitres en format attendu par l'API
       const chapitres = Array.isArray(moduleData.cours) && moduleData.cours.length > 0 && typeof moduleData.cours[0] === 'object'
@@ -158,7 +158,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          titre: moduleData.titre,
+          titre: moduleData.titre || '', // Utiliser une chaîne vide si le titre n'est pas fourni
           chapitres: chapitres,
           description: '',
           type_module: 'cours',

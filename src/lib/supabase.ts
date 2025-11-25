@@ -103,3 +103,12 @@ export const syncSessionWithCookies = async () => {
     // Erreur silencieuse pour éviter l'exposition d'informations
   }
 };
+
+// Exporter les utilitaires de retry
+export {
+  withRetry,
+  selectWithRetry,
+  insertWithRetry,
+  updateWithRetry,
+  deleteWithRetry
+} from './supabase-retry';

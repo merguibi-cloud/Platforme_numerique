@@ -324,7 +324,7 @@ export const TiptapToolbar = ({
               className="flex-1 bg-gray-500 text-white text-sm font-semibold uppercase tracking-wider hover:bg-gray-600 transition-colors disabled:opacity-50 flex items-center justify-center"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
-              {isSaving ? 'Envoi...' : nextStepButtonText}
+              {isSaving ? 'Enregistrement en cours...' : nextStepButtonText}
             </button>
           </div>
         )}
