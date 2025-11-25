@@ -56,6 +56,7 @@ export const ModuleManagement = ({
 }: ModuleManagementProps) => {
   const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [preselectedCoursId, setPreselectedCoursId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     title: string;
@@ -90,16 +91,39 @@ export const ModuleManagement = ({
   };
 
   const handleAddModuleClick = () => {
+    setPreselectedCoursId(null);
     setIsCreateModalOpen(true);
+  };
+
+  const handleEditCoursClick = (module: ModuleWithStatus) => {
+    // Vérifier si le cours a des chapitres
+    const coursList = module.coursDetails && module.coursDetails.length > 0
+      ? module.coursDetails
+      : module.cours.map((titre, index) => ({
+          id: `${module.id}-${index}`,
+          titre,
+        }));
+    const hasChapitres = coursList.length > 0 || (module.cours_count && module.cours_count > 0);
+    
+    if (!hasChapitres) {
+      // Si le cours n'a pas de chapitres, ouvrir le modal pour créer un chapitrage
+      setPreselectedCoursId(module.id);
+      setIsCreateModalOpen(true);
+    } else {
+      // Si le cours a des chapitres, rediriger vers l'édition
+      onEditCours(module.id);
+    }
   };
 
   const handleSaveModule = (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
     onAddModule(moduleData);
     setIsCreateModalOpen(false);
+    setPreselectedCoursId(null);
   };
 
   const handleCloseModal = () => {
     setIsCreateModalOpen(false);
+    setPreselectedCoursId(null);
   };
 
   console.log('[ModuleManagement] Modules reçus:', modules.length, modules);
@@ -210,7 +234,7 @@ export const ModuleManagement = ({
                     </td>
                     <td className="border border-[#032622] p-0">
                       <button
-                        onClick={() => onEditCours(module.id)}
+                        onClick={() => handleEditCoursClick(module)}
                         className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
@@ -222,8 +246,8 @@ export const ModuleManagement = ({
                                 id: `${module.id}-${index}`,
                                 titre,
                               }));
-                          const hasCours = coursList.length > 0 || (module.cours_count && module.cours_count > 0);
-                          return hasCours ? 'ÉDITER LE COURS' : 'AJOUTER UN COURS';
+                          const hasChapitres = coursList.length > 0 || (module.cours_count && module.cours_count > 0);
+                          return hasChapitres ? 'ÉDITER LE COURS' : 'AJOUTER UN CHAPITRAGE';
                         })()}
                       </button>
                     </td>
@@ -349,6 +373,7 @@ export const ModuleManagement = ({
           id: module.id,
           titre: module.moduleName || `Module ${module.numero_module ?? ''}`.trim()
         }))}
+        preselectedCoursId={preselectedCoursId}
       />
 
       <Modal

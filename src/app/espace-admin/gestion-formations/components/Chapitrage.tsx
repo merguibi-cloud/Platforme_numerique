@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Chapitre } from '../../../../types/cours';
-import { FileText } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
+import { CreateModule } from './CreateModule';
 
 interface ChapitrageProps {
   coursId: number;
@@ -36,6 +37,8 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
   const [quizzesByChapitre, setQuizzesByChapitre] = useState<Map<number, QuizData>>(new Map());
   const [etudeCas, setEtudeCas] = useState<EtudeCasData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddChapitreModalOpen, setIsAddChapitreModalOpen] = useState(false);
+  const [coursInfo, setCoursInfo] = useState<{ id: string; titre: string } | null>(null);
 
   const loadChapitres = useCallback(async () => {
       try {
@@ -232,6 +235,126 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
     };
   }, [coursId, loadChapitres]);
 
+  // Charger les informations du cours pour le modal
+  useEffect(() => {
+    const loadCoursInfo = async () => {
+      try {
+        const response = await fetch(`/api/cours/${coursId}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.cours) {
+            setCoursInfo({
+              id: coursId.toString(),
+              titre: data.cours.titre || `Cours ${coursId}`
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des informations du cours:', error);
+        // En cas d'erreur, créer quand même l'info avec l'ID
+        setCoursInfo({
+          id: coursId.toString(),
+          titre: `Cours ${coursId}`
+        });
+      }
+    };
+    if (coursId) {
+      loadCoursInfo();
+    }
+  }, [coursId]);
+
+  const handleSaveChapitres = async (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => {
+    try {
+      // Convertir les chapitres en format attendu par l'API
+      const chapitres = Array.isArray(moduleData.cours) && moduleData.cours.length > 0 && typeof moduleData.cours[0] === 'object'
+        ? moduleData.cours
+        : (moduleData.cours as string[]).map(titre => ({ titre }));
+
+      const response = await fetch(`/api/cours?formationId=${formationId}&blocId=${blocId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          titre: moduleData.titre || coursInfo?.titre,
+          chapitres: chapitres,
+          description: '',
+          type_module: 'cours',
+          coursId: coursId.toString(), // Utiliser le coursId actuel
+        }),
+      });
+
+      if (response.ok) {
+        // Fermer le modal d'abord
+        setIsAddChapitreModalOpen(false);
+        
+        // Forcer le rafraîchissement en rechargeant depuis l'API (ignorer preloadedData)
+        // Cela garantit que les nouveaux chapitres apparaissent immédiatement
+        try {
+          const refreshResponse = await fetch(`/api/cours/${coursId}/complete`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.cours) {
+              const coursData = refreshData.cours;
+              const sortedChapitres = (coursData.chapitres || []).sort((a: any, b: any) => 
+                (a.ordre_affichage || 0) - (b.ordre_affichage || 0)
+              );
+              setChapitres(sortedChapitres as Chapitre[]);
+              
+              // Mettre à jour les quiz
+              const quizzesMap = new Map<number, QuizData>();
+              sortedChapitres.forEach((chapitre: any) => {
+                if (chapitre.quizzes && chapitre.quizzes.length > 0) {
+                  const quiz = chapitre.quizzes[0];
+                  quizzesMap.set(chapitre.id, {
+                    id: quiz.id || quiz.quiz?.id,
+                    cours_id: chapitre.id,
+                    titre: quiz.titre || quiz.quiz?.titre || 'Quiz'
+                  });
+                }
+              });
+              setQuizzesByChapitre(quizzesMap);
+              
+              // Mettre à jour l'étude de cas
+              if (coursData.etude_cas) {
+                setEtudeCas({
+                  id: coursData.etude_cas.id,
+                  titre: coursData.etude_cas.titre || 'Étude de cas'
+                });
+              } else {
+                setEtudeCas(null);
+              }
+            }
+          } else {
+            // Fallback: utiliser la fonction de rafraîchissement normale
+            await loadChapitres();
+          }
+        } catch (error) {
+          console.error('Erreur lors du rafraîchissement:', error);
+          // Fallback: utiliser la fonction de rafraîchissement normale
+          await loadChapitres();
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de l'ajout du chapitre: ${errorData.error || 'Erreur inconnue'}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du chapitre:', error);
+      alert('Erreur lors de l\'ajout du chapitre');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsAddChapitreModalOpen(false);
+  };
+
   if (isLoading) {
     return (
       <div className="fixed bottom-4 right-4 z-40 bg-[#F8F5E4] border border-[#032622] overflow-hidden w-[567px] h-[267px] flex flex-col shadow-lg">
@@ -251,15 +374,23 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 bg-[#F8F5E4] border border-[#032622] overflow-hidden w-[567px] h-[267px] flex flex-col shadow-lg">
-      <div className="p-4 border-b border-[#032622]/20">
-        <h3 
-          className="text-lg font-bold text-[#032622] uppercase"
-          style={{ fontFamily: 'var(--font-termina-bold)' }}
-        >
-          CHAPITRAGE
-        </h3>
-      </div>
+    <>
+      <div className="fixed bottom-4 right-4 z-40 bg-[#F8F5E4] border border-[#032622] overflow-hidden w-[567px] h-[267px] flex flex-col shadow-lg">
+        <div className="p-4 border-b border-[#032622]/20 flex items-center justify-between">
+          <h3 
+            className="text-lg font-bold text-[#032622] uppercase"
+            style={{ fontFamily: 'var(--font-termina-bold)' }}
+          >
+            CHAPITRAGE
+          </h3>
+          <button
+            onClick={() => setIsAddChapitreModalOpen(true)}
+            className="w-6 h-6 border border-[#032622] bg-[#032622] text-[#F8F5E4] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
+            title="Ajouter un chapitre"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
 
       <div className="flex-1 p-4 overflow-y-auto">
         {chapitres.length === 0 ? (
@@ -346,6 +477,17 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
         )}
       </div>
     </div>
+
+    {/* Modal pour ajouter un chapitre - Utilise CreateModule */}
+    <CreateModule
+      isOpen={isAddChapitreModalOpen && !!coursInfo}
+      onClose={handleCloseModal}
+      onSave={handleSaveChapitres}
+      existingModules={coursInfo ? [coursInfo] : []}
+      preselectedCoursId={coursId.toString()}
+      addChapitreOnly={true}
+    />
+    </>
   );
 };
 

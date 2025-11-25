@@ -6,8 +6,10 @@ import { X, Plus, Minus } from 'lucide-react';
 interface CreateModuleProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (moduleData: { titre: string; cours: Array<{ id?: number; titre: string }>; moduleId?: string }) => void;
+  onSave: (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }>; moduleId?: string }) => void;
   existingModules?: Array<{ id: string; titre: string }>;
+  preselectedCoursId?: string | null;
+  addChapitreOnly?: boolean; // Mode "ajout de chapitre uniquement" - désactive les champs de création de cours
 }
 
 interface ChapitreItem {
@@ -16,7 +18,7 @@ interface ChapitreItem {
   isNew?: boolean;
 }
 
-export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: CreateModuleProps) => {
+export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], preselectedCoursId = null, addChapitreOnly = false }: CreateModuleProps) => {
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [titreCours, setTitreCours] = useState('');
   const [chapitres, setChapitres] = useState<ChapitreItem[]>([{ titre: '', isNew: true }]);
@@ -103,11 +105,12 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
 
     // Pour un cours existant, le titre n'est pas nécessaire car il est déjà dans la base
     // Pour un nouveau cours, le titre est requis
-    if ((coursTitle || hasExistingModule) && chapitresData.length > 0) {
+    // En mode "ajout de chapitre uniquement", on peut sauvegarder sans titre de cours
+    if ((coursTitle || hasExistingModule || addChapitreOnly) && chapitresData.length > 0) {
       onSave({
-        titre: coursTitle || undefined, // Ne pas envoyer de titre vide
+        titre: coursTitle || (addChapitreOnly ? '' : undefined), // En mode addChapitreOnly, envoyer une chaîne vide
         cours: chapitresData,
-        moduleId: hasExistingModule ? selectedModuleId : undefined
+        moduleId: hasExistingModule ? selectedModuleId : (addChapitreOnly && preselectedCoursId ? preselectedCoursId : undefined)
       });
       handleClose();
     }
@@ -131,6 +134,23 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
     }
   }, [selectedModuleId]);
 
+  // Pré-sélectionner le cours si fourni
+  useEffect(() => {
+    if (isOpen && preselectedCoursId) {
+      setSelectedModuleId(preselectedCoursId);
+      setTitreCours(''); // Vider le champ titre car le cours est déjà sélectionné
+      // Charger les chapitres existants si en mode "ajout de chapitre uniquement"
+      if (addChapitreOnly) {
+        loadChapitres(preselectedCoursId);
+      }
+    } else if (!isOpen) {
+      // Réinitialiser quand le modal se ferme
+      setSelectedModuleId('');
+      setTitreCours('');
+      setChapitres([{ titre: '', isNew: true }]);
+    }
+  }, [isOpen, preselectedCoursId, addChapitreOnly]);
+
   if (!isOpen) return null;
 
   return (
@@ -142,7 +162,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
             className="text-2xl font-bold text-[#032622] uppercase"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            CRÉATION D'UN COURS
+            {addChapitreOnly || selectedModuleId ? 'AJOUTER UN CHAPITRAGE' : 'CRÉATION D\'UN COURS'}
           </h2>
           <button
             onClick={handleClose}
@@ -154,8 +174,71 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Cours */}
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Cours - Masqué en mode "ajout de chapitre uniquement" */}
+          {!addChapitreOnly && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label 
+                  className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                >
+                  COURS
+                </label>
+                <input
+                  type="text"
+                  value={titreCours}
+                  onChange={(e) => {
+                    setTitreCours(e.target.value);
+                    setSelectedModuleId('');
+                  }}
+                  placeholder={selectedModuleId ? "Cours sélectionné ci-dessous" : "Nom du cours"}
+                  disabled={!!selectedModuleId}
+                  className="w-full p-4 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent disabled:bg-gray-200 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                />
+              </div>
+
+              {existingModules.length > 0 && (
+                <div className="space-y-2">
+                  <label 
+                    className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                    style={{ fontFamily: 'var(--font-termina-bold)' }}
+                  >
+                    COURS EXISTANT
+                  </label>
+                  <select
+                    value={selectedModuleId}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setSelectedModuleId(value);
+                      const selectedModule = existingModules.find((module) => module.id === value);
+                      if (selectedModule) {
+                        // Ne pas modifier titreCours quand on sélectionne un cours existant
+                        // Le titre du cours est déjà dans le select, pas besoin de le mettre dans le champ input
+                        // setTitreCours(selectedModule.titre);
+                      } else {
+                        setTitreCours('');
+                        setChapitres([{ titre: '', isNew: true }]);
+                      }
+                    }}
+                    className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                    style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    disabled={isLoadingChapitres || !!preselectedCoursId}
+                  >
+                    <option value="">Sélectionner un cours existant</option>
+                    {existingModules.map((module) => (
+                      <option key={module.id} value={module.id}>
+                        {module.titre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Afficher le cours sélectionné en mode "ajout de chapitre uniquement" */}
+          {addChapitreOnly && preselectedCoursId && existingModules.length > 0 && (
             <div className="space-y-2">
               <label 
                 className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
@@ -165,54 +248,13 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
               </label>
               <input
                 type="text"
-                value={titreCours}
-                onChange={(e) => {
-                  setTitreCours(e.target.value);
-                  setSelectedModuleId('');
-                }}
-                placeholder="Nom du cours"
-                className="w-full p-4 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                value={existingModules.find(m => m.id === preselectedCoursId)?.titre || ''}
+                disabled
+                className="w-full p-4 border-2 border-[#032622] bg-gray-200 text-[#032622] cursor-not-allowed"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               />
             </div>
-
-            {existingModules.length > 0 && (
-              <div className="space-y-2">
-                <label 
-                  className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
-                >
-                  COURS EXISTANT
-                </label>
-                <select
-                  value={selectedModuleId}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setSelectedModuleId(value);
-                    const selectedModule = existingModules.find((module) => module.id === value);
-                    if (selectedModule) {
-                      // Ne pas modifier titreCours quand on sélectionne un cours existant
-                      // Le titre du cours est déjà dans le select, pas besoin de le mettre dans le champ input
-                      // setTitreCours(selectedModule.titre);
-                    } else {
-                      setTitreCours('');
-                      setChapitres([{ titre: '', isNew: true }]);
-                    }
-                  }}
-                  className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
-                  disabled={isLoadingChapitres}
-                >
-                  <option value="">Sélectionner un cours existant</option>
-                  {existingModules.map((module) => (
-                    <option key={module.id} value={module.id}>
-                      {module.titre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Chapitres */}
           <div className="space-y-4">
@@ -257,7 +299,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
                     {chapitres.length > 1 && (
                     <button
                         onClick={() => handleRemoveChapitre(index)}
-                      className="w-8 h-8 border-2 border-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-[#F8F5E4] transition-colors flex items-center justify-center"
+                      className="w-8 h-8 border-2 border-[#032622] bg-[#032622] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
                         title={chapitreItem.isNew ? 'Supprimer ce chapitre' : 'Supprimer ce chapitre (sera supprimé lors de la sauvegarde)'}
                     >
                       <Minus className="w-4 h-4" />
@@ -275,14 +317,15 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [] }: 
           <button
             onClick={handleSave}
             disabled={
-              !(titreCours.trim() || selectedModuleId) ||
+              (!addChapitreOnly && !(titreCours.trim() || selectedModuleId)) ||
               !chapitres.some(chapitreItem => chapitreItem.titre.trim()) ||
-              isLoadingChapitres
+              isLoadingChapitres ||
+              (addChapitreOnly && !selectedModuleId && !preselectedCoursId)
             }
             className="w-full bg-[#032622] text-[#F8F5E4] py-3 text-lg font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            {selectedModuleId ? 'AJOUTER LES CHAPITRES' : 'CRÉER LE COURS'}
+            {addChapitreOnly || selectedModuleId ? 'AJOUTER LES CHAPITRES' : 'CRÉER LE COURS'}
           </button>
         </div>
       </div>

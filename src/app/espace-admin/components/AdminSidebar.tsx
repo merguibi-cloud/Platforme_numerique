@@ -40,20 +40,20 @@ const menuItems: (MenuItem | MenuGroup)[] = [
     icon: '/menue_etudiant/Livre.png',
     iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
     children: [
-      { 
-        id: 'gestion-etudiants', 
-        label: 'GESTION ÉTUDIANTS', 
-        icon: '/menue_etudiant/Etudiant.png',
-        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-        href: '/espace-admin/gestion-etudiants'
-      },
-      { 
-        id: 'gestion-formations', 
-        label: 'GESTION FORMATIONS', 
-        icon: '/menue_etudiant/Livre.png',
-        iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
-        href: '/espace-admin/gestion-formations'
-      },
+  { 
+    id: 'gestion-etudiants', 
+    label: 'GESTION ÉTUDIANTS', 
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+    href: '/espace-admin/gestion-etudiants'
+  },
+  { 
+    id: 'gestion-formations', 
+    label: 'GESTION FORMATIONS', 
+    icon: '/menue_etudiant/Livre.png',
+    iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
+    href: '/espace-admin/gestion-formations'
+  },
       { 
         id: 'gestion-inscriptions', 
         label: 'GESTION DES INSCRIPTIONS', 
@@ -61,12 +61,12 @@ const menuItems: (MenuItem | MenuGroup)[] = [
         iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
         href: '/espace-admin/gestion-inscriptions'
       },
-      { 
-        id: 'attribution', 
-        label: 'ESPACE D\'ATTRIBUTION', 
-        icon: '/menue_etudiant/Etudiant.png',
-        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-        href: '/espace-admin/attribution'
+  { 
+    id: 'attribution', 
+    label: 'ESPACE D\'ATTRIBUTION', 
+    icon: '/menue_etudiant/Etudiant.png',
+    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+    href: '/espace-admin/attribution'
       }
     ]
   },
@@ -245,29 +245,29 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
             </button>
           ) : (
             <>
-              <div className="flex items-center space-x-3">
-                <Image 
-                  src="/menue_etudiant/ESObeige.png" 
-                  alt="ELITE SOCIETY ONLINE" 
+          <div className="flex items-center space-x-3">
+            <Image 
+              src="/menue_etudiant/ESObeige.png" 
+              alt="ELITE SOCIETY ONLINE" 
                   width={50} 
                   height={50}
                   className="w-12 h-12"
-                />
-                <div>
-                  <h1 className="text-white text-sm font-bold uppercase tracking-wide">
-                    ELITE SOCIETY
-                  </h1>
-                  <p className="text-white text-xs opacity-80">
-                    ADMIN
-                  </p>
-                </div>
+            />
+              <div>
+                <h1 className="text-white text-sm font-bold uppercase tracking-wide">
+                  ELITE SOCIETY
+                </h1>
+                <p className="text-white text-xs opacity-80">
+                  ADMIN
+                </p>
               </div>
-              <button
-                onClick={handleCollapse}
+          </div>
+          <button
+            onClick={handleCollapse}
                 className="text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
-              >
+          >
                 <ChevronLeft className="w-4 h-4" />
-              </button>
+          </button>
             </>
           )}
         </div>
@@ -391,33 +391,33 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
             // Gestion des items normaux
             if ('href' in item) {
               return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => setActiveItem(item.id)}
-                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
-                    activeItem === item.id
-                      ? 'text-[#F8F5E4]'
-                      : 'text-white hover:bg-gray-700'
-                  }`}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Image 
-                    src={activeItem === item.id ? item.icon : item.iconInactive} 
-                    alt={item.label} 
-                    width={24} 
-                    height={24}
+            <Link
+              key={item.id}
+              href={item.href}
+              onClick={() => setActiveItem(item.id)}
+              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
+                activeItem === item.id
+                  ? 'text-[#F8F5E4]'
+                  : 'text-white hover:bg-gray-700'
+              }`}
+              title={isCollapsed ? item.label : undefined}
+            >
+              <Image 
+                src={activeItem === item.id ? item.icon : item.iconInactive} 
+                alt={item.label} 
+                width={24} 
+                height={24}
                     className={`${isCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
-                  />
-                  {!isCollapsed && (
-                    <span 
-                      className="text-sm font-medium"
-                      style={{ fontFamily: 'var(--font-termina-bold)' }}
-                    >
-                      {item.label}
-                    </span>
-                  )}
-                </Link>
+              />
+              {!isCollapsed && (
+                <span 
+                  className="text-sm font-medium"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                >
+                  {item.label}
+                </span>
+              )}
+            </Link>
               );
             }
             return null;

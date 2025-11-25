@@ -325,25 +325,176 @@ export async function updateBlocServer(blocId: number, updates: UpdateBlocReques
 export async function deleteBlocServer(blocId: number, userId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = getSupabaseServerClient();
-    // Supprimer d'abord les cours associés
-    const { error: modulesError } = await supabase
+    
+    // 1. Récupérer tous les cours du bloc
+    const { data: cours, error: coursFetchError } = await supabase
       .from('cours_apprentissage')
-      .delete()
+      .select('id')
       .eq('bloc_id', blocId);
-    if (modulesError) {
-      return { success: false, error: modulesError.message };
+    
+    if (coursFetchError) {
+      return { success: false, error: `Erreur lors de la récupération des cours: ${coursFetchError.message}` };
     }
-    // Puis supprimer le bloc
+    
+    if (cours && cours.length > 0) {
+      const coursIds = cours.map(c => c.id);
+      
+      // 2. Pour chaque cours, récupérer tous les chapitres
+      const { data: chapitres, error: chapitresFetchError } = await supabase
+        .from('chapitres_cours')
+        .select('id')
+        .in('cours_id', coursIds);
+      
+      if (chapitresFetchError) {
+        return { success: false, error: `Erreur lors de la récupération des chapitres: ${chapitresFetchError.message}` };
+      }
+      
+      if (chapitres && chapitres.length > 0) {
+        const chapitreIds = chapitres.map(ch => ch.id);
+        
+        // 3. Supprimer les quiz et leurs éléments associés
+        const { data: quizzes, error: quizzesFetchError } = await supabase
+          .from('quiz_evaluations')
+          .select('id')
+          .in('chapitre_id', chapitreIds);
+        
+        if (quizzesFetchError) {
+          console.error('Erreur lors de la récupération des quiz:', quizzesFetchError);
+        } else if (quizzes && quizzes.length > 0) {
+          const quizIds = quizzes.map(q => q.id);
+          
+          // Récupérer les questions des quiz
+          const { data: questions, error: questionsFetchError } = await supabase
+            .from('questions_quiz')
+            .select('id')
+            .in('quiz_id', quizIds);
+          
+          if (questionsFetchError) {
+            console.error('Erreur lors de la récupération des questions de quiz:', questionsFetchError);
+          } else if (questions && questions.length > 0) {
+            const questionIds = questions.map(q => q.id);
+            
+            // Supprimer les réponses possibles des quiz
+            const { error: reponsesDeleteError } = await supabase
+              .from('reponses_possibles')
+              .delete()
+              .in('question_id', questionIds);
+            
+            if (reponsesDeleteError) {
+              console.error('Erreur lors de la suppression des réponses de quiz:', reponsesDeleteError);
+            }
+            
+            // Supprimer les questions de quiz
+            const { error: questionsDeleteError } = await supabase
+              .from('questions_quiz')
+              .delete()
+              .in('quiz_id', quizIds);
+            
+            if (questionsDeleteError) {
+              console.error('Erreur lors de la suppression des questions de quiz:', questionsDeleteError);
+            }
+          }
+          
+          // Supprimer les quiz
+          const { error: quizzesDeleteError } = await supabase
+            .from('quiz_evaluations')
+            .delete()
+            .in('id', quizIds);
+          
+          if (quizzesDeleteError) {
+            console.error('Erreur lors de la suppression des quiz:', quizzesDeleteError);
+          }
+        }
+        
+        // 4. Supprimer les études de cas et leurs éléments associés
+        const { data: etudesCas, error: etudesCasFetchError } = await supabase
+          .from('etudes_cas')
+          .select('id')
+          .in('chapitre_id', chapitreIds);
+        
+        if (etudesCasFetchError) {
+          console.error('Erreur lors de la récupération des études de cas:', etudesCasFetchError);
+        } else if (etudesCas && etudesCas.length > 0) {
+          const etudeCasIds = etudesCas.map(ec => ec.id);
+          
+          // Récupérer les questions des études de cas
+          const { data: questionsEtudeCas, error: questionsEtudeCasFetchError } = await supabase
+            .from('questions_etude_cas')
+            .select('id')
+            .in('etude_cas_id', etudeCasIds);
+          
+          if (questionsEtudeCasFetchError) {
+            console.error('Erreur lors de la récupération des questions d\'étude de cas:', questionsEtudeCasFetchError);
+          } else if (questionsEtudeCas && questionsEtudeCas.length > 0) {
+            const questionEtudeCasIds = questionsEtudeCas.map(q => q.id);
+            
+            // Supprimer les réponses possibles des études de cas
+            const { error: reponsesEtudeCasDeleteError } = await supabase
+              .from('reponses_possibles_etude_cas')
+              .delete()
+              .in('question_id', questionEtudeCasIds);
+            
+            if (reponsesEtudeCasDeleteError) {
+              console.error('Erreur lors de la suppression des réponses d\'étude de cas:', reponsesEtudeCasDeleteError);
+            }
+            
+            // Supprimer les questions d'étude de cas
+            const { error: questionsEtudeCasDeleteError } = await supabase
+              .from('questions_etude_cas')
+              .delete()
+              .in('etude_cas_id', etudeCasIds);
+            
+            if (questionsEtudeCasDeleteError) {
+              console.error('Erreur lors de la suppression des questions d\'étude de cas:', questionsEtudeCasDeleteError);
+            }
+          }
+          
+          // Supprimer les études de cas
+          const { error: etudesCasDeleteError } = await supabase
+            .from('etudes_cas')
+            .delete()
+            .in('id', etudeCasIds);
+          
+          if (etudesCasDeleteError) {
+            console.error('Erreur lors de la suppression des études de cas:', etudesCasDeleteError);
+          }
+        }
+        
+        // 5. Supprimer les chapitres
+        const { error: chapitresDeleteError } = await supabase
+          .from('chapitres_cours')
+          .delete()
+          .in('id', chapitreIds);
+        
+        if (chapitresDeleteError) {
+          return { success: false, error: `Erreur lors de la suppression des chapitres: ${chapitresDeleteError.message}` };
+        }
+      }
+      
+      // 6. Supprimer les cours
+      const { error: coursDeleteError } = await supabase
+        .from('cours_apprentissage')
+        .delete()
+        .in('id', coursIds);
+      
+      if (coursDeleteError) {
+        return { success: false, error: `Erreur lors de la suppression des cours: ${coursDeleteError.message}` };
+      }
+    }
+    
+    // 7. Supprimer le bloc
     const { error } = await supabase
       .from('blocs_competences')
       .delete()
       .eq('id', blocId);
+    
     if (error) {
       return { success: false, error: error.message };
     }
+    
     return { success: true };
   } catch (error) {
-    return { success: false, error: 'Erreur de traitement' };
+    return { success: false, error: `Erreur de traitement: ${error instanceof Error ? error.message : 'Erreur inconnue'}` };
   }
 }
 // =============================================
