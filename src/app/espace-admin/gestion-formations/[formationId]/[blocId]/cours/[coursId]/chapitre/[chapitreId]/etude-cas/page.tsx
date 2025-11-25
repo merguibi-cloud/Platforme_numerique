@@ -85,7 +85,6 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
       {/* Etude Cas Editor */}
       <EtudeCasEditorPage
         coursId={parseInt(coursId)}
-        chapitreId={parseInt(chapitreId)}
         formationId={formationId}
         blocId={blocId}
       />

@@ -141,7 +141,6 @@ export async function GET(
 
     // 5. Charger toutes les études de cas pour ces cours
     // L'étude de cas est associée directement au cours via cours_id
-    const coursIds = cours.map((c: any) => c.id);
     const { data: allEtudesCasCours, error: etudesCasCoursError } = await supabase
       .from('etudes_cas')
       .select('*')
