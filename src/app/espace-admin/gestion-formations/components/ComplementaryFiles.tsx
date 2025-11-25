@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react';
 import { X, Upload, FileText, RefreshCw } from 'lucide-react';
 import { FichierElement } from '../../../../types/cours';
+import { isFileTooLarge } from '@/lib/content-validator';
+import { Modal } from '../../../Modal';
 
 interface ComplementaryFilesProps {
   fichiers: FichierElement[];
@@ -14,11 +16,25 @@ interface ComplementaryFilesProps {
 export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile, deletingFileId }: ComplementaryFilesProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileErrorModal, setFileErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       Array.from(files).forEach(file => {
+        // Valider la taille du fichier
+        const validation = isFileTooLarge(file, 'file');
+        if (validation.tooLarge) {
+          setFileErrorModal({
+            isOpen: true,
+            message: `Le fichier "${file.name}" est trop volumineux (${validation.formattedSize}). La taille maximale autorisée est de ${validation.formattedMaxSize}. Veuillez choisir un fichier plus petit.`
+          });
+          // Réinitialiser l'input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          return;
+        }
         onAddFile(file);
       });
     }
@@ -31,6 +47,15 @@ export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile, deleting
     const files = event.dataTransfer.files;
     if (files && files.length > 0) {
       Array.from(files).forEach(file => {
+        // Valider la taille du fichier
+        const validation = isFileTooLarge(file, 'file');
+        if (validation.tooLarge) {
+          setFileErrorModal({
+            isOpen: true,
+            message: `Le fichier "${file.name}" est trop volumineux (${validation.formattedSize}). La taille maximale autorisée est de ${validation.formattedMaxSize}. Veuillez choisir un fichier plus petit.`
+          });
+          return;
+        }
         onAddFile(file);
       });
     }

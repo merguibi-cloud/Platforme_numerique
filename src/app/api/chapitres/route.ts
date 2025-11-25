@@ -71,7 +71,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error: any) {
+      // Si l'erreur est liée à la taille du body (413)
+      if (error.message?.includes('413') || error.message?.includes('Payload Too Large')) {
+        return NextResponse.json({ 
+          error: 'Le contenu est trop volumineux. La taille maximale autorisée est de 4 MB. Veuillez réduire la taille du contenu ou le diviser en plusieurs chapitres.',
+          code: 'PAYLOAD_TOO_LARGE'
+        }, { status: 413 });
+      }
+      throw error;
+    }
+    
     const { cours_id, titre, contenu } = body;
 
     if (!cours_id || !titre) {
@@ -107,7 +120,19 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error: any) {
+      // Si l'erreur est liée à la taille du body (413)
+      if (error.message?.includes('413') || error.message?.includes('Payload Too Large')) {
+        return NextResponse.json({ 
+          error: 'Le contenu est trop volumineux. La taille maximale autorisée est de 4 MB. Veuillez réduire la taille du contenu ou le diviser en plusieurs chapitres.',
+          code: 'PAYLOAD_TOO_LARGE'
+        }, { status: 413 });
+      }
+      throw error;
+    }
     
     const { chapitreId, titre, contenu, statut, _changedFields } = body;
     

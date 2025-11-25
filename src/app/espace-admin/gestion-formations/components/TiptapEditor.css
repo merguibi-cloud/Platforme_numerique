@@ -134,9 +134,24 @@
   object-fit: contain;
 }
 
-/* Wrapper pour centrer les vidéos */
+.ProseMirror iframe {
+  width: 819px !important;
+  height: 436px !important;
+  max-width: 819px !important;
+  max-height: 436px !important;
+  display: block !important;
+  margin: 10px auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  border: 2px solid #032622;
+  border-radius: 4px;
+}
+
+/* Wrapper pour centrer les vidéos et iframes */
 .ProseMirror p:has(video),
-.ProseMirror div:has(video) {
+.ProseMirror div:has(video),
+.ProseMirror p:has(iframe),
+.ProseMirror div:has(iframe) {
   text-align: center;
   display: flex;
   justify-content: center;

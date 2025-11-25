@@ -27,6 +27,12 @@ import { TiptapToolbar } from './TiptapToolbar';
 import { FichierElement } from '../../../../types/cours';
 import { useState, useEffect } from 'react';
 import { Modal } from '../../../Modal';
+import { 
+  isContentTooLarge, 
+  isFileTooLarge, 
+  formatSize,
+  MAX_CONTENT_SIZE 
+} from '@/lib/content-validator';
 import './TiptapEditor.css';
 
 interface TiptapEditorProps {
@@ -103,6 +109,8 @@ export const TiptapEditor = ({
   const [videoPreview, setVideoPreview] = useState<string>('');
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
+  const [pasteWarningModal, setPasteWarningModal] = useState<{ isOpen: boolean; size: number; maxSize: number }>({ isOpen: false, size: 0, maxSize: MAX_CONTENT_SIZE });
+  const [previousContent, setPreviousContent] = useState<string>(content);
 
 
   const editor = useEditor({
@@ -153,7 +161,31 @@ export const TiptapEditor = ({
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const currentContent = editor.getHTML();
+      
+      // Vérifier si le contenu dépasse la limite (au cas où le collage aurait réussi malgré le blocage)
+      const validation = isContentTooLarge(currentContent);
+      if (validation.tooLarge) {
+        // Si le contenu est trop gros, restaurer le contenu précédent immédiatement
+        console.warn('Contenu trop volumineux détecté après mise à jour, restauration du contenu précédent');
+        
+        // Restaurer le contenu précédent immédiatement
+        editor.commands.setContent(previousContent);
+        
+        // Afficher le modal d'avertissement
+        setPasteWarningModal({
+          isOpen: true,
+          size: validation.size,
+          maxSize: validation.maxSize
+        });
+        
+        // Ne pas appeler onChange pour éviter de mettre à jour le state parent
+        return;
+      }
+      
+      // Sauvegarder le contenu actuel comme contenu précédent (pour restauration si nécessaire)
+      setPreviousContent(currentContent);
+      onChange(currentContent);
       // Ajouter les boutons de suppression après chaque mise à jour
       setTimeout(() => {
         addDeleteButtonsToImages();
@@ -179,9 +211,95 @@ export const TiptapEditor = ({
         }
         return false;
       },
+      handlePaste: (view, event) => {
+        // Cette fonction est appelée par Tiptap, mais on utilise aussi un listener natif
+        // pour être sûr d'intercepter avant tout traitement
+        const clipboardData = event.clipboardData;
+        if (!clipboardData) return false;
+
+        const pastedText = clipboardData.getData('text/plain');
+        if (!pastedText) return false;
+
+        const validation = isContentTooLarge(pastedText);
+        
+        if (validation.tooLarge) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          
+          setPasteWarningModal({
+            isOpen: true,
+            size: validation.size,
+            maxSize: validation.maxSize
+          });
+          
+          return true;
+        }
+
+        return false;
+      },
     },
     immediatelyRender: false,
   });
+
+  // Intercepter le paste au niveau DOM natif AVANT que Tiptap ne le gère
+  useEffect(() => {
+    if (!editor) return;
+
+    const editorElement = editor.view.dom;
+    
+    const handlePasteNative = (event: ClipboardEvent) => {
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) return;
+
+      // Récupérer le texte ET le HTML depuis le presse-papier
+      const pastedText = clipboardData.getData('text/plain');
+      const pastedHtml = clipboardData.getData('text/html');
+      
+      // Utiliser le HTML si disponible (plus précis), sinon le texte
+      const contentToCheck = pastedHtml || pastedText;
+      
+      if (!contentToCheck || contentToCheck.trim() === '') return;
+
+      // Vérifier la taille AVANT que Tiptap ne traite le collage
+      const validation = isContentTooLarge(contentToCheck);
+      
+      if (validation.tooLarge) {
+        // Bloquer COMPLÈTEMENT le collage
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        
+        // Empêcher le comportement par défaut du navigateur
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+        
+        // Afficher le modal immédiatement
+        setPasteWarningModal({
+          isOpen: true,
+          size: validation.size,
+          maxSize: validation.maxSize
+        });
+        
+        // Retourner false pour empêcher la propagation
+        return false;
+      }
+    };
+
+    // Ajouter le listener avec capture=true pour intercepter AVANT les autres handlers
+    // Utiliser { capture: true, passive: false } pour pouvoir preventDefault
+    editorElement.addEventListener('paste', handlePasteNative, { capture: true, passive: false });
+
+    return () => {
+      editorElement.removeEventListener('paste', handlePasteNative, { capture: true } as any);
+    };
+  }, [editor]);
+
+  // Mettre à jour previousContent quand le content prop change
+  useEffect(() => {
+    setPreviousContent(content);
+  }, [content]);
 
 
   // Fonctions pour gérer l'upload de fichiers
@@ -190,6 +308,18 @@ export const TiptapEditor = ({
     if (file) {
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (allowedTypes.includes(file.type)) {
+        // Valider la taille du fichier
+        const validation = isFileTooLarge(file, 'image');
+        if (validation.tooLarge) {
+          setErrorModal({ 
+            isOpen: true, 
+            message: `L'image est trop volumineuse (${validation.formattedSize}). La taille maximale autorisée est de ${validation.formattedMaxSize}. Veuillez choisir une image plus petite.` 
+          });
+          // Réinitialiser l'input
+          event.target.value = '';
+          return;
+        }
+        
         setSelectedImageFile(file);
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -207,6 +337,18 @@ export const TiptapEditor = ({
     if (file) {
       const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'];
       if (allowedTypes.includes(file.type)) {
+        // Valider la taille du fichier
+        const validation = isFileTooLarge(file, 'video');
+        if (validation.tooLarge) {
+          setErrorModal({ 
+            isOpen: true, 
+            message: `La vidéo est trop volumineuse (${validation.formattedSize}). La taille maximale autorisée est de ${validation.formattedMaxSize}. Veuillez choisir une vidéo plus petite ou la compresser.` 
+          });
+          // Réinitialiser l'input
+          event.target.value = '';
+          return;
+        }
+        
         setSelectedVideoFile(file);
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -332,7 +474,33 @@ export const TiptapEditor = ({
             return;
           }
         } else {
-          const errorData = await uploadResponse.json();
+          // Gérer les erreurs 413 (Payload Too Large)
+          if (uploadResponse.status === 413) {
+            let errorData;
+            try {
+              errorData = await uploadResponse.json();
+            } catch {
+              errorData = { error: 'Fichier trop volumineux' };
+            }
+            
+            const fileSize = selectedVideoFile ? formatSize(selectedVideoFile.size) : 'inconnue';
+            const maxSize = errorData.maxSize ? formatSize(errorData.maxSize) : '4 MB';
+            
+            setErrorModal({ 
+              isOpen: true, 
+              message: `La vidéo est trop volumineuse (${fileSize}).\n\n⚠️ LIMITE VERCEL :\n\n• La taille maximale autorisée pour un upload via l'API est de ${maxSize}\n• Votre vidéo dépasse cette limite\n\n✅ SOLUTIONS :\n\n1. Utiliser une URL externe (YouTube, Vimeo, etc.) dans le champ "URL de la vidéo"\n2. Compresser la vidéo pour réduire sa taille\n3. Diviser la vidéo en plusieurs parties plus petites\n\nPour les vidéos plus grandes, nous recommandons d'utiliser une plateforme d'hébergement vidéo externe.` 
+            });
+            setIsUploadingVideo(false);
+            return;
+          }
+          
+          // Autres erreurs
+          let errorData;
+          try {
+            errorData = await uploadResponse.json();
+          } catch {
+            errorData = { error: 'Erreur inconnue lors de l\'upload de la vidéo' };
+          }
           const errorMessage = errorData.error || 'Erreur inconnue lors de l\'upload de la vidéo';
           
           setErrorModal({ isOpen: true, message: errorMessage });
@@ -341,8 +509,97 @@ export const TiptapEditor = ({
         }
         setIsUploadingVideo(false);
       } else if (videoUrl) {
-        // Utiliser l'URL fournie directement
-        finalVideoUrl = videoUrl;
+        // Valider l'URL avant de l'utiliser
+        const trimmedUrl = videoUrl.trim();
+        
+        // Vérifier que l'URL est valide (commence par http:// ou https://)
+        if (!trimmedUrl) {
+          setErrorModal({ isOpen: true, message: 'Veuillez saisir une URL valide pour la vidéo.' });
+          return;
+        }
+        
+        try {
+          const url = new URL(trimmedUrl);
+          // Vérifier que c'est bien une URL http ou https
+          if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+            setErrorModal({ isOpen: true, message: 'L\'URL doit commencer par http:// ou https://' });
+            return;
+          }
+          
+          // Détecter si c'est une URL YouTube ou Vimeo et convertir en URL embed
+          let embedUrl = trimmedUrl;
+          let isEmbed = false;
+          
+          // YouTube : https://www.youtube.com/watch?v=VIDEO_ID ou https://youtu.be/VIDEO_ID
+          if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
+            isEmbed = true;
+            let videoId = '';
+            
+            if (url.hostname.includes('youtu.be')) {
+              // Format: https://youtu.be/VIDEO_ID
+              videoId = url.pathname.slice(1);
+            } else if (url.pathname === '/watch' && url.searchParams.has('v')) {
+              // Format: https://www.youtube.com/watch?v=VIDEO_ID
+              videoId = url.searchParams.get('v') || '';
+            } else if (url.pathname.startsWith('/embed/')) {
+              // Déjà en format embed
+              embedUrl = trimmedUrl;
+            } else {
+              // Essayer d'extraire l'ID depuis le pathname
+              const match = url.pathname.match(/\/([a-zA-Z0-9_-]{11})/);
+              if (match) {
+                videoId = match[1];
+              }
+            }
+            
+            if (videoId) {
+              embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else {
+              setErrorModal({ isOpen: true, message: 'URL YouTube invalide. Veuillez utiliser une URL complète comme : https://www.youtube.com/watch?v=VIDEO_ID ou https://youtu.be/VIDEO_ID' });
+              return;
+            }
+          }
+          // Vimeo : https://vimeo.com/VIDEO_ID
+          else if (url.hostname.includes('vimeo.com')) {
+            isEmbed = true;
+            const videoId = url.pathname.split('/').filter(Boolean).pop();
+            if (videoId) {
+              embedUrl = `https://player.vimeo.com/video/${videoId}`;
+            } else {
+              setErrorModal({ isOpen: true, message: 'URL Vimeo invalide. Veuillez utiliser une URL complète comme : https://vimeo.com/VIDEO_ID' });
+              return;
+            }
+          }
+          
+          finalVideoUrl = embedUrl;
+          
+          // Insérer la vidéo dans l'éditeur
+          editor.chain().focus().insertContent({
+            type: 'video',
+            attrs: {
+              src: finalVideoUrl,
+              controls: true,
+              style: 'width: 819px; height: 436px; max-width: 819px; max-height: 436px; border: 2px solid #032622; border-radius: 4px; display: block; margin: 10px auto; object-fit: contain;',
+              type: selectedVideoFile?.type || 'video/mp4',
+              isEmbed: isEmbed,
+            },
+          }).run();
+          
+          // Reset des états
+          setVideoUrl('');
+          setSelectedVideoFile(null);
+          setVideoPreview('');
+          setIsVideoModalOpen(false);
+          setIsUploadingVideo(false);
+          return; // Sortir ici car on a déjà inséré la vidéo
+        } catch (error) {
+          // Si l'URL n'est pas valide, afficher une erreur
+          setErrorModal({ 
+            isOpen: true, 
+            message: 'URL invalide. Veuillez saisir une URL complète commençant par http:// ou https://\n\nExemples valides :\n• https://exemple.com/video.mp4\n• https://www.youtube.com/watch?v=...\n• https://vimeo.com/...' 
+          });
+          return;
+        }
       } else if (selectedVideoFile && !currentCoursId) {
         // Si pas de coursId, utiliser le DataURL temporaire (pour prévisualisation)
         finalVideoUrl = videoPreview;
@@ -360,6 +617,7 @@ export const TiptapEditor = ({
           controls: true,
           style: 'width: 819px; height: 436px; max-width: 819px; max-height: 436px; border: 2px solid #032622; border-radius: 4px; display: block; margin: 10px auto; object-fit: contain;',
           type: selectedVideoFile?.type || 'video/mp4',
+          isEmbed: false,
         },
       }).run();
 
@@ -433,7 +691,7 @@ export const TiptapEditor = ({
       {saveStatus === 'saved' && lastManualSaveTime && (
         <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
           <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
-            Dernière sauvegarde : {lastManualSaveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            Enregistré - {lastManualSaveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
       )}
@@ -654,6 +912,9 @@ export const TiptapEditor = ({
                 <p className="text-xs text-gray-600 mt-1">
                   Formats acceptés : MP4, WebM, OGG, AVI, MOV
                 </p>
+                <p className="text-xs text-amber-600 mt-1 font-semibold">
+                  ⚠️ Taille maximale : 4 MB (limite Vercel). Pour les vidéos plus grandes, utilisez une URL externe ci-dessous.
+                </p>
               </div>
 
               {/* Prévisualisation */}
@@ -686,10 +947,13 @@ export const TiptapEditor = ({
                   type="url"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="https://exemple.com/video.mp4"
+                  placeholder="https://exemple.com/video.mp4 ou https://youtube.com/watch?v=..."
                   className="w-full p-3 border border-[#032622] rounded bg-white text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                   style={{ fontFamily: 'var(--font-termina-medium)' }}
                 />
+                <p className="text-xs text-gray-600 mt-1">
+                  Vous pouvez utiliser une URL directe vers un fichier vidéo (.mp4, .webm, etc.) ou une URL YouTube/Vimeo
+                </p>
               </div>
             </div>
             <div className="flex justify-end p-4 border-t border-[#032622]">
@@ -803,6 +1067,15 @@ export const TiptapEditor = ({
         title="Erreur"
         message={errorModal.message}
         type="error"
+      />
+
+      {/* Modal d'avertissement pour le collage */}
+      <Modal
+        isOpen={pasteWarningModal.isOpen}
+        onClose={() => setPasteWarningModal({ isOpen: false, size: 0, maxSize: MAX_CONTENT_SIZE })}
+        title="Collage impossible - Contenu trop volumineux"
+        message={`Le texte que vous essayez de coller est trop volumineux (${formatSize(pasteWarningModal.size)}).\n\n⚠️ IMPORTANT :\n\n• La taille maximale autorisée pour un collage est de ${formatSize(pasteWarningModal.maxSize)}\n• Le copier-coller d'un seul coup ne fonctionne pas pour de gros volumes de texte\n\n✅ SOLUTION :\n\nVous pouvez coller le texte par petites portions (paragraphe par paragraphe ou section par section). Chaque petite portion sera acceptée sans problème.\n\nLe problème vient uniquement du collage d'une trop grande quantité de texte en une seule fois.`}
+        type="warning"
       />
     </div>
   );

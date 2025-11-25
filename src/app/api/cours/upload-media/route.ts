@@ -62,21 +62,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Limiter la taille des fichiers
-    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
-    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500 MB
+    // Limiter la taille des fichiers (limite Vercel : 4.5 MB)
+    // IMPORTANT: Vercel limite le body des requêtes à 4.5 MB
+    // Pour les fichiers plus grands, utiliser un upload direct vers Supabase Storage
+    const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4 MB (limite Vercel)
+    const MAX_VIDEO_SIZE = 4 * 1024 * 1024; // 4 MB (limite Vercel)
 
     if (isImage && file.size > MAX_IMAGE_SIZE) {
       return NextResponse.json(
-        { error: `La taille de l'image ne doit pas dépasser ${MAX_IMAGE_SIZE / (1024 * 1024)} MB` },
-        { status: 400 }
+        { 
+          error: `La taille de l'image ne doit pas dépasser ${MAX_IMAGE_SIZE / (1024 * 1024)} MB`,
+          code: 'FILE_TOO_LARGE',
+          maxSize: MAX_IMAGE_SIZE,
+          fileSize: file.size
+        },
+        { status: 413 }
       );
     }
 
     if (isVideo && file.size > MAX_VIDEO_SIZE) {
       return NextResponse.json(
-        { error: `La taille de la vidéo ne doit pas dépasser ${MAX_VIDEO_SIZE / (1024 * 1024)} MB` },
-        { status: 400 }
+        { 
+          error: `La taille de la vidéo ne doit pas dépasser ${MAX_VIDEO_SIZE / (1024 * 1024)} MB. Pour les vidéos plus grandes, veuillez utiliser une URL externe (YouTube, Vimeo, etc.) ou compresser la vidéo.`,
+          code: 'FILE_TOO_LARGE',
+          maxSize: MAX_VIDEO_SIZE,
+          fileSize: file.size
+        },
+        { status: 413 }
       );
     }
 

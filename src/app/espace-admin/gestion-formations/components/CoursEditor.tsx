@@ -6,6 +6,8 @@ import { TiptapEditor } from './TiptapEditor';
 import AdminTopBar from '../../components/AdminTopBar';
 import { Chapitre, FichierElement } from '../../../../types/cours';
 import { ArrowLeft } from 'lucide-react';
+import { isContentTooLarge, estimateFinalSize, formatSize, MAX_CONTENT_SIZE } from '@/lib/content-validator';
+import { Modal } from '../../../Modal';
 
 interface ChapitreEditorProps {
   chapitreId?: number;
@@ -43,6 +45,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
     quizzes?: Record<number, { quiz: any; questions: any[] }>;
     etudeCas?: { id: number; titre: string };
   } | null>(null);
+  const [contentSizeWarningModal, setContentSizeWarningModal] = useState<{ isOpen: boolean; size: number; maxSize: number }>({ isOpen: false, size: 0, maxSize: MAX_CONTENT_SIZE });
 
   const loadCoursInfo = async () => {
     try {
@@ -278,6 +281,30 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
     }
 
     try {
+      // Valider la taille du contenu avant l'envoi (toujours vérifier si le contenu existe)
+      if (contenu) {
+        // Estimer la taille finale du JSON (plus précis que juste le contenu)
+        const estimatedSize = estimateFinalSize(contenu);
+        if (estimatedSize > MAX_CONTENT_SIZE) {
+          console.log('Contenu trop volumineux détecté:', { estimatedSize, maxSize: MAX_CONTENT_SIZE });
+          setContentSizeWarningModal({
+            isOpen: true,
+            size: estimatedSize,
+            maxSize: MAX_CONTENT_SIZE
+          });
+          // Réinitialiser les états
+          if (isAutoSave) {
+            setIsAutoSaving(false);
+            setSaveStatus('idle');
+          } else {
+            setIsSaving(false);
+            setSaveStatus('idle');
+          }
+          setSaveAbortController(null);
+          return; // Ne pas sauvegarder
+        }
+      }
+
       // Construire l'objet de données avec seulement les champs modifiés
       const chapitreData: any = {
         cours_id: coursId
@@ -314,18 +341,16 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         });
         
         if (response.ok) {
+          // Sauvegarde réussie - arrêter immédiatement et afficher le message avec l'heure
           const data = await response.json();
-          // Si l'API retourne le chapitre mis à jour, mettre à jour l'état
-          if (data.chapitre) {
-            setCours(data.chapitre);
-          }
+          
           // Mettre à jour seulement les champs sauvegardés
           // IMPORTANT: Mettre à jour hasUnsavedChanges AVANT de mettre à jour lastSavedContent
           // pour éviter que le useEffect de sauvegarde automatique ne se déclenche
           setHasUnsavedChanges(false);
           
           if (contenuChanged) {
-          setLastSavedContent(contenu);
+            setLastSavedContent(contenu);
           }
           if (titreChanged) {
             // IMPORTANT: Sauvegarder le titre du chapitre, pas le titre du cours
@@ -335,18 +360,21 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
             setLastSavedStatut('brouillon');
           }
           
+          // Mettre à jour le statut avec l'heure appropriée
+          const saveTime = new Date();
           if (isAutoSave) {
-            const saveTime = new Date();
             setLastAutoSaveTime(saveTime);
             setSaveStatus('auto-saved');
-            // Le message reste affiché jusqu'à la prochaine sauvegarde
           } else {
-            // Sauvegarde manuelle
-            const saveTime = new Date();
             setLastManualSaveTime(saveTime);
             setSaveStatus('saved');
-            // Le message reste affiché jusqu'à la prochaine sauvegarde
           }
+          
+          // Si l'API retourne le chapitre mis à jour, mettre à jour l'état
+          if (data.chapitre) {
+            setCours(data.chapitre);
+          }
+          
           // Rafraîchir le chapitrage après mise à jour (en arrière-plan, sans bloquer)
           if (typeof window !== 'undefined') {
             setTimeout(() => {
@@ -356,6 +384,41 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
               }
             }, 100);
           }
+          
+          // Arrêter ici - ne pas continuer avec d'autres vérifications
+          return;
+        } else if (response.status === 413) {
+          // Gérer les erreurs 413
+          const errorData = await response.json().catch(() => ({ error: 'Contenu trop volumineux' }));
+          // Estimer la taille pour afficher dans le modal
+          const estimatedSize = contenu ? estimateFinalSize(contenu) : MAX_CONTENT_SIZE + 1;
+          setContentSizeWarningModal({
+            isOpen: true,
+            size: estimatedSize,
+            maxSize: MAX_CONTENT_SIZE
+          });
+          if (isAutoSave) {
+            setIsAutoSaving(false);
+            setSaveStatus('idle');
+          } else {
+            setIsSaving(false);
+            setSaveStatus('idle');
+          }
+          setSaveAbortController(null);
+          return;
+        } else {
+          // Autre erreur
+          console.error('Erreur lors de la sauvegarde:', response.status);
+          if (isAutoSave) {
+            setIsAutoSaving(false);
+            setSaveStatus('idle');
+          } else {
+            setIsSaving(false);
+            setSaveStatus('idle');
+          }
+          setSaveAbortController(null);
+          alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+          return;
         }
       } else {
         // Création
@@ -366,36 +429,67 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         });
         
         if (response.ok) {
+          // Création réussie - arrêter immédiatement et afficher le message avec l'heure
           const data = await response.json();
           setCurrentChapitreId(data.chapitre.id);
           setCours(data.chapitre);
-          setLastSavedContent(contenu);
-          // IMPORTANT: Sauvegarder le titre du chapitre retourné par l'API, pas le titre du cours
-          setLastSavedTitre(data.chapitre.titre || '');
-          setLastSavedStatut('brouillon');
+          
+          // Mettre à jour les états de sauvegarde
           setHasUnsavedChanges(false);
+          if (contenuChanged) {
+            setLastSavedContent(contenu);
+          }
+          if (titreChanged) {
+            setLastSavedTitre(chapitreTitre);
+          }
+          if (statutChanged) {
+            setLastSavedStatut('brouillon');
+          }
+          
+          // Mettre à jour le statut avec l'heure appropriée
+          const saveTime = new Date();
           if (isAutoSave) {
-            const saveTime = new Date();
             setLastAutoSaveTime(saveTime);
             setSaveStatus('auto-saved');
-            // Le message reste affiché jusqu'à la prochaine sauvegarde
           } else {
-            const saveTime = new Date();
             setLastManualSaveTime(saveTime);
             setSaveStatus('saved');
-            // Le message reste affiché jusqu'à la prochaine sauvegarde
           }
-          // Rafraîchir le chapitrage après création
-          if (typeof window !== 'undefined') {
-            const refreshFn = (window as any)[`refreshChapitrage_${coursId}`];
-            if (refreshFn && typeof refreshFn === 'function') {
-              refreshFn();
-            }
+          
+          // Arrêter ici - ne pas continuer avec d'autres vérifications
+          return;
+        } else if (response.status === 413) {
+          // Gérer les erreurs 413
+          const errorData = await response.json().catch(() => ({ error: 'Contenu trop volumineux' }));
+          // Estimer la taille pour afficher dans le modal
+          const estimatedSize = contenu ? estimateFinalSize(contenu) : MAX_CONTENT_SIZE + 1;
+          setContentSizeWarningModal({
+            isOpen: true,
+            size: estimatedSize,
+            maxSize: MAX_CONTENT_SIZE
+          });
+          if (isAutoSave) {
+            setIsAutoSaving(false);
+            setSaveStatus('idle');
+          } else {
+            setIsSaving(false);
+            setSaveStatus('idle');
           }
-          // Rediriger seulement si ce n'est pas une sauvegarde automatique
-          if (!isAutoSave) {
-            router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${data.chapitre.id}`);
+          setSaveAbortController(null);
+          return;
+        } else {
+          // En cas d'autre erreur
+          console.error('Erreur lors de la création du chapitre:', response.status);
+          if (isAutoSave) {
+            setIsAutoSaving(false);
+            setSaveStatus('idle');
+          } else {
+            setIsSaving(false);
+            setSaveStatus('idle');
           }
+          setSaveAbortController(null);
+          alert('Erreur lors de la création du chapitre. Veuillez réessayer.');
+          return;
         }
       }
     } catch (error: any) {
@@ -463,6 +557,21 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   const handleNextStep = async () => {
     setIsSaving(true);
     try {
+      // Valider la taille du contenu avant l'envoi
+      if (contenu) {
+        // Estimer la taille finale du JSON (plus précis que juste le contenu)
+        const estimatedSize = estimateFinalSize(contenu);
+        if (estimatedSize > MAX_CONTENT_SIZE) {
+          setContentSizeWarningModal({
+            isOpen: true,
+            size: estimatedSize,
+            maxSize: MAX_CONTENT_SIZE
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+
       let finalChapitreId = currentChapitreId;
 
       // Vérifier si le contenu a changé avant de sauvegarder
@@ -489,9 +598,22 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           if (response.ok) {
             setLastSavedContent(contenu);
             setHasUnsavedChanges(false);
-          } else {
-            throw new Error('Erreur lors de la mise à jour du chapitre');
+        } else {
+          // Gérer les erreurs 413
+          if (response.status === 413) {
+            const errorData = await response.json().catch(() => ({ error: 'Contenu trop volumineux' }));
+            // Estimer la taille pour afficher dans le modal
+            const estimatedSize = contenu ? estimateFinalSize(contenu) : MAX_CONTENT_SIZE + 1;
+            setContentSizeWarningModal({
+              isOpen: true,
+              size: estimatedSize,
+              maxSize: MAX_CONTENT_SIZE
+            });
+            setIsSaving(false);
+            return;
           }
+          throw new Error('Erreur lors de la mise à jour du chapitre');
+        }
         }
         // Si pas de changements, on passe directement à la redirection
       } else {
@@ -511,21 +633,39 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         });
         
         if (response.ok) {
+          // Création réussie - arrêter immédiatement
           const data = await response.json();
-            finalChapitreId = data.chapitre.id;
-            // Mettre à jour le state avec le nouveau chapitre
-            setCours(data.chapitre);
-            setCurrentChapitreId(finalChapitreId);
-            setLastSavedContent(contenu);
-            setHasUnsavedChanges(false);
-            setExistingQuizId(null); // Réinitialiser car c'est un nouveau chapitre
+          finalChapitreId = data.chapitre.id;
+          // Mettre à jour le state avec le nouveau chapitre
+          setCours(data.chapitre);
+          setCurrentChapitreId(finalChapitreId);
+          setLastSavedContent(contenu);
+          setHasUnsavedChanges(false);
+          setExistingQuizId(null); // Réinitialiser car c'est un nouveau chapitre
+          setIsSaving(false);
+          
           // Mettre à jour l'URL si nécessaire
-            if (finalChapitreId) {
-              router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${finalChapitreId}`, { scroll: false });
-            }
-          } else {
-            throw new Error('Erreur lors de la création du chapitre');
+          if (finalChapitreId) {
+            router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${finalChapitreId}`, { scroll: false });
           }
+          
+          // Arrêter ici, ne pas continuer
+          // Note: La redirection vers le quiz se fera après cette fonction
+        } else {
+          // Gérer les erreurs 413
+          if (response.status === 413) {
+            const errorData = await response.json().catch(() => ({ error: 'Contenu trop volumineux' }));
+            setContentSizeWarningModal({
+              isOpen: true,
+              size: 0,
+              maxSize: MAX_CONTENT_SIZE
+            });
+            setIsSaving(false);
+            return;
+          }
+          setIsSaving(false);
+          throw new Error('Erreur lors de la création du chapitre');
+        }
         } else {
           // Si le contenu est vide et qu'il n'y a pas de chapitre, on ne peut pas créer de quiz
           alert('Veuillez d\'abord ajouter du contenu au chapitre avant de créer le quiz');
@@ -705,6 +845,21 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           chapitrageData={chapitrageData || undefined}
         />
       </div>
+
+      {/* Modal d'avertissement pour le contenu trop volumineux */}
+      <Modal
+        isOpen={contentSizeWarningModal.isOpen}
+        onClose={() => {
+          console.log('Fermeture du modal de taille');
+          setContentSizeWarningModal({ isOpen: false, size: 0, maxSize: MAX_CONTENT_SIZE });
+        }}
+        title="Contenu trop volumineux"
+        message={contentSizeWarningModal.size > 0 
+          ? `Le contenu que vous essayez de sauvegarder est trop volumineux (${formatSize(contentSizeWarningModal.size)}).\n\nLa taille maximale autorisée est de ${formatSize(contentSizeWarningModal.maxSize)}.\n\nVeuillez réduire la taille du contenu en supprimant du texte ou des images, ou divisez le contenu en plusieurs chapitres.`
+          : `Le contenu que vous essayez de sauvegarder est trop volumineux.\n\nLa taille maximale autorisée est de ${formatSize(contentSizeWarningModal.maxSize)}.\n\nVeuillez réduire la taille du contenu en supprimant du texte ou des images, ou divisez le contenu en plusieurs chapitres.`
+        }
+        type="warning"
+      />
       </div>
   );
 };
