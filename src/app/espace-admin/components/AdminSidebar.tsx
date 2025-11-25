@@ -357,7 +357,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                   )}
                   {isCollapsed && isOpen && item.children && (
                     <div className="mt-2 flex flex-col items-center gap-2">
-                      <div className="w-px h-4 bg-gray-600" />
                       {item.children.map((child) => {
                         const isActive = activeItem === child.id || pathname.includes(child.href);
                         return (
