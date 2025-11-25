@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Chapitre } from '../../../../types/cours';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CreateModule } from './CreateModule';
 
 interface ChapitrageProps {
@@ -39,6 +39,7 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
   const [isLoading, setIsLoading] = useState(true);
   const [isAddChapitreModalOpen, setIsAddChapitreModalOpen] = useState(false);
   const [coursInfo, setCoursInfo] = useState<{ id: string; titre: string } | null>(null);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const loadChapitres = useCallback(async () => {
       try {
@@ -375,31 +376,49 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-40 bg-[#F8F5E4] border border-[#032622] overflow-hidden w-[567px] h-[267px] flex flex-col shadow-lg">
+      <div className={`fixed bottom-4 right-4 z-40 bg-[#F8F5E4] border border-[#032622] overflow-hidden flex flex-col shadow-lg transition-all duration-300 ${
+        isMinimized ? 'w-[60px] h-[60px]' : 'w-[567px] h-[267px]'
+      }`}>
         <div className="p-4 border-b border-[#032622]/20 flex items-center justify-between">
-          <h3 
-            className="text-lg font-bold text-[#032622] uppercase"
-            style={{ fontFamily: 'var(--font-termina-bold)' }}
-          >
-            CHAPITRAGE
-          </h3>
           <button
-            onClick={() => setIsAddChapitreModalOpen(true)}
+            onClick={() => setIsMinimized(!isMinimized)}
             className="w-6 h-6 border border-[#032622] bg-[#032622] text-[#F8F5E4] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
-            title="Ajouter un chapitre"
+            title={isMinimized ? "Agrandir le chapitrage" : "Réduire le chapitrage"}
           >
-            <Plus className="w-4 h-4" />
+            {isMinimized ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
           </button>
+          {!isMinimized && (
+            <h3 
+              className="text-lg font-bold text-[#032622] uppercase flex-1 text-center"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              CHAPITRAGE
+            </h3>
+          )}
+          {!isMinimized && (
+            <button
+              onClick={() => setIsAddChapitreModalOpen(true)}
+              className="w-6 h-6 border border-[#032622] bg-[#032622] text-[#F8F5E4] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
+              title="Ajouter un chapitre"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
-        {chapitres.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-[#032622]/70 text-sm text-center">
-              Aucun chapitre créé pour ce cours
-            </p>
-          </div>
-        ) : (
+      {!isMinimized && (
+        <div className="flex-1 p-4 overflow-y-auto">
+          {chapitres.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-[#032622]/70 text-sm text-center">
+                Aucun chapitre créé pour ce cours
+              </p>
+            </div>
+          ) : (
           <div className="space-y-2">
             {chapitres.map((chapitreItem) => {
               const hasQuiz = quizzesByChapitre.has(chapitreItem.id);
@@ -475,7 +494,8 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
             )}
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
 
     {/* Modal pour ajouter un chapitre - Utilise CreateModule */}
