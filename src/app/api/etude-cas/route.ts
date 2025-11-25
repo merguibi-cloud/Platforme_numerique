@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     const body = await request.json();
 
-    const { cours_id, titre, description, consigne, fichier_consigne, date_limite, points_max, criteres_evaluation } = body;
+    const { cours_id, titre, description, consigne, fichier_consigne, nom_fichier_consigne, date_limite, points_max, criteres_evaluation } = body;
 
     console.log('[POST /api/etude-cas] Données reçues:', { 
       cours_id,
@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
       if (description !== undefined) updateData.description = description;
       if (consigne !== undefined) updateData.consigne = consigne || '';
       if (fichier_consigne !== undefined) updateData.fichier_consigne = fichier_consigne;
+      if (nom_fichier_consigne !== undefined) updateData.nom_fichier_consigne = nom_fichier_consigne;
       if (date_limite !== undefined) updateData.date_limite = date_limite;
       if (points_max !== undefined) updateData.points_max = points_max;
       if (criteres_evaluation !== undefined) updateData.criteres_evaluation = criteres_evaluation;
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
         description,
         consigne: finalConsigne,
         fichier_consigne,
+        nom_fichier_consigne: nom_fichier_consigne || null,
         date_limite,
         points_max: points_max || 100,
         criteres_evaluation,
@@ -211,7 +213,7 @@ export async function PUT(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     const body = await request.json();
 
-    const { etudeCasId, titre, description, consigne, fichier_consigne, date_limite, points_max, criteres_evaluation } = body;
+    const { etudeCasId, titre, description, consigne, fichier_consigne, nom_fichier_consigne, date_limite, points_max, criteres_evaluation } = body;
 
     if (!etudeCasId) {
       return NextResponse.json({ error: 'etudeCasId requis' }, { status: 400 });
@@ -230,8 +232,9 @@ export async function PUT(request: NextRequest) {
 
     if (titre !== undefined) updateData.titre = titre;
     if (description !== undefined) updateData.description = description;
-    if (consigne !== undefined) updateData.consigne = consigne;
+    if (consigne !== undefined) updateData.consigne = consigne || ''; // consigne est NOT NULL, utiliser '' au lieu de null
     if (fichier_consigne !== undefined) updateData.fichier_consigne = fichier_consigne;
+    if (nom_fichier_consigne !== undefined) updateData.nom_fichier_consigne = nom_fichier_consigne;
     if (date_limite !== undefined) updateData.date_limite = date_limite;
     if (points_max !== undefined) updateData.points_max = points_max;
     if (criteres_evaluation !== undefined) updateData.criteres_evaluation = criteres_evaluation;

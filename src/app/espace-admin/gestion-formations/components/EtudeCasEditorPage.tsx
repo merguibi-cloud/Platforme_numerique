@@ -41,6 +41,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
   const [consigne, setConsigne] = useState('');
   const [fichierConsigne, setFichierConsigne] = useState<File | null>(null);
   const [fichierConsigneUrl, setFichierConsigneUrl] = useState<string | null>(null);
+  const [fichierConsigneNom, setFichierConsigneNom] = useState<string | null>(null); // Nom original du fichier
   const [useFichierConsigne, setUseFichierConsigne] = useState(false);
   const [isUploadingConsigne, setIsUploadingConsigne] = useState(false);
   const [isDeletingConsigne, setIsDeletingConsigne] = useState(false);
@@ -98,25 +99,26 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
               setFichierConsigneUrl(data.etudeCas.fichier_consigne);
               setUseFichierConsigne(true);
               
-              // Extraire le nom du fichier depuis l'URL pour l'affichage
-              let fileName = 'fichier_consigne';
-              try {
-                const url = new URL(data.etudeCas.fichier_consigne);
-                const pathParts = url.pathname.split('/');
-                fileName = pathParts[pathParts.length - 1] || fileName;
-                // Nettoyer le nom du fichier (enlever les paramètres de requête si présents)
-                fileName = fileName.split('?')[0];
-                console.log('[loadEtudeCas] Nom du fichier extrait:', fileName);
-              } catch (e) {
-                // Si ce n'est pas une URL valide, essayer d'extraire depuis le chemin
-                const pathParts = data.etudeCas.fichier_consigne.split('/');
-                fileName = pathParts[pathParts.length - 1] || fileName;
-                fileName = fileName.split('?')[0];
-                console.log('[loadEtudeCas] Nom du fichier extrait (chemin):', fileName);
+              // Utiliser le nom stocké en base ou extraire depuis l'URL
+              let fileName = data.etudeCas.nom_fichier_consigne || 'fichier_consigne';
+              if (!data.etudeCas.nom_fichier_consigne) {
+                // Fallback : extraire le nom du fichier depuis l'URL
+                try {
+                  const url = new URL(data.etudeCas.fichier_consigne);
+                  const pathParts = url.pathname.split('/');
+                  fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+                  console.log('[loadEtudeCas] Nom du fichier extrait depuis URL:', fileName);
+                } catch (e) {
+                  const pathParts = data.etudeCas.fichier_consigne.split('/');
+                  fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+                  console.log('[loadEtudeCas] Nom du fichier extrait (chemin):', fileName);
+                }
+              } else {
+                console.log('[loadEtudeCas] Nom du fichier depuis la base:', fileName);
               }
               
-              // Créer un objet File factice pour l'affichage (on ne peut pas recréer un vrai File depuis une URL)
-              // On stocke le nom du fichier pour l'affichage
+              // Créer un objet File factice pour l'affichage et stocker le nom
+              setFichierConsigneNom(fileName);
               setFichierConsigne(new File([], fileName, { type: 'application/octet-stream' }));
               console.log('[loadEtudeCas] États mis à jour: useFichierConsigne=true, fichierConsigneUrl=', data.etudeCas.fichier_consigne);
             } else {
@@ -149,10 +151,12 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
             // Utiliser les valeurs chargées depuis la base de données
             const loadedConsigne = data.etudeCas.consigne || '';
             const loadedFichierConsigneUrl = data.etudeCas.fichier_consigne || null;
+            const loadedFichierConsigneNom = data.etudeCas.nom_fichier_consigne || null;
             setLastSavedData(JSON.stringify({ 
               consigne: loadedConsigne, 
               questions: formattedQuestions, 
-              fichierConsigneUrl: loadedFichierConsigneUrl 
+              fichierConsigneUrl: loadedFichierConsigneUrl,
+              fichierConsigneNom: loadedFichierConsigneNom
             }));
             setHasUnsavedChanges(false);
           }
@@ -197,16 +201,19 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
               setFichierConsigneUrl(reloadData.etudeCas.fichier_consigne);
               setUseFichierConsigne(true);
               
-              // Extraire le nom du fichier
-              let fileName = 'fichier_consigne';
-              try {
-                const url = new URL(reloadData.etudeCas.fichier_consigne);
-                const pathParts = url.pathname.split('/');
-                fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
-              } catch (e) {
-                const pathParts = reloadData.etudeCas.fichier_consigne.split('/');
-                fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+              // Utiliser le nom stocké en base ou extraire depuis l'URL
+              let fileName = reloadData.etudeCas.nom_fichier_consigne || 'fichier_consigne';
+              if (!reloadData.etudeCas.nom_fichier_consigne) {
+                try {
+                  const url = new URL(reloadData.etudeCas.fichier_consigne);
+                  const pathParts = url.pathname.split('/');
+                  fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+                } catch (e) {
+                  const pathParts = reloadData.etudeCas.fichier_consigne.split('/');
+                  fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+                }
               }
+              setFichierConsigneNom(fileName);
               setFichierConsigne(new File([], fileName, { type: 'application/octet-stream' }));
             }
           }
@@ -382,6 +389,8 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
         const uploadData = await uploadResponse.json();
         if (uploadData.success && uploadData.fichier) {
           setFichierConsigneUrl(uploadData.fichier.url || uploadData.fichier.chemin_fichier);
+          // Stocker le nom original du fichier
+          setFichierConsigneNom(uploadData.fichier.nom_fichier || file.name);
         }
       } else {
         let errorData;
@@ -429,8 +438,9 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
         const payload = {
           cours_id: coursId,
           titre: `Étude de cas - Cours`,
-          consigne: consigne || null,
+          consigne: consigne || '', // consigne est NOT NULL, utiliser '' au lieu de null
           fichier_consigne: fichierConsigneUrl || null,
+          nom_fichier_consigne: fichierConsigneNom || null,
         };
         console.log('[handleAutoSave] Envoi POST /api/etude-cas avec:', payload);
         const etudeCasResponse = await fetch('/api/etude-cas', {
@@ -451,8 +461,9 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             etudeCasId: currentEtudeCasId,
-            consigne: consigne || null,
+            consigne: consigne || '', // consigne est NOT NULL, utiliser '' au lieu de null
             fichier_consigne: fichierConsigneUrl || null,
+            nom_fichier_consigne: fichierConsigneNom || null,
           }),
         });
         if (!updateResponse.ok) {
@@ -516,7 +527,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
         }
       }
 
-      setLastSavedData(JSON.stringify({ consigne, questions, fichierConsigneUrl }));
+      setLastSavedData(JSON.stringify({ consigne, questions, fichierConsigneUrl, fichierConsigneNom }));
       setHasUnsavedChanges(false);
       setLastAutoSaveTime(new Date());
     } catch (error) {
@@ -524,7 +535,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
     } finally {
       setIsAutoSaving(false);
     }
-      }, [consigne, questions, etudeCasId, coursId, isSaving, isAutoSaving, hasUnsavedChanges, fichierConsigneUrl]);
+      }, [consigne, questions, etudeCasId, coursId, isSaving, isAutoSaving, hasUnsavedChanges, fichierConsigneUrl, fichierConsigneNom]);
 
   // Sauvegarde automatique après 5 secondes
   useEffect(() => {
@@ -628,8 +639,9 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
         const payload = {
           cours_id: coursId,
           titre: `Étude de cas - Cours`,
-          consigne: consigne || null,
+          consigne: consigne || '', // consigne est NOT NULL, utiliser '' au lieu de null
           fichier_consigne: fichierConsigneUrl || null,
+          nom_fichier_consigne: fichierConsigneNom || null,
         };
         console.log('[handleSubmit] Envoi POST /api/etude-cas avec:', payload);
         const etudeCasResponse = await fetch('/api/etude-cas', {
@@ -651,8 +663,9 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             etudeCasId: currentEtudeCasId,
-            consigne: consigne,
+            consigne: consigne || '', // consigne est NOT NULL, utiliser '' au lieu de null
             fichier_consigne: fichierConsigneUrl,
+            nom_fichier_consigne: fichierConsigneNom || null,
           }),
         });
       }
@@ -712,7 +725,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
         }
       }
 
-      setLastSavedData(JSON.stringify({ consigne, questions, fichierConsigneUrl }));
+      setLastSavedData(JSON.stringify({ consigne, questions, fichierConsigneUrl, fichierConsigneNom }));
       setHasUnsavedChanges(false);
       setLastAutoSaveTime(new Date());
 
@@ -797,15 +810,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-[#032622]" />
                   <span className="text-[#032622] font-bold">
-                    {fichierConsigne?.name || (fichierConsigneUrl ? (() => {
-                      try {
-                        const url = new URL(fichierConsigneUrl);
-                        const pathParts = url.pathname.split('/');
-                        return pathParts[pathParts.length - 1]?.split('?')[0] || 'Fichier consigne';
-                      } catch {
-                        return fichierConsigneUrl.split('/').pop()?.split('?')[0] || 'Fichier consigne';
-                      }
-                    })() : 'Fichier consigne')}
+                    {fichierConsigneNom || fichierConsigne?.name || 'Fichier consigne'}
                   </span>
                   {fichierConsigneUrl && (
                     <a
@@ -849,6 +854,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
                     }
                     setFichierConsigne(null);
                     setFichierConsigneUrl(null);
+                    setFichierConsigneNom(null);
                     setUseFichierConsigne(false);
                     setIsDeletingConsigne(false);
                   }}

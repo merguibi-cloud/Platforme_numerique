@@ -88,6 +88,7 @@ export interface EtudeCas {
   description?: string;
   consigne: string;
   fichier_consigne?: string;
+  nom_fichier_consigne?: string; // Nom original du fichier
   date_limite?: string;
   points_max: number;
   criteres_evaluation?: string[];

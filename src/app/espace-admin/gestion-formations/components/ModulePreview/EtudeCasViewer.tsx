@@ -133,18 +133,31 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
         </h3>
         {etudeCas.fichier_consigne ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-[#F8F5E4] border-2 border-[#032622]">
-              <FileText className="w-6 h-6 text-[#032622]" />
-              <span className="text-[#032622] font-bold flex-1">
-                {etudeCas.fichier_consigne.split('/').pop() || 'Fichier consigne'}
-              </span>
+            <div className="flex items-center justify-between p-4 bg-white border-2 border-[#032622] rounded hover:bg-[#032622]/5 transition-colors">
+              <div className="flex items-center gap-3 flex-1">
+                <FileText className="w-6 h-6 text-[#032622]" />
+                <span className="text-[#032622] font-bold text-sm">
+                  {(etudeCas as any).nom_fichier_consigne || (() => {
+                    try {
+                      const url = new URL(etudeCas.fichier_consigne);
+                      const pathParts = url.pathname.split('/');
+                      return pathParts[pathParts.length - 1]?.split('?')[0] || 'Fichier consigne';
+                    } catch {
+                      return etudeCas.fichier_consigne.split('/').pop()?.split('?')[0] || 'Fichier consigne';
+                    }
+                  })()}
+                </span>
+              </div>
               <a
                 href={etudeCas.fichier_consigne}
+                download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 transition-colors font-bold text-sm uppercase"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 <Download className="w-4 h-4" />
+                Télécharger
               </a>
             </div>
             {etudeCas.consigne && (
@@ -167,14 +180,31 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
               <a
                 key={aIndex}
                 href={annexe}
+                download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 bg-[#F8F5E4] border-2 border-[#032622] hover:bg-[#032622]/5 transition-colors"
+                className="flex items-center justify-between p-3 bg-white border-2 border-[#032622] rounded hover:bg-[#032622]/5 transition-colors"
               >
-                <span className="text-[#032622] font-bold text-sm">
-                  Annexe {aIndex + 1}: {annexe.split('/').pop() || `Support ${aIndex + 1}`}
-                </span>
-                <Download className="w-4 h-4 text-[#032622]" />
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-[#032622]" />
+                  <span className="text-[#032622] font-bold text-sm">
+                    {(() => {
+                      try {
+                        const url = new URL(annexe);
+                        const pathParts = url.pathname.split('/');
+                        return pathParts[pathParts.length - 1]?.split('?')[0] || `Annexe ${aIndex + 1}`;
+                      } catch {
+                        return annexe.split('/').pop()?.split('?')[0] || `Annexe ${aIndex + 1}`;
+                      }
+                    })()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#032622] font-bold text-xs uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                    Télécharger
+                  </span>
+                  <Download className="w-4 h-4 text-[#032622]" />
+                </div>
               </a>
             ))}
           </div>
@@ -303,14 +333,31 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
                     <a
                       key={aIndex}
                       href={annexe}
+                      download
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 bg-[#F8F5E4] border-2 border-[#032622] hover:bg-[#032622]/5 transition-colors"
+                      className="flex items-center justify-between p-3 bg-white border-2 border-[#032622] rounded hover:bg-[#032622]/5 transition-colors"
                     >
-                      <span className="text-[#032622] font-bold text-sm">
-                        {annexe.split('/').pop() || `Support ${aIndex + 1}`}
-                      </span>
-                      <Download className="w-4 h-4 text-[#032622]" />
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-[#032622]" />
+                        <span className="text-[#032622] font-bold text-sm">
+                          {(() => {
+                            try {
+                              const url = new URL(annexe);
+                              const pathParts = url.pathname.split('/');
+                              return pathParts[pathParts.length - 1]?.split('?')[0] || `Support ${aIndex + 1}`;
+                            } catch {
+                              return annexe.split('/').pop()?.split('?')[0] || `Support ${aIndex + 1}`;
+                            }
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#032622] font-bold text-xs uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                          Télécharger
+                        </span>
+                        <Download className="w-4 h-4 text-[#032622]" />
+                      </div>
                     </a>
                   ))}
                 </div>
