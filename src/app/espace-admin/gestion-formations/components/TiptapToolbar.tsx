@@ -21,6 +21,7 @@ interface TiptapToolbarProps {
   onSaveDraft?: () => void;
   onNextStep?: () => void;
   isSaving?: boolean;
+  isAutoSaving?: boolean;
   onOpenImageModal?: () => void;
   onOpenVideoModal?: () => void;
   onOpenLinkModal?: () => void;
@@ -32,6 +33,7 @@ export const TiptapToolbar = ({
   onSaveDraft,
   onNextStep,
   isSaving = false,
+  isAutoSaving = false,
   onOpenImageModal,
   onOpenVideoModal,
   onOpenLinkModal,
@@ -78,9 +80,14 @@ export const TiptapToolbar = ({
           {/* Groupe 1: Save & Undo */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => editor.chain().focus().run()}
-              className="w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors"
-              title="Sauvegarder"
+              onClick={() => {
+                if (onSaveDraft) {
+                  onSaveDraft();
+                }
+              }}
+              disabled={isSaving || isAutoSaving}
+              className="w-10 h-10 bg-[#032622] text-[#F8F5E4] flex items-center justify-center hover:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isSaving ? "Sauvegarde en cours..." : isAutoSaving ? "Sauvegarde automatique en cours..." : "Sauvegarder manuellement"}
             >
               <Save className="w-5 h-5" />
             </button>
@@ -308,17 +315,9 @@ export const TiptapToolbar = ({
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        {onSaveDraft && onNextStep && (
+        {/* Navigation Button */}
+        {onNextStep && (
           <div className="flex flex-[1] gap-1">
-            <button
-              onClick={onSaveDraft}
-              disabled={isSaving}
-              className="flex-1 bg-gray-500 text-white text-sm font-semibold uppercase tracking-wider hover:bg-gray-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              {isSaving ? 'Sauvegarde...' : 'ENREGISTRER'}
-            </button>
             <button
               onClick={onNextStep}
               disabled={isSaving}

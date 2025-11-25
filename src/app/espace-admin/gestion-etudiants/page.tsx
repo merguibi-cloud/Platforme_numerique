@@ -127,15 +127,15 @@ export default function GestionEtudiants() {
   return (
     <div className="flex-1 p-6 md:p-10">
         <AdminTopBar notificationCount={0} className="mb-6" />
-        
+      
         <div className="space-y-6">
           <div>
-            <h1 
+          <h1 
               className="text-3xl md:text-4xl font-bold text-[#032622] mb-2"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              GESTION DES ÉTUDIANTS
-            </h1>
+            style={{ fontFamily: 'var(--font-termina-bold)' }}
+          >
+            GESTION DES ÉTUDIANTS
+          </h1>
             <p className="text-[#032622]/70 text-sm md:text-base">
               Gérez tous les étudiants de votre plateforme
             </p>
@@ -209,8 +209,8 @@ export default function GestionEtudiants() {
                       </option>
                     ))}
                   </select>
-                </div>
-              </div>
+          </div>
+        </div>
             )}
           </div>
 
@@ -288,7 +288,7 @@ export default function GestionEtudiants() {
               </table>
             </div>
           )}
-        </div>
+      </div>
     </div>
   );
 }

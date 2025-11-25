@@ -24,6 +24,8 @@ interface ModuleWithStatus {
 interface ModuleManagementProps {
   blocTitle: string;
   blocNumber: string;
+  formationTitle?: string;
+  formationEcole?: string;
   modules: ModuleWithStatus[];
   formationId: string;
   blocId: string;
@@ -39,6 +41,8 @@ interface ModuleManagementProps {
 export const ModuleManagement = ({
   blocTitle,
   blocNumber,
+  formationTitle,
+  formationEcole,
   modules,
   formationId,
   blocId,
@@ -290,6 +294,14 @@ export const ModuleManagement = ({
           >
             {blocNumber} - {blocTitle}
           </h1>
+          {formationTitle && (
+            <p 
+              className="text-sm text-[#032622]/70 italic"
+              style={{ fontFamily: 'var(--font-termina-medium)' }}
+            >
+              Formation : {formationTitle}{formationEcole ? ` - ${formationEcole}` : ''}
+            </p>
+          )}
         </div>
 
         {/* Add Module Button */}

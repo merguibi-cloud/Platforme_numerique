@@ -38,6 +38,8 @@ interface TiptapEditorProps {
   isSaving?: boolean;
   lastAutoSaveTime?: Date | null;
   isAutoSaving?: boolean;
+  lastManualSaveTime?: Date | null;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'auto-saving' | 'auto-saved';
   fichiers?: FichierElement[];
   onAddFile?: (file: File) => void;
   onRemoveFile?: (fileId: string) => void;
@@ -69,6 +71,8 @@ export const TiptapEditor = ({
   isSaving = false,
   lastAutoSaveTime,
   isAutoSaving = false,
+  lastManualSaveTime,
+  saveStatus = 'idle',
   fichiers = [],
   onAddFile,
   onRemoveFile,
@@ -407,8 +411,17 @@ export const TiptapEditor = ({
 
   return (
     <div className="bg-[#F8F5E4] border border-[#032622] relative">
-      {/* Indicateur de sauvegarde automatique - affiché seulement pendant et juste après la sauvegarde */}
-      {isAutoSaving && (
+      {/* Indicateur de sauvegarde */}
+      {/* Priorité 1: Sauvegarde en cours (manuelle ou automatique) */}
+      {saveStatus === 'saving' && (
+        <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
+          <RefreshCw className="w-4 h-4 text-[#032622] animate-spin" />
+          <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+            Enregistrement en cours...
+          </span>
+        </div>
+      )}
+      {saveStatus === 'auto-saving' && (
         <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-[#032622] animate-spin" />
           <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
@@ -416,7 +429,16 @@ export const TiptapEditor = ({
           </span>
         </div>
       )}
-      {!isAutoSaving && lastAutoSaveTime && (
+      {/* Priorité 2: Message de sauvegarde manuelle (persistant jusqu'à la prochaine sauvegarde) */}
+      {saveStatus === 'saved' && lastManualSaveTime && (
+        <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
+          <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+            Dernière sauvegarde : {lastManualSaveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      )}
+      {/* Priorité 3: Message de sauvegarde automatique (si pas de sauvegarde manuelle récente) */}
+      {saveStatus === 'auto-saved' && lastAutoSaveTime && (
         <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-4 py-2 flex items-center gap-2">
           <span className="text-xs text-[#032622]/70" style={{ fontFamily: 'var(--font-termina-medium)' }}>
             Dernière sauvegarde automatique : {lastAutoSaveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -430,6 +452,7 @@ export const TiptapEditor = ({
         onSaveDraft={onSaveDraft}
         onNextStep={onNextStep}
         isSaving={isSaving}
+        isAutoSaving={isAutoSaving}
         onOpenImageModal={openImageModal}
         onOpenVideoModal={openVideoModal}
         onOpenLinkModal={openLinkModal}

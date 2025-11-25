@@ -33,7 +33,9 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   const [lastSavedStatut, setLastSavedStatut] = useState<string>('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
+  const [lastManualSaveTime, setLastManualSaveTime] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'auto-saving' | 'auto-saved'>('idle');
   const [existingQuizId, setExistingQuizId] = useState<number | null>(null);
   const [saveAbortController, setSaveAbortController] = useState<AbortController | null>(null);
   const [chapitrageData, setChapitrageData] = useState<{
@@ -215,8 +217,10 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
       return;
     }
     
+    // Utiliser le titre du chapitre (cours?.titre) et non le titre du cours (coursTitle)
+    const chapitreTitre = cours?.titre || '';
     const contenuChanged = contenu !== lastSavedContent && contenu !== '';
-    const titreChanged = coursTitle !== lastSavedTitre;
+    const titreChanged = chapitreTitre !== lastSavedTitre;
     const statutChanged = 'brouillon' !== lastSavedStatut;
     
     if (contenuChanged || titreChanged || statutChanged) {
@@ -224,27 +228,40 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
     } else {
       setHasUnsavedChanges(false);
     }
-  }, [contenu, lastSavedContent, coursTitle, lastSavedTitre, lastSavedStatut, isSaving, isAutoSaving]);
+  }, [contenu, lastSavedContent, cours, lastSavedTitre, lastSavedStatut, isSaving, isAutoSaving]);
 
   const handleSaveDraft = useCallback(async (isAutoSave = false) => {
     // Calculer les différences pour ne sauvegarder que ce qui a changé
+    // IMPORTANT: Utiliser le titre du chapitre (cours?.titre) et non le titre du cours (coursTitle)
+    const chapitreTitre = cours?.titre || '';
     const contenuChanged = contenu !== lastSavedContent;
-    const titreChanged = coursTitle !== lastSavedTitre;
+    const titreChanged = chapitreTitre !== lastSavedTitre;
     const statutChanged = 'brouillon' !== lastSavedStatut;
     
     // Ne pas sauvegarder si rien n'a changé
     if (!contenuChanged && !titreChanged && !statutChanged) {
+      // Si c'est une sauvegarde manuelle et qu'il n'y a pas de changements, afficher quand même un message
+      if (!isAutoSave) {
+        setSaveStatus('saved');
+        setLastManualSaveTime(new Date());
+        // Le message reste affiché jusqu'à la prochaine sauvegarde
+      }
       return;
     }
 
-    // Annuler la sauvegarde précédente si elle est en cours
-    if (saveAbortController) {
+    // Désactiver la sauvegarde manuelle si une sauvegarde automatique est en cours
+    if (!isAutoSave && isAutoSaving) {
+      return; // Ne pas permettre la sauvegarde manuelle pendant une sauvegarde automatique
+    }
+
+    // Annuler la sauvegarde précédente si elle est en cours (sauf si c'est une sauvegarde manuelle qui annule une auto)
+    if (saveAbortController && isAutoSave) {
       saveAbortController.abort();
     }
 
-    // Ne pas sauvegarder si on est déjà en train de sauvegarder (sauf si c'est une nouvelle sauvegarde)
-    if (isSaving || isAutoSaving) {
-      return;
+    // Pour la sauvegarde automatique, on ne sauvegarde pas si une sauvegarde manuelle est en cours
+    if (isAutoSave && isSaving) {
+      return; // Ne pas interrompre une sauvegarde manuelle avec une auto
     }
 
     // Créer un nouveau AbortController pour cette sauvegarde
@@ -254,8 +271,10 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
     // Pour la sauvegarde automatique, utiliser isAutoSaving au lieu de isSaving
     if (isAutoSave) {
       setIsAutoSaving(true);
+      setSaveStatus('auto-saving');
     } else {
       setIsSaving(true);
+      setSaveStatus('saving');
     }
 
     try {
@@ -269,7 +288,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         chapitreData.contenu = contenu;
       }
       if (titreChanged) {
-        chapitreData.titre = coursTitle;
+        // IMPORTANT: Utiliser le titre du chapitre, pas le titre du cours
+        chapitreData.titre = chapitreTitre;
       }
       if (statutChanged) {
         chapitreData.statut = 'brouillon';
@@ -308,7 +328,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           setLastSavedContent(contenu);
           }
           if (titreChanged) {
-            setLastSavedTitre(coursTitle);
+            // IMPORTANT: Sauvegarder le titre du chapitre, pas le titre du cours
+            setLastSavedTitre(chapitreTitre);
           }
           if (statutChanged) {
             setLastSavedStatut('brouillon');
@@ -317,7 +338,14 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           if (isAutoSave) {
             const saveTime = new Date();
             setLastAutoSaveTime(saveTime);
-            // L'heure de la dernière sauvegarde reste affichée
+            setSaveStatus('auto-saved');
+            // Le message reste affiché jusqu'à la prochaine sauvegarde
+          } else {
+            // Sauvegarde manuelle
+            const saveTime = new Date();
+            setLastManualSaveTime(saveTime);
+            setSaveStatus('saved');
+            // Le message reste affiché jusqu'à la prochaine sauvegarde
           }
           // Rafraîchir le chapitrage après mise à jour (en arrière-plan, sans bloquer)
           if (typeof window !== 'undefined') {
@@ -342,11 +370,20 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           setCurrentChapitreId(data.chapitre.id);
           setCours(data.chapitre);
           setLastSavedContent(contenu);
+          // IMPORTANT: Sauvegarder le titre du chapitre retourné par l'API, pas le titre du cours
+          setLastSavedTitre(data.chapitre.titre || '');
+          setLastSavedStatut('brouillon');
           setHasUnsavedChanges(false);
           if (isAutoSave) {
             const saveTime = new Date();
             setLastAutoSaveTime(saveTime);
-            // L'heure de la dernière sauvegarde reste affichée
+            setSaveStatus('auto-saved');
+            // Le message reste affiché jusqu'à la prochaine sauvegarde
+          } else {
+            const saveTime = new Date();
+            setLastManualSaveTime(saveTime);
+            setSaveStatus('saved');
+            // Le message reste affiché jusqu'à la prochaine sauvegarde
           }
           // Rafraîchir le chapitrage après création
           if (typeof window !== 'undefined') {
@@ -368,6 +405,10 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         return;
       }
       console.error('Erreur lors de la sauvegarde:', error);
+      // Réinitialiser les états en cas d'erreur
+      setSaveStatus('idle');
+      // Afficher un message d'erreur à l'utilisateur
+      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
     } finally {
       if (isAutoSave) {
         setIsAutoSaving(false);
@@ -375,8 +416,9 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         setIsSaving(false);
       }
       setSaveAbortController(null);
+      // Ne pas réinitialiser saveStatus ici, il sera mis à jour après la sauvegarde réussie
     }
-  }, [contenu, lastSavedContent, lastSavedTitre, lastSavedStatut, isSaving, isAutoSaving, currentChapitreId, coursId, coursTitle, router, formationId, blocId, saveAbortController]);
+  }, [contenu, lastSavedContent, lastSavedTitre, lastSavedStatut, isSaving, isAutoSaving, currentChapitreId, coursId, cours, router, formationId, blocId, saveAbortController]);
 
   // Sauvegarde automatique avec debouncing adaptatif selon la taille du contenu
   useEffect(() => {
@@ -429,9 +471,11 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
       if (currentChapitreId) {
         // Si le chapitre existe déjà, ne sauvegarder que s'il y a des modifications
         if (hasChanges) {
+          // IMPORTANT: Utiliser le titre du chapitre s'il existe, sinon le titre du cours comme fallback
+          const chapitreTitre = cours?.titre || coursTitle;
           const chapitreData = {
             cours_id: coursId,
-            titre: coursTitle,
+            titre: chapitreTitre,
         contenu,
         statut: 'en_cours_examen'
       };
@@ -641,6 +685,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           isSaving={isSaving}
           lastAutoSaveTime={lastAutoSaveTime}
           isAutoSaving={isAutoSaving}
+          lastManualSaveTime={lastManualSaveTime}
+          saveStatus={saveStatus}
           fichiers={fichiers}
           onAddFile={handleAddFile}
           onRemoveFile={handleRemoveFile}

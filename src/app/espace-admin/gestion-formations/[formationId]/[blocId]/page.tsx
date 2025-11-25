@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModuleManagement } from '../../components/ModuleManagement';
 import AdminTopBar from '../../../components/AdminTopBar';
+import { getFormationById } from '@/lib/formations';
 
 interface ModuleManagementPageProps {
   params: Promise<{
@@ -33,6 +34,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   const [isLoading, setIsLoading] = useState(true);
   const [modules, setModules] = useState<ModuleWithStatus[]>([]);
   const [blocInfo, setBlocInfo] = useState<{ titre: string; numero_bloc: number } | null>(null);
+  const [formationInfo, setFormationInfo] = useState<{ titre: string; ecole?: string } | null>(null);
 
   const loadBlocInfo = async () => {
     try {
@@ -55,6 +57,20 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
       }
     } catch (error) {
       console.error('Erreur lors du chargement des informations du bloc:', error);
+    }
+  };
+
+  const loadFormationInfo = async () => {
+    try {
+      const formation = await getFormationById(parseInt(formationId, 10));
+      if (formation) {
+        setFormationInfo({
+          titre: formation.titre || '',
+          ecole: formation.ecole
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des informations de la formation:', error);
     }
   };
 
@@ -120,6 +136,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
     const loadData = async () => {
       await Promise.all([
         loadBlocInfo(),
+        loadFormationInfo(),
         loadModules()
       ]);
       setIsLoading(false);
@@ -264,6 +281,8 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
             <ModuleManagement
               blocTitle={blocInfo?.titre || "Chargement..."}
               blocNumber={`BLOC ${blocInfo?.numero_bloc || ""}`}
+              formationTitle={formationInfo?.titre || ''}
+              formationEcole={formationInfo?.ecole}
               modules={modules}
               formationId={formationId}
               blocId={blocId}
