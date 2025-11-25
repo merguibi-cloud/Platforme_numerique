@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, ChevronDown, RefreshCw, ArrowLeft, Upload, Image as ImageIcon, Video, FileText, Check } from 'lucide-react';
 import { Modal } from '@/app/Modal';
 
 interface EtudeCasEditorPageProps {
-  chapitreId: number;
   coursId: number;
   formationId: string;
   blocId: string;
@@ -37,7 +36,7 @@ interface ReponseData {
   ordre_affichage: number;
 }
 
-export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }: EtudeCasEditorPageProps) => {
+export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEditorPageProps) => {
   const router = useRouter();
   const [consigne, setConsigne] = useState('');
   const [fichierConsigne, setFichierConsigne] = useState<File | null>(null);
@@ -59,39 +58,72 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
     message: '',
     type: 'info'
   });
+  const [noQuestionsModal, setNoQuestionsModal] = useState<{ isOpen: boolean }>({
+    isOpen: false
+  });
 
   // Charger l'étude de cas existante
   useEffect(() => {
     const loadEtudeCas = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/etude-cas?chapitreId=${chapitreId}`, {
+        // Si on a déjà un etudeCasId, l'utiliser directement
+        // Sinon, utiliser coursId
+        let url = '/api/etude-cas?';
+        if (etudeCasId) {
+          url += `etudeCasId=${etudeCasId}`;
+        } else {
+          url += `coursId=${coursId}`;
+        }
+        
+        const response = await fetch(url, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
         if (response.ok) {
           const data = await response.json();
           if (data.etudeCas) {
+            console.log('[loadEtudeCas] Données reçues:', {
+              id: data.etudeCas.id,
+              hasFichierConsigne: !!data.etudeCas.fichier_consigne,
+              fichierConsigne: data.etudeCas.fichier_consigne
+            });
+            
             setEtudeCasId(data.etudeCas.id);
             setConsigne(data.etudeCas.consigne || '');
-            setUseFichierConsigne(!!data.etudeCas.fichier_consigne);
-            setFichierConsigneUrl(data.etudeCas.fichier_consigne || null);
             
-            // Si un fichier existe, extraire le nom du fichier depuis l'URL
+            // Si un fichier existe, configurer correctement l'état pour l'affichage
             if (data.etudeCas.fichier_consigne) {
+              console.log('[loadEtudeCas] Fichier consigne trouvé:', data.etudeCas.fichier_consigne);
+              setFichierConsigneUrl(data.etudeCas.fichier_consigne);
+              setUseFichierConsigne(true);
+              
+              // Extraire le nom du fichier depuis l'URL pour l'affichage
+              let fileName = 'fichier_consigne';
               try {
                 const url = new URL(data.etudeCas.fichier_consigne);
                 const pathParts = url.pathname.split('/');
-                const fileName = pathParts[pathParts.length - 1];
-                // Créer un objet File factice pour l'affichage (on ne peut pas recréer un vrai File depuis une URL)
-                // On stockera juste le nom pour l'affichage
-                setFichierConsigne(new File([], fileName || 'fichier_consigne'));
+                fileName = pathParts[pathParts.length - 1] || fileName;
+                // Nettoyer le nom du fichier (enlever les paramètres de requête si présents)
+                fileName = fileName.split('?')[0];
+                console.log('[loadEtudeCas] Nom du fichier extrait:', fileName);
               } catch (e) {
                 // Si ce n'est pas une URL valide, essayer d'extraire depuis le chemin
                 const pathParts = data.etudeCas.fichier_consigne.split('/');
-                const fileName = pathParts[pathParts.length - 1];
-                setFichierConsigne(new File([], fileName || 'fichier_consigne'));
+                fileName = pathParts[pathParts.length - 1] || fileName;
+                fileName = fileName.split('?')[0];
+                console.log('[loadEtudeCas] Nom du fichier extrait (chemin):', fileName);
               }
+              
+              // Créer un objet File factice pour l'affichage (on ne peut pas recréer un vrai File depuis une URL)
+              // On stocke le nom du fichier pour l'affichage
+              setFichierConsigne(new File([], fileName, { type: 'application/octet-stream' }));
+              console.log('[loadEtudeCas] États mis à jour: useFichierConsigne=true, fichierConsigneUrl=', data.etudeCas.fichier_consigne);
+            } else {
+              console.log('[loadEtudeCas] Aucun fichier consigne trouvé');
+              setFichierConsigneUrl(null);
+              setUseFichierConsigne(false);
+              setFichierConsigne(null);
             }
             
             // Charger les questions
@@ -113,7 +145,15 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
             }));
             setQuestions(formattedQuestions);
             
-            setLastSavedData(JSON.stringify({ consigne, questions: formattedQuestions, fichierConsigneUrl: data.etudeCas.fichier_consigne || null }));
+            // Mettre à jour lastSavedData après avoir défini tous les états
+            // Utiliser les valeurs chargées depuis la base de données
+            const loadedConsigne = data.etudeCas.consigne || '';
+            const loadedFichierConsigneUrl = data.etudeCas.fichier_consigne || null;
+            setLastSavedData(JSON.stringify({ 
+              consigne: loadedConsigne, 
+              questions: formattedQuestions, 
+              fichierConsigneUrl: loadedFichierConsigneUrl 
+            }));
             setHasUnsavedChanges(false);
           }
         }
@@ -124,7 +164,62 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
       }
     };
     loadEtudeCas();
-  }, [chapitreId]);
+  }, [coursId]);
+  
+  // Recharger les données après qu'un etudeCasId soit créé (après sauvegarde automatique)
+  // Utiliser une ref pour éviter les rechargements en boucle
+  const previousEtudeCasIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    // Ne recharger que si etudeCasId vient d'être créé (passage de null à une valeur)
+    if (!etudeCasId || previousEtudeCasIdRef.current === etudeCasId) {
+      previousEtudeCasIdRef.current = etudeCasId;
+      return;
+    }
+    
+    const wasNull = previousEtudeCasIdRef.current === null;
+    previousEtudeCasIdRef.current = etudeCasId;
+    
+    // Ne recharger que si on vient de créer l'étude de cas (passage de null à une valeur)
+    if (!wasNull) return;
+    
+    const reloadAfterSave = async () => {
+      try {
+        const reloadResponse = await fetch(`/api/etude-cas?etudeCasId=${etudeCasId}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (reloadResponse.ok) {
+          const reloadData = await reloadResponse.json();
+          if (reloadData.etudeCas) {
+            // Mettre à jour uniquement le fichier consigne si présent et différent
+            if (reloadData.etudeCas.fichier_consigne && reloadData.etudeCas.fichier_consigne !== fichierConsigneUrl) {
+              console.log('[reloadAfterSave] Mise à jour du fichier consigne:', reloadData.etudeCas.fichier_consigne);
+              setFichierConsigneUrl(reloadData.etudeCas.fichier_consigne);
+              setUseFichierConsigne(true);
+              
+              // Extraire le nom du fichier
+              let fileName = 'fichier_consigne';
+              try {
+                const url = new URL(reloadData.etudeCas.fichier_consigne);
+                const pathParts = url.pathname.split('/');
+                fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+              } catch (e) {
+                const pathParts = reloadData.etudeCas.fichier_consigne.split('/');
+                fileName = pathParts[pathParts.length - 1]?.split('?')[0] || fileName;
+              }
+              setFichierConsigne(new File([], fileName, { type: 'application/octet-stream' }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du rechargement après sauvegarde:', error);
+      }
+    };
+    
+    // Délai pour éviter les rechargements trop fréquents
+    const timeoutId = setTimeout(reloadAfterSave, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [etudeCasId, fichierConsigneUrl]); // Se déclenche uniquement quand etudeCasId change
 
   // Détecter les changements
   useEffect(() => {
@@ -273,6 +368,7 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
 
       // Utiliser AbortController pour permettre l'annulation si nécessaire
       const controller = new AbortController();
+      console.log('[handleConsigneFileUpload] Envoi du fichier vers /api/etude-cas/upload-consigne');
       const uploadResponse = await fetch('/api/etude-cas/upload-consigne', {
         method: 'POST',
         body: formData,
@@ -280,17 +376,24 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
         signal: controller.signal,
       });
 
+      console.log('[handleConsigneFileUpload] Réponse reçue:', uploadResponse.status, uploadResponse.statusText);
+
       if (uploadResponse.ok) {
         const uploadData = await uploadResponse.json();
         if (uploadData.success && uploadData.fichier) {
           setFichierConsigneUrl(uploadData.fichier.url || uploadData.fichier.chemin_fichier);
         }
       } else {
-        const errorData = await uploadResponse.json();
-        console.error('Erreur upload fichier consigne:', errorData);
+        let errorData;
+        try {
+          errorData = await uploadResponse.json();
+        } catch (e) {
+          errorData = { error: `Erreur ${uploadResponse.status}: ${uploadResponse.statusText}` };
+        }
+        console.error('Erreur upload fichier consigne:', errorData, 'Status:', uploadResponse.status);
         setModal({
           isOpen: true,
-          message: `Erreur lors de l'upload du fichier: ${errorData.error || 'Erreur inconnue'}`,
+          message: `Erreur lors de l'upload du fichier (${uploadResponse.status}): ${errorData.error || uploadResponse.statusText || 'Erreur inconnue'}`,
           type: 'error',
           title: 'Erreur d\'upload'
         });
@@ -323,15 +426,17 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
       // Créer ou mettre à jour l'étude de cas
       let currentEtudeCasId = etudeCasId;
       if (!currentEtudeCasId) {
+        const payload = {
+          cours_id: coursId,
+          titre: `Étude de cas - Cours`,
+          consigne: consigne || null,
+          fichier_consigne: fichierConsigneUrl || null,
+        };
+        console.log('[handleAutoSave] Envoi POST /api/etude-cas avec:', payload);
         const etudeCasResponse = await fetch('/api/etude-cas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chapitre_id: chapitreId,
-            titre: `Étude de cas - Chapitre ${chapitreId}`,
-            consigne: consigne,
-            fichier_consigne: fichierConsigneUrl,
-          }),
+          body: JSON.stringify(payload),
         });
         if (etudeCasResponse.ok) {
           const etudeCasData = await etudeCasResponse.json();
@@ -341,15 +446,19 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
           return;
         }
       } else {
-        await fetch('/api/etude-cas', {
+        const updateResponse = await fetch('/api/etude-cas', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             etudeCasId: currentEtudeCasId,
-            consigne: consigne,
-            fichier_consigne: fichierConsigneUrl,
+            consigne: consigne || null,
+            fichier_consigne: fichierConsigneUrl || null,
           }),
         });
+        if (!updateResponse.ok) {
+          // En mode auto-save, on ne lance pas d'erreur, on retourne silencieusement
+          return;
+        }
       }
 
       // Sauvegarder les questions
@@ -415,7 +524,7 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
     } finally {
       setIsAutoSaving(false);
     }
-  }, [consigne, questions, etudeCasId, chapitreId, isSaving, isAutoSaving, hasUnsavedChanges, fichierConsigneUrl]);
+      }, [consigne, questions, etudeCasId, coursId, isSaving, isAutoSaving, hasUnsavedChanges, fichierConsigneUrl]);
 
   // Sauvegarde automatique après 5 secondes
   useEffect(() => {
@@ -433,19 +542,16 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
   }, [consigne, questions, hasUnsavedChanges, isSaving, isAutoSaving, handleAutoSave]);
 
   const handleSubmit = async () => {
-    // VALIDATION : Vérifier qu'il y a au moins une question
+    // Vérifier s'il y a des questions valides (non vides)
     const questionsValides = questions.filter(q => q.question.trim());
+    
+    // Si aucune question valide, afficher un modal de confirmation
     if (questionsValides.length === 0) {
-      setModal({
-        isOpen: true,
-        message: 'Veuillez ajouter au moins une question avant de soumettre l\'étude de cas',
-        type: 'warning',
-        title: 'Validation requise'
-      });
+      setNoQuestionsModal({ isOpen: true });
       return;
     }
     
-    // VALIDATION : Vérifier que toutes les questions ont au moins une bonne réponse
+    // VALIDATION : Vérifier que toutes les questions présentes ont au moins une bonne réponse
     const validationErrors: string[] = [];
     let questionNum = 0;
     
@@ -454,6 +560,12 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
       if (!q.question.trim()) continue; // Ignorer les questions vides
       
       questionNum++; // Numéro de la question valide
+      
+      // Les questions ouvertes et pièce jointe n'ont pas de réponses prédéfinies
+      // Elles sont corrigées manuellement, donc on les ignore dans la validation
+      if (q.type_question === 'ouverte' || q.type_question === 'piece_jointe') {
+        continue; // Passer à la question suivante
+      }
       
       // Filtrer les réponses valides (non vides)
       const reponsesValides = q.reponses.filter(r => r.reponse.trim());
@@ -503,27 +615,35 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
       return;
     }
     
+    // Procéder à la sauvegarde
+    await proceedWithSave();
+  };
+
+  const proceedWithSave = async () => {
     setIsSaving(true);
     try {
       // Créer ou mettre à jour l'étude de cas
       let currentEtudeCasId = etudeCasId;
       if (!currentEtudeCasId) {
+        const payload = {
+          cours_id: coursId,
+          titre: `Étude de cas - Cours`,
+          consigne: consigne || null,
+          fichier_consigne: fichierConsigneUrl || null,
+        };
+        console.log('[handleSubmit] Envoi POST /api/etude-cas avec:', payload);
         const etudeCasResponse = await fetch('/api/etude-cas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chapitre_id: chapitreId,
-            titre: `Étude de cas - Chapitre ${chapitreId}`,
-            consigne: consigne,
-            fichier_consigne: fichierConsigneUrl,
-          }),
+          body: JSON.stringify(payload),
         });
         if (etudeCasResponse.ok) {
           const etudeCasData = await etudeCasResponse.json();
           currentEtudeCasId = etudeCasData.etudeCas.id;
           setEtudeCasId(currentEtudeCasId);
         } else {
-          throw new Error('Erreur lors de la création de l\'étude de cas');
+          const errorData = await etudeCasResponse.json().catch(() => ({ error: 'Erreur inconnue' }));
+          throw new Error(errorData.error || 'Erreur lors de la création de l\'étude de cas');
         }
       } else {
         await fetch('/api/etude-cas', {
@@ -599,9 +719,10 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
       router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}`);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de l\'étude de cas:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde de l\'étude de cas';
       setModal({
         isOpen: true,
-        message: 'Erreur lors de la sauvegarde de l\'étude de cas',
+        message: errorMessage,
         type: 'error',
         title: 'Erreur'
       });
@@ -671,12 +792,20 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
                 <RefreshCw className="w-5 h-5 animate-spin text-[#032622]" />
                 <span className="text-[#032622] font-bold">Upload en cours...</span>
               </div>
-            ) : (fichierConsigne || fichierConsigneUrl) ? (
+            ) : fichierConsigneUrl ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-[#032622]" />
                   <span className="text-[#032622] font-bold">
-                    {fichierConsigne?.name || (fichierConsigneUrl ? fichierConsigneUrl.split('/').pop() || 'Fichier consigne' : 'Fichier consigne')}
+                    {fichierConsigne?.name || (fichierConsigneUrl ? (() => {
+                      try {
+                        const url = new URL(fichierConsigneUrl);
+                        const pathParts = url.pathname.split('/');
+                        return pathParts[pathParts.length - 1]?.split('?')[0] || 'Fichier consigne';
+                      } catch {
+                        return fichierConsigneUrl.split('/').pop()?.split('?')[0] || 'Fichier consigne';
+                      }
+                    })() : 'Fichier consigne')}
                   </span>
                   {fichierConsigneUrl && (
                     <a
@@ -856,11 +985,11 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
             {/* Zone de dépôt pour question pièce jointe */}
             {question.type_question === 'piece_jointe' && (
               <div className="border-2 border-dashed border-[#032622] p-8 text-center">
-                <p className="text-[#032622] mb-4">Déposez les fichiers ici pdf ou .docx</p>
+                <p className="text-[#032622] mb-4">Déposez les fichiers ici pdf, .docx ou .pptx</p>
                 <label className="bg-[#032622] text-[#F8F5E4] px-4 py-2 cursor-pointer inline-block">
                   <input
                     type="file"
-                    accept=".pdf,.docx"
+                    accept=".pdf,.docx,.pptx"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) updateQuestion(qIndex, 'fichier_question', file.name);
@@ -978,7 +1107,7 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
               <label className="border-2 border-dashed border-[#032622] p-6 text-center cursor-pointer block hover:bg-[#032622]/10 transition-colors bg-[#F8F5E4]">
                 <input
                   type="file"
-                  accept=".pdf,.docx"
+                  accept=".pdf,.docx,.pptx"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) addSupportAnnexe(qIndex, file);
@@ -1023,6 +1152,23 @@ export const EtudeCasEditorPage = ({ chapitreId, coursId, formationId, blocId }:
         message={modal.message}
         type={modal.type}
         title={modal.title}
+      />
+
+      {/* Modal de confirmation pour étude de cas sans questions */}
+      <Modal
+        isOpen={noQuestionsModal.isOpen}
+        onClose={() => setNoQuestionsModal({ isOpen: false })}
+        message="Vous n'avez pas ajouté de questions à cette étude de cas.\n\nSouhaitez-vous continuer et enregistrer l'étude de cas sans questions, ou annuler pour ajouter des questions ?"
+        type="warning"
+        title="Aucune question ajoutée"
+        isConfirm={true}
+        onConfirm={() => {
+          setNoQuestionsModal({ isOpen: false });
+          proceedWithSave();
+        }}
+        onCancel={() => {
+          setNoQuestionsModal({ isOpen: false });
+        }}
       />
     </div>
   );

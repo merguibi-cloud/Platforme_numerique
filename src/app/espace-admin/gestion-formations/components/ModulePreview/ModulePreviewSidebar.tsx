@@ -22,7 +22,7 @@ interface CoursPreviewSidebarProps {
   onCoursClick?: (coursId: number) => void;
   onChapitreClick?: (chapitreId: number) => void;
   onQuizClick?: (chapitreId: number) => void;
-  onEtudeCasClick?: (chapitreId: number) => void;
+  onEtudeCasClick?: (coursIdOrChapitreId: number, etudeCasId?: number) => void;
   fichiersComplementaires?: string[];
   isCollapsed?: boolean;
   onToggle?: () => void;
@@ -68,14 +68,16 @@ export const ModulePreviewSidebar = ({
     }
   }, []);
 
-  // OPTIMISATION : Extraire les quiz et études de cas depuis les cours déjà chargés
+  // OPTIMISATION : Extraire les quiz depuis les chapitres et les études de cas au niveau cours
   // Les cours sont déjà chargés avec leurs quiz et études de cas via l'endpoint batch
+  const [etudeCasByCours, setEtudeCasByCours] = useState<Map<number, EtudeCasData>>(new Map());
+  
   useEffect(() => {
       const quizzesMap = new Map<number, QuizData>();
-      const etudeCasMap = new Map<number, EtudeCasData>();
+      const etudeCasCoursMap = new Map<number, EtudeCasData>();
 
     // Extraire les données des cours passés en props (déjà chargées)
-    console.log('[CoursPreviewSidebar] Extraction des quiz depuis cours:', cours.length);
+    console.log('[CoursPreviewSidebar] Extraction des quiz et études de cas depuis cours:', cours.length);
     cours.forEach((c: any) => {
       const chapitresList = c.chapitres || [];
       
@@ -92,23 +94,24 @@ export const ModulePreviewSidebar = ({
             console.log(`[CoursPreviewSidebar] Quiz trouvé pour chapitre ${chapitre.id}:`, quiz.titre);
               }
         }
-        
-        // Extraire l'étude de cas depuis les chapitres
-        if (chapitre.etude_cas) {
-          const etudeCas = chapitre.etude_cas.etudeCas || chapitre.etude_cas;
-          if (etudeCas && etudeCas.id) {
-            etudeCasMap.set(chapitre.id, {
-              id: etudeCas.id,
-              titre: etudeCas.titre || 'Étude de cas'
-                });
-              }
-            }
       });
+      
+      // Extraire l'étude de cas au niveau cours (pas au niveau chapitre)
+      if (c.etude_cas) {
+        const etudeCas = c.etude_cas.etudeCas || c.etude_cas;
+        if (etudeCas && etudeCas.id) {
+          etudeCasCoursMap.set(c.id, {
+            id: etudeCas.id,
+            titre: etudeCas.titre || 'Étude de cas'
+          });
+          console.log(`[CoursPreviewSidebar] Étude de cas trouvée pour cours ${c.id}:`, etudeCas.titre);
+        }
+      }
     });
 
     setQuizzesByChapitre(quizzesMap);
-    setEtudeCasByChapitre(etudeCasMap);
-    console.log(`[CoursPreviewSidebar] Total quiz extraits: ${quizzesMap.size}, Total études de cas: ${etudeCasMap.size}`);
+    setEtudeCasByCours(etudeCasCoursMap);
+    console.log(`[CoursPreviewSidebar] Total quiz extraits: ${quizzesMap.size}, Total études de cas au niveau cours: ${etudeCasCoursMap.size}`);
   }, [cours]);
 
   const toggleCours = (coursId: number) => {
@@ -181,8 +184,6 @@ export const ModulePreviewSidebar = ({
                           const isCurrentChapitre = chapitre.id === currentChapitreId;
                           const hasQuiz = quizzesByChapitre.has(chapitre.id);
                           const quiz = hasQuiz ? quizzesByChapitre.get(chapitre.id) : null;
-                          const hasEtudeCas = etudeCasByChapitre.has(chapitre.id);
-                          const etudeCas = hasEtudeCas ? etudeCasByChapitre.get(chapitre.id) : null;
                           return (
                             <div key={chapitre.id} className="space-y-1">
                               <button
@@ -217,25 +218,30 @@ export const ModulePreviewSidebar = ({
                                   </div>
                                 </button>
                               )}
-                              {etudeCas && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEtudeCasClick?.(chapitre.id);
-                                  }}
-                                  className="pl-4 text-xs text-[#032622]/70 hover:text-[#032622] cursor-pointer transition-colors w-full text-left"
-                                >
-                                  <div className="flex items-center gap-1">
-                                    <FileText className="w-3 h-3" />
-                                    <span style={{ fontFamily: 'var(--font-termina-medium)' }}>
-                                      {etudeCas.titre}
-                                    </span>
-                                  </div>
-                                </button>
-                              )}
                             </div>
                           );
                         })}
+                        {/* Afficher l'étude de cas au niveau cours, après tous les chapitres et quiz */}
+                        {etudeCasByCours.has(c.id) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Passer le coursId pour l'étude de cas au niveau cours
+                              const etudeCas = etudeCasByCours.get(c.id);
+                              if (etudeCas) {
+                                onEtudeCasClick?.(c.id, etudeCas.id);
+                              }
+                            }}
+                            className="mt-2 pt-2 border-t-2 border-[#032622] text-xs text-[#032622] hover:text-[#032622]/70 cursor-pointer transition-colors w-full text-left"
+                          >
+                            <div className="flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              <span style={{ fontFamily: 'var(--font-termina-medium)' }}>
+                                {etudeCasByCours.get(c.id)?.titre || 'Étude de cas'}
+                              </span>
+                            </div>
+                          </button>
+                        )}
                       </>
                     ) : (
                       <div className="text-sm text-[#032622]/70 italic text-center">

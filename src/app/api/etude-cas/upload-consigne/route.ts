@@ -3,14 +3,22 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdminOrRole } from '@/lib/auth-helpers';
 
+// Forcer l'export dynamique pour Next.js
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
+    console.log('[upload-consigne] Requête reçue à /api/etude-cas/upload-consigne');
+    
     // Authentification
     const authResult = await getAuthenticatedUser(request);
     if ('error' in authResult) {
+      console.log('[upload-consigne] Erreur d\'authentification:', authResult.error);
       return authResult.error;
     }
     const { user } = authResult;
+    console.log('[upload-consigne] Utilisateur authentifié:', user.id);
 
     // Vérification des permissions (admin ou rôles pédagogie)
     const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);

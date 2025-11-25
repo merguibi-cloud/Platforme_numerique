@@ -70,34 +70,28 @@ export async function GET(request: NextRequest) {
       chapitresByCours.set(chapitre.cours_id, list);
     });
 
-    // Récupérer les études de cas pour chaque cours (via les chapitres)
-    const chapitreIds = chapitresData?.map(c => c.id) ?? [];
-    const { data: etudesCasData, error: etudesCasError } =
-      chapitreIds.length > 0
-        ? await supabase
-            .from('etudes_cas')
-            .select('id, chapitre_id, actif')
-            .in('chapitre_id', chapitreIds)
-            .eq('actif', true)
-        : { data: [], error: null };
-
-    if (etudesCasError) {
-      console.error('Erreur lors de la récupération des études de cas:', etudesCasError);
-    }
-
-    // Créer une map chapitre_id -> cours_id pour trouver le cours parent
-    const chapitreToCours = new Map<number, number>();
-    chapitresData?.forEach((chapitre) => {
-      chapitreToCours.set(chapitre.id, chapitre.cours_id);
-    });
-
+    // Récupérer les études de cas pour chaque cours (via cours_id)
     const etudesCasByCours = new Set<number>();
-    etudesCasData?.forEach((etudeCas) => {
-      const coursId = chapitreToCours.get(etudeCas.chapitre_id);
-      if (coursId) {
-        etudesCasByCours.add(coursId);
+    
+    if (coursIds.length > 0) {
+      // Charger toutes les études de cas pour ces cours en une seule requête
+      const { data: etudesCasCours, error: etudesCasCoursError } = await supabase
+        .from('etudes_cas')
+        .select('cours_id')
+        .in('cours_id', coursIds)
+        .eq('actif', true);
+      
+      if (etudesCasCoursError) {
+        console.error('Erreur lors de la récupération des études de cas:', etudesCasCoursError);
+      } else if (etudesCasCours) {
+        // Marquer les cours qui ont une étude de cas
+        etudesCasCours.forEach((ec: any) => {
+          if (ec.cours_id) {
+            etudesCasByCours.add(ec.cours_id);
+          }
+        });
       }
-    });
+    }
 
     const creatorIds = Array.from(
       new Set(

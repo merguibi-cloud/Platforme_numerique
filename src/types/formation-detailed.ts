@@ -83,7 +83,7 @@ export interface ChapitreCours {
 
 export interface EtudeCas {
   id: number;
-  chapitre_id: number;
+  cours_id: number;
   titre: string;
   description?: string;
   consigne: string;
@@ -96,7 +96,7 @@ export interface EtudeCas {
   updated_at: string;
   
   // Relations
-  chapitre?: ChapitreCours;
+  cours?: CoursApprentissage;
   soumissions?: SoumissionEtudeCas[];
 }
 

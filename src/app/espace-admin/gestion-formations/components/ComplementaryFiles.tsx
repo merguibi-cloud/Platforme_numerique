@@ -155,7 +155,7 @@ export const ComplementaryFiles = ({ fichiers, onAddFile, onRemoveFile, deleting
           />
           
           <p className="text-xs text-[#032622]/50 mt-1">
-            Formats acceptés: PDF, DOC, PPT, TXT, Images, Vidéos
+            Formats acceptés: PDF, DOC, DOCX, PPT, PPTX, TXT, Images, Vidéos
           </p>
         </div>
       </div>

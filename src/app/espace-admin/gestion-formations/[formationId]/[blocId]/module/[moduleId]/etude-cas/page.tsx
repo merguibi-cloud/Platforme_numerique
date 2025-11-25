@@ -19,6 +19,7 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
   const { formationId, blocId, moduleId } = use(params);
   const [isLoading, setIsLoading] = useState(true);
   const [moduleInfo, setModuleInfo] = useState<any>(null);
+  const [hasEtudeCas, setHasEtudeCas] = useState(false);
 
   useEffect(() => {
     const loadModuleInfo = async () => {
@@ -30,6 +31,16 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
         if (response.ok) {
           const data = await response.json();
           setModuleInfo(data.module);
+        }
+        
+        // Vérifier si une étude de cas existe pour ce cours
+        const etudeCasResponse = await fetch(`/api/etude-cas?coursId=${moduleId}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (etudeCasResponse.ok) {
+          const etudeCasData = await etudeCasResponse.json();
+          setHasEtudeCas(!!etudeCasData.etudeCas);
         }
       } catch (error) {
         console.error('Erreur lors du chargement du module:', error);
@@ -70,7 +81,7 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
             </button>
             <div>
               <h1 className="text-xl font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
-                CRÉATION DE L'ÉTUDE DE CAS
+                {hasEtudeCas ? 'ÉDITION DE L\'ÉTUDE DE CAS' : 'CRÉATION DE L\'ÉTUDE DE CAS'}
               </h1>
               {moduleInfo && (
                 <p className="text-sm text-[#032622]/70">{moduleInfo.titre}</p>
@@ -83,7 +94,6 @@ export default function EtudeCasPage({ params }: EtudeCasPageProps) {
 
       {/* Etude Cas Editor */}
       <EtudeCasEditorPage
-        chapitreId={0}
         coursId={parseInt(moduleId, 10)}
         formationId={formationId}
         blocId={blocId}

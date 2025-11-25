@@ -139,55 +139,57 @@ export async function GET(
       console.log('[DEBUG] Aucun chapitre trouvé, impossible de charger les quiz');
     }
 
-    // 5. Charger toutes les études de cas pour tous les chapitres en une seule requête
-    const { data: allEtudesCas, error: etudesCasError } = await supabase
+    // 5. Charger toutes les études de cas pour ces cours
+    // L'étude de cas est associée directement au cours via cours_id
+    const coursIds = cours.map((c: any) => c.id);
+    const { data: allEtudesCasCours, error: etudesCasCoursError } = await supabase
       .from('etudes_cas')
       .select('*')
-      .in('chapitre_id', chapitreIds)
+      .in('cours_id', coursIds)
       .eq('actif', true);
 
-    if (etudesCasError) {
-      console.error('Erreur lors de la récupération des études de cas:', etudesCasError);
+    if (etudesCasCoursError) {
+      console.error('Erreur lors de la récupération des études de cas au niveau cours:', etudesCasCoursError);
     }
 
-    const etudesCasList = allEtudesCas || [];
-    const etudeCasIds = etudesCasList.map(ec => ec.id);
+    const etudesCasCoursList = allEtudesCasCours || [];
+    const etudeCasCoursIds = etudesCasCoursList.map(ec => ec.id);
 
-    // 6. Charger toutes les questions d'étude de cas en une seule requête
-    let etudeCasQuestionsMap = new Map<number, any[]>();
-    if (etudeCasIds.length > 0) {
+    // Charger toutes les questions des études de cas au niveau cours
+    let etudeCasCoursQuestionsMap = new Map<number, any[]>();
+    if (etudeCasCoursIds.length > 0) {
       const { data: questions, error: questionsError } = await supabase
         .from('questions_etude_cas')
         .select(`
           *,
           reponses_possibles:reponses_possibles_etude_cas (*)
         `)
-        .in('etude_cas_id', etudeCasIds)
+        .in('etude_cas_id', etudeCasCoursIds)
         .eq('actif', true)
         .order('ordre_affichage', { ascending: true });
 
-      if (questionsError) {
-        console.error('Erreur lors de la récupération des questions d\'étude de cas:', questionsError);
-      } else if (questions) {
+      if (!questionsError && questions) {
         questions.forEach((q: any) => {
           const etudeCasId = q.etude_cas_id;
-          if (!etudeCasQuestionsMap.has(etudeCasId)) {
-            etudeCasQuestionsMap.set(etudeCasId, []);
+          if (!etudeCasCoursQuestionsMap.has(etudeCasId)) {
+            etudeCasCoursQuestionsMap.set(etudeCasId, []);
           }
-          etudeCasQuestionsMap.get(etudeCasId)!.push(q);
+          etudeCasCoursQuestionsMap.get(etudeCasId)!.push(q);
         });
       }
     }
 
-    // 7. Organiser les études de cas par chapitre_id, puis par cours_id
-    const etudeCasByChapitre = new Map<number, any>();
-    etudesCasList.forEach((ec: any) => {
-      etudeCasByChapitre.set(ec.chapitre_id, {
-        id: ec.id,
-        titre: ec.titre || 'Étude de cas',
-        etudeCas: ec,
-        questions: etudeCasQuestionsMap.get(ec.id) || []
-      });
+    // Associer les études de cas aux cours via cours_id
+    const etudeCasByCours = new Map<number, any>();
+    etudesCasCoursList.forEach((etudeCasData: any) => {
+      if (etudeCasData.cours_id) {
+        etudeCasByCours.set(etudeCasData.cours_id, {
+          id: etudeCasData.id,
+          titre: etudeCasData.titre || 'Étude de cas',
+          etudeCas: etudeCasData,
+          questions: etudeCasCoursQuestionsMap.get(etudeCasData.id) || []
+        });
+      }
     });
 
     // 8. Construire la réponse optimisée avec tous les cours et leurs données
@@ -202,21 +204,21 @@ export async function GET(
 
         // Récupérer les quiz pour ce chapitre
         const quizData = quizzesMap.get(chapitre.id);
-        
-        // Récupérer l'étude de cas pour ce chapitre
-        const etudeCasData = etudeCasByChapitre.get(chapitre.id);
 
         return {
           ...chapitre,
           fichiers_complementaires: fichiersComplementaires,
-          quiz: quizData || null,
-          etude_cas: etudeCasData || null
+          quiz: quizData || null
         };
       });
 
+      // Récupérer l'étude de cas au niveau cours (pas au niveau chapitre)
+      const etudeCasData = etudeCasByCours.get(c.id);
+
       return {
         ...c,
-        chapitres: chapitresWithDetails
+        chapitres: chapitresWithDetails,
+        etude_cas: etudeCasData || null
       };
     });
 

@@ -119,42 +119,41 @@ export async function GET(
     }
 
     // 4. Charger l'étude de cas du cours (si elle existe) avec ses questions et réponses
+    // L'étude de cas est associée directement au cours via cours_id
+    // Il ne peut y avoir qu'une seule étude de cas par cours
     let etudeCas = null;
     let etudeCasQuestions = [];
 
-    // L'étude de cas est maintenant liée à un chapitre, donc on cherche dans les chapitres
-    if (chapitreIds.length > 0) {
-      const { data: etudeCasData, error: etudeCasError } = await supabase
-        .from('etudes_cas')
-        .select('*')
-        .in('chapitre_id', chapitreIds)
+    // Chercher l'étude de cas pour ce cours
+    const { data: etudeCasData, error: etudeCasError } = await supabase
+      .from('etudes_cas')
+      .select('*')
+      .eq('cours_id', coursId)
+      .eq('actif', true)
+      .maybeSingle();
+
+    if (etudeCasError && etudeCasError.code !== 'PGRST116') {
+      console.error('Erreur lors de la récupération de l\'étude de cas:', etudeCasError);
+    } else if (etudeCasData) {
+      etudeCas = etudeCasData;
+      const etudeCasId = etudeCasData.id;
+
+      // Charger les questions de l'étude de cas
+      const { data: questionsEtudeCas, error: questionsEtudeCasError } = await supabase
+        .from('questions_etude_cas')
+        .select(`
+          *,
+          reponses_possibles_etude_cas (*)
+        `)
+        .eq('etude_cas_id', etudeCasId)
         .eq('actif', true)
-        .limit(1)
-        .single();
+        .order('ordre_affichage', { ascending: true });
 
-      if (etudeCasError && etudeCasError.code !== 'PGRST116') {
-        console.error('Erreur lors de la récupération de l\'étude de cas:', etudeCasError);
-      } else if (etudeCasData) {
-        etudeCas = etudeCasData;
-        const etudeCasId = etudeCasData.id;
-
-        // Charger les questions de l'étude de cas
-        const { data: questionsEtudeCas, error: questionsEtudeCasError } = await supabase
-          .from('questions_etude_cas')
-          .select(`
-            *,
-            reponses_possibles_etude_cas (*)
-          `)
-          .eq('etude_cas_id', etudeCasId)
-          .eq('actif', true)
-          .order('ordre_affichage', { ascending: true });
-
-        if (questionsEtudeCasError) {
-          console.error('Erreur lors de la récupération des questions de l\'étude de cas:', questionsEtudeCasError);
-        } else {
-          etudeCasQuestions = questionsEtudeCas || [];
-          console.log(`[DEBUG] ${etudeCasQuestions.length} questions trouvées pour l'étude de cas`);
-        }
+      if (questionsEtudeCasError) {
+        console.error('Erreur lors de la récupération des questions de l\'étude de cas:', questionsEtudeCasError);
+      } else {
+        etudeCasQuestions = questionsEtudeCas || [];
+        console.log(`[DEBUG] ${etudeCasQuestions.length} questions trouvées pour l'étude de cas du cours`);
       }
     }
 

@@ -133,20 +133,17 @@ export const ModulePreviewViewer = ({
         );
           setQuizzesByChapitre(quizzesMap);
 
-          // Charger l'étude de cas pour le premier chapitre
+          // Charger l'étude de cas au niveau cours (chapitreId = 0 signifie chapitre_id IS NULL)
           let etudeCas = null;
           let etudeCasQuestions = [];
-          if (chapitres.length > 0) {
-            const firstChapitreId = chapitres[0].id;
-            const etudeCasResponse = await fetch(`/api/etude-cas?chapitreId=${firstChapitreId}`, {
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' }
-            });
-            if (etudeCasResponse.ok) {
-              const etudeCasData = await etudeCasResponse.json();
-              etudeCas = etudeCasData.etudeCas;
-              etudeCasQuestions = etudeCasData.questions || [];
-            }
+          const etudeCasResponse = await fetch(`/api/etude-cas?chapitreId=0`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (etudeCasResponse.ok) {
+            const etudeCasData = await etudeCasResponse.json();
+            etudeCas = etudeCasData.etudeCas;
+            etudeCasQuestions = etudeCasData.questions || [];
           }
 
           const sortedChapitres = chapitres.sort((a: ChapitreCours, b: ChapitreCours) => a.ordre_affichage - b.ordre_affichage);
@@ -423,10 +420,10 @@ export const ModulePreviewViewer = ({
     }
   };
 
-  const handleEtudeCasClick = (chapitreIdClicked: number) => {
-    // Si c'est un chapitre du cours actuel, afficher le modal ou aller directement à l'étude de cas
-    const chapitreExists = data.chapitres.some((ch: ChapitreCours) => ch.id === chapitreIdClicked);
-    if (chapitreExists) {
+  const handleEtudeCasClick = (coursIdOrChapitreId: number, etudeCasId?: number) => {
+    // Si c'est le cours actuel (même ID que coursId), afficher le modal ou aller directement à l'étude de cas
+    // L'étude de cas est maintenant au niveau cours, pas au niveau chapitre
+    if (coursIdOrChapitreId === coursId) {
       // Vérifier si l'étude de cas existe dans les données
       const etudeCasInData = data.etudeCas;
       if (etudeCasInData || hasEtudeCas) {
