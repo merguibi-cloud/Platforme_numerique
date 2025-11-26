@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         duree_estimee,
         ordre_affichage,
         actif,
+        statut,
         created_at,
         updated_at,
         created_by
@@ -127,11 +128,16 @@ export async function GET(request: NextRequest) {
       const chapitresTitles = chapitresDetails.map((chapitre) => chapitre.titre);
       const chapitresActifs = chapitresList.filter((chapitre) => chapitre.actif).length;
 
-      let statut: 'en_ligne' | 'brouillon' | 'manquant' = 'brouillon';
-      if (chapitresList.length === 0) {
-        statut = 'manquant';
-      } else if (chapitresActifs === chapitresList.length && chapitresList.length > 0) {
-        statut = 'en_ligne';
+      // Utiliser le statut de la base de données, avec fallback si non défini
+      let statut: 'en_ligne' | 'brouillon' | 'manquant' = (c.statut as 'en_ligne' | 'brouillon' | 'manquant') || 'brouillon';
+      
+      // Si le statut n'est pas défini en base, calculer un statut par défaut basé sur les chapitres
+      if (!c.statut) {
+        if (chapitresList.length === 0) {
+          statut = 'manquant';
+        } else if (chapitresActifs === chapitresList.length && chapitresList.length > 0) {
+          statut = 'en_ligne';
+        }
       }
 
       const latestUpdate = chapitresList.length > 0

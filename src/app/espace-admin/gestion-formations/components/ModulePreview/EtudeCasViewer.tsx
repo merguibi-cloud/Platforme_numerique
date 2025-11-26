@@ -31,11 +31,13 @@ interface EtudeCasViewerProps {
   etudeCas: EtudeCas;
   questions: QuestionEtudeCas[];
   isPreview?: boolean;
+  onSubmit?: (reponses: any, fichiers: { [questionId: number]: File[] }, commentaire: string) => void;
 }
 
-export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeCasViewerProps) => {
+export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit }: EtudeCasViewerProps) => {
   const [answers, setAnswers] = useState<{ [questionId: number]: any }>({});
   const [uploadedFiles, setUploadedFiles] = useState<{ [questionId: number]: File[] }>({});
+  const [commentaire, setCommentaire] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
@@ -95,8 +97,13 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
 
   const handleConfirmSubmit = () => {
     setShowConfirmModal(false);
-    // Ici on enverrait les réponses à l'API
-    console.log('Réponses soumises:', { answers, uploadedFiles });
+    
+    // Appeler le callback avec les réponses et fichiers organisés par questionId
+    if (onSubmit) {
+      onSubmit(answers, uploadedFiles, commentaire);
+    } else {
+      console.log('Réponses soumises:', { answers, uploadedFiles, commentaire });
+    }
   };
 
   const handleReturnToQuestions = () => {
@@ -109,9 +116,13 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true }: EtudeC
 
   const handleSendAnyway = () => {
     setShowWarningModal(false);
-    // Envoyer directement sans afficher le modal de confirmation
-    console.log('Réponses soumises (incomplètes):', { answers, uploadedFiles });
-    // Ici on enverrait les réponses à l'API directement
+    
+    // Appeler le callback avec les réponses et fichiers organisés par questionId
+    if (onSubmit) {
+      onSubmit(answers, uploadedFiles, commentaire);
+    } else {
+      console.log('Réponses soumises (incomplètes):', { answers, uploadedFiles, commentaire });
+    }
   };
 
   return (

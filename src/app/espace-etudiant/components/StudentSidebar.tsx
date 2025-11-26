@@ -152,6 +152,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
     setIsLoggingOut(false);
   }, []);
 
+
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
       {/* Logo et titre */}

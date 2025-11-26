@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { QuizEvaluation, QuestionQuiz, ReponsePossible } from '@/types/formation-detailed';
 
@@ -8,7 +8,7 @@ interface QuizViewerProps {
   quiz: QuizEvaluation;
   questions: QuestionQuiz[];
   isPreview?: boolean;
-  onQuizComplete?: () => void;
+  onQuizComplete?: (reponses?: { [questionId: number]: number[] }, tempsPasse?: number) => void;
 }
 
 export const QuizViewer = ({ quiz, questions, isPreview = true, onQuizComplete }: QuizViewerProps) => {
@@ -16,6 +16,22 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, onQuizComplete }
   const [selectedAnswers, setSelectedAnswers] = useState<{ [questionId: number]: number[] }>({});
   const [showResults, setShowResults] = useState(false);
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number[] }>({});
+  const startTimeRef = useRef<Date | null>(null);
+  const [tempsPasseMinutes, setTempsPasseMinutes] = useState(0);
+
+  // Démarrer le timer au chargement
+  useEffect(() => {
+    startTimeRef.current = new Date();
+    
+    const interval = setInterval(() => {
+      if (startTimeRef.current) {
+        const elapsed = Math.floor((new Date().getTime() - startTimeRef.current.getTime()) / 1000 / 60);
+        setTempsPasseMinutes(elapsed);
+      }
+    }, 60000); // Mise à jour toutes les minutes
+
+    return () => clearInterval(interval);
+  }, []);
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -41,8 +57,12 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, onQuizComplete }
       // Fin du quiz - afficher les résultats
       setUserAnswers(selectedAnswers);
       setShowResults(true);
-      // Appeler le callback pour indiquer que le quiz est terminé
-      onQuizComplete?.();
+      // Calculer le temps final
+      const tempsFinal = startTimeRef.current 
+        ? Math.floor((new Date().getTime() - startTimeRef.current.getTime()) / 1000 / 60)
+        : tempsPasseMinutes;
+      // Appeler le callback avec les réponses et le temps passé
+      onQuizComplete?.(selectedAnswers, tempsFinal);
     }
   };
 

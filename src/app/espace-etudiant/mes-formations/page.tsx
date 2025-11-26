@@ -42,147 +42,6 @@ const heroCourse = {
 
 // Les blocs sont maintenant chargés depuis la base de données
 
-// Type pour les événements
-type Event = {
-  title: string;
-  time: string;
-};
-
-// Événements par jour
-const eventsByDay: Record<number, Event[]> = {
-  15: [
-    {
-      title: "Réunion d'équipe",
-      time: "En visio / 10h00 - 11h00",
-    },
-    {
-      title: "Formation Excel",
-      time: "En visio / 14h00 - 16h00",
-    },
-  ],
-  16: [
-    {
-      title: "Atelier créatif",
-      time: "En visio / 09h00 - 12h00",
-    },
-  ],
-  17: [
-    {
-      title: "Séance de coaching",
-      time: "En visio / 15h00 - 16h00",
-    },
-    {
-      title: "Webinaire marketing",
-      time: "En visio / 18h00 - 19h30",
-    },
-  ],
-  18: [
-    {
-      title: "Masterclass en ligne : Stratégies digitales 2025",
-      time: "En visio / 09h30 - 11h00",
-    },
-    {
-      title: "Entretien pédagogique avec votre animatrice",
-      time: "En visio / 16h00 - 16h30",
-    },
-    {
-      title: "Conférence live : " + "\"" + "Le futur du travail" + "\"",
-      time: "En visio / 18h00 - 19h00",
-    },
-  ],
-  19: [
-    {
-      title: "Workshop design thinking",
-      time: "En visio / 10h00 - 17h00",
-    },
-  ],
-  20: [
-    {
-      title: "Présentation de projet",
-      time: "En visio / 14h00 - 15h30",
-    },
-  ],
-  21: [
-    {
-      title: "Évaluation finale",
-      time: "En visio / 09h00 - 12h00",
-    },
-  ],
-};
-
-const upcomingEvents = eventsByDay[18] || [];
-
-const latestGrades = [
-  {
-    title: "Bloc 1 - Module 1",
-    label: "Quizz",
-    grade: "9,5",
-  },
-  {
-    title: "Bloc 1",
-    label: "Étude de cas",
-    grade: "13",
-  },
-];
-
-const complementaryDocs = [
-  {
-    title: "Plan_marketing.pdf",
-    size: "PDF",
-  },
-  {
-    title: "Benchmark_concurrence.xlsx",
-    size: "XLSX",
-  },
-  {
-    title: "Rapport_tendances2025.pptx",
-    size: "PPTX",
-  },
-];
-
-const quizQuestions = [
-  {
-    id: 1,
-    question: "Quelle est la finalité principale d'une analyse de marché ?",
-    options: [
-      "Déterminer les besoins financiers internes",
-      "Comprendre la taille, les acteurs et les tendances du secteur",
-      "Réduire les coûts de production",
-      "Établir un business plan",
-    ],
-    correctIndex: 1,
-    explanation:
-      "Une analyse de marché fournit une photographie précise de l'environnement économique. Elle identifie la taille du marché, sa dynamique, le profil des clients et la pression concurrentielle. Ces informations guident ensuite les décisions financières ou marketing.",
-    courseTip:
-      "Astuce : commence toujours par segmenter ton marché (B2B/B2C) et par dresser une cartographie des acteurs clés pour repérer les opportunités.",
-  },
-  {
-    id: 2,
-    question: "Quels éléments relèvent d'une veille stratégique efficace ?",
-    options: [
-      "Le contrôle interne des budgets",
-      "La surveillance des concurrents",
-      "L'évolution de la réglementation",
-      "L'analyse des performances individuelles des salariés",
-    ],
-    correctIndex: 1,
-    explanation:
-      "La veille stratégique observe les signaux externes afin d'anticiper les mouvements du marché. La surveillance des concurrents permet de détecter rapidement une innovation, un repositionnement prix ou une campagne de communication agressive.",
-    courseTip:
-      "Outil pratique : mets en place un tableau de veille avec des sources fiables (sites concurrents, réseaux sociaux, bases de données sectorielles) et un rythme de revue hebdomadaire.",
-  },
-  {
-    id: 3,
-    question:
-      "La veille concurrentielle est uniquement utile dans les secteurs technologiques.",
-    options: ["Vrai", "Faux"],
-    correctIndex: 1,
-    explanation:
-      "Quelle que soit l'industrie, les décisions des concurrents influencent ton attractivité : évolution d'une gamme, ouverture d'un nouveau point de vente, partenariat stratégique. Ignorer ces signaux expose à une perte de parts de marché.",
-    courseTip:
-      "Exemple : en grande distribution, l'analyse des prospectus concurrents donne des indications immédiates sur les promotions à venir.",
-  },
-];
 
 type Step = "overview" | "module" | "quiz" | "results";
 
@@ -239,7 +98,7 @@ export default function MesFormationsPage() {
   const [isNotebookOpen, setIsNotebookOpen] = useState(false);
   const [notebookContent, setNotebookContent] = useState("");
   const [moduleNotes, setModuleNotes] = useState("");
-  const [selectedDay, setSelectedDay] = useState(18);
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
   const courseContentRef = useRef<HTMLDivElement | null>(null);
 
   // États pour les nouvelles fonctionnalités
@@ -252,6 +111,13 @@ export default function MesFormationsPage() {
   const [showSmartNotesPanel, setShowSmartNotesPanel] = useState(false);
   // Les blocs sont maintenant chargés depuis la base de données
   const [courseBlocks, setCourseBlocks] = useState<any[]>([]);
+  const [isLoadingBlocs, setIsLoadingBlocs] = useState(true);
+  const [agendaEvents, setAgendaEvents] = useState<Record<number, any[]>>({});
+  const [latestGrades, setLatestGrades] = useState<any[]>([]);
+  const [isLoadingAgenda, setIsLoadingAgenda] = useState(true);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [isEditingNote, setIsEditingNote] = useState<string | null>(null);
@@ -265,20 +131,126 @@ export default function MesFormationsPage() {
 
   // Fonction pour obtenir les événements du jour sélectionné
   const getCurrentDayEvents = () => {
-    return eventsByDay[selectedDay] || [];
+    // Chercher les événements pour le jour sélectionné dans le mois actuel
+    const eventsForDay = agendaEvents[selectedDay] || [];
+    
+    // Filtrer les événements qui correspondent au mois et à l'année actuels
+    return eventsForDay.filter((event: any) => {
+      if (!event.date) return false;
+      const eventDate = new Date(event.date);
+      return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
+    });
   };
 
-  // Fonction pour naviguer entre les jours
-  const navigateDay = (direction: 'prev' | 'next') => {
-    const days = [15, 16, 17, 18, 19, 20, 21];
-    const currentIndex = days.indexOf(selectedDay);
+  // Fonction pour obtenir les jours du mois actuel
+  const getDaysInCurrentMonth = () => {
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    const days = [];
     
-    if (direction === 'prev' && currentIndex > 0) {
-      setSelectedDay(days[currentIndex - 1]);
-    } else if (direction === 'next' && currentIndex < days.length - 1) {
-      setSelectedDay(days[currentIndex + 1]);
+    // Jours du mois précédent pour compléter la première semaine
+    const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      days.push({ day: prevMonthDays - i, isCurrentMonth: false });
     }
+    
+    // Jours du mois actuel
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push({ day, isCurrentMonth: true });
+    }
+    
+    // Compléter jusqu'à 42 jours (6 semaines)
+    const remainingDays = 42 - days.length;
+    for (let day = 1; day <= remainingDays; day++) {
+      days.push({ day, isCurrentMonth: false });
+    }
+    
+    return days;
   };
+
+
+  // Charger les blocs depuis l'API
+  useEffect(() => {
+    const loadBlocs = async () => {
+      try {
+        setIsLoadingBlocs(true);
+        const response = await fetch('/api/espace-etudiant/blocs', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.blocs) {
+            // Formater les blocs pour l'affichage
+            const formattedBlocs = data.blocs.map((bloc: any) => ({
+              id: bloc.id,
+              title: `BLOC ${bloc.numero_bloc}`,
+              subtitle: bloc.titre,
+              progress: bloc.progression,
+              locked: bloc.locked,
+              cta: bloc.locked ? 'COMMENCER' : (bloc.progression > 0 ? 'REPRENDRE' : 'COMMENCER'),
+              premier_cours_id: bloc.premier_cours_id,
+              formation_id: bloc.formation_id
+            }));
+            setCourseBlocks(formattedBlocs);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des blocs:', error);
+      } finally {
+        setIsLoadingBlocs(false);
+      }
+    };
+    loadBlocs();
+  }, []);
+
+  // Charger l'agenda depuis l'API
+  useEffect(() => {
+    const loadAgenda = async () => {
+      try {
+        setIsLoadingAgenda(true);
+        const response = await fetch('/api/espace-etudiant/agenda', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.evenements) {
+            setAgendaEvents(data.evenements);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'agenda:', error);
+      } finally {
+        setIsLoadingAgenda(false);
+      }
+    };
+    loadAgenda();
+  }, []);
+
+  // Charger les notes depuis l'API
+  useEffect(() => {
+    const loadNotes = async () => {
+      try {
+        setIsLoadingNotes(true);
+        const response = await fetch('/api/espace-etudiant/notes', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.notes) {
+            setLatestGrades(data.notes);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des notes:', error);
+      } finally {
+        setIsLoadingNotes(false);
+      }
+    };
+    loadNotes();
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -526,7 +498,7 @@ export default function MesFormationsPage() {
     ));
   }, []);
 
-  const totalQuestions = quizQuestions.length;
+  const totalQuestions = 0;
 
   const handleSelectAnswer = (questionId: number, optionIndex: number) => {
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
@@ -536,18 +508,11 @@ export default function MesFormationsPage() {
   };
 
   const score = useMemo(() => {
-    let total = 0;
-    Object.entries(selectedAnswers).forEach(([questionId, answerIndex]) => {
-      const question = quizQuestions.find((q) => q.id === Number(questionId));
-      if (question && answerIndex === question.correctIndex) {
-        total += 1;
-      }
-    });
-    return total;
+    return 0;
   }, [selectedAnswers]);
 
   const computedScoreOn20 = useMemo(() => {
-    return Math.round((score / totalQuestions) * 20);
+    return 0;
   }, [score, totalQuestions]);
 
   const resetQuiz = () => {
@@ -614,7 +579,12 @@ export default function MesFormationsPage() {
 
       <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
         <div className="space-y-4">
-          {courseBlocks.length === 0 ? (
+          {isLoadingBlocs ? (
+            <div className="text-center py-12 border border-black bg-[#F8F5E4]">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+              <p className="text-[#032622] mt-4">Chargement des blocs...</p>
+            </div>
+          ) : courseBlocks.length === 0 ? (
             <div className="text-center py-12 border border-black bg-[#F8F5E4]">
               <p className="text-[#032622]">Aucun bloc disponible</p>
             </div>
@@ -626,7 +596,19 @@ export default function MesFormationsPage() {
                 block.locked ? "opacity-70" : ""
               }`}
             >
-        <div className="flex-1 p-6">
+              {/* Icône cadenas à gauche si verrouillé */}
+              {block.locked && (
+                <div className="lg:w-24 w-full lg:h-auto h-24 border-b lg:border-b-0 lg:border-r border-black flex items-center justify-center bg-[#032622]">
+                  <Image
+                    src="/icon/Cadenas.png"
+                    alt="Bloc verrouillé"
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
+              )}
+              <div className="flex-1 p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="text-xs font-semibold text-[#032622] uppercase mb-1">
@@ -642,27 +624,41 @@ export default function MesFormationsPage() {
                 </div>
                 <div className="h-1 bg-gray-300 border border-black">
                   <div
-                    className="h-full bg-[#032622]"
+                    className="h-full bg-[#032622] transition-all duration-300"
                     style={{ width: `${block.progress}%` }}
                   ></div>
                 </div>
               </div>
               <div className="border-t lg:border-t-0 lg:border-l border-black p-6 flex flex-col justify-center items-center min-w-[200px]">
-                <button
-                  onClick={() => {
-                    if (block.locked) return;
-                    setStep("module");
-                  }}
-                  className={`px-6 py-2 text-sm font-bold border border-black flex items-center space-x-2 ${
+                <Link
+                  href={block.locked || !block.premier_cours_id ? '#' : `/espace-etudiant/cours/${block.formation_id}/${block.id}/${block.premier_cours_id}`}
+                  className={`px-6 py-2 text-sm font-bold border border-black flex items-center space-x-2 transition-colors ${
                     block.locked
                       ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-[#032622] text-white hover:bg-[#044a3a]"
+                      : block.progress > 0
+                      ? "bg-[#032622] text-white hover:bg-[#044a3a]"
+                      : "bg-[#6b7280] text-white hover:bg-[#4b5563]"
                   }`}
-                  disabled={block.locked}
+                  onClick={(e) => {
+                    if (block.locked || !block.premier_cours_id) {
+                      e.preventDefault();
+                    }
+                  }}
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   <span>{block.cta}</span>
-                  {block.locked ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                </button>
+                  {block.locked ? (
+                    <Image
+                      src="/icon/Cadenas.png"
+                      alt="Verrouillé"
+                      width={16}
+                      height={16}
+                      className="w-4 h-4 object-contain"
+                    />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
+                </Link>
               </div>
             </div>
             ))
@@ -675,6 +671,39 @@ export default function MesFormationsPage() {
               <h4 className="text-sm font-bold text-[#032622] uppercase">Événements à venir</h4>
             </div>
             <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h5 className="text-xs font-bold text-[#032622] uppercase">
+                  {new Date(currentYear, currentMonth).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                </h5>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      if (currentMonth === 0) {
+                        setCurrentMonth(11);
+                        setCurrentYear(currentYear - 1);
+                      } else {
+                        setCurrentMonth(currentMonth - 1);
+                      }
+                    }}
+                    className="p-1 hover:bg-gray-200 rounded"
+                  >
+                    <ChevronLeft className="w-3 h-3 text-[#032622]" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (currentMonth === 11) {
+                        setCurrentMonth(0);
+                        setCurrentYear(currentYear + 1);
+                      } else {
+                        setCurrentMonth(currentMonth + 1);
+                      }
+                    }}
+                    className="p-1 hover:bg-gray-200 rounded"
+                  >
+                    <ChevronRight className="w-3 h-3 text-[#032622]" />
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-7 gap-1 text-xs font-bold text-[#032622] uppercase">
                 {["L", "M", "M", "J", "V", "S", "D"].map((day, index) => (
                   <div key={`${day}-${index}`} className="text-center">
@@ -683,26 +712,67 @@ export default function MesFormationsPage() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1 text-xs text-[#032622]">
-                {[15, 16, 17, 18, 19, 20, 21].map((day) => (
-                  <div
-                    key={day}
-                    className={`h-8 flex items-center justify-center border border-black cursor-pointer hover:bg-gray-200 ${
-                      day === selectedDay ? "bg-[#032622] text-white" : "bg-[#F8F5E4]"
-                    }`}
-                    onClick={() => setSelectedDay(day)}
-                  >
-                    {day}
-                  </div>
-                ))}
+                {getDaysInCurrentMonth().map((dayObj, index) => {
+                  // Vérifier si ce jour a des événements dans le mois actuel
+                  const dayEvents = dayObj.isCurrentMonth && agendaEvents[dayObj.day] 
+                    ? agendaEvents[dayObj.day].filter((event: any) => {
+                        if (!event.date) return false;
+                        const eventDate = new Date(event.date);
+                        return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
+                      })
+                    : [];
+                  const hasEvents = dayEvents.length > 0;
+                  
+                  const isToday = dayObj.isCurrentMonth && 
+                    dayObj.day === new Date().getDate() && 
+                    currentMonth === new Date().getMonth() && 
+                    currentYear === new Date().getFullYear();
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`h-8 flex items-center justify-center border border-black relative cursor-pointer hover:bg-gray-200 ${
+                        !dayObj.isCurrentMonth ? "opacity-30 bg-gray-100" :
+                        dayObj.day === selectedDay && isToday ? "bg-[#032622] text-white" :
+                        isToday ? "bg-yellow-200" :
+                        dayObj.day === selectedDay ? "bg-[#032622] text-white" : 
+                        "bg-[#F8F5E4]"
+                      }`}
+                      onClick={() => {
+                        if (dayObj.isCurrentMonth) {
+                          setSelectedDay(dayObj.day);
+                        }
+                      }}
+                      title={hasEvents ? `${dayEvents.length} événement(s)` : ''}
+                    >
+                      {dayObj.day}
+                      {hasEvents && (
+                        <span className="absolute w-1.5 h-1.5 bg-[#032622] rounded-full bottom-1"></span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               <div className="space-y-2 pt-2">
-                {getCurrentDayEvents().map((event, index) => (
-                  <div key={index} className="border border-black p-3 text-xs bg-white/60">
-                    <div className="font-bold text-[#032622]">{event.title}</div>
-                    <div className="text-[#032622] opacity-80">{event.time}</div>
+                {isLoadingAgenda ? (
+                  <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                    Chargement des événements...
                   </div>
-                ))}
-                {getCurrentDayEvents().length === 0 && (
+                ) : getCurrentDayEvents().length > 0 ? (
+                  getCurrentDayEvents().map((event, index) => (
+                    <div 
+                      key={event.id || index} 
+                      className={`border border-black p-3 text-xs ${
+                        event.type === 'important' ? 'bg-yellow-100' : 
+                        event.type === 'late' ? 'bg-red-100' : 
+                        'bg-white/60'
+                      }`}
+                    >
+                      <div className="font-bold text-[#032622]">{event.title}</div>
+                      <div className="text-[#032622] opacity-80">{event.time || '09h00'}</div>
+                    </div>
+                  ))
+                ) : (
                   <div className="text-center text-[#032622] opacity-60 text-xs py-4">
                     Aucun événement prévu ce jour
                   </div>
@@ -722,24 +792,36 @@ export default function MesFormationsPage() {
               <h4 className="text-sm font-bold text-[#032622] uppercase">Mes derniers rendus</h4>
             </div>
             <div className="p-4">
-              {latestGrades.map((grade, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between border border-black mb-3 last:mb-0"
-                >
-                  <div className="p-3">
-                    <p className="text-xs text-[#032622] opacity-80">{grade.title}</p>
-                    <p className="text-sm font-semibold text-[#032622]">{grade.label}</p>
-                  </div>
-                  <div className="p-3 bg-[#032622] text-white font-bold text-lg min-w-[70px] text-center">
-                    {grade.grade}
-                  </div>
+              {isLoadingNotes ? (
+                <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                  Chargement des notes...
                 </div>
-              ))}
-              <button className="text-xs font-semibold text-[#032622] flex items-center space-x-1">
-                <span>VOIR TOUTES LES NOTES</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
+              ) : latestGrades.length > 0 ? (
+                <>
+                  {latestGrades.map((grade) => (
+                    <div
+                      key={grade.id}
+                      className="flex items-center justify-between border border-black mb-3 last:mb-0"
+                    >
+                      <div className="p-3">
+                        <p className="text-xs text-[#032622] opacity-80">{grade.title}</p>
+                        <p className="text-sm font-semibold text-[#032622]">{grade.label}</p>
+                      </div>
+                      <div className="p-3 bg-[#032622] text-white font-bold text-lg min-w-[70px] text-center">
+                        {grade.grade}
+                      </div>
+                    </div>
+                  ))}
+                  <button className="text-xs font-semibold text-[#032622] flex items-center space-x-1 mt-2">
+                    <span>VOIR TOUTES LES NOTES</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                  Aucune note disponible
+                </div>
+              )}
             </div>
           </div>
 
@@ -1144,18 +1226,9 @@ export default function MesFormationsPage() {
               <h4 className="text-sm font-bold text-[#032622] uppercase">Supports complémentaires</h4>
             </div>
             <div className="p-4 space-y-3">
-              {complementaryDocs.map((doc, index) => (
-                <div
-                  key={index}
-                  className="border border-black px-3 py-2 flex items-center justify-between text-xs text-[#032622]"
-                >
-                  <div>
-                    <p className="font-semibold">{doc.title}</p>
-                    <p className="opacity-70">{doc.size}</p>
-                  </div>
-                  <Download className="w-4 h-4" />
-                </div>
-              ))}
+              <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                Aucun support complémentaire disponible
+              </div>
             </div>
           </div>
 
@@ -1635,34 +1708,9 @@ export default function MesFormationsPage() {
         )}
 
         <div className="space-y-6">
-          {quizQuestions.map((question) => (
-            <div key={question.id} className="border border-black p-4 bg-white/40">
-              <p className="text-xs font-semibold text-[#032622] uppercase mb-3">
-                Question {question.id}
-              </p>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">
-                {question.question}
-              </h3>
-              <div className="grid md:grid-cols-2 gap-3">
-                {question.options.map((option, index) => {
-                  const isSelected = selectedAnswers[question.id] === index;
-                  return (
-                    <button
-                      key={option}
-                      onClick={() => handleSelectAnswer(question.id, index)}
-                      className={`border border-black px-4 py-3 text-left text-sm font-semibold transition-colors ${
-                        isSelected
-                          ? "bg-[#032622] text-white"
-                          : "bg-[#F8F5E4] text-[#032622] hover:bg-[#032622] hover:text-white"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+          <div className="text-center text-[#032622] opacity-60 py-8">
+            Aucune question disponible pour le moment
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -1727,50 +1775,9 @@ export default function MesFormationsPage() {
 
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-[#032622] uppercase">Relecture pédagogique</h3>
-          {quizQuestions.map((question) => {
-            const selected = selectedAnswers[question.id];
-            const isCorrect = selected === question.correctIndex;
-            return (
-              <div key={question.id} className="border border-black bg-white/60 p-4 space-y-3">
-                <div className="flex items-center space-x-2">
-                  {isCorrect ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-600" />
-                  )}
-                  <p className="text-xs font-semibold uppercase text-[#032622]">
-                    Question {question.id}
-                  </p>
-                </div>
-                <h4 className="text-sm font-bold text-[#032622]">{question.question}</h4>
-                <div className="text-sm">
-                  <p className="font-semibold text-[#032622]">
-                    Ta réponse :
-                    <span className={`ml-2 ${isCorrect ? "text-green-600" : "text-red-600"}`}>
-                      {selected !== null ? question.options[selected] : "Non renseignée"}
-                    </span>
-                  </p>
-                  {!isCorrect && (
-                    <p className="font-semibold text-[#032622]">
-                      Bonne réponse :
-                      <span className="ml-2 text-green-600">
-                        {question.options[question.correctIndex]}
-                      </span>
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2 text-sm text-[#032622]">
-                  <p>{question.explanation}</p>
-                  <div className="bg-[#032622]/10 border border-[#032622] px-3 py-2">
-                    <p className="text-xs font-bold uppercase text-[#032622] mb-1">
-                      Note de cours
-                    </p>
-                    <p>{question.courseTip}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          <div className="text-center text-[#032622] opacity-60 py-8">
+            Aucune question disponible pour le moment
+          </div>
         </div>
 
         <div className="flex items-center space-x-4 justify-center pt-4">
@@ -1788,15 +1795,6 @@ export default function MesFormationsPage() {
           >
             MODULE SUIVANT
           </button>
-        </div>
-
-        <div className="space-y-3">
-          {upcomingEvents.slice(0, 2).map((event, index) => (
-            <div key={index} className="border border-black p-4 bg-white/60">
-              <div className="text-sm font-bold text-[#032622]">{event.title}</div>
-              <div className="text-xs text-[#032622] opacity-80">{event.time}</div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

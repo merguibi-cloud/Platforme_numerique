@@ -951,7 +951,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
                 <select
                   value={question.type_question}
                   onChange={(e) => updateQuestion(qIndex, 'type_question', e.target.value)}
-                  className="bg-[#032622] text-[#F8F5E4] px-4 py-3 pr-10 font-bold uppercase appearance-none cursor-pointer"
+                  className="bg-[#032622] border-2 border-[#032622] text-[#F8F5E4] px-4 py-3 pr-10 font-bold uppercase appearance-none cursor-pointer"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   <option value="ouverte">QUESTION OUVERTE</option>
@@ -960,7 +960,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
                   <option value="vrai_faux">VRAI/FAUX</option>
                   <option value="piece_jointe">PIÈCE JOINTE</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#F8F5E4] pointer-events-none" />
+                <ChevronDown className="absolute  right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#F8F5E4] pointer-events-none" />
               </div>
             </div>
 

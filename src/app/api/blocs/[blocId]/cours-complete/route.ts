@@ -26,13 +26,25 @@ export async function GET(
       return NextResponse.json({ error: 'ID de bloc invalide' }, { status: 400 });
     }
 
+    // Vérifier si c'est une requête de prévisualisation admin (paramètre preview=true)
+    const { searchParams } = new URL(request.url);
+    const isPreview = searchParams.get('preview') === 'true';
+
     // 1. Charger tous les cours du bloc
-    const { data: cours, error: coursError } = await supabase
+    // Pour les étudiants: seulement ceux en ligne
+    // Pour la prévisualisation admin: tous les cours actifs
+    let query = supabase
       .from('cours_apprentissage')
       .select('*')
       .eq('bloc_id', blocIdNum)
-      .eq('actif', true)
-      .order('ordre_affichage', { ascending: true });
+      .eq('actif', true);
+
+    if (!isPreview) {
+      // Pour les étudiants, filtrer par statut 'en_ligne'
+      query = query.eq('statut', 'en_ligne');
+    }
+
+    const { data: cours, error: coursError } = await query.order('ordre_affichage', { ascending: true });
 
     if (coursError) {
       console.error('Erreur lors de la récupération des cours:', coursError);

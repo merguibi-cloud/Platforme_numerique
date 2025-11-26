@@ -257,7 +257,7 @@ export const ModulePreviewViewer = ({
     const loadAllCours = async () => {
       try {
         // OPTIMISATION : Utiliser l'endpoint batch qui charge tous les cours avec leurs chapitres en une seule requête
-        const response = await fetch(`/api/blocs/${blocId}/cours-complete`, {
+        const response = await fetch(`/api/blocs/${blocId}/cours-complete?preview=true`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });

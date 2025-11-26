@@ -185,13 +185,18 @@ export const ModuleManagement = ({
                     VISUALISER
                   </th>
                 )}
+                {title === 'EN LIGNE' && (
+                  <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
+                    CORRECTION
+                  </th>
+                )}
                 <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">SUPPRIMER</th>
               </tr>
             </thead>
             <tbody>
               {modules.length === 0 ? (
                 <tr>
-                  <td colSpan={showAssign ? (showVisualize ? 9 : 8) : (showVisualize ? 8 : 7)} className="border border-[#032622] p-8 text-center text-[#032622]">
+                  <td colSpan={showAssign ? (showVisualize ? (title === 'EN LIGNE' ? 10 : 9) : (title === 'EN LIGNE' ? 9 : 8)) : (showVisualize ? (title === 'EN LIGNE' ? 9 : 8) : (title === 'EN LIGNE' ? 8 : 7))} className="border border-[#032622] p-8 text-center text-[#032622]">
                     <p className="text-lg font-medium">{emptyMessage}</p>
                   </td>
                 </tr>
@@ -284,6 +289,20 @@ export const ModuleManagement = ({
                         >
                           <Eye className="w-3 h-3" />
                           VISUALISER
+                        </button>
+                      </td>
+                    )}
+                    {title === 'EN LIGNE' && (
+                      <td className="border border-[#032622] p-0">
+                        <button
+                          onClick={() => {
+                            router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${module.id}/correction`);
+                          }}
+                          className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                          style={{ fontFamily: 'var(--font-termina-bold)' }}
+                        >
+                          <FileText className="w-3 h-3" />
+                          CORRECTION
                         </button>
                       </td>
                     )}
