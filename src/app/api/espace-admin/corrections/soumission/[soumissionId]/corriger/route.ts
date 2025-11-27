@@ -136,10 +136,19 @@ export async function POST(
           .eq('id', soumissionIdNum)
           .maybeSingle();
 
-        const pointsMaxEtudeCas = (soumission?.etudes_cas as any)?.points_max || 20;
+        // Toutes les études de cas sont notées sur 20
+        // Calculer la note sur 20 en fonction des points attribués
+        // Si totalMax = 20, alors note = totalPoints
+        // Sinon, on fait une règle de trois
+        const noteMaxEtudeCas = 20; // Toujours sur 20
         
-        // Calculer la note sur points_max de l'étude de cas
-        noteGlobaleCalculee = totalMax > 0 ? (totalPoints / totalMax) * pointsMaxEtudeCas : 0;
+        // Calculer la note sur 20
+        noteGlobaleCalculee = totalMax > 0 ? (totalPoints / totalMax) * noteMaxEtudeCas : 0;
+        
+        // S'assurer que la note ne dépasse pas 20
+        if (noteGlobaleCalculee > 20) {
+          noteGlobaleCalculee = 20;
+        }
       } else {
         noteGlobaleCalculee = 0;
       }
@@ -149,7 +158,7 @@ export async function POST(
     const { error: updateSoumissionError } = await supabase
       .from('soumissions_etude_cas')
       .update({
-        note: parseFloat(noteGlobaleCalculee),
+        note: Math.min(parseFloat(noteGlobaleCalculee), 20), // S'assurer que la note ne dépasse pas 20
         commentaire_correcteur: commentaire_global || null,
         statut: 'corrige',
         date_correction: new Date().toISOString(),
@@ -194,13 +203,16 @@ export async function POST(
           .eq('evaluation_id', soumission.etude_cas_id)
           .maybeSingle();
 
+        // S'assurer que la note ne dépasse pas 20
+        const noteFinale = Math.min(parseFloat(noteGlobaleCalculee), 20);
+        
         if (noteExistante) {
           // Mettre à jour la note existante
           await supabase
             .from('notes_etudiants')
             .update({
-              note: parseFloat(noteGlobaleCalculee),
-              note_max: (etudeCas as any)?.points_max || 20,
+              note: noteFinale,
+              note_max: 20, // Toujours sur 20
               date_evaluation: new Date().toISOString()
             })
             .eq('id', noteExistante.id);
@@ -213,8 +225,8 @@ export async function POST(
               bloc_id: blocId,
               type_evaluation: 'etude_cas',
               evaluation_id: soumission.etude_cas_id,
-              note: parseFloat(noteGlobaleCalculee),
-              note_max: (etudeCas as any)?.points_max || 20,
+              note: noteFinale,
+              note_max: 20, // Toujours sur 20
               date_evaluation: new Date().toISOString()
             });
         }

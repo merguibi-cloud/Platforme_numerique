@@ -182,16 +182,28 @@ export default function MesFormationsPage() {
           const data = await response.json();
           if (data.success && data.blocs) {
             // Formater les blocs pour l'affichage
-            const formattedBlocs = data.blocs.map((bloc: any) => ({
-              id: bloc.id,
-              title: `BLOC ${bloc.numero_bloc}`,
-              subtitle: bloc.titre,
-              progress: bloc.progression,
-              locked: bloc.locked,
-              cta: bloc.locked ? 'COMMENCER' : (bloc.progression > 0 ? 'REPRENDRE' : 'COMMENCER'),
-              premier_cours_id: bloc.premier_cours_id,
-              formation_id: bloc.formation_id
-            }));
+            const formattedBlocs = data.blocs.map((bloc: any) => {
+              // Déterminer le texte du bouton
+              let cta = 'COMMENCER';
+              if (bloc.locked) {
+                cta = 'COMMENCER';
+              } else if (bloc.progression === 100) {
+                cta = 'REVOIR LE COURS';
+              } else if (bloc.progression > 0) {
+                cta = 'REPRENDRE';
+              }
+              
+              return {
+                id: bloc.id,
+                title: `BLOC ${bloc.numero_bloc}`,
+                subtitle: bloc.titre,
+                progress: bloc.progression,
+                locked: bloc.locked,
+                cta: cta,
+                premier_cours_id: bloc.premier_cours_id,
+                formation_id: bloc.formation_id
+              };
+            });
             setCourseBlocks(formattedBlocs);
           }
         }

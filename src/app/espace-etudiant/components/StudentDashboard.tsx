@@ -19,23 +19,23 @@ interface DashboardData {
   } | null;
   progression: {
     pourcentage: number;
-    coursLus: number;
-    coursTotal: number;
+    chapitresLus: number;
+    chapitresTotal: number;
     quizCompletes: number;
     quizTotal: number;
-    videosVues: number;
-    videosTotal: number;
+    etudeCasSoumises: number;
+    etudeCasTotal: number;
   };
   statistiques: {
-    coursLus: number;
+    chapitresLus: number;
     quizCompletes: number;
-    videosVues: number;
-    coursRestants: number;
+    etudeCasSoumises: number;
+    chapitresRestants: number;
     quizRestants: number;
-    videosRestantes: number;
-    pourcentageCours: number;
+    etudeCasRestantes: number;
+    pourcentageChapitres: number;
     pourcentageQuiz: number;
-    pourcentageVideos: number;
+    pourcentageEtudeCas: number;
   };
   activite: {
     tempsTotalHeures: number;
@@ -125,9 +125,9 @@ export const StudentDashboard = () => {
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
   
-  const coursPercentage = dashboardData?.statistiques.pourcentageCours || 0;
+  const coursPercentage = dashboardData?.statistiques.pourcentageChapitres || 0;
   const quizPercentage = dashboardData?.statistiques.pourcentageQuiz || 0;
-  const videosPercentage = dashboardData?.statistiques.pourcentageVideos || 0;
+  const etudeCasPercentage = dashboardData?.statistiques.pourcentageEtudeCas || 0;
   
   // Cours : cercle complet (extérieur)
   const coursDashArray = circumference;
@@ -138,8 +138,8 @@ export const StudentDashboard = () => {
   const quizDashOffset = circumference - (quizPercentage / 100) * circumference;
   
   // Vidéos : commence après le quiz
-  const videosDashArray = circumference;
-  const videosDashOffset = circumference - (videosPercentage / 100) * circumference;
+  const etudeCasDashArray = circumference;
+  const etudeCasDashOffset = circumference - (etudeCasPercentage / 100) * circumference;
 
   // Préparer les données pour le graphique d'activité
   const activiteData = dashboardData?.activite.activiteHebdomadaire || [];
@@ -362,11 +362,11 @@ export const StudentDashboard = () => {
                   <div className="flex flex-col space-y-2 text-xs">
                     <div 
                       className="flex items-center space-x-1 group cursor-pointer"
-                      title={`${dashboardData?.statistiques.coursLus || 0} cours lus sur ${dashboardData?.progression.coursTotal || 0}`}
+                      title={`${dashboardData?.statistiques.chapitresLus || 0} chapitres lus sur ${dashboardData?.progression.chapitresTotal || 0}`}
                     >
                       <div className="w-3 h-3 bg-[#032622]"></div>
                       <span className="text-[#032622]">
-                        Cours lus <span className="font-bold">({dashboardData?.statistiques.coursLus || 0})</span>
+                        Chapitres lus <span className="font-bold">({dashboardData?.statistiques.chapitresLus || 0})</span>
                       </span>
                     </div>
                     <div 
@@ -380,11 +380,11 @@ export const StudentDashboard = () => {
                     </div>
                     <div 
                       className="flex items-center space-x-1 group cursor-pointer"
-                      title={`${dashboardData?.statistiques.videosVues || 0} vidéos vues sur ${dashboardData?.progression.videosTotal || 0}`}
+                      title={`${dashboardData?.statistiques.etudeCasSoumises || 0} études de cas soumises sur ${dashboardData?.progression.etudeCasTotal || 0}`}
                     >
-                      <div className="w-3 h-3 bg-[#d1d5db]"></div>
+                      <div className="w-3 h-3 bg-[#5AA469]"></div>
                       <span className="text-[#032622]">
-                        Vidéos vues <span className="font-bold">({dashboardData?.statistiques.videosVues || 0})</span>
+                        Études de cas <span className="font-bold">({dashboardData?.statistiques.etudeCasSoumises || 0})</span>
                       </span>
                     </div>
                   </div>
@@ -403,7 +403,7 @@ export const StudentDashboard = () => {
                         strokeWidth="12"
                         fill="none"
                       />
-                      {/* Cercle cours (vert foncé) - extérieur, le plus épais */}
+                      {/* Cercle chapitres (vert foncé) - extérieur, le plus épais */}
                       <circle
                         cx="50"
                         cy="50"
@@ -429,16 +429,16 @@ export const StudentDashboard = () => {
                         strokeLinecap="round"
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                       />
-                      {/* Cercle vidéos (gris clair) - intérieur */}
+                      {/* Cercle études de cas (vert clair) - intérieur */}
                       <circle
                         cx="50"
                         cy="50"
                         r="30"
-                        stroke="#d1d5db"
+                        stroke="#5AA469"
                         strokeWidth="8"
                         fill="none"
-                        strokeDasharray={videosDashArray}
-                        strokeDashoffset={videosDashOffset}
+                        strokeDasharray={etudeCasDashArray}
+                        strokeDashoffset={etudeCasDashOffset}
                         strokeLinecap="round"
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                       />
@@ -446,7 +446,7 @@ export const StudentDashboard = () => {
                     {/* Tooltip au survol */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#032622] text-white px-3 py-1 rounded text-xs font-bold whitespace-nowrap">
-                        {dashboardData?.statistiques.coursLus || 0} cours | {dashboardData?.statistiques.quizCompletes || 0} quiz | {dashboardData?.statistiques.videosVues || 0} vidéos
+                        {dashboardData?.statistiques.chapitresLus || 0} chapitres | {dashboardData?.statistiques.quizCompletes || 0} quiz | {dashboardData?.statistiques.etudeCasSoumises || 0} études de cas
                       </div>
                     </div>
                   </div>

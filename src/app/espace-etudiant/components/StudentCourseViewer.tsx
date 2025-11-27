@@ -56,11 +56,13 @@ export const StudentCourseViewer = ({
   const [currentChapitreIndex, setCurrentChapitreIndex] = useState(0);
   const [allCours, setAllCours] = useState<CoursApprentissage[]>([]);
   const [isSidebarRightCollapsed, setIsSidebarRightCollapsed] = useState(false);
-  const [showQuizModal, setShowQuizModal] = useState(false);
-  const [showEtudeCasModal, setShowEtudeCasModal] = useState(false);
   const [quizzesByChapitre, setQuizzesByChapitre] = useState<Map<number, QuizData>>(new Map());
   const [currentQuiz, setCurrentQuiz] = useState<QuizData | null>(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [quizReponses, setQuizReponses] = useState<any>(null); // Réponses du quiz déjà fait
+  const [etudeCasReponses, setEtudeCasReponses] = useState<any>(null); // Réponses de l'étude de cas déjà soumise
+  const [showEtudeCasConfirmModal, setShowEtudeCasConfirmModal] = useState(false); // Modal de confirmation pour soumettre l'étude de cas
+  const [getEtudeCasAnswers, setGetEtudeCasAnswers] = useState<(() => { answers: any; uploadedFiles: { [questionId: number]: File[] }; commentaire: string; allQuestionsAnswered: boolean }) | null>(null);
   
   // États pour les modals
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -69,6 +71,24 @@ export const StudentCourseViewer = ({
   const [showNextCourseModal, setShowNextCourseModal] = useState(false);
   const [nextCourse, setNextCourse] = useState<{ id: number; titre: string } | null>(null);
   const [blocCompleted, setBlocCompleted] = useState(false);
+  
+  // États pour stocker les quiz et études de cas déjà complétés
+  const [quizAvecNote, setQuizAvecNote] = useState<Set<number>>(new Set()); // Set des quiz_id qui ont une note
+  const [etudeCasSoumis, setEtudeCasSoumis] = useState<Set<number>>(new Set()); // Set des etude_cas_id déjà soumis
+  const [blocIsCompleted, setBlocIsCompleted] = useState(false); // Indique si le bloc est complété (tous quiz notés et toutes études de cas soumises)
+  
+  // État pour suivre si on vient de soumettre un quiz (pour éviter d'afficher le message immédiatement)
+  const [justSubmittedQuiz, setJustSubmittedQuiz] = useState<number | null>(null);
+  
+  // État pour la progression réelle
+  const [realProgress, setRealProgress] = useState<{
+    progressionPourcentage: number;
+    chapitresLus: number[];
+    chapitresSautes: number[];
+    quizCompletes: number[];
+    etudeCasSoumise: boolean;
+    totalChapitres: number;
+  } | null>(null);
   
   // Timer pour suivre le temps passé dans le bloc
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,26 +125,85 @@ export const StudentCourseViewer = ({
   // Fonction pour enregistrer la progression
   const trackProgression = async (action: string, tempsPasse?: number) => {
     try {
+      // Vérifier que les données nécessaires sont disponibles
+      if (!blocId || !coursId) {
+        console.warn('Impossible d\'enregistrer la progression : blocId ou coursId manquant');
+        return;
+      }
+
       const currentChapitre = data.chapitres[currentChapitreIndex];
+      const bodyData = {
+        bloc_id: parseInt(blocId),
+        cours_id: coursId,
+        chapitre_id: currentChapitre?.id || null,
+        action: action,
+        temps_passe_minutes: tempsPasse !== undefined ? tempsPasse : tempsPasseMinutes,
+        date_jour: new Date().toISOString().split('T')[0]
+      };
+
       const response = await fetch('/api/espace-etudiant/progression', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          bloc_id: parseInt(blocId),
-          cours_id: coursId,
-          chapitre_id: currentChapitre?.id,
-          action: action,
-          temps_passe_minutes: tempsPasse !== undefined ? tempsPasse : tempsPasseMinutes,
-          date_jour: new Date().toISOString().split('T')[0]
-        })
+        body: JSON.stringify(bodyData)
       });
 
       if (!response.ok) {
-        console.error('Erreur lors de l\'enregistrement de la progression');
+        const errorText = await response.text();
+        console.error('Erreur lors de l\'enregistrement de la progression:', errorText);
       }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement de la progression:', error);
+    }
+  };
+
+  // Fonction centralisée pour charger la dernière position de lecture
+  const loadLastPosition = async (chapitres: ChapitreCours[]): Promise<number | null> => {
+    try {
+      const response = await fetch(`/api/espace-etudiant/progression/last-position?coursId=${coursId}&blocId=${blocId}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.chapitre_id) {
+          // Trouver l'index du chapitre dans la liste triée
+          const chapitreIndex = chapitres.findIndex(ch => ch.id === result.chapitre_id);
+          if (chapitreIndex !== -1) {
+            return chapitreIndex;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement de la dernière position:', error);
+    }
+    return null;
+  };
+
+  // Fonction pour charger la progression réelle
+  const loadRealProgress = async () => {
+    try {
+      const response = await fetch(`/api/espace-etudiant/progression/real-progress?coursId=${coursId}&blocId=${blocId}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setRealProgress({
+            progressionPourcentage: result.progressionPourcentage || 0,
+            chapitresLus: result.chapitresLus?.map((c: any) => c.id) || [],
+            chapitresSautes: result.chapitresSautes || [],
+            quizCompletes: result.quizCompletes?.map((q: any) => q.id) || [],
+            etudeCasSoumise: result.etudeCasSoumise || false,
+            totalChapitres: result.totalChapitres || 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement de la progression réelle:', error);
     }
   };
 
@@ -233,8 +312,10 @@ export const StudentCourseViewer = ({
             bloc
           });
           
+          // Charger la dernière position de lecture
           if (sortedChapitres.length > 0) {
-            setCurrentChapitreIndex(0);
+            const lastPosition = await loadLastPosition(sortedChapitres);
+            setCurrentChapitreIndex(lastPosition !== null ? lastPosition : 0);
             setCurrentView('cours');
           }
           
@@ -288,8 +369,10 @@ export const StudentCourseViewer = ({
             bloc
           });
           
+          // Charger la dernière position de lecture
           if (sortedChapitres.length > 0) {
-            setCurrentChapitreIndex(0);
+            const lastPosition = await loadLastPosition(sortedChapitres);
+            setCurrentChapitreIndex(lastPosition !== null ? lastPosition : 0);
             setCurrentView('cours');
           }
         }
@@ -332,13 +415,80 @@ export const StudentCourseViewer = ({
     loadAllCours();
   }, [blocId]);
 
+  // Charger les quiz avec note et les études de cas soumises
+  useEffect(() => {
+    const loadCompletedEvaluations = async () => {
+      try {
+        // Récupérer les IDs des quiz
+        const quizIds = Array.from(quizzesByChapitre.values()).map(q => q.quiz.id);
+        const etudeCasId = data.etudeCas?.id;
+
+        if (quizIds.length === 0 && !etudeCasId) return;
+
+        // Construire l'URL avec les paramètres
+        const params = new URLSearchParams();
+        if (quizIds.length > 0) {
+          params.append('quizIds', quizIds.join(','));
+        }
+        if (etudeCasId) {
+          params.append('etudeCasId', etudeCasId.toString());
+        }
+
+        const response = await fetch(`/api/espace-etudiant/evaluations/check?${params.toString()}`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setQuizAvecNote(new Set(result.quizAvecNote || []));
+            if (result.etudeCasSoumis && etudeCasId) {
+              setEtudeCasSoumis(new Set([etudeCasId]));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des évaluations complétées:', error);
+      }
+    };
+
+    if (quizzesByChapitre.size > 0 || data.etudeCas) {
+      loadCompletedEvaluations();
+    }
+  }, [quizzesByChapitre, data.etudeCas]);
+
+  // Charger la progression réelle au chargement initial et après soumission de quiz/étude de cas
+  useEffect(() => {
+    if (!isLoading && data.cours && data.chapitres.length > 0) {
+      loadRealProgress();
+    }
+  }, [isLoading, data.cours, data.chapitres.length]);
+
+  // Recharger la progression réelle après soumission de quiz
+  useEffect(() => {
+    if (quizCompleted) {
+      setTimeout(() => {
+        loadRealProgress();
+      }, 1000);
+    }
+  }, [quizCompleted]);
+
+  // Recharger la progression réelle après soumission d'étude de cas
+  useEffect(() => {
+    if (etudeCasSoumis.size > 0) {
+      setTimeout(() => {
+        loadRealProgress();
+      }, 1000);
+    }
+  }, [etudeCasSoumis.size]);
+
   const currentChapitre = data.chapitres[currentChapitreIndex];
   const hasPreviousChapitre = currentChapitreIndex > 0;
   const hasNextChapitre = currentChapitreIndex < data.chapitres.length - 1;
   const hasQuizForCurrentChapitre = currentChapitre ? quizzesByChapitre.has(currentChapitre.id) : false;
   const hasEtudeCas = data.etudeCas !== null;
 
-  // Enregistrer quand on change de chapitre
+  // Enregistrer quand on change de chapitre et recharger la progression réelle
   useEffect(() => {
     if (currentChapitre && currentView === 'cours') {
       trackProgression('view_chapitre', tempsPasseMinutes);
@@ -350,6 +500,11 @@ export const StudentCourseViewer = ({
         setCurrentQuiz(null);
       }
       setQuizCompleted(false);
+      
+      // Recharger la progression réelle après un court délai pour laisser le temps à l'API de s'enregistrer
+      setTimeout(() => {
+        loadRealProgress();
+      }, 500);
     }
   }, [currentChapitreIndex, currentChapitre, quizzesByChapitre, currentView]);
 
@@ -370,132 +525,169 @@ export const StudentCourseViewer = ({
     };
   }, [tempsPasseMinutes]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentView === 'cours') {
+      // Vérifier si le quiz du chapitre actuel a déjà une note
+      const currentChapitre = data.chapitres[currentChapitreIndex];
+      const quizData = currentChapitre ? quizzesByChapitre.get(currentChapitre.id) : null;
+      const currentQuizId = quizData?.quiz.id;
+      const quizDejaNote = currentQuizId && quizAvecNote.has(currentQuizId);
+      
       if (hasQuizForCurrentChapitre) {
-        setShowQuizModal(true);
+        // Le quiz existe, naviguer vers le quiz (en mode lecture seule si déjà fait)
+        if (currentChapitre) {
+          navigateToQuiz(currentChapitre.id);
+        }
       } else if (hasNextChapitre) {
-        setCurrentChapitreIndex(prev => prev + 1);
-        trackProgression('change_page', tempsPasseMinutes);
+        // Passer au chapitre suivant
+        navigateToChapitre(currentChapitreIndex + 1);
       } else if (hasEtudeCas) {
-        setShowEtudeCasModal(true);
+        // Pas de chapitre suivant, naviguer vers l'étude de cas (toujours accessible)
+        navigateToEtudeCas();
       }
     } else if (currentView === 'quiz') {
-      if (quizCompleted) {
-        if (hasNextChapitre) {
-          setCurrentView('cours');
-          setCurrentChapitreIndex(prev => prev + 1);
-          setQuizCompleted(false);
-          trackProgression('change_page', tempsPasseMinutes);
-        } else if (hasEtudeCas) {
-          setShowEtudeCasModal(true);
-          setQuizCompleted(false);
+      // Après avoir consulté le quiz (en mode lecture seule ou après soumission)
+      // Toujours permettre la navigation
+      if (hasNextChapitre) {
+        setQuizCompleted(false);
+        navigateToChapitre(currentChapitreIndex + 1);
+      } else if (hasEtudeCas) {
+        // Toujours permettre d'accéder à l'étude de cas
+        navigateToEtudeCas();
+        setQuizCompleted(false);
+      } else {
+        setCurrentView('cours');
+        setQuizCompleted(false);
+      }
+    } else if (currentView === 'etude-cas') {
+      // Si l'étude de cas est déjà soumise, retourner aux formations
+      if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+        router.push('/espace-etudiant/mes-formations');
+      } else {
+        // Si l'étude de cas n'est pas encore soumise, afficher la popup de confirmation
+        if (getEtudeCasAnswers) {
+          const answersData = getEtudeCasAnswers();
+          if (answersData.allQuestionsAnswered) {
+            // Toutes les questions sont répondues, afficher la popup de confirmation
+            setShowEtudeCasConfirmModal(true);
+          } else {
+            // Certaines questions ne sont pas répondues, afficher un avertissement
+            setErrorMessage('Vous n\'avez pas répondu à toutes les questions. Voulez-vous vraiment soumettre votre étude de cas ?');
+            setShowEtudeCasConfirmModal(true);
+          }
         } else {
-          setCurrentView('cours');
-          setQuizCompleted(false);
+          // Si on ne peut pas récupérer les réponses, essayer de soumettre quand même
+          setShowEtudeCasConfirmModal(true);
         }
       }
     }
   };
-
-  const handleContinueReading = () => {
-    setShowQuizModal(false);
-  };
-
-  const handleGoToQuiz = () => {
-    setShowQuizModal(false);
-    setCurrentView('quiz');
-    setQuizCompleted(false);
-    trackProgression('change_page', tempsPasseMinutes);
-  };
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showQuizModal) {
-          setShowQuizModal(false);
-        }
-        if (showEtudeCasModal) {
-          setShowEtudeCasModal(false);
-        }
-      }
-    };
-
-    if (showQuizModal || showEtudeCasModal) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [showQuizModal, showEtudeCasModal]);
 
   const handlePrevious = () => {
     if (currentView === 'etude-cas' && hasEtudeCas) {
       const lastChapitre = data.chapitres[data.chapitres.length - 1];
       if (lastChapitre && quizzesByChapitre.has(lastChapitre.id)) {
-        setCurrentView('quiz');
-        setCurrentChapitreIndex(data.chapitres.length - 1);
+        navigateToQuiz(lastChapitre.id);
       } else {
-        setCurrentView('cours');
-        setCurrentChapitreIndex(data.chapitres.length - 1);
+        navigateToChapitre(data.chapitres.length - 1);
       }
-      trackProgression('change_page', tempsPasseMinutes);
     } else if (currentView === 'quiz' && currentChapitre) {
       setCurrentView('cours');
       trackProgression('change_page', tempsPasseMinutes);
     } else if (currentView === 'cours' && hasPreviousChapitre) {
-      setCurrentChapitreIndex(prev => prev - 1);
-      trackProgression('change_page', tempsPasseMinutes);
+      navigateToChapitre(currentChapitreIndex - 1);
     }
   };
 
+  // Handlers centralisés pour les clics dans la sidebar
   const handleChapitreClick = (chapitreId: number) => {
     const targetIndex = data.chapitres.findIndex((ch: ChapitreCours) => ch.id === chapitreId);
-    
     if (targetIndex !== -1) {
-      setCurrentChapitreIndex(targetIndex);
-      setCurrentView('cours');
-      trackProgression('change_page', tempsPasseMinutes);
+      navigateToChapitre(targetIndex);
     }
   };
 
   const handleQuizClick = (chapitreId: number) => {
-    const targetIndex = data.chapitres.findIndex((ch: ChapitreCours) => ch.id === chapitreId);
-    
-    if (targetIndex !== -1) {
-      setCurrentChapitreIndex(targetIndex);
-      setCurrentView('cours');
-      
-      const quizData = quizzesByChapitre.get(chapitreId);
-      if (quizData) {
-        setCurrentQuiz(quizData);
-        setShowQuizModal(true);
-      }
-    }
+    navigateToQuiz(chapitreId);
   };
 
   const handleEtudeCasClick = (coursIdOrChapitreId: number, etudeCasId?: number) => {
     if (coursIdOrChapitreId === coursId) {
-      const etudeCasInData = data.etudeCas;
-      if (etudeCasInData || hasEtudeCas) {
-        setShowEtudeCasModal(true);
-      } else {
-        setCurrentView('etude-cas');
+      navigateToEtudeCas();
+    }
+  };
+
+  const handleCoursClick = (clickedCoursId: number) => {
+    // Ne rien faire - le clic sur le cours ne fait que dérouler les chapitres
+  };
+
+  // Fonction centralisée pour naviguer vers un chapitre
+  const navigateToChapitre = (chapitreIndex: number) => {
+    setCurrentChapitreIndex(chapitreIndex);
+    setCurrentView('cours');
+    // Utiliser 'view_chapitre' pour enregistrer la progression et permettre la reprise automatique
+    trackProgression('view_chapitre', tempsPasseMinutes);
+  };
+
+  // Fonction centralisée pour naviguer vers un quiz
+  const navigateToQuiz = async (chapitreId: number) => {
+    const targetIndex = data.chapitres.findIndex((ch: ChapitreCours) => ch.id === chapitreId);
+    if (targetIndex !== -1) {
+      setCurrentChapitreIndex(targetIndex);
+      const quizData = quizzesByChapitre.get(chapitreId);
+      if (quizData) {
+        // Si le quiz est déjà fait, charger les réponses
+        if (quizAvecNote.has(quizData.quiz.id) && justSubmittedQuiz !== quizData.quiz.id) {
+          try {
+            const response = await fetch(`/api/espace-etudiant/quiz/${quizData.quiz.id}/reponses`, {
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+              const result = await response.json();
+              if (result.success) {
+                setQuizReponses(result);
+              }
+            }
+          } catch (error) {
+            console.error('Erreur lors du chargement des réponses:', error);
+          }
+        } else {
+          setQuizReponses(null); // Pas de réponses si le quiz n'est pas encore fait
+        }
+        setCurrentQuiz(quizData);
+        setCurrentView('quiz');
+        // Si le quiz est déjà fait, on est en mode lecture seule, donc quizCompleted = true pour permettre la navigation
+        const isQuizDone = quizAvecNote.has(quizData.quiz.id) && justSubmittedQuiz !== quizData.quiz.id;
+        setQuizCompleted(isQuizDone);
         trackProgression('change_page', tempsPasseMinutes);
       }
     }
   };
 
-  const handleGoToEtudeCas = () => {
-    setShowEtudeCasModal(false);
+  // Fonction centralisée pour naviguer vers une étude de cas
+  const navigateToEtudeCas = async () => {
+    if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+      // Charger les réponses de l'étude de cas déjà soumise
+      try {
+        const response = await fetch(`/api/espace-etudiant/etude-cas/${data.etudeCas.id}/reponses`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setEtudeCasReponses(result);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des réponses de l\'étude de cas:', error);
+      }
+    } else {
+      setEtudeCasReponses(null);
+    }
     setCurrentView('etude-cas');
     trackProgression('change_page', tempsPasseMinutes);
-  };
-
-  const handleContinueToEtudeCas = () => {
-    setShowEtudeCasModal(false);
-  };
-
-  const handleCoursClick = (clickedCoursId: number) => {
-    // Ne rien faire - le clic sur le cours ne fait que dérouler les chapitres
   };
 
   // Fonction pour soumettre le quiz
@@ -520,6 +712,24 @@ export const StudentCourseViewer = ({
         const result = await response.json();
         console.log('Quiz soumis avec succès:', result);
         setQuizCompleted(true);
+        // Marquer ce quiz comme venant d'être soumis pour éviter le message immédiat
+        if (currentQuiz?.quiz.id) {
+          setJustSubmittedQuiz(currentQuiz.quiz.id);
+          // Ajouter le quiz à la liste des quiz avec note après un court délai
+          setTimeout(() => {
+            setQuizAvecNote(prev => new Set(prev).add(currentQuiz.quiz.id));
+            // Réinitialiser le flag après 2 secondes
+            setTimeout(() => {
+              setJustSubmittedQuiz(null);
+            }, 2000);
+          }, 100);
+        }
+        // Vérifier si le bloc est maintenant complété
+        await checkBlocCompletion();
+        // Recharger la progression réelle
+        setTimeout(() => {
+          loadRealProgress();
+        }, 500);
       } else {
         console.error('Erreur lors de la soumission du quiz');
       }
@@ -537,23 +747,13 @@ export const StudentCourseViewer = ({
     return null;
   };
 
-  // Fonction pour vérifier si le bloc est complété à 100%
-  const checkBlocCompletion = async () => {
-    try {
-      const response = await fetch(`/api/espace-etudiant/blocs`, {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const currentBloc = result.blocs?.find((b: any) => b.id.toString() === blocId);
-        return currentBloc?.progression === 100;
-      }
-      return false;
-    } catch (error) {
-      console.error('Erreur lors de la vérification de la progression:', error);
-      return false;
-    }
+  // Fonction pour confirmer et soumettre l'étude de cas
+  const handleConfirmEtudeCasSubmit = async () => {
+    if (!getEtudeCasAnswers || !data.etudeCas) return;
+    
+    const answersData = getEtudeCasAnswers();
+    await handleEtudeCasSubmit(answersData.answers, answersData.uploadedFiles, answersData.commentaire);
+    setShowEtudeCasConfirmModal(false);
   };
 
   // Fonction pour soumettre l'étude de cas
@@ -595,8 +795,21 @@ export const StudentCourseViewer = ({
         const result = await response.json();
         console.log('Étude de cas soumise avec succès:', result);
         
+        // Ajouter l'étude de cas à la liste des études de cas soumises
+        if (data.etudeCas?.id) {
+          setEtudeCasSoumis(prev => new Set(prev).add(data.etudeCas.id));
+        }
+        
         // Attendre un peu pour que la progression soit mise à jour dans la base de données
         await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Vérifier si le bloc est maintenant complété
+        await checkBlocCompletion();
+        
+        // Recharger la progression réelle
+        setTimeout(() => {
+          loadRealProgress();
+        }, 500);
         
         // Vérifier s'il y a un prochain cours dans le bloc actuel
         const nextCours = findNextCourse();
@@ -607,7 +820,7 @@ export const StudentCourseViewer = ({
           setBlocCompleted(false);
           setShowNextCourseModal(true);
         } else {
-          // Pas de prochain cours dans le bloc → vérifier si le bloc est complété à 100%
+          // Pas de prochain cours dans le bloc → vérifier si le bloc est complété
           const isBlocCompleted = await checkBlocCompletion();
           
           if (isBlocCompleted) {
@@ -651,9 +864,137 @@ export const StudentCourseViewer = ({
     router.push('/espace-etudiant/mes-formations');
   };
 
-  const progress = data.chapitres.length > 0
-    ? Math.round(((currentChapitreIndex + 1) / data.chapitres.length) * 100)
-    : 0;
+  // État pour stocker s'il y a un bloc suivant
+  const [hasNextBlocState, setHasNextBlocState] = useState(false);
+
+  // Vérifier s'il y a un bloc suivant au chargement
+  useEffect(() => {
+    const checkNextBloc = async () => {
+      try {
+        const response = await fetch(`/api/espace-etudiant/blocs`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const result = await response.json();
+          const currentBlocIndex = result.blocs?.findIndex((b: any) => b.id.toString() === blocId) ?? -1;
+          if (currentBlocIndex !== -1 && currentBlocIndex < (result.blocs?.length || 0) - 1) {
+            setHasNextBlocState(true);
+          } else {
+            setHasNextBlocState(false);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du bloc suivant:', error);
+        setHasNextBlocState(false);
+      }
+    };
+    checkNextBloc();
+  }, [blocId]);
+
+  // Fonction pour vérifier si le bloc est complété
+  const checkBlocCompletion = async () => {
+    try {
+      const response = await fetch(`/api/espace-etudiant/blocs/${blocId}/completion`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setBlocIsCompleted(result.isCompleted);
+          return result.isCompleted;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Erreur lors de la vérification de la complétion du bloc:', error);
+      return false;
+    }
+  };
+
+  // Vérifier la complétion du bloc périodiquement et après soumission
+  useEffect(() => {
+    if (!isLoading && blocId) {
+      checkBlocCompletion();
+    }
+  }, [blocId, isLoading, quizAvecNote, etudeCasSoumis]);
+
+  // Fonction pour calculer le label du bouton suivant
+  const getNextButtonLabel = () => {
+    if (currentView === 'etude-cas') {
+      // Si l'étude de cas est déjà soumise, afficher "RETOUR AUX FORMATIONS"
+      if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+        return 'RETOUR AUX FORMATIONS';
+      }
+      return 'TERMINER';
+    }
+
+    if (currentView === 'quiz') {
+      // Dans un quiz (en mode lecture seule ou après soumission)
+      // Toujours permettre la navigation
+      if (hasNextChapitre) {
+        return 'PASSER AU CHAPITRE SUIVANT';
+      } else if (hasEtudeCas) {
+        return 'PASSER À L\'ÉTUDE DE CAS';
+      } else {
+        // Fin du cours, vérifier s'il y a un cours suivant
+        const nextCours = findNextCourse();
+        if (nextCours) {
+          return 'PASSER AU COURS SUIVANT';
+        } else if (hasNextBlocState) {
+          return 'PASSER AU BLOC SUIVANT';
+        } else {
+          // Plus de blocs, quiz final (pas encore défini)
+          return 'PASSER AU QUIZ FINAL';
+        }
+      }
+    }
+
+    if (currentView === 'cours') {
+      // Dans un cours
+      if (hasQuizForCurrentChapitre) {
+        return 'PASSER AU QUIZ';
+      } else if (hasNextChapitre) {
+        return 'PASSER AU CHAPITRE SUIVANT';
+      } else if (hasEtudeCas) {
+        return 'PASSER À L\'ÉTUDE DE CAS';
+      } else {
+        // Fin du cours, vérifier s'il y a un cours suivant
+        const nextCours = findNextCourse();
+        if (nextCours) {
+          return 'PASSER AU COURS SUIVANT';
+        } else if (hasNextBlocState) {
+          return 'PASSER AU BLOC SUIVANT';
+        } else {
+          // Plus de blocs, quiz final (pas encore défini)
+          return 'PASSER AU QUIZ FINAL';
+        }
+      }
+    }
+
+    return 'SUIVANT';
+  };
+
+  // Fonction pour calculer le label du bouton précédent
+  const getPreviousButtonLabel = () => {
+    if (currentView === 'quiz') {
+      return 'RETOUR AU COURS';
+    }
+    if (currentView === 'etude-cas') {
+      return 'RETOUR AU COURS';
+    }
+    if (currentView === 'cours' && hasPreviousChapitre) {
+      return 'CHAPITRE PRÉCÉDENT';
+    }
+    return 'PRÉCÉDENT';
+  };
+
+  // Calcul de la progression : utiliser la progression réelle si disponible, sinon fallback sur la position
+  const progress = realProgress?.progressionPourcentage !== undefined
+    ? realProgress.progressionPourcentage
+    : (data.chapitres.length > 0
+        ? Math.round(((currentChapitreIndex + 1) / data.chapitres.length) * 100)
+        : 0);
 
   if (isLoading) {
     return (
@@ -751,7 +1092,10 @@ export const StudentCourseViewer = ({
                     quiz={currentQuiz.quiz}
                     questions={currentQuiz.questions}
                     isPreview={false}
-                    onQuizComplete={(reponses, tempsPasse) => {
+                    readOnly={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id}
+                    userAnswers={quizReponses?.reponses || null}
+                    quizResult={quizReponses?.tentative || null}
+                    onQuizComplete={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id ? undefined : (reponses, tempsPasse) => {
                       handleQuizSubmit(reponses, tempsPasse);
                       setQuizCompleted(true);
                     }}
@@ -763,8 +1107,10 @@ export const StudentCourseViewer = ({
                     etudeCas={data.etudeCas}
                     questions={data.etudeCasQuestions}
                     isPreview={false}
-                    onSubmit={(reponses, fichiers, commentaire) => {
-                      handleEtudeCasSubmit(reponses, fichiers, commentaire);
+                    readOnly={etudeCasSoumis.has(data.etudeCas.id)}
+                    userSubmission={etudeCasReponses}
+                    onGetAnswers={etudeCasSoumis.has(data.etudeCas.id) ? undefined : (getAnswers) => {
+                      setGetEtudeCasAnswers(() => getAnswers);
                     }}
                   />
                 )}
@@ -773,12 +1119,19 @@ export const StudentCourseViewer = ({
             
             <ModulePreviewNavigation
               hasPrevious={currentView === 'cours' ? hasPreviousChapitre : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
-              hasNext={currentView === 'cours' ? (hasNextChapitre || hasQuizForCurrentChapitre || (hasEtudeCas && !hasNextChapitre && !hasQuizForCurrentChapitre)) : currentView === 'quiz' ? quizCompleted : currentView === 'etude-cas' ? false : false}
+              hasNext={currentView === 'cours' ? (() => {
+                // Toujours permettre la navigation vers le quiz ou l'étude de cas, même s'ils sont déjà faits
+                return hasNextChapitre || 
+                       hasQuizForCurrentChapitre || 
+                       (hasEtudeCas && !hasNextChapitre && !hasQuizForCurrentChapitre);
+              })() : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
               onPrevious={handlePrevious}
               onNext={handleNext}
               currentType={currentView}
               quizCompleted={quizCompleted}
-              showEtudeCasButton={currentView === 'cours' && !hasNextChapitre && !hasQuizForCurrentChapitre && hasEtudeCas}
+              showEtudeCasButton={currentView === 'cours' && !hasNextChapitre && !hasQuizForCurrentChapitre && hasEtudeCas && !etudeCasSoumis.has(data.etudeCas?.id || 0)}
+              nextLabel={getNextButtonLabel()}
+              previousLabel={getPreviousButtonLabel()}
             />
           </div>
 
@@ -805,90 +1158,6 @@ export const StudentCourseViewer = ({
         </div>
       </div>
 
-      {/* Modals - identiques à ModulePreviewViewer */}
-      {showQuizModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowQuizModal(false);
-            }
-          }}
-        >
-          <div 
-            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 
-              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              TU ARRIVES AU QUIZ
-            </h3>
-            <p className="text-[#032622] mb-6 text-center">
-              Prêt à tester tes connaissances ?
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={handleContinueReading}
-                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                RÉVISER ENCORE
-              </button>
-              <button
-                onClick={handleGoToQuiz}
-                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                COMMENCER LE QUIZ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEtudeCasModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowEtudeCasModal(false);
-            }
-          }}
-        >
-          <div 
-            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 
-              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
-              style={{ fontFamily: 'var(--font-termina-bold)' }}
-            >
-              TU ARRIVES À L'ÉTUDE DE CAS
-            </h3>
-            <p className="text-[#032622] mb-6 text-center">
-              Prêt à commencer l'étude de cas du module ?
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={handleContinueToEtudeCas}
-                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                CONTINUER À RÉVISER
-              </button>
-              <button
-                onClick={handleGoToEtudeCas}
-                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                COMMENCER L'ÉTUDE DE CAS
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal de succès */}
       <Modal
@@ -907,6 +1176,56 @@ export const StudentCourseViewer = ({
         message={errorMessage || "Erreur lors de la soumission de l'étude de cas. Veuillez réessayer."}
         type="error"
       />
+
+      {/* Modal de confirmation pour soumettre l'étude de cas */}
+      {showEtudeCasConfirmModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEtudeCasConfirmModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 
+              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              PRÊT À VALIDER TON ÉTUDE DE CAS ?
+            </h3>
+            <p className="text-[#032622] mb-6 text-center">
+              Assure-toi d'avoir bien relu ton travail avant de l'envoyer. Une fois validé, tu ne pourras plus revenir en arrière.
+            </p>
+            {getEtudeCasAnswers && !getEtudeCasAnswers().allQuestionsAnswered && (
+              <div className="mb-6 p-4 bg-yellow-100 border-2 border-yellow-500 rounded">
+                <p className="text-[#032622] font-bold text-center">
+                  ⚠️ ATTENTION : Tu n'as pas répondu à toutes les questions.
+                </p>
+              </div>
+            )}
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowEtudeCasConfirmModal(false)}
+                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                RETOURNER AUX QUESTIONS
+              </button>
+              <button
+                onClick={handleConfirmEtudeCasSubmit}
+                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                CONFIRMER L'ENVOI
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal après soumission - choix de navigation */}
       {showNextCourseModal && (

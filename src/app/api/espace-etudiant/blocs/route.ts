@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Pour chaque bloc, calculer la progression
+    // Filtrer les blocs qui ont au moins un cours en ligne
     const blocsAvecProgression = await Promise.all(
       blocs.map(async (bloc) => {
         // Récupérer tous les cours du bloc (seulement ceux en ligne)
@@ -73,6 +74,11 @@ export async function GET(request: NextRequest) {
           .eq('statut', 'en_ligne');
 
         const coursIds = cours?.map(c => c.id) || [];
+        
+        // Si le bloc n'a aucun cours en ligne, ne pas le retourner
+        if (coursIds.length === 0) {
+          return null;
+        }
 
         // Récupérer tous les chapitres des cours
         const { data: chapitres, error: chapitresError } = await supabase
@@ -81,15 +87,45 @@ export async function GET(request: NextRequest) {
           .in('cours_id', coursIds)
           .eq('actif', true);
 
-        // Compter les cours lus (chapitres texte/presentation)
-        const coursAvecTexte = new Set(
-          chapitres?.filter(c => c.type_contenu === 'texte' || c.type_contenu === 'presentation').map(c => c.cours_id) || []
-        );
-        const coursLus = coursAvecTexte.size;
+        // Récupérer les chapitres réellement lus par l'étudiant
+        const chapitreIds = chapitres?.map(c => c.id) || [];
+        const { data: chapitresLusData } = await supabase
+          .from('notes_etudiants')
+          .select('evaluation_id')
+          .eq('etudiant_id', etudiant.id)
+          .eq('bloc_id', bloc.id)
+          .eq('type_evaluation', 'cours')
+          .in('evaluation_id', chapitreIds);
 
-        // Compter les vidéos
+        const chapitresLusIds = new Set(chapitresLusData?.map(c => c.evaluation_id) || []);
+
+        // Compter les cours réellement complétés (tous les chapitres du cours sont lus)
+        const coursCompletes = new Set<number>();
+        coursIds.forEach(coursId => {
+          const chapitresDuCours = chapitres?.filter(c => c.cours_id === coursId) || [];
+          if (chapitresDuCours.length > 0) {
+            // Un cours est complété si tous ses chapitres texte/presentation sont lus
+            const chapitresTexte = chapitresDuCours.filter(c => 
+              c.type_contenu === 'texte' || c.type_contenu === 'presentation'
+            );
+            const tousChapitresTexteLus = chapitresTexte.length > 0 && 
+              chapitresTexte.every(ch => chapitresLusIds.has(ch.id));
+            if (tousChapitresTexteLus) {
+              coursCompletes.add(coursId);
+            }
+          }
+        });
+        const coursLus = coursCompletes.size;
+
+        // Compter les vidéos réellement vues
         const videosTotal = chapitres?.filter(c => c.type_contenu === 'video' && c.url_video).length || 0;
-        const videosVues = videosTotal; // Pour l'instant, on considère qu'une vidéo est vue si elle existe
+        // Pour l'instant, on considère qu'une vidéo est vue si le chapitre vidéo est dans les chapitres lus
+        // (à améliorer avec une vraie table de progression vidéo si nécessaire)
+        const videosVues = chapitres?.filter(c => 
+          c.type_contenu === 'video' && 
+          c.url_video && 
+          chapitresLusIds.has(c.id)
+        ).length || 0;
 
         // Récupérer les quiz du bloc
         const { data: quiz, error: quizError } = await supabase
@@ -110,12 +146,41 @@ export async function GET(request: NextRequest) {
 
         const quizCompletes = new Set(tentativesQuiz?.map(t => t.quiz_id) || []).size;
 
+        // Compter les études de cas complétées
+        const { data: etudesCasData } = await supabase
+          .from('etudes_cas')
+          .select('id')
+          .in('cours_id', coursIds)
+          .eq('actif', true);
+
+        const etudeCasIds = etudesCasData?.map(ec => ec.id) || [];
+        const { data: soumissionsEtudeCas } = await supabase
+          .from('soumissions_etude_cas')
+          .select('etude_cas_id')
+          .eq('user_id', user.id)
+          .in('etude_cas_id', etudeCasIds);
+
+        const etudeCasSoumises = new Set(soumissionsEtudeCas?.map(s => s.etude_cas_id) || []).size;
+
         // Calculer le pourcentage de progression
-        const totalCours = coursIds.length;
+        // Formule simple : (Chapitres lus + Quiz faits + Études de cas faites) / Total
+        // Les vidéos ne comptent plus
+        const totalChapitres = chapitres?.filter(c => 
+          c.type_contenu === 'texte' || c.type_contenu === 'presentation'
+        ).length || 0;
+        const chapitresLusCount = chapitres?.filter(c => 
+          (c.type_contenu === 'texte' || c.type_contenu === 'presentation') &&
+          chapitresLusIds.has(c.id)
+        ).length || 0;
+        
         const totalQuiz = quizIds.length;
-        const totalVideos = videosTotal;
-        const totalElements = totalCours + totalQuiz + totalVideos;
-        const elementsCompletes = coursLus + quizCompletes + videosVues;
+        const totalEtudeCas = etudeCasIds.length;
+        
+        // Total des éléments à compléter
+        const totalElements = totalChapitres + totalQuiz + totalEtudeCas;
+        const elementsCompletes = chapitresLusCount + quizCompletes + etudeCasSoumises;
+        
+        // Calcul simple : éléments complétés / total éléments
         const progression = totalElements > 0 
           ? Math.round((elementsCompletes / totalElements) * 100) 
           : 0;
@@ -127,19 +192,24 @@ export async function GET(request: NextRequest) {
           description: bloc.description,
           progression: progression,
           coursLus: coursLus,
-          coursTotal: totalCours,
+          coursTotal: coursIds.length,
+          chapitresLus: chapitresLusCount,
+          chapitresTotal: totalChapitres,
           quizCompletes: quizCompletes,
           quizTotal: totalQuiz,
-          videosVues: videosVues,
-          videosTotal: totalVideos
+          etudeCasSoumises: etudeCasSoumises,
+          etudeCasTotal: totalEtudeCas
         };
       })
     );
 
+    // Filtrer les blocs null (sans cours en ligne)
+    const blocsFiltres = blocsAvecProgression.filter(bloc => bloc !== null) as any[];
+
     // Déterminer quels blocs sont verrouillés
     // Le bloc 1 doit être à 100% pour débloquer le bloc 2, etc.
     const blocsAvecVerrouillage = await Promise.all(
-      blocsAvecProgression.map(async (bloc, index) => {
+      blocsFiltres.map(async (bloc, index) => {
         let locked = false;
         
         if (bloc.numero_bloc === 1) {
@@ -147,17 +217,18 @@ export async function GET(request: NextRequest) {
           locked = false;
         } else {
           // Vérifier si tous les blocs précédents sont à 100%
-          const blocsPrecedents = blocsAvecProgression.slice(0, index);
-          const tousBlocsPrecedentsCompletes = blocsPrecedents.every(b => b.progression === 100);
+          const blocsPrecedents = blocsFiltres.slice(0, index);
+          const tousBlocsPrecedentsCompletes = blocsPrecedents.every(b => b && b.progression === 100);
           locked = !tousBlocsPrecedentsCompletes;
         }
 
-        // Récupérer le premier cours du bloc pour la navigation
+        // Récupérer le premier cours en ligne du bloc pour la navigation
         const { data: premierCours } = await supabase
           .from('cours_apprentissage')
           .select('id')
           .eq('bloc_id', bloc.id)
           .eq('actif', true)
+          .eq('statut', 'en_ligne')
           .order('ordre_affichage', { ascending: true })
           .limit(1)
           .maybeSingle();

@@ -8,19 +8,39 @@ interface QuizViewerProps {
   quiz: QuizEvaluation;
   questions: QuestionQuiz[];
   isPreview?: boolean;
+  readOnly?: boolean;
+  userAnswers?: any[] | null;
+  quizResult?: { score: number; noteSur20: number; reponsesCorrectes: number; totalQuestions: number } | null;
   onQuizComplete?: (reponses?: { [questionId: number]: number[] }, tempsPasse?: number) => void;
 }
 
-export const QuizViewer = ({ quiz, questions, isPreview = true, onQuizComplete }: QuizViewerProps) => {
+export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false, userAnswers: propUserAnswers = null, quizResult = null, onQuizComplete }: QuizViewerProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [questionId: number]: number[] }>({});
-  const [showResults, setShowResults] = useState(false);
+  const [showResults, setShowResults] = useState(readOnly); // Afficher directement les résultats si readOnly
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number[] }>({});
   const startTimeRef = useRef<Date | null>(null);
   const [tempsPasseMinutes, setTempsPasseMinutes] = useState(0);
 
-  // Démarrer le timer au chargement
+  // Si readOnly, charger les réponses depuis les props
   useEffect(() => {
+    if (readOnly && propUserAnswers) {
+      const answersMap: { [questionId: number]: number[] } = {};
+      propUserAnswers.forEach((r: any) => {
+        let reponseDonnee = r.reponse_donnee;
+        try {
+          reponseDonnee = JSON.parse(reponseDonnee);
+        } catch {}
+        answersMap[r.question_id] = Array.isArray(reponseDonnee) ? reponseDonnee : [reponseDonnee];
+      });
+      setUserAnswers(answersMap);
+      setShowResults(true);
+    }
+  }, [readOnly, propUserAnswers]);
+
+  // Démarrer le timer au chargement (seulement si pas readOnly)
+  useEffect(() => {
+    if (readOnly) return;
     startTimeRef.current = new Date();
     
     const interval = setInterval(() => {
@@ -31,11 +51,12 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, onQuizComplete }
     }, 60000); // Mise à jour toutes les minutes
 
     return () => clearInterval(interval);
-  }, []);
+  }, [readOnly]);
 
   const currentQuestion = questions[currentQuestionIndex];
 
   const handleAnswerSelect = (questionId: number, reponseId: number, isMultiple: boolean) => {
+    if (readOnly) return; // Ne pas permettre la sélection en mode lecture seule
     if (isMultiple) {
       setSelectedAnswers(prev => {
         const current = prev[questionId] || [];
@@ -97,17 +118,27 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, onQuizComplete }
   };
 
   if (showResults) {
-    const { correct, total, score } = calculateScore();
+    // Utiliser quizResult si fourni (mode readOnly), sinon calculer
+    const result = quizResult ? {
+      correct: quizResult.reponsesCorrectes,
+      total: quizResult.totalQuestions,
+      score: quizResult.noteSur20
+    } : calculateScore();
     
     return (
       <div className="space-y-6">
         {/* Résultat */}
         <div className="text-center">
           <div className="inline-block bg-[#032622] p-8 mb-4">
-            <div className="text-6xl font-bold text-[#F8F5E4] mb-2">{score}/20</div>
+            <div className="text-6xl font-bold text-[#F8F5E4] mb-2">{result.score}/20</div>
             <div className="text-lg text-[#F8F5E4]/80">
-              {correct} / {total} questions correctes
+              {result.correct} / {result.total} questions correctes
             </div>
+            {readOnly && (
+              <div className="text-sm text-[#F8F5E4]/60 mt-2">
+                Vous avez déjà complété ce quiz
+              </div>
+            )}
           </div>
         </div>
 

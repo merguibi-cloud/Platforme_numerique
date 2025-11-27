@@ -10,6 +10,8 @@ interface ModulePreviewNavigationProps {
   currentType?: 'cours' | 'quiz' | 'etude-cas';
   quizCompleted?: boolean;
   showEtudeCasButton?: boolean;
+  nextLabel?: string;
+  previousLabel?: string;
 }
 
 export const ModulePreviewNavigation = ({
@@ -19,8 +21,27 @@ export const ModulePreviewNavigation = ({
   onNext,
   currentType = 'cours',
   quizCompleted = false,
-  showEtudeCasButton = false
+  showEtudeCasButton = false,
+  nextLabel,
+  previousLabel
 }: ModulePreviewNavigationProps) => {
+  // Déterminer le label précédent
+  const getPreviousLabel = () => {
+    if (previousLabel) return previousLabel;
+    if (currentType === 'quiz') return 'RETOUR AU COURS';
+    if (currentType === 'etude-cas') return 'RETOUR AU COURS';
+    return 'PRÉCÉDENT';
+  };
+
+  // Déterminer le label suivant
+  const getNextLabel = () => {
+    if (nextLabel) return nextLabel;
+    if (currentType === 'etude-cas') return 'TERMINER';
+    if (showEtudeCasButton) return 'PASSER À L\'ÉTUDE DE CAS';
+    if (currentType === 'quiz' && quizCompleted) return 'SUIVANT';
+    return 'SUIVANT';
+  };
+
   return (
     <div className="bg-[#032622] px-6 py-4 flex items-center justify-between w-full">
       {/* Navigation précédente */}
@@ -35,11 +56,7 @@ export const ModulePreviewNavigation = ({
         style={{ fontFamily: 'var(--font-termina-bold)' }}
       >
         <ArrowLeft className="w-5 h-5" />
-        {currentType === 'quiz' 
-          ? 'RETOUR AU COURS' 
-          : currentType === 'etude-cas'
-          ? 'RETOUR AU COURS'
-          : 'PRÉCÉDENT'}
+        {getPreviousLabel()}
       </button>
 
       {/* Navigation suivante */}
@@ -54,13 +71,7 @@ export const ModulePreviewNavigation = ({
           }`}
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
-          {currentType === 'etude-cas' 
-            ? 'TERMINER' 
-            : showEtudeCasButton
-            ? 'ÉTUDE DE CAS'
-            : currentType === 'quiz' && quizCompleted
-            ? 'SUIVANT'
-            : 'SUIVANT'}
+          {getNextLabel()}
           <ArrowRight className="w-5 h-5" />
         </button>
       )}

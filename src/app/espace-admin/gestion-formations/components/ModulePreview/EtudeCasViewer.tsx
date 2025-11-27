@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Download, Upload, X, Check } from 'lucide-react';
 import { EtudeCas } from '@/types/formation-detailed';
 
@@ -31,21 +31,43 @@ interface EtudeCasViewerProps {
   etudeCas: EtudeCas;
   questions: QuestionEtudeCas[];
   isPreview?: boolean;
+  readOnly?: boolean;
+  userSubmission?: any;
   onSubmit?: (reponses: any, fichiers: { [questionId: number]: File[] }, commentaire: string) => void;
+  onGetAnswers?: (getAnswers: () => { answers: any; uploadedFiles: { [questionId: number]: File[] }; commentaire: string; allQuestionsAnswered: boolean }) => void;
 }
 
-export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit }: EtudeCasViewerProps) => {
-  const [answers, setAnswers] = useState<{ [questionId: number]: any }>({});
+export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly = false, userSubmission = null, onSubmit, onGetAnswers }: EtudeCasViewerProps) => {
+  // Charger les réponses depuis userSubmission si en mode readOnly
+  const initialAnswers = readOnly && userSubmission?.questions ? 
+    userSubmission.questions.reduce((acc: any, q: any) => {
+      if (q.reponse_etudiant) {
+        if (q.type_question === 'ouverte') {
+          acc[q.id] = q.reponse_etudiant.reponse_texte || '';
+        } else if (q.type_question === 'piece_jointe') {
+          acc[q.id] = q.reponse_etudiant.fichier_reponse || null;
+        } else if (q.type_question === 'choix_unique' || q.type_question === 'vrai_faux') {
+          acc[q.id] = q.reponse_etudiant.reponse_choix_id || null;
+        } else if (q.type_question === 'choix_multiple') {
+          acc[q.id] = q.reponse_etudiant.reponse_choix_ids || [];
+        }
+      }
+      return acc;
+    }, {}) : {};
+  
+  const [answers, setAnswers] = useState<{ [questionId: number]: any }>(initialAnswers);
   const [uploadedFiles, setUploadedFiles] = useState<{ [questionId: number]: File[] }>({});
-  const [commentaire, setCommentaire] = useState<string>('');
+  const [commentaire, setCommentaire] = useState<string>(readOnly && userSubmission ? (userSubmission.commentaire_etudiant || '') : '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
   const handleTextAnswer = (questionId: number, value: string) => {
+    if (readOnly) return; // Ne pas permettre la modification en mode lecture seule
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
   const handleChoiceAnswer = (questionId: number, reponseId: number, isMultiple: boolean) => {
+    if (readOnly) return; // Ne pas permettre la modification en mode lecture seule
     setAnswers(prev => {
       const current = prev[questionId] || [];
       if (isMultiple) {
@@ -62,7 +84,7 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit
   };
 
   const handleFileUpload = (questionId: number, files: FileList | null) => {
-    if (!files) return;
+    if (readOnly || !files) return; // Ne pas permettre l'upload en mode lecture seule
     setUploadedFiles(prev => ({
       ...prev,
       [questionId]: Array.from(files)
@@ -86,6 +108,21 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit
       return answers[q.id] !== undefined && answers[q.id] !== null;
     }
   });
+
+  // Exposer une fonction pour récupérer les réponses (pour le bouton Terminé du parent)
+  const getAnswers = () => ({
+    answers,
+    uploadedFiles,
+    commentaire,
+    allQuestionsAnswered
+  });
+
+  // Exposer la fonction au parent via le callback
+  useEffect(() => {
+    if (onGetAnswers && !readOnly) {
+      onGetAnswers(getAnswers);
+    }
+  }, [answers, uploadedFiles, commentaire, allQuestionsAnswered, onGetAnswers, readOnly]);
 
   const handleConfirmClick = () => {
     if (allQuestionsAnswered) {
@@ -236,7 +273,8 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit
                 value={answers[question.id] || ''}
                 onChange={(e) => handleTextAnswer(question.id, e.target.value)}
                 placeholder="Écrivez votre réponse ici..."
-                className="w-full min-h-[200px] px-4 py-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] font-bold"
+                disabled={readOnly}
+                className={`w-full min-h-[200px] px-4 py-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] font-bold ${readOnly ? 'opacity-75 cursor-not-allowed' : ''}`}
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               />
             )}
@@ -294,11 +332,12 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit
                         <button
                           key={reponse.id}
                           onClick={() => handleChoiceAnswer(question.id, reponse.id, false)}
+                          disabled={readOnly}
                           className={`px-6 py-4 border-2 font-bold transition-colors ${
                             isSelected
                               ? 'bg-[#032622] text-[#F8F5E4] border-[#032622]'
                               : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
-                          }`}
+                          } ${readOnly ? 'opacity-75 cursor-not-allowed' : ''}`}
                           style={{ fontFamily: 'var(--font-termina-bold)' }}
                         >
                           {reponse.reponse.toUpperCase()}
@@ -378,19 +417,21 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit
         ))}
       </div>
 
-      {/* Bouton de soumission */}
-      <div className="w-full">
-        <button
-          onClick={handleConfirmClick}
-          className="w-full px-8 py-4 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
-          style={{ fontFamily: 'var(--font-termina-bold)' }}
-        >
-          CONFIRMER LES RÉPONSES
-        </button>
-      </div>
+      {/* Bouton de soumission - seulement en mode preview (admin) */}
+      {isPreview && !readOnly && (
+        <div className="w-full">
+          <button
+            onClick={handleConfirmClick}
+            className="w-full px-8 py-4 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+            style={{ fontFamily: 'var(--font-termina-bold)' }}
+          >
+            CONFIRMER LES RÉPONSES
+          </button>
+        </div>
+      )}
 
-      {/* Modal de confirmation */}
-      {showConfirmModal && (
+      {/* Modal de confirmation - seulement en mode preview (admin) */}
+      {isPreview && showConfirmModal && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={(e) => {
@@ -432,8 +473,8 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, onSubmit
         </div>
       )}
 
-      {/* Modal d'avertissement */}
-      {showWarningModal && (
+      {/* Modal d'avertissement - seulement en mode preview (admin) */}
+      {isPreview && showWarningModal && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={(e) => {

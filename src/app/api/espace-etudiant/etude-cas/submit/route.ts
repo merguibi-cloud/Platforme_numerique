@@ -255,19 +255,42 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (cours) {
-        // Créer une note en attente de correction
-        await supabase
+        // Créer ou mettre à jour une note en attente de correction (une seule note par étude de cas)
+        // Vérifier si une note existe déjà
+        const { data: noteExistante } = await supabase
           .from('notes_etudiants')
-          .insert({
-            etudiant_id: etudiant.id,
-            bloc_id: cours.bloc_id,
-            type_evaluation: 'etude_cas',
-            evaluation_id: parseInt(etude_cas_id as string),
-            note: 0, // Note à définir par le correcteur
-            note_max: 20,
-            numero_tentative: 1,
-            date_evaluation: new Date().toISOString()
-          });
+          .select('id')
+          .eq('etudiant_id', etudiant.id)
+          .eq('type_evaluation', 'etude_cas')
+          .eq('evaluation_id', parseInt(etude_cas_id as string))
+          .maybeSingle();
+
+        if (noteExistante) {
+          // Mettre à jour la note existante (écrase l'ancienne)
+          await supabase
+            .from('notes_etudiants')
+            .update({
+              note: 0, // Note à définir par le correcteur
+              note_max: 20,
+              numero_tentative: 1,
+              date_evaluation: new Date().toISOString()
+            })
+            .eq('id', noteExistante.id);
+        } else {
+          // Créer une nouvelle note
+          await supabase
+            .from('notes_etudiants')
+            .insert({
+              etudiant_id: etudiant.id,
+              bloc_id: cours.bloc_id,
+              type_evaluation: 'etude_cas',
+              evaluation_id: parseInt(etude_cas_id as string),
+              note: 0, // Note à définir par le correcteur
+              note_max: 20,
+              numero_tentative: 1,
+              date_evaluation: new Date().toISOString()
+            });
+        }
       }
     }
 

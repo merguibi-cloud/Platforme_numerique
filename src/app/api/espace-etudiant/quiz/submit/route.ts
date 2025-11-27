@@ -33,6 +33,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Récupérer le quiz pour obtenir la limite de tentatives
+    const { data: quizData, error: quizDataError } = await supabase
+      .from('quiz_evaluations')
+      .select('nombre_tentatives_max')
+      .eq('id', quiz_id)
+      .single();
+
+    if (quizDataError || !quizData) {
+      return NextResponse.json(
+        { success: false, error: 'Quiz non trouvé' },
+        { status: 404 }
+      );
+    }
+
+    // Vérifier le nombre de tentatives existantes
+    const { data: tentativesExistantes, error: tentativesError } = await supabase
+      .from('tentatives_quiz')
+      .select('numero_tentative')
+      .eq('quiz_id', quiz_id)
+      .eq('user_id', user.id)
+      .order('numero_tentative', { ascending: false });
+
+    if (tentativesError) {
+      return NextResponse.json(
+        { success: false, error: 'Erreur lors de la vérification des tentatives' },
+        { status: 500 }
+      );
+    }
+
+    const nombreTentatives = tentativesExistantes?.length || 0;
+    const nombreTentativesMax = quizData.nombre_tentatives_max || 3;
+
+    // Vérifier si l'étudiant a atteint la limite de tentatives
+    if (nombreTentatives >= nombreTentativesMax) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Vous avez atteint le nombre maximum de tentatives (${nombreTentativesMax}). Vous ne pouvez plus faire ce quiz.` 
+        },
+        { status: 403 }
+      );
+    }
+
     // Récupérer les questions du quiz pour calculer le score
     const { data: questions, error: questionsError } = await supabase
       .from('questions_quiz')
@@ -47,14 +90,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculer le score
+    // Calculer le score sur 20 (toutes les notes sont sur 20)
+    // 1 question = 20 points, 2 questions = 10 points chacun, etc.
+    const nombreQuestions = questions?.length || 0;
+    const pointsParQuestion = nombreQuestions > 0 ? 20 / nombreQuestions : 0;
+    
     let scoreTotal = 0;
-    let pointsMax = 0;
+    let reponsesCorrectes = 0;
     const reponsesDetaillees: any[] = [];
 
     for (const question of questions || []) {
-      pointsMax += question.points || 1;
-      
       const userReponses = reponses[question.id];
       if (!userReponses) continue;
 
@@ -78,8 +123,10 @@ export async function POST(request: NextRequest) {
         isCorrect = userReponsesArray.length === 1 && bonnesReponsesIds.includes(userReponsesArray[0]);
       }
 
-      const pointsObtenus = isCorrect ? (question.points || 1) : 0;
+      // Points obtenus : si correct, pointsParQuestion, sinon 0
+      const pointsObtenus = isCorrect ? pointsParQuestion : 0;
       scoreTotal += pointsObtenus;
+      if (isCorrect) reponsesCorrectes++;
 
       // Enregistrer la réponse détaillée
       reponsesDetaillees.push({
@@ -87,24 +134,17 @@ export async function POST(request: NextRequest) {
         reponse_donnee: Array.isArray(userReponses) ? JSON.stringify(userReponses) : userReponses,
         reponse_correcte_id: bonnesReponsesIds.length === 1 ? bonnesReponsesIds[0] : null,
         points_obtenus: pointsObtenus
+        // Note: points_max n'existe pas dans la table reponses_quiz
+        // Les points maximums sont stockés dans questions_quiz.points
       });
     }
 
-    // Calculer le score en pourcentage
-    const scorePourcentage = pointsMax > 0 ? Math.round((scoreTotal / pointsMax) * 100) : 0;
+    // Le score est directement sur 20 (pas de pourcentage)
+    const scoreSur20 = Math.round(scoreTotal * 100) / 100; // Arrondir à 2 décimales
+    const scorePourcentage = Math.round((scoreSur20 / 20) * 100); // Pourcentage pour compatibilité
 
-    // Récupérer le numéro de tentative actuel
-    const { data: tentativesExistantes } = await supabase
-      .from('tentatives_quiz')
-      .select('numero_tentative')
-      .eq('quiz_id', quiz_id)
-      .eq('user_id', user.id)
-      .order('numero_tentative', { ascending: false })
-      .limit(1);
-
-    const numeroTentative = tentativesExistantes && tentativesExistantes.length > 0
-      ? tentativesExistantes[0].numero_tentative + 1
-      : 1;
+    // Calculer le numéro de tentative (on utilise déjà tentativesExistantes récupéré plus haut)
+    const numeroTentative = nombreTentatives + 1;
 
     // Créer la tentative
     const { data: tentative, error: tentativeError } = await supabase
@@ -169,24 +209,46 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (etudiant) {
-          // Créer ou mettre à jour la note
-          const noteSur20 = Math.round((scorePourcentage / 100) * 20);
+          // Créer ou mettre à jour la note (une seule note par quiz, écrase l'ancienne)
+          // scoreSur20 est déjà calculé sur 20
           
-          await supabase
+          // Vérifier si une note existe déjà
+          const { data: noteExistante } = await supabase
             .from('notes_etudiants')
-            .upsert({
-              etudiant_id: etudiant.id,
-              bloc_id: cours.bloc_id,
-              type_evaluation: 'quiz',
-              evaluation_id: quiz_id,
-              note: noteSur20,
-              note_max: 20,
-              temps_passe: temps_passe_minutes || 0,
-              numero_tentative: numeroTentative,
-              date_evaluation: new Date().toISOString()
-            }, {
-              onConflict: 'etudiant_id,type_evaluation,evaluation_id,numero_tentative'
-            });
+            .select('id')
+            .eq('etudiant_id', etudiant.id)
+            .eq('type_evaluation', 'quiz')
+            .eq('evaluation_id', quiz_id)
+            .maybeSingle();
+
+          if (noteExistante) {
+            // Mettre à jour la note existante (écrase l'ancienne)
+            await supabase
+              .from('notes_etudiants')
+              .update({
+                note: scoreSur20,
+                note_max: 20,
+                temps_passe: temps_passe_minutes || 0,
+                numero_tentative: numeroTentative,
+                date_evaluation: new Date().toISOString()
+              })
+              .eq('id', noteExistante.id);
+          } else {
+            // Créer une nouvelle note
+            await supabase
+              .from('notes_etudiants')
+              .insert({
+                etudiant_id: etudiant.id,
+                bloc_id: cours.bloc_id,
+                type_evaluation: 'quiz',
+                evaluation_id: quiz_id,
+                note: scoreSur20,
+                note_max: 20,
+                temps_passe: temps_passe_minutes || 0,
+                numero_tentative: numeroTentative,
+                date_evaluation: new Date().toISOString()
+              });
+          }
         }
       }
     }
@@ -195,10 +257,10 @@ export async function POST(request: NextRequest) {
       success: true,
       tentative: {
         id: tentative.id,
-        score: scorePourcentage,
-        scoreSur20: Math.round((scorePourcentage / 100) * 20),
-        pointsObtenus: scoreTotal,
-        pointsMax: pointsMax,
+        score: scorePourcentage, // Pourcentage pour compatibilité
+        scoreSur20: scoreSur20, // Score réel sur 20
+        reponsesCorrectes: reponsesCorrectes,
+        totalQuestions: nombreQuestions,
         numeroTentative: numeroTentative
       }
     });

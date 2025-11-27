@@ -70,17 +70,23 @@ export async function GET(request: NextRequest) {
       .in('cours_id', coursIds)
       .eq('actif', true);
 
-    // Compter les cours lus (chapitres avec type_contenu = 'texte' ou 'presentation')
-    // Pour simplifier, on considère qu'un cours est lu si au moins un chapitre texte/presentation existe
-    const coursAvecTexte = new Set(
-      chapitres?.filter(c => c.type_contenu === 'texte' || c.type_contenu === 'presentation').map(c => c.cours_id) || []
-    );
-    const coursLus = coursAvecTexte.size;
+    // Récupérer les chapitres réellement lus par l'étudiant
+    const chapitreIds = chapitres?.map(c => c.id) || [];
+    const { data: chapitresLusData } = await supabase
+      .from('notes_etudiants')
+      .select('evaluation_id')
+      .eq('etudiant_id', etudiant.id)
+      .eq('type_evaluation', 'cours')
+      .in('evaluation_id', chapitreIds);
 
-    // Compter les vidéos (chapitres avec type_contenu = 'video' et url_video)
-    const videosTotal = chapitres?.filter(c => c.type_contenu === 'video' && c.url_video).length || 0;
-    // Pour l'instant, on considère qu'une vidéo est vue si elle existe (à améliorer avec une table de progression)
-    const videosVues = videosTotal;
+    const chapitresLusIds = new Set(chapitresLusData?.map(c => c.evaluation_id) || []);
+
+    // Compter les chapitres texte/presentation réellement lus
+    const chapitresTexte = chapitres?.filter(c => 
+      c.type_contenu === 'texte' || c.type_contenu === 'presentation'
+    ) || [];
+    const chapitresLus = chapitresTexte.filter(c => chapitresLusIds.has(c.id)).length;
+    const chapitresTotal = chapitresTexte.length;
 
     // Récupérer les quiz de la formation
     const { data: quiz, error: quizError } = await supabase
@@ -101,13 +107,27 @@ export async function GET(request: NextRequest) {
 
     const quizCompletes = new Set(tentativesQuiz?.map(t => t.quiz_id) || []).size;
 
+    // Récupérer les études de cas
+    const { data: etudesCasData } = await supabase
+      .from('etudes_cas')
+      .select('id')
+      .in('cours_id', coursIds)
+      .eq('actif', true);
+
+    const etudeCasIdsProgression = etudesCasData?.map(ec => ec.id) || [];
+    const { data: soumissionsEtudeCas } = await supabase
+      .from('soumissions_etude_cas')
+      .select('etude_cas_id')
+      .eq('user_id', user.id)
+      .in('etude_cas_id', etudeCasIdsProgression);
+
+    const etudeCasSoumises = new Set(soumissionsEtudeCas?.map(s => s.etude_cas_id) || []).size;
+
     // Calculer le pourcentage de progression global
-    // Pourcentage basé sur : cours lus + quiz complétés + vidéos vues / total
-    const totalCours = coursIds.length;
-    const totalQuiz = quizIds.length;
-    const totalVideos = videosTotal;
-    const totalElements = totalCours + totalQuiz + totalVideos;
-    const elementsCompletes = coursLus + quizCompletes + videosVues;
+    // Formule simple : (Chapitres lus + Quiz faits + Études de cas faites) / Total
+    // Les vidéos ne comptent plus
+    const totalElements = chapitresTotal + quizIds.length + etudeCasIdsProgression.length;
+    const elementsCompletes = chapitresLus + quizCompletes + etudeCasSoumises;
     const progressionPourcentage = totalElements > 0 
       ? Math.round((elementsCompletes / totalElements) * 100) 
       : 0;
@@ -152,7 +172,7 @@ export async function GET(request: NextRequest) {
     const tempsTotalSessionsHeures = Math.round(tempsTotalSessionsMinutes / 60 * 10) / 10;
 
     // Déterminer si l'étudiant a commencé (a au moins un cours lu, un quiz complété ou une vidéo vue)
-    const aCommence = coursLus > 0 || quizCompletes > 0 || videosVues > 0;
+    const aCommence = chapitresLus > 0 || quizCompletes > 0 || etudeCasSoumises > 0;
 
     // Préparer les données pour le graphique (7 derniers jours)
     const joursSemaineLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -335,15 +355,15 @@ export async function GET(request: NextRequest) {
 
     // Calculer les statistiques pour le diagramme circulaire
     // Pourcentages pour le diagramme (basés sur les totaux)
-    const pourcentageCours = totalCours > 0 
-      ? Math.round((coursLus / totalCours) * 100) 
+    const pourcentageChapitres = chapitresTotal > 0 
+      ? Math.round((chapitresLus / chapitresTotal) * 100) 
       : 0;
-    const pourcentageQuiz = totalQuiz > 0 
-      ? Math.round((quizCompletes / totalQuiz) * 100) 
+    const pourcentageQuiz = quizIds.length > 0 
+      ? Math.round((quizCompletes / quizIds.length) * 100) 
       : 0;
-    const pourcentageVideos = totalVideos > 0 
-      ? Math.round((videosVues / totalVideos) * 100) 
-      : 0;
+    const pourcentageEtudeCas = etudeCasIdsProgression.length > 0 
+      ? Math.round((etudeCasSoumises / etudeCasIdsProgression.length) * 100) 
+      : (etudeCasIdsProgression.length === 0 ? 100 : 0);
 
     return NextResponse.json({
       success: true,
@@ -351,25 +371,25 @@ export async function GET(request: NextRequest) {
         formation: formation,
         progression: {
           pourcentage: progressionPourcentage,
-          coursLus: coursLus,
-          coursTotal: totalCours,
+          chapitresLus: chapitresLus,
+          chapitresTotal: chapitresTotal,
           quizCompletes: quizCompletes,
-          quizTotal: totalQuiz,
-          videosVues: videosVues,
-          videosTotal: totalVideos,
+          quizTotal: quizIds.length,
+          etudeCasSoumises: etudeCasSoumises,
+          etudeCasTotal: etudeCasIdsProgression.length,
           elementsCompletes: elementsCompletes,
           elementsTotal: totalElements
         },
         statistiques: {
-          coursLus: coursLus,
+          chapitresLus: chapitresLus,
           quizCompletes: quizCompletes,
-          videosVues: videosVues,
-          coursRestants: totalCours - coursLus,
-          quizRestants: totalQuiz - quizCompletes,
-          videosRestantes: totalVideos - videosVues,
-          pourcentageCours: pourcentageCours,
+          etudeCasSoumises: etudeCasSoumises,
+          chapitresRestants: chapitresTotal - chapitresLus,
+          quizRestants: quizIds.length - quizCompletes,
+          etudeCasRestantes: etudeCasIdsProgression.length - etudeCasSoumises,
+          pourcentageChapitres: pourcentageChapitres,
           pourcentageQuiz: pourcentageQuiz,
-          pourcentageVideos: pourcentageVideos
+          pourcentageEtudeCas: pourcentageEtudeCas
         },
         activite: {
           tempsTotalHeures: tempsTotalActivitesHeures, // Temps passé sur cours/quiz/études de cas

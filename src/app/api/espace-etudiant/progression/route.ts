@@ -31,7 +31,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    // Vérifier si le body existe et n'est pas vide
+    let body;
+    try {
+      const text = await request.text();
+      if (!text || text.trim() === '') {
+        return NextResponse.json(
+          { success: false, error: 'Body de la requête vide' },
+          { status: 400 }
+        );
+      }
+      body = JSON.parse(text);
+    } catch (error) {
+      console.error('Erreur lors du parsing du body:', error);
+      return NextResponse.json(
+        { success: false, error: 'Body JSON invalide' },
+        { status: 400 }
+      );
+    }
+
     const { 
       bloc_id, 
       cours_id, 
@@ -93,19 +111,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Enregistrer l'événement dans notes_etudiants si c'est un chapitre lu
-    if (action === 'complete_chapitre' && chapitre_id) {
+    // Enregistrer l'événement dans notes_etudiants si c'est un chapitre consulté ou complété
+    // On enregistre pour 'view_chapitre' (pour la reprise automatique) et 'complete_chapitre'
+    if ((action === 'view_chapitre' || action === 'complete_chapitre') && chapitre_id) {
       // Vérifier si une note existe déjà pour ce chapitre
       const { data: existingNote } = await supabase
         .from('notes_etudiants')
         .select('id')
         .eq('etudiant_id', etudiant.id)
-        .eq('chapitre_id', chapitre_id)
+        .eq('evaluation_id', chapitre_id)
         .eq('type_evaluation', 'cours')
         .maybeSingle();
 
-      if (!existingNote) {
-        // Créer une note pour indiquer que le chapitre a été lu
+      if (existingNote) {
+        // Mettre à jour la date de dernière activité
+        await supabase
+          .from('notes_etudiants')
+          .update({
+            updated_at: new Date().toISOString(),
+            date_evaluation: new Date().toISOString()
+          })
+          .eq('id', existingNote.id);
+      } else {
+        // Créer une note pour indiquer que le chapitre a été consulté
         await supabase
           .from('notes_etudiants')
           .insert({
@@ -113,7 +141,7 @@ export async function POST(request: NextRequest) {
             bloc_id: bloc_id,
             type_evaluation: 'cours',
             evaluation_id: chapitre_id,
-            note: 0, // Pas de note pour un chapitre lu
+            note: 0, // Pas de note pour un chapitre consulté
             note_max: 0,
             temps_passe: temps_passe_minutes || 0,
             date_evaluation: new Date().toISOString()
