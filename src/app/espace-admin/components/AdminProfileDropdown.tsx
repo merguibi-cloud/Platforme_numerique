@@ -30,13 +30,22 @@ export const AdminProfileDropdown = () => {
   const displayLabel = adminUser.isLoading ? "Chargement..." : adminUser.displayName;
   const roleLabel = adminUser.isLoading ? " " : adminUser.roleLabel;
   const initials = adminUser.isLoading ? "…" : adminUser.initials;
+  const photoProfil = adminUser.photoProfil;
 
   return (
     <div className="relative group">
       <div className="flex items-center space-x-3 cursor-pointer">
-        <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
-          {initials}
-        </div>
+        {photoProfil ? (
+          <img
+            src={photoProfil}
+            alt={displayLabel}
+            className="w-12 h-12 rounded-full object-cover border-2 border-[#032622]"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
+            {initials}
+          </div>
+        )}
         <div>
           <p
             className="text-[#032622] font-semibold text-sm"

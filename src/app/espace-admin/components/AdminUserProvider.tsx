@@ -6,6 +6,7 @@ interface AdminUserState {
   displayName: string;
   roleLabel: string;
   initials: string;
+  photoProfil: string | null;
   isLoading: boolean;
 }
 
@@ -17,6 +18,7 @@ const DEFAULT_STATE: AdminUserState = {
   displayName: "Utilisateur",
   roleLabel: "Administrateur",
   initials: "U",
+  photoProfil: null,
   isLoading: true,
 };
 
@@ -74,6 +76,7 @@ async function fetchAdminUserData(): Promise<AdminUserState> {
 
     let roleLabel = DEFAULT_STATE.roleLabel;
     let displayName = "";
+    let photoProfil: string | null = null;
 
     // Priorité 1: Récupérer depuis la table administrateurs
     if (adminResponse.ok) {
@@ -86,6 +89,10 @@ async function fetchAdminUserData(): Promise<AdminUserState> {
         
         if (adminName) {
           displayName = adminName;
+        }
+        
+        if (adminData.admin.photo_profil) {
+          photoProfil = adminData.admin.photo_profil;
         }
       }
     }
@@ -132,6 +139,7 @@ async function fetchAdminUserData(): Promise<AdminUserState> {
       displayName,
       roleLabel,
       initials,
+      photoProfil,
       isLoading: false,
     };
   } catch (error) {
