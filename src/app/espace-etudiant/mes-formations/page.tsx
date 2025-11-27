@@ -824,10 +824,13 @@ export default function MesFormationsPage() {
                       </div>
                     </div>
                   ))}
-                  <button className="text-xs font-semibold text-[#032622] flex items-center space-x-1 mt-2">
+                  <Link 
+                    href="/espace-etudiant/releve-notes"
+                    className="text-xs font-semibold text-[#032622] flex items-center space-x-1 mt-2 hover:underline"
+                  >
                     <span>VOIR TOUTES LES NOTES</span>
                     <ArrowRight className="w-3 h-3" />
-                  </button>
+                  </Link>
                 </>
               ) : (
                 <div className="text-center text-[#032622] opacity-60 text-xs py-4">

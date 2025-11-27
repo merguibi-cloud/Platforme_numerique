@@ -627,12 +627,15 @@ export const StudentDashboard = () => {
             )}
             
             <div className="p-4">
-              <button className="text-[#032622] text-sm font-bold flex items-center">
+              <Link 
+                href="/espace-etudiant/releve-notes"
+                className="text-[#032622] text-sm font-bold flex items-center hover:underline"
+              >
                 VOIR TOUTES LES NOTES
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
+              </Link>
             </div>
           </div>
 
