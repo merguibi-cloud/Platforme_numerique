@@ -82,6 +82,10 @@ export default function CorrectionDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showJustificationModal, setShowJustificationModal] = useState(false);
+  const [justification, setJustification] = useState('');
+  const [noteAvant, setNoteAvant] = useState<number | null>(null);
+  const [noteApres, setNoteApres] = useState<number | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -162,6 +166,30 @@ export default function CorrectionDetailPage() {
       return;
     }
 
+    // Si une note existe déjà, afficher le modal de justification
+    if (data.soumission.note !== null && data.soumission.note !== undefined) {
+      // Calculer la nouvelle note globale
+      const nouvelleNoteGlobale = data.questions.reduce((sum, q) => {
+        return sum + (corrections[q.id]?.note || 0);
+      }, 0);
+      
+      // Vérifier si la note a changé
+      const noteAvantValue = data.soumission.note;
+      if (Math.abs(nouvelleNoteGlobale - noteAvantValue) > 0.01) {
+        setNoteAvant(noteAvantValue);
+        setNoteApres(nouvelleNoteGlobale);
+        setShowJustificationModal(true);
+        return;
+      }
+    }
+
+    // Si pas de note existante, sauvegarder directement
+    await saveCorrections();
+  };
+
+  const saveCorrections = async (justificationText?: string) => {
+    if (!data) return;
+
     setIsSaving(true);
     try {
       const correctionsArray = data.questions.map(q => ({
@@ -176,11 +204,14 @@ export default function CorrectionDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          corrections: correctionsArray
+          corrections: correctionsArray,
+          justification: justificationText || null
         })
       });
 
       if (response.ok) {
+        setShowJustificationModal(false);
+        setJustification('');
         setShowSuccessModal(true);
         // Recharger les données après un court délai
         setTimeout(() => {
@@ -195,6 +226,14 @@ export default function CorrectionDetailPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleConfirmJustification = () => {
+    if (!justification.trim()) {
+      alert('Veuillez saisir une justification pour la modification de la note.');
+      return;
+    }
+    saveCorrections(justification);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -416,7 +455,7 @@ export default function CorrectionDetailPage() {
             className="px-8 py-4 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            {isSaving ? 'ENREGISTREMENT...' : 'METTRE LA NOTE GLOBALE'}
+            {isSaving ? 'ENREGISTREMENT...' : (data?.soumission.note !== null && data?.soumission.note !== undefined ? 'MODIFIER LA CORRECTION' : 'METTRE LA NOTE GLOBALE')}
           </button>
         </div>
       </div>
@@ -437,6 +476,86 @@ export default function CorrectionDetailPage() {
         message="Une erreur est survenue. Veuillez vérifier que toutes les questions ont une note."
         type="error"
       />
+
+      {/* Modal de justification pour modification de note */}
+      {showJustificationModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowJustificationModal(false);
+              setJustification('');
+            }
+          }}
+        >
+          <div 
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-2xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 
+              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              JUSTIFICATION DE LA MODIFICATION
+            </h3>
+            
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[#032622] font-semibold">
+                  Note actuelle : <span className="text-lg">{noteAvant?.toFixed(1).replace('.', ',') || '0'}/20</span>
+                </p>
+                <span className="text-[#032622] text-2xl mx-2">→</span>
+                <p className="text-[#032622] font-semibold">
+                  Nouvelle note : <span className="text-lg">{noteApres?.toFixed(1).replace('.', ',') || '0'}/20</span>
+                </p>
+              </div>
+              <p className="text-[#032622] mb-4 text-sm opacity-80">
+                Vous êtes sur le point de modifier une note déjà attribuée. Veuillez justifier cette modification.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label 
+                htmlFor="justification"
+                className="block text-[#032622] font-bold mb-2 uppercase text-sm"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                JUSTIFICATION *
+              </label>
+              <textarea
+                id="justification"
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                placeholder="Expliquez la raison de cette modification de note..."
+                className="w-full px-4 py-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] min-h-[120px] resize-y"
+                required
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowJustificationModal(false);
+                  setJustification('');
+                }}
+                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+                disabled={isSaving}
+              >
+                ANNULER
+              </button>
+              <button
+                onClick={handleConfirmJustification}
+                disabled={isSaving || !justification.trim()}
+                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                {isSaving ? 'ENREGISTREMENT...' : 'CONFIRMER LA MODIFICATION'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

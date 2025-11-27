@@ -76,14 +76,22 @@ export default function ReleveNotesPage() {
     return note.toFixed(1).replace('.', ',');
   };
 
+  const formatNoteQuiz = (note: number): string => {
+    if (note === 0) return '0';
+    // Les quiz sont toujours des nombres entiers
+    return Math.round(note).toString();
+  };
+
   const handleExportPDF = async () => {
     try {
-      // Créer le document PDF avec React.createElement pour éviter les problèmes de JSX
-      const doc = React.createElement(ReleveNotesPDF, {
-        releve: releve,
-        moyennesGenerales: moyennesGenerales,
-        userName: userName
-      });
+      // Créer le document PDF avec JSX
+      const doc = (
+        <ReleveNotesPDF
+          releve={releve}
+          moyennesGenerales={moyennesGenerales}
+          userName={userName}
+        />
+      );
       
       // Générer le blob PDF
       const blob = await pdf(doc).toBlob();
@@ -211,7 +219,7 @@ export default function ReleveNotesPage() {
                                 <span className="text-[#032622]/80">{note.titre}</span>
                               </div>
                               <span className="text-[#032622] font-bold">
-                                {formatNote(note.note)}/20
+                                {note.type === 'quiz' ? formatNoteQuiz(note.note) : formatNote(note.note)}/20
                               </span>
                             </div>
                           ))}

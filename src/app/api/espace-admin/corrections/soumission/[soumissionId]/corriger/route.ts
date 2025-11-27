@@ -42,7 +42,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { corrections, note_globale, commentaire_global } = body;
+    const { corrections, note_globale, commentaire_global, justification } = body;
 
     if (!corrections || !Array.isArray(corrections)) {
       return NextResponse.json(
@@ -197,7 +197,7 @@ export async function POST(
         // Vérifier si une note existe déjà
         const { data: noteExistante } = await supabase
           .from('notes_etudiants')
-          .select('id')
+          .select('id, note')
           .eq('etudiant_id', etudiant.id)
           .eq('type_evaluation', 'etude_cas')
           .eq('evaluation_id', soumission.etude_cas_id)
@@ -207,6 +207,9 @@ export async function POST(
         const noteFinale = Math.min(parseFloat(noteGlobaleCalculee), 20);
         
         if (noteExistante) {
+          // Récupérer la note avant modification
+          const noteAvant = noteExistante.note;
+          
           // Mettre à jour la note existante
           await supabase
             .from('notes_etudiants')
@@ -216,6 +219,22 @@ export async function POST(
               date_evaluation: new Date().toISOString()
             })
             .eq('id', noteExistante.id);
+
+          // Enregistrer la modification dans modifications_notes si une justification est fournie
+          if (justification && justification.trim()) {
+            await supabase
+              .from('modifications_notes')
+              .insert({
+                type_evaluation: 'etude_cas',
+                evaluation_id: soumission.etude_cas_id,
+                soumission_id: soumissionIdNum,
+                correcteur_id: user.id,
+                note_avant: noteAvant,
+                note_apres: noteFinale,
+                justification: justification.trim(),
+                date_modification: new Date().toISOString()
+              });
+          }
         } else {
           // Créer une nouvelle note
           await supabase

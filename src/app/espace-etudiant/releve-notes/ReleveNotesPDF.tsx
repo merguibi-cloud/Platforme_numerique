@@ -172,6 +172,11 @@ const formatNote = (note: number): string => {
   return note.toFixed(1).replace('.', ',');
 };
 
+const formatNoteQuiz = (note: number): string => {
+  if (note === 0) return '0';
+  return Math.round(note).toString();
+};
+
 export const ReleveNotesPDF: React.FC<ReleveNotesPDFProps> = ({
   releve,
   moyennesGenerales,
@@ -242,7 +247,9 @@ export const ReleveNotesPDF: React.FC<ReleveNotesPDFProps> = ({
                             {note.type === 'quiz' ? 'Quiz:' : 'Étude:'}
                           </Text>
                           <Text style={styles.noteDetailleeTitre}>{note.titre}</Text>
-                          <Text style={styles.noteDetailleeNote}>{formatNote(note.note)}/20</Text>
+                          <Text style={styles.noteDetailleeNote}>
+                            {note.type === 'quiz' ? formatNoteQuiz(note.note) : formatNote(note.note)}/20
+                          </Text>
                         </View>
                       ))}
                     </View>
