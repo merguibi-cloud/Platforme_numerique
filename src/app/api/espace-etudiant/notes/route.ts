@@ -105,12 +105,13 @@ export async function GET(request: NextRequest) {
       const cours = quiz?.cours_apprentissage;
       const bloc = cours?.blocs_competences;
       
-      // Le score est déjà en pourcentage, on le convertit sur 20
-      const noteSur20 = tentative.score ? (tentative.score * 20 / 100).toFixed(1).replace('.', ',') : '0';
+      // Le score est stocké en pourcentage, on le convertit sur 20
+      // Les quiz sont toujours des nombres entiers
+      const noteSur20 = tentative.score ? Math.round(tentative.score * 20 / 100).toString() : '0';
       
       notes.push({
         id: `quiz-${tentative.id}`,
-        title: `Bloc ${bloc?.numero_bloc || ''} - ${cours?.titre || 'Module'} ${quiz?.titre || 'Quiz'}`,
+        title: `Bloc ${bloc?.numero_bloc || ''} - ${cours?.titre || 'Module'}`,
         label: 'Quizz',
         grade: noteSur20,
         date: tentative.date_fin,
@@ -124,11 +125,16 @@ export async function GET(request: NextRequest) {
       const cours = etudeCas?.cours_apprentissage;
       const bloc = cours?.blocs_competences;
       
+      // Formater la note avec virgule pour les études de cas (peut avoir des décimales)
+      const noteFormatee = soumission.note 
+        ? parseFloat(soumission.note.toString()).toFixed(1).replace('.', ',') 
+        : '0';
+      
       notes.push({
         id: `etude-cas-${soumission.id}`,
-        title: `Bloc ${bloc?.numero_bloc || ''} ${etudeCas?.titre || 'Étude de cas'}`,
+        title: `Bloc ${bloc?.numero_bloc || ''}`,
         label: 'Étude de cas',
-        grade: soumission.note ? soumission.note.toString().replace('.', ',') : '0',
+        grade: noteFormatee,
         date: soumission.date_correction,
         type: 'etude_cas'
       });

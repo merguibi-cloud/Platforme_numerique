@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { User, FileText, Settings } from 'lucide-react';
+import { User, FileText, Settings, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -47,16 +47,6 @@ interface DashboardData {
     }>;
   };
   aCommence: boolean;
-  dernieresNotes: Array<{
-    id: string;
-    note: number;
-    noteMax: number;
-    type: string;
-    date: string;
-    titre: string;
-    bloc: string;
-    cours: string | null;
-  }>;
   competences: {
     current: number;
     total: number;
@@ -67,6 +57,14 @@ export const StudentDashboard = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [latestGrades, setLatestGrades] = useState<Array<{
+    id: string;
+    title: string;
+    label: string;
+    grade: string;
+    date: string;
+    type: string;
+  }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +93,18 @@ export const StudentDashboard = () => {
           const dashboardResult = await dashboardResponse.json();
           if (dashboardResult.success && dashboardResult.dashboard) {
             setDashboardData(dashboardResult.dashboard);
+          }
+        }
+
+        // Charger les notes depuis l'API unifiée
+        const notesResponse = await fetch('/api/espace-etudiant/notes', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (notesResponse.ok) {
+          const notesResult = await notesResponse.json();
+          if (notesResult.success && notesResult.notes) {
+            setLatestGrades(notesResult.notes);
           }
         }
       } catch (error) {
@@ -606,36 +616,36 @@ export const StudentDashboard = () => {
               </h3>
             </div>
             
-            {dashboardData?.dernieresNotes && dashboardData.dernieresNotes.length > 0 ? (
-              dashboardData.dernieresNotes.map((note, index) => (
-                <div key={note.id} className={`bg-[#032622] ${index < dashboardData.dernieresNotes.length - 1 ? 'border-b border-[#F8F5E4]' : ''}`}>
-                  <div className="flex">
-                    <div className="flex-1 p-4 border-r border-[#F8F5E4]">
-                      <div className="text-xs text-white mb-1">{note.bloc}{note.cours ? ` - ${note.cours}` : ''}</div>
-                      <div className="text-sm font-bold text-white">{note.titre}</div>
-                    </div>
-                    <div className="w-20 p-4 flex items-center justify-center bg-[#F8F5E4]">
-                      <span className="text-2xl font-bold text-[#032622]">{note.note.toFixed(1)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-4 text-center text-[#032622] text-sm">
-                Aucune note disponible
-              </div>
-            )}
-            
             <div className="p-4">
-              <Link 
-                href="/espace-etudiant/releve-notes"
-                className="text-[#032622] text-sm font-bold flex items-center hover:underline"
-              >
-                VOIR TOUTES LES NOTES
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+              {latestGrades.length > 0 ? (
+                <>
+                  {latestGrades.map((grade) => (
+                    <div
+                      key={grade.id}
+                      className="flex items-center justify-between border border-black mb-3 last:mb-0"
+                    >
+                      <div className="p-3">
+                        <p className="text-xs text-[#032622] opacity-80">{grade.title}</p>
+                        <p className="text-sm font-semibold text-[#032622]">{grade.label}</p>
+                      </div>
+                      <div className="p-3 bg-[#032622] text-white font-bold text-lg min-w-[70px] text-center">
+                        {grade.grade}
+                      </div>
+                    </div>
+                  ))}
+                  <Link 
+                    href="/espace-etudiant/releve-notes"
+                    className="text-xs font-semibold text-[#032622] flex items-center space-x-1 mt-2 hover:underline"
+                  >
+                    <span>VOIR TOUTES LES NOTES</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </>
+              ) : (
+                <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                  Aucune note disponible
+                </div>
+              )}
             </div>
           </div>
 
