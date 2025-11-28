@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ArrowLeft, User, Mail, Calendar, Clock, MessageSquare, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import AdminTopBar from '../../components/AdminTopBar';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Modal } from '@/app/Modal';
 
 interface EtudiantDetails {
   id: string;
@@ -60,6 +61,11 @@ export default function EtudiantDetailPage() {
 
   const [etudiantData, setEtudiantData] = useState<EtudiantDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Charger les données depuis l'API
   useEffect(() => {
@@ -394,8 +400,17 @@ export default function EtudiantDetailPage() {
             </div>
 
             {/* Lien suspendre le compte */}
-            <button className="w-full text-left text-[#032622] font-semibold hover:underline">
-              SUSPENDRE LE COMPTE
+            <button className="w-full text-left text-[#032622] font-semibold hover:underline mb-4">
+              SUSPENDRE L'ACCES AU COMPTE
+            </button>
+
+            {/* Bouton supprimer le compte */}
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              disabled={isDeleting}
+              className="w-full px-4 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? 'SUPPRESSION EN COURS...' : 'SUPPRIMER LE COMPTE'}
             </button>
           </div>
 
@@ -484,6 +499,67 @@ export default function EtudiantDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => !isDeleting && setShowDeleteModal(false)}
+        title="Confirmation de suppression"
+        message="Êtes-vous sûr de vouloir supprimer définitivement ce compte étudiant ? Cette action est irréversible et supprimera toutes les données associées."
+        type="warning"
+        isConfirm={true}
+        onConfirm={async () => {
+          setIsDeleting(true);
+          try {
+            const response = await fetch(`/api/admin/etudiants/${id}`, {
+              method: 'DELETE',
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              setShowDeleteModal(false);
+              setShowSuccessModal(true);
+              setTimeout(() => {
+                router.push('/espace-admin/gestion-etudiants');
+              }, 1500);
+            } else {
+              setErrorMessage(result.error || 'Erreur lors de la suppression');
+              setShowDeleteModal(false);
+              setShowErrorModal(true);
+              setIsDeleting(false);
+            }
+          } catch (error) {
+            setErrorMessage('Une erreur est survenue lors de la suppression.');
+            setShowDeleteModal(false);
+            setShowErrorModal(true);
+            setIsDeleting(false);
+          }
+        }}
+        onCancel={() => setShowDeleteModal(false)}
+        confirmDisabled={isDeleting}
+      />
+
+      {/* Modal de succès */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Succès"
+        message="Compte étudiant supprimé avec succès."
+        type="success"
+      />
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
+      />
     </div>
   );
 }

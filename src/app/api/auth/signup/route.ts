@@ -12,13 +12,27 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password || !telephone) {
       return NextResponse.json(
-        { error: 'Email, mot de passe et numéro de téléphone requis' },
+        { 
+          success: false,
+          error: 'Email, mot de passe et numéro de téléphone requis' 
+        },
         { status: 400 }
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Variables d\'environnement Supabase manquantes');
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Configuration serveur incorrecte' 
+        },
+        { status: 500 }
+      );
+    }
     
     // Utiliser le service role key pour créer l'utilisateur et le profil
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
@@ -40,22 +54,23 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Créer l'utilisateur dans auth.users avec l'API client normale
-    // Cela enverra automatiquement l'email de confirmation
-    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    
-    const { data: signUpData, error: signUpError } = await supabaseAnon.auth.signUp({
-      email,
+    // Créer l'utilisateur dans auth.users avec l'API admin pour garantir la création immédiate
+    // Cela permet d'éviter les problèmes de timing avec la contrainte de clé étrangère
+    console.log('Tentative de création de l\'utilisateur avec l\'API admin...');
+    const { data: createUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+      email: email.toLowerCase(),
       password,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/exchange-code`
+      email_confirm: false, // L'email sera confirmé via le lien de confirmation
+      user_metadata: {
+        email_redirect_to: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/exchange-code`
       }
     });
     
-    if (signUpError) {
+    if (createUserError) {
+      console.error('Erreur lors de la création de l\'utilisateur:', createUserError);
       // Si l'erreur est due à un email déjà existant, retourner un message clair
-      const errorMessage = signUpError.message || '';
-      if (errorMessage.includes('already registered') || errorMessage.includes('already exists') || errorMessage.includes('duplicate')) {
+      const errorMessage = createUserError.message || '';
+      if (errorMessage.includes('already registered') || errorMessage.includes('already exists') || errorMessage.includes('duplicate') || errorMessage.includes('User already registered')) {
         await logCreate(request, 'auth.users', 'unknown', { email }, `Tentative d'inscription avec email existant: ${errorMessage}`).catch(() => {});
         return NextResponse.json(
           { 
@@ -70,13 +85,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false,
-          error: 'Erreur lors de la création du compte'
+          error: `Erreur lors de la création du compte: ${errorMessage}`,
+          details: createUserError
         },
         { status: 400 }
       );
     }
     
-    if (!signUpData.user) {
+    if (!createUserData?.user) {
       await logCreate(request, 'auth.users', 'unknown', { email }, 'Échec d\'inscription: utilisateur non créé').catch(() => {});
       return NextResponse.json(
         { error: 'Erreur lors de la création de l\'utilisateur' },
@@ -85,7 +101,24 @@ export async function POST(request: NextRequest) {
     }
     
     // Récupérer les données de l'utilisateur créé
-    const data = { user: signUpData.user };
+    const data = { user: createUserData.user };
+    
+    // Vérifier que l'utilisateur existe bien dans auth.users avant de créer le profil
+    // Attendre un court instant pour s'assurer que la transaction est complète
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Vérifier que l'utilisateur existe vraiment
+    const { data: verifyUser, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(data.user.id);
+    if (verifyError || !verifyUser) {
+      console.error('Erreur lors de la vérification de l\'utilisateur:', verifyError);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Erreur lors de la vérification de l\'utilisateur créé'
+        },
+        { status: 500 }
+      );
+    }
 
     if (!data.user) {
       await logCreate(request, 'auth.users', 'unknown', { email }, 'Échec d\'inscription: utilisateur non créé').catch(() => {});
@@ -222,9 +255,14 @@ export async function POST(request: NextRequest) {
       message: 'Inscription réussie. Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail pour confirmer votre compte.'
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Erreur dans la route signup:', error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { 
+        success: false,
+        error: 'Erreur interne du serveur',
+        details: error?.message || 'Erreur inconnue'
+      },
       { status: 500 }
     );
   }

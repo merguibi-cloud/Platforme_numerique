@@ -1,7 +1,7 @@
 "use client";
 import { User } from 'lucide-react';
 
-type Step = 'INFORMATIONS' | 'CONTRAT' | 'DOCUMENTS' | 'DOSSIER' | 'VALIDATION';
+type Step = 'INFORMATIONS' | 'CONTRAT' | 'INSCRIPTION' | 'DOCUMENTS' | 'DOSSIER' | 'VALIDATION';
 
 interface ProgressHeaderProps {
   currentStep: Step;
@@ -9,8 +9,11 @@ interface ProgressHeaderProps {
 }
 
 export const ProgressHeader = ({ currentStep, onClose }: ProgressHeaderProps) => {
-  const steps: Step[] = ['INFORMATIONS', 'CONTRAT', 'DOCUMENTS', 'DOSSIER', 'VALIDATION'];
-  const currentStepIndex = steps.indexOf(currentStep);
+  // Étapes sans CONTRAT (temporairement retiré)
+  const steps: Step[] = ['INFORMATIONS', 'INSCRIPTION', 'DOCUMENTS', 'DOSSIER', 'VALIDATION'];
+  // Si currentStep est CONTRAT, on le mappe vers INSCRIPTION pour l'affichage
+  const displayStep = currentStep === 'CONTRAT' ? 'INSCRIPTION' : currentStep;
+  const currentStepIndex = steps.indexOf(displayStep);
 
   return (
     <>
@@ -30,7 +33,7 @@ export const ProgressHeader = ({ currentStep, onClose }: ProgressHeaderProps) =>
           
           {/* Progress bar */}
           <div className="flex items-center justify-between mb-6">
-            <span className="text-[#032622] font-medium">ÉTAPE {currentStepIndex + 1} SUR 5</span>
+            <span className="text-[#032622] font-medium">ÉTAPE {currentStepIndex + 1} SUR {steps.length}</span>
           </div>
           
           {/* Barre de progression continue avec labels */}
@@ -38,7 +41,7 @@ export const ProgressHeader = ({ currentStep, onClose }: ProgressHeaderProps) =>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
               <div 
                 className="h-full bg-[#032622] transition-all duration-300"
-                style={{ width: `${((currentStepIndex + 1) / 5) * 100}%` }}
+                style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
               />
             </div>
             

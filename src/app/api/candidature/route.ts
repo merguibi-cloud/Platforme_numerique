@@ -177,14 +177,7 @@ export async function POST(request: NextRequest) {
          piece_identite_paths: stepData.pieceIdentitePaths || [],
        };
 
-       // Si c'est la première fois qu'on crée la candidature et que l'utilisateur a le rôle 'lead',
-       // changer son rôle en 'candidat'
-       if (!existingCandidature && profile.data?.role === 'lead') {
-         await supabase
-           .from('user_profiles')
-           .update({ role: 'candidat' })
-           .eq('user_id', user.id);
-       }
+       // Le changement de rôle de 'lead' à 'candidat' se fait maintenant lors du paiement accepté (webhook Stripe)
     } else if (step === 'documents') {
       updateData = {
         ...updateData,

@@ -7,6 +7,7 @@ import { saveCandidatureStep } from '@/lib/candidature-api';
 import { useCandidature } from '@/contexts/CandidatureContext';
 import { Modal } from './Modal';
 import { useModal } from './useModal';
+import { validatePreviousSteps } from '../utils/stepValidation';
 
 interface DocumentsProps {
   onClose: () => void;
@@ -39,6 +40,28 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
   
   // État pour les fichiers manquants (enregistrés en BDD mais introuvables dans le storage)
   const [missingFiles, setMissingFiles] = useState<string[]>([]);
+
+  // Vérifier les étapes précédentes au chargement
+  useEffect(() => {
+    if (!candidatureData) return;
+    
+    const validation = validatePreviousSteps('documents', candidatureData);
+    if (!validation.isValid && validation.missingStep && validation.message) {
+      // Utiliser setTimeout pour éviter la boucle infinie
+      const timer = setTimeout(() => {
+        showWarning(
+          validation.message + '\n\nCliquez sur OK pour être redirigé vers l\'étape manquante.',
+          'Étape manquante',
+          () => {
+            router.push(`/validation?step=${validation.missingStep}`);
+          }
+        );
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidatureData?.id, candidatureData?.paid_at]); // Inclure paid_at pour détecter les changements de paiement
 
   // Charger les données depuis le Context quand disponibles
   useEffect(() => {
@@ -917,6 +940,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         title={modalState.title}
         message={modalState.message}
         type={modalState.type}
+        onConfirm={modalState.onConfirm}
       />
     </div>
   );

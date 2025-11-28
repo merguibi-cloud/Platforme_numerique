@@ -552,14 +552,8 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
         console.log('Aucune modification détectée - Pas d\'appel API');
       }
       
-      // Passer à l'étape suivante selon le type de formation
-      if (formData.typeFormation === 'alternance' && formData.aUneEntreprise === 'oui') {
-        // Pour les formations en alternance avec entreprise, aller à l'étape contrat
-        router.push('/validation?step=contrat');
-      } else {
-        // Pour les autres cas, aller directement aux documents
-      router.push('/validation?step=documents');
-      }
+      // Aller directement à inscription après informations (CONTRAT retiré)
+      router.push('/validation?step=inscription');
     } catch (error) {
       showError('Erreur lors de la sauvegarde des données. Veuillez réessayer.', 'Erreur');
     } finally {
@@ -700,7 +694,8 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   placeholder="TÉLÉPHONE*"
                   value={formData.telephone}
                   onChange={(e) => handleInputChange('telephone', e.target.value)}
-                  className="w-full p-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  disabled={true}
+                  className="w-full p-3 border border-[#032622] bg-gray-300 text-[#032622] focus:outline-none focus:border-[#032622] cursor-not-allowed"
                 />
               </div>
             </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ModuleManagement } from '../../components/ModuleManagement';
 import AdminTopBar from '../../../components/AdminTopBar';
 import { getFormationById } from '@/lib/formations';
+import { Modal } from '@/app/Modal';
 
 interface ModuleManagementPageProps {
   params: Promise<{
@@ -32,6 +33,8 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
   const { formationId, blocId } = use(params);
   
   const [isLoading, setIsLoading] = useState(true);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [modules, setModules] = useState<ModuleWithStatus[]>([]);
   const [blocInfo, setBlocInfo] = useState<{ titre: string; numero_bloc: number } | null>(null);
   const [formationInfo, setFormationInfo] = useState<{ titre: string; ecole?: string } | null>(null);
@@ -246,7 +249,8 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
       console.log('[handleDeleteModule] Modules rechargés après suppression');
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
-      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      setErrorMessage(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      setShowErrorModal(true);
     }
   };
 
@@ -297,6 +301,18 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
           </div>
         </div>
       </div>
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
+      />
     </div>
   );
 }

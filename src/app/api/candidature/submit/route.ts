@@ -41,12 +41,15 @@ export async function POST(request: NextRequest) {
     const hasDocs = candidature.cv_path && candidature.diplome_path && 
                    (candidature.releves_paths && candidature.releves_paths.length > 0) &&
                    (candidature.piece_identite_paths && candidature.piece_identite_paths.length > 0) &&
-                   candidature.entreprise_accueil;
+                   candidature.lettre_motivation_path;
     const hasRecap = candidature.accept_conditions && candidature.attest_correct;
+    // Vérifier que le paiement a été effectué
+    const paidAt = candidature.paid_at;
+    const hasPaid = !!(paidAt && paidAt !== null && paidAt !== '');
 
-    if (!hasInfos || !hasDocs || !hasRecap) {
+    if (!hasInfos || !hasDocs || !hasRecap || !hasPaid) {
       return NextResponse.json(
-        { success: false, error: 'La candidature est incomplète. Veuillez compléter toutes les étapes.' },
+        { success: false, error: 'La candidature est incomplète. Veuillez compléter toutes les étapes, y compris le paiement des frais d\'inscription.' },
         { status: 400 }
       );
     }
@@ -65,9 +68,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError) {
+      console.error('Erreur lors de la mise à jour de la candidature:', updateError);
       await logUpdate(request, 'candidatures', candidature.id, candidature, { status: 'submitted' }, ['status'], `Échec de soumission de candidature: ${updateError.message}`).catch(() => {});
       return NextResponse.json(
-        { success: false, error: 'Erreur lors de la soumission de la candidature' },
+        { success: false, error: `Erreur lors de la soumission de la candidature: ${updateError.message}` },
         { status: 500 }
       );
     }
@@ -85,8 +89,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('Erreur serveur lors de la soumission:', error);
     return NextResponse.json(
-      { success: false, error: 'Erreur serveur' },
+      { success: false, error: `Erreur serveur: ${error instanceof Error ? error.message : 'Erreur inconnue'}` },
       { status: 500 }
     );
   }

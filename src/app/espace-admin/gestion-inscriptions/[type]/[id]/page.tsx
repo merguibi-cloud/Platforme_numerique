@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Download, Eye, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
+import { Modal } from '@/app/Modal';
+import { useModal } from '@/app/validation/components/useModal';
 
 interface CandidatData {
   id: string;
@@ -45,7 +47,8 @@ interface CandidatData {
 
 const stepsMap: Record<string, number> = {
   informations: 1,
-  contrat: 2,
+  contrat: 1, // CONTRAT retiré, mappé vers informations
+  inscription: 2,
   documents: 3,
   recap: 4,
   validation: 5,
@@ -61,6 +64,9 @@ export default function CandidatDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const { showConfirm } = useModal();
 
   useEffect(() => {
     loadData();
@@ -129,11 +135,12 @@ export default function CandidatDetailPage() {
           loadData();
         }
       } else {
-        alert(result.error || 'Erreur lors de l\'action');
+        setErrorMessage(result.error || 'Erreur lors de l\'action');
+        setShowErrorModal(true);
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de l\'action');
+      setErrorMessage('Erreur lors de l\'action');
+      setShowErrorModal(true);
     } finally {
       setIsActionLoading(null);
     }
@@ -194,7 +201,7 @@ export default function CandidatDetailPage() {
   const totalSteps = 5;
   const steps = [
     { id: 1, label: 'INFORMATIONS', active: currentStep >= 1 },
-    { id: 2, label: 'CONTRAT', active: currentStep >= 2 },
+    { id: 2, label: 'INSCRIPTION', active: currentStep >= 2 },
     { id: 3, label: 'DOCUMENTS', active: currentStep >= 3 },
     { id: 4, label: 'RECAP', active: currentStep >= 4 },
     { id: 5, label: 'VALIDATION', active: currentStep >= 5 },
@@ -349,8 +356,9 @@ export default function CandidatDetailPage() {
           <div className="space-y-3">
             <button
               onClick={() => handleAction('debloquer_acces')}
-              disabled={isActionLoading === 'debloquer_acces'}
-              className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50"
+              disabled={isActionLoading === 'debloquer_acces' || data?.role === 'lead'}
+              className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title={data?.role === 'lead' ? 'Seuls les candidats peuvent être débloqués' : undefined}
             >
               {isActionLoading === 'debloquer_acces' ? 'TRAITEMENT...' : "DÉBLOQUER L'ACCÈS À LA PLATEFORME"}
             </button>
@@ -370,9 +378,11 @@ export default function CandidatDetailPage() {
             </button>
             <button
               onClick={() => {
-                if (confirm('Êtes-vous sûr de vouloir supprimer cette candidature ?')) {
-                  handleAction('supprimer_candidature');
-                }
+                showConfirm(
+                  'Supprimer la candidature',
+                  'Êtes-vous sûr de vouloir supprimer cette candidature ? Cette action est irréversible.',
+                  () => handleAction('supprimer_candidature')
+                );
               }}
               disabled={isActionLoading === 'supprimer_candidature'}
               className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors text-sm disabled:opacity-50"
@@ -645,6 +655,18 @@ export default function CandidatDetailPage() {
           ))}
         </div>
       </div>
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
+      />
     </div>
   );
 }

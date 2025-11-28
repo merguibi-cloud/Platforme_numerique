@@ -84,6 +84,7 @@ export default function CorrectionDetailPage() {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showJustificationModal, setShowJustificationModal] = useState(false);
   const [justification, setJustification] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [noteAvant, setNoteAvant] = useState<number | null>(null);
   const [noteApres, setNoteApres] = useState<number | null>(null);
 
@@ -230,7 +231,8 @@ export default function CorrectionDetailPage() {
 
   const handleConfirmJustification = () => {
     if (!justification.trim()) {
-      alert('Veuillez saisir une justification pour la modification de la note.');
+      setErrorMessage('Veuillez saisir une justification pour la modification de la note.');
+      setShowErrorModal(true);
       return;
     }
     saveCorrections(justification);
@@ -473,7 +475,7 @@ export default function CorrectionDetailPage() {
         isOpen={showErrorModal}
         onClose={() => setShowErrorModal(false)}
         title="Erreur"
-        message="Une erreur est survenue. Veuillez vérifier que toutes les questions ont une note."
+        message={errorMessage || "Une erreur est survenue. Veuillez vérifier que toutes les questions ont une note."}
         type="error"
       />
 

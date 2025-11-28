@@ -9,11 +9,11 @@ import { Documents } from './components/Documents';
 import { Recap } from './components/Recap';
 import { Validation } from './components/Validation';
 import ContratStep from './components/ContratStep';
+import PaiementFraisScolarite from './components/PaiementFraisScolarite';
 import { getCurrentUser, getSessionRole } from '@/lib/auth-api';
 import { getUserFormationData, UserFormationData } from '@/lib/user-formations';
 import { CandidatureProvider, useCandidature } from '@/contexts/CandidatureContext';
 import { StudentGuard } from '@/components/RoleGuard';
-import { SessionTracker } from '@/components/SessionTracker';
 
 const ValidationContent = () => {
   const router = useRouter();
@@ -103,33 +103,26 @@ const ValidationContent = () => {
                     (data.piece_identite_paths && data.piece_identite_paths.length > 0) &&
                     (data.type_formation !== 'alternance' || data.a_une_entreprise);
     
-    // Pour les formations en alternance avec entreprise, vérifier les formulaires Airtable
-    const needsAirtableForms = data.type_formation === 'alternance' && data.a_une_entreprise === 'oui';
-    const hasAirtableForms = !needsAirtableForms || 
-                            (data.airtable_form_etudiant_completed && data.airtable_form_entreprise_completed);
-    
     const hasDocs = data.cv_path && data.diplome_path && 
                    (data.releves_paths && data.releves_paths.length > 0) &&
                    data.entreprise_accueil;
     const hasRecap = data.accept_conditions && data.attest_correct && hasDocs;
-    const hasValidation = data.paid_at;
+    const hasPaid = data.paid_at;
+    const hasValidation = data.status === 'validated';
     
     // Rediriger vers la prochaine étape non complétée
+    // CONTRAT temporairement retiré du flux
     if (hasValidation) {
       router.push('/validation?step=validation');
+    } else if (hasPaid) {
+      router.push('/validation?step=documents');
     } else if (hasRecap) {
-      router.push('/validation?step=validation');
+      router.push('/validation?step=inscription');
     } else if (hasDocs) {
       router.push('/validation?step=recap');
-    } else if (hasInfos && needsAirtableForms && hasAirtableForms) {
-      // Si les formulaires Airtable sont complétés, aller aux documents
-      router.push('/validation?step=documents');
-    } else if (hasInfos && needsAirtableForms && !hasAirtableForms) {
-      // Si les formulaires Airtable ne sont pas complétés, aller à l'étape contrat
-      router.push('/validation?step=contrat');
-    } else if (hasInfos && !needsAirtableForms) {
-      // Si pas besoin de formulaires Airtable, aller directement aux documents
-      router.push('/validation?step=documents');
+    } else if (hasInfos) {
+      // Après informations, aller directement à inscription (contrat retiré)
+      router.push('/validation?step=inscription');
     } else {
       router.push('/validation?step=informations');
     }
@@ -155,6 +148,10 @@ const ValidationContent = () => {
         // La logique de redirection est gérée dans Information.tsx
         break;
       case 'contrat':
+        // CONTRAT retiré, rediriger vers inscription
+        router.push('/validation?step=inscription');
+        break;
+      case 'inscription':
         router.push('/validation?step=documents');
         break;
       case 'documents':
@@ -171,15 +168,16 @@ const ValidationContent = () => {
   const handlePrevStep = () => {
     switch (currentStep) {
       case 'contrat':
+        // CONTRAT retiré, rediriger vers informations
+        router.push('/validation?step=informations');
+        break;
+      case 'inscription':
+        // Après inscription, revenir à informations (contrat retiré)
         router.push('/validation?step=informations');
         break;
       case 'documents':
-        // Déterminer la route précédente selon le type de formation
-        if (candidatureData?.type_formation === 'alternance' && candidatureData?.a_une_entreprise === 'oui') {
-          router.push('/validation?step=contrat');
-        } else {
-          router.push('/validation?step=informations');
-        }
+        // Revenir à inscription
+        router.push('/validation?step=inscription');
         break;
       case 'recap':
         router.push('/validation?step=documents');
@@ -221,6 +219,14 @@ const ValidationContent = () => {
       case 'contrat':
         return (
           <ContratStep 
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+            onClose={handleCloseCandidatureForm}
+          />
+        );
+      case 'inscription':
+        return (
+          <PaiementFraisScolarite 
             onNext={handleNextStep}
             onPrev={handlePrevStep}
             onClose={handleCloseCandidatureForm}
@@ -287,7 +293,6 @@ const ValidationWithAuth = () => {
 
   return (
     <CandidatureProvider userId={user?.id} key={user?.id}>
-      <SessionTracker />
       <ValidationContent />
     </CandidatureProvider>
   );

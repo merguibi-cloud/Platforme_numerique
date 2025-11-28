@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle, ChevronLeft, Send } from 'lucide-react';
 import { ProgressHeader } from './ProgressHeader';
 import { useCandidature } from '@/contexts/CandidatureContext';
 import { Modal } from './Modal';
 import { useModal } from './useModal';
+import { validatePreviousSteps } from '../utils/stepValidation';
 
 interface ValidationProps {
   onClose: () => void;
@@ -12,10 +14,33 @@ interface ValidationProps {
 }
 
 export const Validation = ({ onClose, onPrev }: ValidationProps) => {
+  const router = useRouter();
   const { candidatureData, refreshCandidature } = useCandidature();
   const { modalState, showSuccess, showError, showWarning, hideModal } = useModal();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Vérifier les étapes précédentes au chargement
+  useEffect(() => {
+    if (!candidatureData) return;
+    
+    const validation = validatePreviousSteps('validation', candidatureData);
+    if (!validation.isValid && validation.missingStep && validation.message) {
+      // Utiliser setTimeout pour éviter la boucle infinie
+      const timer = setTimeout(() => {
+        showWarning(
+          validation.message + '\n\nCliquez sur OK pour être redirigé vers l\'étape manquante.',
+          'Étape manquante',
+          () => {
+            router.push(`/validation?step=${validation.missingStep}`);
+          }
+        );
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidatureData?.id, candidatureData?.paid_at]); // Inclure paid_at pour détecter les changements
 
   // Vérifier si la candidature a déjà été soumise
   useEffect(() => {
@@ -30,16 +55,13 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
       return;
     }
 
-    // Vérifier que toutes les étapes sont complétées
-    const hasInfos = candidatureData.nom && candidatureData.prenom && candidatureData.email && candidatureData.telephone;
-    const hasDocs = candidatureData.cv_path && candidatureData.diplome_path && 
-                   (candidatureData.releves_paths && candidatureData.releves_paths.length > 0) &&
-                   (candidatureData.piece_identite_paths && candidatureData.piece_identite_paths.length > 0) &&
-                   candidatureData.entreprise_accueil;
-    const hasRecap = candidatureData.accept_conditions && candidatureData.attest_correct;
-
-    if (!hasInfos || !hasDocs || !hasRecap) {
-      showWarning('Veuillez compléter toutes les étapes avant de soumettre votre candidature.', 'Étapes manquantes');
+    // Vérifier que toutes les étapes sont complétées en utilisant la fonction de validation
+    const validation = validatePreviousSteps('validation', candidatureData);
+    if (!validation.isValid) {
+      showWarning(
+        validation.message || 'Veuillez compléter toutes les étapes avant de soumettre votre candidature.',
+        'Étapes manquantes'
+      );
       return;
     }
 
@@ -59,9 +81,13 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
         setIsSubmitted(true);
         // Rafraîchir les données du Context
         await refreshCandidature();
-        showSuccess('Votre candidature a été envoyée avec succès ! Vous recevrez un email de confirmation.', 'Succès');
+        showSuccess('Votre candidature a été envoyée avec succès ! Un administrateur va étudier votre dossier.', 'Succès');
+        // Rediriger vers la page d'accueil après 2 secondes
+        setTimeout(() => {
+          router.push('/validation');
+        }, 2000);
       } else {
-        showError('Erreur lors de l\'envoi de la candidature. Veuillez réessayer.', 'Erreur');
+        showError(result.error || 'Erreur lors de l\'envoi de la candidature. Veuillez réessayer.', 'Erreur');
       }
     } catch (error) {
       showError('Erreur lors de l\'envoi de la candidature. Veuillez réessayer.', 'Erreur');
@@ -160,6 +186,7 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
         title={modalState.title}
         message={modalState.message}
         type={modalState.type}
+        onConfirm={modalState.onConfirm}
       />
     </div>
   );

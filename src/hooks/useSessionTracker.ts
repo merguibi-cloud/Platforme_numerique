@@ -1,18 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-api';
 
 /**
  * Hook pour suivre le temps de connexion de l'utilisateur
  * Envoie périodiquement la durée de connexion au serveur
- * Fonctionne pour tous les utilisateurs authentifiés (lead, candidat, formateur, étudiant, admin)
+ * Ne fonctionne QUE dans l'espace étudiant pour éviter de tracker le temps passé dans la validation
  */
 export function useSessionTracker() {
   const [user, setUser] = useState<any>(null);
+  const pathname = usePathname();
   const startTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateRef = useRef<number>(0);
+
+  // Vérifier si on est dans l'espace étudiant
+  const isInStudentSpace = pathname?.startsWith('/espace-etudiant') || false;
 
   // Charger l'utilisateur au montage
   useEffect(() => {
@@ -30,6 +35,16 @@ export function useSessionTracker() {
   }, []);
 
   useEffect(() => {
+    // Ne tracker que si on est dans l'espace étudiant
+    if (!isInStudentSpace) {
+      // Nettoyer l'intervalle si on quitte l'espace étudiant
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
     if (!user) {
       // Nettoyer l'intervalle si l'utilisateur se déconnecte
       if (intervalRef.current) {
@@ -99,7 +114,7 @@ export function useSessionTracker() {
         }
       }
     };
-  }, [user]);
+  }, [user, isInStudentSpace]);
 
   return null;
 }

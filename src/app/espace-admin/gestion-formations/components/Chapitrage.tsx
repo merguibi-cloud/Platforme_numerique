@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Chapitre } from '../../../../types/cours';
 import { FileText, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CreateModule } from './CreateModule';
+import { Modal } from '@/app/Modal';
 
 interface ChapitrageProps {
   coursId: number;
@@ -40,6 +41,8 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
   const [isAddChapitreModalOpen, setIsAddChapitreModalOpen] = useState(false);
   const [coursInfo, setCoursInfo] = useState<{ id: string; titre: string } | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const loadChapitres = useCallback(async () => {
       try {
@@ -344,11 +347,13 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
         }
       } else {
         const errorData = await response.json();
-        alert(`Erreur lors de l'ajout du chapitre: ${errorData.error || 'Erreur inconnue'}`);
+        setErrorMessage(`Erreur lors de l'ajout du chapitre: ${errorData.error || 'Erreur inconnue'}`);
+        setShowErrorModal(true);
       }
     } catch (error) {
       console.error('Erreur lors de l\'ajout du chapitre:', error);
-      alert('Erreur lors de l\'ajout du chapitre');
+      setErrorMessage('Erreur lors de l\'ajout du chapitre');
+      setShowErrorModal(true);
     }
   };
 
@@ -506,6 +511,18 @@ export const Chapitrage = ({ coursId, currentChapitreId, onChapitreClick, onQuiz
       existingModules={coursInfo ? [coursInfo] : []}
       preselectedCoursId={coursId.toString()}
       addChapitreOnly={true}
+    />
+
+    {/* Modal d'erreur */}
+    <Modal
+      isOpen={showErrorModal}
+      onClose={() => {
+        setShowErrorModal(false);
+        setErrorMessage('');
+      }}
+      title="Erreur"
+      message={errorMessage}
+      type="error"
     />
     </>
   );

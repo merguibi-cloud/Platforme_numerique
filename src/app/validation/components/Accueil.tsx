@@ -93,13 +93,11 @@ export const Accueil = ({
       completedSteps.push('INFORMATIONS');
     }
 
-    // Vérifier l'étape CONTRAT pour les formations en alternance avec entreprise
-    const needsAirtableForms = candidatureData.type_formation === 'alternance' && candidatureData.a_une_entreprise === 'oui';
-    const hasAirtableForms = !needsAirtableForms || 
-                            (candidatureData.airtable_form_etudiant_completed && candidatureData.airtable_form_entreprise_completed);
-    
-    if (needsAirtableForms && hasAirtableForms) {
-      completedSteps.push('CONTRAT');
+    // CONTRAT temporairement retiré de la progression
+
+    // Vérifier l'étape INSCRIPTION (paiement des frais d'inscription)
+    if (candidatureData.paid_at) {
+      completedSteps.push('INSCRIPTION');
     }
 
     // Vérifier l'étape documents - tous les documents obligatoires doivent être présents
@@ -117,8 +115,8 @@ export const Accueil = ({
       completedSteps.push('DOSSIER');
     }
 
-    // Vérifier l'étape validation - vérifie si le paiement a été effectué
-    if (candidatureData.paid_at) {
+    // Vérifier l'étape validation - vérifie si le statut est validé
+    if (candidatureData.status === 'validated') {
       completedSteps.push('VALIDATION');
     }
 
@@ -161,7 +159,7 @@ export const Accueil = ({
     if (status === 'validated' || status === 'approved') {
       return { label: 'VALIDÉ', color: 'bg-green-600', textColor: 'text-green-600' };
     } else if (status === 'submitted' || status === 'pending') {
-      return { label: 'CANDIDATURE ENVOYÉE', color: 'bg-blue-600', textColor: 'text-blue-600' };
+      return { label: 'EN COURS D\'ÉTUDE', color: 'bg-blue-600', textColor: 'text-blue-600' };
     } else {
       // draft ou null
       return { label: 'BROUILLON', color: 'bg-[#C2C6B6]', textColor: 'text-[#032622]' };
@@ -181,17 +179,12 @@ export const Accueil = ({
     } else if (completedSteps.includes('DOCUMENTS')) {
       // DOCUMENTS complété, aller à DOSSIER
       router.push('/validation?step=recap');
-    } else if (completedSteps.includes('CONTRAT')) {
-      // CONTRAT complété, aller à DOCUMENTS
+    } else if (completedSteps.includes('INSCRIPTION')) {
+      // INSCRIPTION complété, aller à DOCUMENTS
       router.push('/validation?step=documents');
     } else if (completedSteps.includes('INFORMATIONS')) {
-      // INFORMATIONS complété, vérifier si besoin de CONTRAT
-      const needsAirtableForms = candidatureData?.type_formation === 'alternance' && candidatureData?.a_une_entreprise === 'oui';
-      if (needsAirtableForms) {
-        router.push('/validation?step=contrat');
-      } else {
-        router.push('/validation?step=documents');
-      }
+      // INFORMATIONS complété, aller directement à INSCRIPTION (CONTRAT retiré)
+      router.push('/validation?step=inscription');
     } else {
       // Rien n'est complété, commencer par INFORMATIONS
       router.push('/validation?step=informations');
@@ -341,6 +334,15 @@ export const Accueil = ({
                   </div>
                   </div>
                   
+                  {/* Message d'information si candidature soumise */}
+                  {(candidatureData?.status === 'submitted' || candidatureData?.status === 'pending') && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                      <p className="text-xs sm:text-sm text-blue-800">
+                        📋 Un administrateur étudie actuellement votre candidature. Vous serez notifié dès qu'une décision sera prise.
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* Barre de progression visuelle */}
                   <div className="w-full bg-[#C2C6B6] h-1 sm:h-2 mb-2">
                     <div 
@@ -349,7 +351,7 @@ export const Accueil = ({
                         width: completedSteps.includes('VALIDATION') ? '100%' :
                                completedSteps.includes('DOSSIER') ? '80%' :
                                completedSteps.includes('DOCUMENTS') ? '60%' : 
-                               completedSteps.includes('CONTRAT') ? '40%' :
+                               completedSteps.includes('INSCRIPTION') ? '40%' :
                                completedSteps.includes('INFORMATIONS') ? '20%' : '0%' 
                       }}
                     ></div>
@@ -408,30 +410,26 @@ export const Accueil = ({
                     {/* Ligne de connexion */}
                     <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
                     
-                    {/* Étape CONTRAT (conditionnelle) */}
-                    {candidatureData?.type_formation === 'alternance' && candidatureData?.a_une_entreprise === 'oui' && (
-                      <>
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
-                            completedSteps.includes('CONTRAT') ? 'bg-[#032622]' : 'bg-transparent'
-                          }`}>
-                            {completedSteps.includes('CONTRAT') && (
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                          <span className={`text-sm font-bold ${
-                            completedSteps.includes('CONTRAT') ? 'text-[#032622]' : 'text-[#032622]/60'
-                          }`}>
-                            CONTRAT
-                          </span>
-                        </div>
-                        
-                        {/* Ligne de connexion */}
-                        <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
-                      </>
-                    )}
+                    {/* Étape INSCRIPTION */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                        completedSteps.includes('INSCRIPTION') ? 'bg-[#032622]' : 'bg-transparent'
+                      }`}>
+                        {completedSteps.includes('INSCRIPTION') && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-sm font-bold ${
+                        completedSteps.includes('INSCRIPTION') ? 'text-[#032622]' : 'text-[#032622]/60'
+                      }`}>
+                        INSCRIPTION
+                      </span>
+                    </div>
+                    
+                    {/* Ligne de connexion */}
+                    <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
                     
                     {/* Étape DOCUMENTS */}
                     <div className="flex items-center space-x-3">

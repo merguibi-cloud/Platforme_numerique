@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Check, ChevronDown } from 'lucide-react';
 import { QuestionQuiz, ReponsePossible, QuizEvaluation } from '@/types/formation-detailed';
+import { Modal } from '@/app/Modal';
 
 interface QuizEditorProps {
   coursId: number;
@@ -31,6 +32,8 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
   const [questions, setQuestions] = useState<QuestionForm[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [quizId, setQuizId] = useState<number | null>(existingQuizId || null);
   const [coursTitre, setCoursTitre] = useState<string>('');
 
@@ -298,7 +301,8 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
       onSave();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du quiz:', error);
-      alert('Erreur lors de la sauvegarde du quiz');
+      setErrorMessage('Erreur lors de la sauvegarde du quiz');
+      setShowErrorModal(true);
     } finally {
       setIsSaving(false);
     }
@@ -482,6 +486,18 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
           </button>
         </div>
       </div>
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
+      />
     </div>
   );
 };

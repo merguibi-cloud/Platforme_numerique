@@ -61,8 +61,20 @@ export const useModal = () => {
   const showSuccess = (message: string, title: string = 'Succès') => 
     showModal(message, title, 'success');
   
-  const showWarning = (message: string, title: string = 'Attention') => 
-    showModal(message, title, 'warning');
+  const showWarning = (
+    message: string, 
+    title: string = 'Attention',
+    onConfirm?: () => void
+  ) => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      type: 'warning',
+      isConfirm: false,
+      onConfirm
+    });
+  };
   
   const showError = (message: string, title: string = 'Erreur') => 
     showModal(message, title, 'error');

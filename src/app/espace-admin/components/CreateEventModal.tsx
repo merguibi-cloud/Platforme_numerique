@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, ChevronDown, Camera, Plus, Upload, Info } from "lucide-react";
+import { Modal } from "@/app/Modal";
 
 interface Intervenant {
   id: string;
@@ -73,6 +74,8 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
   };
   
   const [currentStep, setCurrentStep] = useState<1 | 2>(getStepFromUrl());
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   const [formData, setFormData] = useState<EventFormData>({
     titre: "",
@@ -489,7 +492,8 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
       }
     } catch (error) {
       console.error('Erreur lors de la création de l\'événement:', error);
-      alert(error instanceof Error ? error.message : 'Erreur lors de la création de l\'événement');
+      setErrorMessage(error instanceof Error ? error.message : 'Erreur lors de la création de l\'événement');
+      setShowErrorModal(true);
     }
   };
   
@@ -1040,6 +1044,18 @@ const CreateEventModal = ({ onClose, onSubmit }: CreateEventModalProps) => {
           </div>
         )}
       </div>
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
+      />
     </div>
   );
 };

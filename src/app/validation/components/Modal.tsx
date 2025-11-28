@@ -146,7 +146,7 @@ export const Modal = ({
             </>
           ) : (
             <button
-              onClick={onClose}
+              onClick={onConfirm || onClose}
               className="bg-[#032622] text-[#F8F5E4] px-6 py-2 font-bold hover:bg-[#032622]/90 transition-colors rounded"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >

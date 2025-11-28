@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCandidature } from '@/contexts/CandidatureContext';
 import { Modal } from './Modal';
 import { useModal } from './useModal';
+import { validatePreviousSteps } from '../utils/stepValidation';
 
 interface RecapProps {
   onClose: () => void;
@@ -33,6 +34,28 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
     releves: [],
     pieceIdentite: []
   });
+
+  // Vérifier les étapes précédentes au chargement
+  useEffect(() => {
+    if (!candidatureData) return;
+    
+    const validation = validatePreviousSteps('recap', candidatureData);
+    if (!validation.isValid && validation.missingStep && validation.message) {
+      // Utiliser setTimeout pour éviter la boucle infinie
+      const timer = setTimeout(() => {
+        showWarning(
+          validation.message + '\n\nCliquez sur OK pour être redirigé vers l\'étape manquante.',
+          'Étape manquante',
+          () => {
+            router.push(`/validation?step=${validation.missingStep}`);
+          }
+        );
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidatureData?.id, candidatureData?.paid_at]); // Inclure paid_at pour détecter les changements
 
   useEffect(() => {
     if (candidatureData) {
@@ -566,6 +589,7 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
         title={modalState.title}
         message={modalState.message}
         type={modalState.type}
+        onConfirm={modalState.onConfirm}
       />
     </div>
   );

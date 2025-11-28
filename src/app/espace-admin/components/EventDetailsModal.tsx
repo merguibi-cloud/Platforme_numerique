@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Download, Trash2, Edit, Calendar, MapPin, Users, Clock } from "lucide-react";
+import { Modal } from "@/app/Modal";
 
 interface EventDetails {
   id: string;
@@ -179,8 +180,16 @@ const EventDetailsModal = ({ event, onClose, onUpdate, onDelete, currentUserId }
     }
   };
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const handleDelete = async () => {
-    if (!event || !confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) return;
+    if (!event) return;
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!event) return;
+    setShowDeleteModal(false);
     setIsLoading(true);
     try {
       const response = await fetch(`/api/espace-admin/agenda/${event.id}`, {
@@ -738,6 +747,18 @@ const EventDetailsModal = ({ event, onClose, onUpdate, onDelete, currentUserId }
           </div>
         )}
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmation de suppression"
+        message="Êtes-vous sûr de vouloir supprimer cet événement ?"
+        type="warning"
+        isConfirm={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </div>
   );
 };

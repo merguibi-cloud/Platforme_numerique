@@ -142,10 +142,10 @@ export async function PUT(
 
     const supabase = getSupabaseServerClient();
 
-    // Récupérer le profil
+    // Récupérer le profil avec le rôle
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('user_id')
+      .select('user_id, role')
       .eq('id', id)
       .maybeSingle();
 
@@ -157,6 +157,13 @@ export async function PUT(
     }
 
     if (action === 'debloquer_acces') {
+      // Vérifier que l'utilisateur n'est pas un lead (seuls les candidats peuvent être débloqués)
+      if (profile.role === 'lead') {
+        return NextResponse.json(
+          { success: false, error: 'Impossible de débloquer l\'accès pour un lead. Seuls les candidats peuvent être débloqués.' },
+          { status: 400 }
+        );
+      }
       // Changer le rôle à 'etudiant' et créer l'entrée dans la table etudiants
       // D'abord, mettre à jour user_profiles (ou supprimer car les étudiants n'ont pas de user_profile)
       // Ensuite, créer l'entrée dans etudiants
@@ -223,20 +230,128 @@ export async function PUT(
       });
 
     } else if (action === 'supprimer_candidature') {
-      // Supprimer la candidature et le user_profile
-      await supabase
+      // Récupérer la candidature avant de la supprimer pour obtenir les fichiers associés
+      const { data: candidature, error: candidatureError } = await supabase
         .from('candidatures')
-        .delete()
-        .eq('user_id', profile.user_id);
+        .select('*')
+        .eq('user_id', profile.user_id)
+        .maybeSingle();
 
-      await supabase
+      if (candidatureError) {
+        console.error('Erreur lors de la récupération de la candidature:', candidatureError);
+      }
+
+      // Si une candidature existe, supprimer tous les fichiers associés
+      if (candidature) {
+        const filesToDelete: string[] = [];
+
+        // Collecter tous les chemins de fichiers
+        if (candidature.photo_identite_path) filesToDelete.push(candidature.photo_identite_path);
+        if (candidature.cv_path) filesToDelete.push(candidature.cv_path);
+        if (candidature.diplome_path) filesToDelete.push(candidature.diplome_path);
+        if (candidature.lettre_motivation_path) filesToDelete.push(candidature.lettre_motivation_path);
+        if (candidature.releves_paths && Array.isArray(candidature.releves_paths)) {
+          filesToDelete.push(...candidature.releves_paths);
+        }
+        if (candidature.piece_identite_paths && Array.isArray(candidature.piece_identite_paths)) {
+          filesToDelete.push(...candidature.piece_identite_paths);
+        }
+
+        // Supprimer les fichiers des buckets
+        for (const filePath of filesToDelete) {
+          if (filePath) {
+            try {
+              // Essayer user_documents
+              await supabase.storage
+                .from('user_documents')
+                .remove([filePath]);
+              
+              // Essayer photo_profil
+              await supabase.storage
+                .from('photo_profil')
+                .remove([filePath]);
+            } catch (error) {
+              // Continuer même si la suppression échoue
+              console.warn(`Impossible de supprimer le fichier ${filePath}:`, error);
+            }
+          }
+        }
+
+        // Supprimer les paiements associés à cette candidature
+        const { error: paiementsDeleteError } = await supabase
+          .from('paiements')
+          .delete()
+          .eq('candidature_id', candidature.id);
+
+        if (paiementsDeleteError) {
+          console.error('Erreur lors de la suppression des paiements:', paiementsDeleteError);
+        }
+
+        // Supprimer la candidature
+        const { error: candidatureDeleteError } = await supabase
+          .from('candidatures')
+          .delete()
+          .eq('user_id', profile.user_id);
+
+        if (candidatureDeleteError) {
+          console.error('Erreur lors de la suppression de la candidature:', candidatureDeleteError);
+          return NextResponse.json(
+            { success: false, error: 'Erreur lors de la suppression de la candidature' },
+            { status: 500 }
+          );
+        }
+      }
+
+      // Déconnecter l'utilisateur s'il est connecté (forcer la déconnexion)
+      try {
+        // Réinitialiser le mot de passe pour invalider toutes les sessions actives
+        // Cela forcera la déconnexion immédiate de toutes les sessions
+        const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!';
+        const { error: signOutError } = await supabase.auth.admin.updateUserById(
+          profile.user_id,
+          {
+            password: randomPassword,
+            // Marquer les sessions comme invalidées
+            app_metadata: {
+              sessions_invalidated_at: new Date().toISOString()
+            }
+          }
+        );
+        
+        if (signOutError) {
+          console.warn('Impossible de déconnecter l\'utilisateur:', signOutError);
+          // On continue quand même la suppression
+        } else {
+        }
+      } catch (signOutException) {
+        // Continuer même si la déconnexion échoue
+        console.warn('Erreur lors de la tentative de déconnexion:', signOutException);
+      }
+
+      // Supprimer le user_profile
+      const { error: profileDeleteError } = await supabase
         .from('user_profiles')
         .delete()
         .eq('id', id);
 
+      if (profileDeleteError) {
+        console.error('Erreur lors de la suppression du user_profile:', profileDeleteError);
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de la suppression du profil utilisateur' },
+          { status: 500 }
+        );
+      }
+
+      // Supprimer l'utilisateur de auth.users pour permettre la réinscription avec le même email
+      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(profile.user_id);
+
+      if (deleteUserError) {
+        // Erreur silencieuse
+      }
+
       return NextResponse.json({
         success: true,
-        message: 'Candidature supprimée avec succès',
+        message: 'Candidature, profil utilisateur et compte d\'authentification supprimés avec succès. L\'utilisateur peut maintenant se réinscrire avec le même email.',
       });
     }
 

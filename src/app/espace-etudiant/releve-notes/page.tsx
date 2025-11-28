@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Download, User } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { ReleveNotesPDF } from './ReleveNotesPDF';
+import { Modal } from '@/app/Modal';
 
 interface NoteDetaillee {
   type: 'quiz' | 'etude_cas';
@@ -110,7 +111,8 @@ export default function ReleveNotesPage() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error);
-      alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
+      setErrorMessage('Erreur lors de la génération du PDF. Veuillez réessayer.');
+      setShowErrorModal(true);
     }
   };
 
@@ -271,6 +273,18 @@ export default function ReleveNotesPage() {
           </button>
         </div>
       </div>
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
+      />
     </div>
   );
 }

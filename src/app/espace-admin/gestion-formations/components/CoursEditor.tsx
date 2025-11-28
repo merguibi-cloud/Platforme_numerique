@@ -28,6 +28,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   const [fichiers, setFichiers] = useState<FichierElement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [currentFormationId, setCurrentFormationId] = useState<string | null>(formationId || null);
   const [currentBlocId, setCurrentBlocId] = useState<string | null>(blocId || null);
   const [lastSavedContent, setLastSavedContent] = useState<string>('');
@@ -417,7 +419,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
             setSaveStatus('idle');
           }
           setSaveAbortController(null);
-          alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+          setErrorMessage('Erreur lors de la sauvegarde. Veuillez réessayer.');
+          setShowErrorModal(true);
           return;
         }
       } else {
@@ -488,7 +491,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
             setSaveStatus('idle');
           }
           setSaveAbortController(null);
-          alert('Erreur lors de la création du chapitre. Veuillez réessayer.');
+          setErrorMessage('Erreur lors de la création du chapitre. Veuillez réessayer.');
+          setShowErrorModal(true);
           return;
         }
       }
@@ -502,7 +506,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
       // Réinitialiser les états en cas d'erreur
       setSaveStatus('idle');
       // Afficher un message d'erreur à l'utilisateur
-      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      setErrorMessage('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      setShowErrorModal(true);
     } finally {
       if (isAutoSave) {
         setIsAutoSaving(false);
@@ -668,7 +673,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         }
         } else {
           // Si le contenu est vide et qu'il n'y a pas de chapitre, on ne peut pas créer de quiz
-          alert('Veuillez d\'abord ajouter du contenu au chapitre avant de créer le quiz');
+          setErrorMessage('Veuillez d\'abord ajouter du contenu au chapitre avant de créer le quiz');
+          setShowErrorModal(true);
           setIsSaving(false);
           return;
         }
@@ -680,7 +686,8 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
-      alert('Erreur lors de la sauvegarde du cours');
+      setErrorMessage('Erreur lors de la sauvegarde du cours');
+      setShowErrorModal(true);
     } finally {
       setIsSaving(false);
     }
@@ -859,6 +866,18 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           : `Le contenu que vous essayez de sauvegarder est trop volumineux.\n\nLa taille maximale autorisée est de ${formatSize(contentSizeWarningModal.maxSize)}.\n\nVeuillez réduire la taille du contenu en supprimant du texte ou des images, ou divisez le contenu en plusieurs chapitres.`
         }
         type="warning"
+      />
+
+      {/* Modal d'erreur */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+        title="Erreur"
+        message={errorMessage}
+        type="error"
       />
       </div>
   );
