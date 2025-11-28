@@ -101,9 +101,9 @@ export async function GET(request: NextRequest) {
 
     // Notes quiz
     tentativesQuiz?.forEach((tentative) => {
-      const quiz = tentative.quiz_evaluations;
-      const cours = quiz?.cours_apprentissage;
-      const bloc = cours?.blocs_competences;
+      const quiz = tentative.quiz_evaluations as any;
+      const cours = quiz?.cours_apprentissage as any;
+      const bloc = cours?.blocs_competences as any;
       
       // Le score est stocké en pourcentage, on le convertit sur 20
       // Les quiz sont toujours des nombres entiers
@@ -121,9 +121,9 @@ export async function GET(request: NextRequest) {
 
     // Notes études de cas
     soumissionsEtudeCas?.forEach((soumission) => {
-      const etudeCas = soumission.etudes_cas;
-      const cours = etudeCas?.cours_apprentissage;
-      const bloc = cours?.blocs_competences;
+      const etudeCas = soumission.etudes_cas as any;
+      const cours = etudeCas?.cours_apprentissage as any;
+      const bloc = cours?.blocs_competences as any;
       
       // Formater la note avec virgule pour les études de cas (peut avoir des décimales)
       const noteFormatee = soumission.note 

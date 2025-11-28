@@ -89,7 +89,7 @@ export async function GET(
 
     const etudeCasIds = etudesCas?.map(ec => ec.id) || [];
 
-    let soumissionsEtudeCas = [];
+    let soumissionsEtudeCas: any[] = [];
     if (etudeCasIds.length > 0) {
       const { data: soumissions, error: soumissionsError } = await supabase
         .from('soumissions_etude_cas')
@@ -161,7 +161,7 @@ export async function GET(
 
     const quizIds = quiz?.map(q => q.id) || [];
 
-    let tentativesQuiz = [];
+    let tentativesQuiz: any[] = [];
     if (quizIds.length > 0) {
       const { data: tentatives, error: tentativesError } = await supabase
         .from('tentatives_quiz')

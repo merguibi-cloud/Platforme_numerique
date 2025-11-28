@@ -82,13 +82,15 @@ export async function GET(
         reponseDonnee = r.reponse_donnee;
       }
 
+      const question = r.questions_quiz as any;
+
       return {
         question_id: r.question_id,
-        question: r.questions_quiz?.question || '',
-        type_question: r.questions_quiz?.type_question || '',
+        question: question?.question || '',
+        type_question: question?.type_question || '',
         reponse_donnee: reponseDonnee,
         points_obtenus: r.points_obtenus || 0,
-        points_max: r.questions_quiz?.points || 0
+        points_max: question?.points || 0
       };
     }) || [];
 

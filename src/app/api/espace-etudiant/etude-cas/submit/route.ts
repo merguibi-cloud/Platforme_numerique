@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parser les réponses
-    let reponsesParsed = {};
+    let reponsesParsed: Record<string, any> = {};
     if (reponses) {
       try {
         reponsesParsed = typeof reponses === 'string' ? JSON.parse(reponses) : reponses;
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
     // Gérer les fichiers uploadés pour les questions de type piece_jointe
     // Associer les fichiers aux questions en utilisant fileQuestionMap
     if (Object.keys(fileQuestionMap).length > 0 && questions) {
-      const reponsesFichiers = [];
+      const reponsesFichiers: any[] = [];
       
       // Pour chaque questionId dans fileQuestionMap, créer une entrée dans reponses_etude_cas
       Object.entries(fileQuestionMap).forEach(([questionIdStr, filePaths]) => {

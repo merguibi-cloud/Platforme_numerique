@@ -72,10 +72,6 @@ export async function GET(
       }
     }
 
-    if (usersError) {
-      console.error('Erreur lors de la récupération des utilisateurs:', usersError);
-    }
-
     // Formater les participants avec les informations utilisateur
     const userMap = new Map(usersWithPhoto.map(u => [u.user_id, u]));
     const formattedParticipants = participants?.map((p: any) => ({

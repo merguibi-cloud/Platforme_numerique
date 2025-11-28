@@ -72,7 +72,7 @@ export async function GET(
       .eq('soumission_id', soumission.id);
 
     // Parser les réponses JSON si elles existent
-    let reponsesParsed = {};
+    let reponsesParsed: Record<string, any> = {};
     if (soumission.reponses_json) {
       try {
         // Si c'est déjà un objet, l'utiliser directement, sinon parser

@@ -797,7 +797,7 @@ export const StudentCourseViewer = ({
         
         // Ajouter l'étude de cas à la liste des études de cas soumises
         if (data.etudeCas?.id) {
-          setEtudeCasSoumis(prev => new Set(prev).add(data.etudeCas.id));
+          setEtudeCasSoumis(prev => new Set(prev).add(data.etudeCas!.id));
         }
         
         // Attendre un peu pour que la progression soit mise à jour dans la base de données
@@ -1096,8 +1096,10 @@ export const StudentCourseViewer = ({
                     userAnswers={quizReponses?.reponses || null}
                     quizResult={quizReponses?.tentative || null}
                     onQuizComplete={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id ? undefined : (reponses, tempsPasse) => {
-                      handleQuizSubmit(reponses, tempsPasse);
-                      setQuizCompleted(true);
+                      if (reponses && tempsPasse !== undefined) {
+                        handleQuizSubmit(reponses, tempsPasse);
+                        setQuizCompleted(true);
+                      }
                     }}
                   />
                 )}

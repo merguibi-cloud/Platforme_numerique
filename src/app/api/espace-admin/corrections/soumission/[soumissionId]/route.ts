@@ -167,7 +167,7 @@ export async function GET(
       .eq('soumission_id', soumissionIdNum);
 
     // Parser les réponses JSON si elles existent
-    let reponsesParsed = {};
+    let reponsesParsed: Record<string, any> = {};
     if (soumission.reponses_json) {
       try {
         reponsesParsed = typeof soumission.reponses_json === 'string' 
