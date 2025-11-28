@@ -37,6 +37,8 @@ export default function ReleveNotesPage() {
   const [releve, setReleve] = useState<ReleveNote[]>([]);
   const [moyennesGenerales, setMoyennesGenerales] = useState<MoyennesGenerales | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
 
   useEffect(() => {
     // Récupérer le nom de l'utilisateur
