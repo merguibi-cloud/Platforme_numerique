@@ -2,13 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-11-17.clover',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-
 export async function POST(request: NextRequest) {
+  // Vérifier que Stripe est configuré avec une clé valide
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  if (!stripeSecretKey) {
+    console.error('STRIPE_SECRET_KEY non configuré dans les variables d\'environnement');
+    return NextResponse.json(
+      { error: 'Configuration Stripe manquante' },
+      { status: 500 }
+    );
+  }
+
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET non configuré dans les variables d\'environnement');
+    return NextResponse.json(
+      { error: 'Configuration webhook Stripe manquante' },
+      { status: 500 }
+    );
+  }
+
+  // Initialiser Stripe avec la clé secrète
+  const stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2025-11-17.clover',
+  });
+
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
