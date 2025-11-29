@@ -71,13 +71,6 @@ const menuItems: (MenuItem | MenuGroup)[] = [
     ]
   },
   { 
-    id: 'bibliotheque', 
-    label: 'BIBLIOTHÈQUE', 
-    icon: '/menue_etudiant/Bibliothèque.png',
-    iconInactive: '/menue_etudiant/nonselectionner/bibliothequenumerique.png',
-    href: '/espace-admin/bibliotheque'
-  },
-  { 
     id: 'agenda', 
     label: 'AGENDA', 
     icon: '/menue_etudiant/calendrier.png',
@@ -85,11 +78,11 @@ const menuItems: (MenuItem | MenuGroup)[] = [
     href: '/espace-admin/agenda'
   },
   { 
-    id: 'messagerie', 
-    label: 'MESSAGERIE', 
-    icon: '/menue_etudiant/messagerie.png',
-    iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
-    href: '/espace-admin/messagerie'
+    id: 'bibliotheque', 
+    label: 'BIBLIOTHÈQUE NUMÉRIQUE', 
+    icon: '/menue_etudiant/Bibliothèque.png',
+    iconInactive: '/menue_etudiant/nonselectionner/bibliothequenumerique.png',
+    href: '/espace-admin/bibliotheque'
   },
   { 
     id: 'vie-etudiante', 
@@ -97,7 +90,16 @@ const menuItems: (MenuItem | MenuGroup)[] = [
     icon: '/menue_etudiant/Etudiant.png',
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
     href: '/espace-admin/vie-etudiante'
-  }
+  },
+  
+ /* { 
+    id: 'messagerie', 
+    label: 'MESSAGERIE', 
+    icon: '/menue_etudiant/messagerie.png',
+    iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
+    href: '/espace-admin/messagerie'
+  },
+  */
 ];
 
 const bottomMenuItems = [

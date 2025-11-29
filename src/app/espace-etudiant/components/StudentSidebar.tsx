@@ -43,13 +43,13 @@ const menuItems = [
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
     href: '/espace-etudiant/vie-etudiante'
   },
-  { 
+  /* { 
     id: 'messagerie', 
     label: 'MESSAGERIE', 
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
     href: '/espace-etudiant/messagerie'
-  }
+  } */
 ];
 
 const bottomMenuItems = [
@@ -177,7 +177,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
 
       {/* Sidebar - Au-dessus de l'overlay */}
       <div className={`
-        ${isCollapsed ? 'w-16' : 'w-64'} 
+        ${isCollapsed ? 'w-24' : 'w-64'} 
         bg-[#032622] 
         min-h-screen 
         flex 
@@ -202,39 +202,54 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
           <X className="w-6 h-6" />
         </button>
       {/* Logo et titre */}
-      <div className="p-6 border-b border-gray-600">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Image 
-              src="/menue_etudiant/ESObeige.png" 
-              alt="ELITE SOCIETY ONLINE" 
-              width={40} 
-              height={40}
-              className="w-10 h-10"
-            />
-            {!isCollapsed && (
-              <div>
-                <h1 className="text-white text-sm font-bold uppercase tracking-wide">
-                  ELITE SOCIETY
-                </h1>
-                <p className="text-white text-xs opacity-80">
-                  ONLINE
-                </p>
+      <div className={`${isCollapsed ? 'p-4' : 'p-6'} border-b border-gray-600`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {isCollapsed ? (
+            <button
+              onClick={handleCollapse}
+              className="hidden lg:flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <Image 
+                src="/menue_etudiant/ESObeige.png" 
+                alt="ELITE SOCIETY ONLINE" 
+                width={36} 
+                height={36}
+                className="w-9 h-9"
+              />
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center space-x-3">
+                <Image 
+                  src="/menue_etudiant/ESObeige.png" 
+                  alt="ELITE SOCIETY ONLINE" 
+                  width={50} 
+                  height={50}
+                  className="w-12 h-12"
+                />
+                <div>
+                  <h1 className="text-white text-sm font-bold uppercase tracking-wide">
+                    ELITE SOCIETY
+                  </h1>
+                  <p className="text-white text-xs opacity-80">
+                    ONLINE
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
-          <button
-            onClick={handleCollapse}
-            className="hidden lg:block text-white hover:bg-gray-700 p-1 rounded transition-colors"
-            aria-label={isCollapsed ? "Développer le menu" : "Réduire le menu"}
-          >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+              <button
+                onClick={handleCollapse}
+                className="hidden lg:flex text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
+                aria-label={isCollapsed ? "Développer le menu" : "Réduire le menu"}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Menu principal */}
-      <div className="flex-1 py-6 relative z-[51]">
+      <div className="flex-1 py-6 overflow-y-auto relative z-[51]">
         <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
           {menuItems.map((item) => (
             <Link
@@ -247,7 +262,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
               }}
               className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 relative z-[51] ${
                 activeItem === item.id
-                  ? 'text-[#F8F5E4]'
+                  ? 'text-[#F8F5E4] bg-gray-700'
                   : 'text-white hover:bg-gray-700'
               }`}
               title={isCollapsed ? item.label : undefined}
@@ -257,11 +272,11 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
                 alt={item.label} 
                 width={24} 
                 height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} pointer-events-none`}
               />
               {!isCollapsed && (
                 <span 
-                  className="text-sm font-medium"
+                  className="text-sm font-medium pointer-events-none"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   {item.label}
@@ -282,7 +297,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
                   key={item.id}
                   onClick={handleLogoutClick}
                   disabled={isLoggingOut}
-                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer relative`}
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer`}
                   title={isCollapsed ? item.label : undefined}
                   style={{ pointerEvents: isLoggingOut ? 'none' : 'auto' }}
                 >
@@ -291,18 +306,18 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
                     alt={item.label} 
                     width={24} 
                     height={24}
-                    className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                    className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} pointer-events-none`}
                   />
                   {!isCollapsed && (
                     <span 
-                      className="text-sm font-medium"
+                      className="text-sm font-medium pointer-events-none"
                       style={{ fontFamily: 'var(--font-termina-bold)' }}
                     >
                       {isLoggingOut ? 'DÉCONNEXION...' : item.label}
                     </span>
                   )}
                   {isCollapsed && isLoggingOut && (
-                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse pointer-events-none"></div>
                   )}
                 </button>
               );
@@ -324,11 +339,11 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
                   alt={item.label} 
                   width={24} 
                   height={24}
-                  className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                  className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} pointer-events-none`}
                 />
                 {!isCollapsed && (
                   <span 
-                    className="text-sm font-medium"
+                    className="text-sm font-medium pointer-events-none"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   >
                     {item.label}

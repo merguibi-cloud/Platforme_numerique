@@ -129,10 +129,11 @@ export async function GET(
       });
       
       // Vérifier si c'est une erreur 404 (fichier non trouvé dans le storage)
-      const isNotFoundError = signedUrlError.statusCode === '404' || 
-                              (signedUrlError as any).status === 404 ||
+      const isNotFoundError = (signedUrlError as any).status === 404 ||
+                              (signedUrlError as any).statusCode === 404 ||
                               signedUrlError.message?.includes('not found') ||
-                              signedUrlError.message?.includes('Object not found');
+                              signedUrlError.message?.includes('Object not found') ||
+                              signedUrlError.message?.includes('404');
       
       if (isNotFoundError) {
         return NextResponse.json(

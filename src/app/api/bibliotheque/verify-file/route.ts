@@ -59,10 +59,11 @@ export async function POST(request: NextRequest) {
       }
 
       // Si c'est une erreur 404 et qu'on n'est pas à la dernière tentative, réessayer
-      const isNotFoundError = error?.statusCode === '404' || 
-                              (error as any)?.status === 404 ||
+      const isNotFoundError = (error as any)?.status === 404 ||
+                              (error as any)?.statusCode === 404 ||
                               error?.message?.includes('not found') ||
-                              error?.message?.includes('Object not found');
+                              error?.message?.includes('Object not found') ||
+                              error?.message?.includes('404');
 
       if (isNotFoundError && attempt < maxRetries) {
         console.log(`Fichier non trouvé (tentative ${attempt}/${maxRetries}), nouvelle tentative dans ${retryDelay}ms...`, {
@@ -79,10 +80,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Si on arrive ici, toutes les tentatives ont échoué
-    const isNotFoundError = signedUrlError?.statusCode === '404' || 
-                            (signedUrlError as any)?.status === 404 ||
+    const isNotFoundError = (signedUrlError as any)?.status === 404 ||
+                            (signedUrlError as any)?.statusCode === 404 ||
                             signedUrlError?.message?.includes('not found') ||
-                            signedUrlError?.message?.includes('Object not found');
+                            signedUrlError?.message?.includes('Object not found') ||
+                            signedUrlError?.message?.includes('404');
     
     if (isNotFoundError) {
       console.error('Fichier non trouvé après toutes les tentatives:', {

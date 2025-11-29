@@ -77,10 +77,11 @@ export async function POST(request: NextRequest) {
         .createSignedUrl(chemin_fichier, 60);
 
       if (signedUrlError || !signedUrlData?.signedUrl) {
-        const isNotFoundError = signedUrlError?.statusCode === '404' || 
-                                (signedUrlError as any)?.status === 404 ||
+        const isNotFoundError = (signedUrlError as any)?.status === 404 ||
+                                (signedUrlError as any)?.statusCode === 404 ||
                                 signedUrlError?.message?.includes('not found') ||
-                                signedUrlError?.message?.includes('Object not found');
+                                signedUrlError?.message?.includes('Object not found') ||
+                                signedUrlError?.message?.includes('404');
         
         console.error('Fichier non trouvé dans le bucket avant sauvegarde:', {
           chemin_fichier,
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
     // et utiliser un bucket_name spécial pour indiquer que c'est une URL externe
     const finalCheminFichier = isYoutube ? chemin_fichier : chemin_fichier;
     const finalBucketName = isYoutube ? 'youtube' : bucket_name;
-    
+
     // Insérer le fichier dans la base de données
     const { data: fichier, error: insertError } = await supabase
       .from('bibliotheque_fichiers')

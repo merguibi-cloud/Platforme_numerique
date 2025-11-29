@@ -342,7 +342,7 @@ export async function logLogin(
   await logAuditAction(request, {
     action_type: 'LOGIN',
     table_name: 'auth.users',
-    resource_id: userId || null,
+    resource_id: userId || undefined,
     status,
     error_message: errorMessage,
     description: status === 'success' 

@@ -14,6 +14,7 @@ interface DocumentModalProps {
   onToggleFavori?: (docId: string, currentFavori: boolean) => void;
   onView?: (doc: BibliothequeFichier) => void;
   showModal: (message: string, title?: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
+  isReadOnly?: boolean;
 }
 
 export const DocumentModal = ({ 
@@ -23,7 +24,8 @@ export const DocumentModal = ({
   onRefresh,
   onToggleFavori,
   onView,
-  showModal
+  showModal,
+  isReadOnly = false
 }: DocumentModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -456,47 +458,49 @@ export const DocumentModal = ({
                 TÉLÉCHARGER
               </button>
             </div>
-            {/* Boutons admin : Modifier et Supprimer */}
-            <div className="flex space-x-2 pt-2 border-t border-[#032622]">
-              {!isEditing ? (
-                <>
-                  <button 
-                    onClick={handleEdit}
-                    disabled={isLoading || isDeleting}
-                    className="flex-1 flex items-center justify-center space-x-1 border border-[#032622] text-[#032622] py-2.5 text-xs font-semibold hover:bg-[#eae5cf] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Edit className="w-3 h-3" />
-                    <span>MODIFIER</span>
-                  </button>
-                  <button 
-                    onClick={handleDeleteClick}
-                    disabled={isLoading || isSaving || isDeleting}
-                    className="flex-1 flex items-center justify-center space-x-1 border border-red-600 text-red-600 py-2.5 text-xs font-semibold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>SUPPRIMER</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={handleSave}
-                    disabled={isSaving || isDeleting}
-                    className="flex-1 flex items-center justify-center space-x-1 bg-[#032622] text-[#F8F5E4] py-2.5 text-xs font-semibold hover:bg-[#01302C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Save className="w-3 h-3" />
-                    <span>{isSaving ? 'ENREGISTREMENT...' : 'ENREGISTRER'}</span>
-                  </button>
-                  <button 
-                    onClick={handleCancelEdit}
-                    disabled={isSaving || isDeleting}
-                    className="flex-1 border border-[#032622] text-[#032622] py-2.5 text-xs font-semibold hover:bg-[#eae5cf] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    ANNULER
-                  </button>
-                </>
-              )}
-            </div>
+            {/* Boutons admin : Modifier et Supprimer (masqués en mode lecture seule) */}
+            {!isReadOnly && (
+              <div className="flex space-x-2 pt-2 border-t border-[#032622]">
+                {!isEditing ? (
+                  <>
+                    <button 
+                      onClick={handleEdit}
+                      disabled={isLoading || isDeleting}
+                      className="flex-1 flex items-center justify-center space-x-1 border border-[#032622] text-[#032622] py-2.5 text-xs font-semibold hover:bg-[#eae5cf] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span>MODIFIER</span>
+                    </button>
+                    <button 
+                      onClick={handleDeleteClick}
+                      disabled={isLoading || isSaving || isDeleting}
+                      className="flex-1 flex items-center justify-center space-x-1 border border-red-600 text-red-600 py-2.5 text-xs font-semibold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>SUPPRIMER</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button 
+                      onClick={handleSave}
+                      disabled={isSaving || isDeleting}
+                      className="flex-1 flex items-center justify-center space-x-1 bg-[#032622] text-[#F8F5E4] py-2.5 text-xs font-semibold hover:bg-[#01302C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save className="w-3 h-3" />
+                      <span>{isSaving ? 'ENREGISTREMENT...' : 'ENREGISTRER'}</span>
+                    </button>
+                    <button 
+                      onClick={handleCancelEdit}
+                      disabled={isSaving || isDeleting}
+                      className="flex-1 border border-[#032622] text-[#032622] py-2.5 text-xs font-semibold hover:bg-[#eae5cf] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ANNULER
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Activité du fichier */}
