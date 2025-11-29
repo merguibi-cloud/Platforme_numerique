@@ -25,9 +25,17 @@ export interface AuditLogData {
 }
 
 /**
+ * Valide si une chaîne est un UUID valide
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
  * Récupère les informations utilisateur pour les logs
  */
-async function getUserInfoForLog(userId: string): Promise<{
+async function getUserInfoForLog(userId: string | null): Promise<{
   user_email: string | null;
   user_nom: string | null;
   user_prenom: string | null;
@@ -35,14 +43,30 @@ async function getUserInfoForLog(userId: string): Promise<{
   performed_by: string;
 }> {
   try {
+    // Si userId est null, 'unknown' ou n'est pas un UUID valide, retourner les valeurs par défaut
+    if (!userId || userId === 'unknown' || !isValidUUID(userId)) {
+      return {
+        user_email: null,
+        user_nom: null,
+        user_prenom: null,
+        user_role: 'unknown',
+        performed_by: 'Unknown',
+      };
+    }
+
     const supabase = getSupabaseServerClient();
     
     // Récupérer depuis la table administrateurs
-    const { data: admin } = await supabase
+    const { data: admin, error: adminError } = await supabase
       .from('administrateurs')
       .select('nom, prenom, email, niveau, role_secondaire')
       .eq('user_id', userId)
       .maybeSingle();
+    
+    if (adminError && adminError.code !== '22P02') {
+      // Ignorer les erreurs de type UUID invalide (22P02)
+      console.error('Erreur récupération administrateur:', adminError);
+    }
     
     if (admin) {
       const nom = admin.nom || '';
@@ -62,40 +86,57 @@ async function getUserInfoForLog(userId: string): Promise<{
     }
     
     // Récupérer depuis user_profiles
-    const profileResult = await getUserProfileServer(userId);
-    if (profileResult && profileResult.role) {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('email, nom, prenom, role')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (profile) {
-        const nom = profile.nom || '';
-        const prenom = profile.prenom || '';
-        const email = profile.email || '';
-        const role = profile.role || 'unknown';
+    try {
+      const profileResult = await getUserProfileServer(userId);
+      if (profileResult && profileResult.role) {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('email, nom, prenom, role')
+          .eq('user_id', userId)
+          .maybeSingle();
         
-        return {
-          user_email: email,
-          user_nom: nom,
-          user_prenom: prenom,
-          user_role: role,
-          performed_by: `${prenom} ${nom} (${email})`.trim() || email || 'Unknown',
-        };
+        if (profileError && profileError.code !== '22P02') {
+          console.error('Erreur récupération profil utilisateur:', profileError);
+        }
+        
+        if (profile) {
+          const nom = profile.nom || '';
+          const prenom = profile.prenom || '';
+          const email = profile.email || '';
+          const role = profile.role || 'unknown';
+          
+          return {
+            user_email: email,
+            user_nom: nom,
+            user_prenom: prenom,
+            user_role: role,
+            performed_by: `${prenom} ${nom} (${email})`.trim() || email || 'Unknown',
+          };
+        }
       }
+    } catch (profileErr) {
+      // Ignorer les erreurs de récupération de profil
     }
     
-    // Récupérer depuis auth.users
-    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
-    if (user) {
-      return {
-        user_email: user.email || null,
-        user_nom: null,
-        user_prenom: null,
-        user_role: 'unknown',
-        performed_by: user.email || 'Unknown',
-      };
+    // Récupérer depuis auth.users uniquement si userId est un UUID valide
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.admin.getUserById(userId);
+      if (authError) {
+        // Ne pas logger les erreurs UUID - elles sont attendues pour les IDs invalides
+        if (!authError.message.includes('UUID')) {
+          console.error('Erreur récupération auth user:', authError);
+        }
+      } else if (user) {
+        return {
+          user_email: user.email || null,
+          user_nom: null,
+          user_prenom: null,
+          user_role: 'unknown',
+          performed_by: user.email || 'Unknown',
+        };
+      }
+    } catch (authErr) {
+      // Ignorer les erreurs d'authentification
     }
     
     return {
@@ -292,7 +333,7 @@ export async function logDelete(
  */
 export async function logLogin(
   request: NextRequest,
-  userId: string,
+  userId: string | null,
   email: string,
   status: 'success' | 'error' = 'success',
   errorMessage?: string
@@ -301,7 +342,7 @@ export async function logLogin(
   await logAuditAction(request, {
     action_type: 'LOGIN',
     table_name: 'auth.users',
-    resource_id: userId,
+    resource_id: userId || null,
     status,
     error_message: errorMessage,
     description: status === 'success' 

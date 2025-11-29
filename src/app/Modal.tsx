@@ -1,5 +1,6 @@
 "use client";
 import { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -86,8 +87,9 @@ export const Modal = ({
 
   const typeStyles = getTypeStyles();
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  // Utiliser un portal pour rendre le modal directement dans le body
+  const modalContent = (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       {/* Overlay */}
       <div 
         className="absolute inset-0 bg-black/50"
@@ -172,4 +174,11 @@ export const Modal = ({
       </div>
     </div>
   );
+
+  // Rendre le modal via un portal dans le body
+  if (typeof window !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return null;
 };

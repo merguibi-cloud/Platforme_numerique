@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // Logger l'échec de connexion (email/mot de passe incorrect)
-        await logLogin(request, 'unknown', email, 'error', error.message).catch(() => {});
+        await logLogin(request, null, email, 'error', error.message).catch(() => {});
         return NextResponse.json(
           { error: 'Email ou mot de passe incorrect.' },
           { status: 400 }
