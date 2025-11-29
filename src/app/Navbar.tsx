@@ -155,25 +155,31 @@ export const Navbar = () => {
 
   return (
     <>
-      <nav className="fixed w-full h-[100px] sm:h-[120px] md:h-[140px] top-4 sm:top-6 md:top-8 left-0 px-2 sm:px-4 z-50">
+      <nav className="fixed w-full h-[80px] xs:h-[90px] sm:h-[110px] md:h-[130px] lg:h-[140px] top-2 xs:top-3 sm:top-4 md:top-6 lg:top-8 left-0 px-2 sm:px-4 z-50">
         {/* Glassmorphism container */}
-        <div className="w-full h-full px-2 sm:px-4 md:px-8">
-          <div className="bg-[#032622]/30  border border-[#F8F5E4]/20 shadow-2xl h-full">
-            <div className="flex items-center h-full px-2 sm:px-4 md:px-8">
+        <div className="w-full h-full px-2 sm:px-4 md:px-6 lg:px-8">
+          <div className="bg-[#032622]/30 backdrop-blur-md border border-[#F8F5E4]/20 shadow-2xl h-full rounded-lg sm:rounded-xl">
+            <div className="flex items-center h-full px-2 sm:px-3 md:px-4 lg:px-8">
               {/* Logo */}
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <Link href="/" className="cursor-pointer">
-                       <Image src="/img/accueil/logo_elite_society_online_blanc.png" alt="ELITE SOCIETY" width={120} height={120} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain" />
+              <div className="flex items-center space-x-1.5 sm:space-x-2 md:space-x-3">
+                <Link href="/" className="cursor-pointer flex-shrink-0">
+                  <Image 
+                    src="/img/accueil/logo_elite_society_online_blanc.png" 
+                    alt="ELITE SOCIETY" 
+                    width={120} 
+                    height={120} 
+                    className="w-12 h-12 xs:w-14 xs:h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 lg:w-24 lg:h-24 object-contain" 
+                  />
                 </Link>
               </div>
 
               {/* Desktop Navigation Links */}
-              <div className="hidden lg:flex items-center space-x-16 ml-16">
+              <div className="hidden lg:flex items-center space-x-12 xl:space-x-16 ml-8 xl:ml-16">
                 {navigationItems.map((item) => (
                   <Link
                     key={item.label}
                     href={item.href}
-                    className="text-[#F8F5E4] hover:text-[#F8F5E4]/80 transition-colors duration-200 tracking-wide text-base sm:text-lg cursor-pointer font-bold"
+                    className="text-[#F8F5E4] hover:text-[#F8F5E4]/80 active:text-[#F8F5E4]/60 transition-colors duration-200 tracking-wide text-sm xl:text-base cursor-pointer font-bold"
                     style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
                   >
                     {item.label}
@@ -188,7 +194,7 @@ export const Navbar = () => {
                   return (
                     <button 
                       onClick={config.action}
-                      className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-sm sm:text-sm md:text-base flex items-center justify-center"
+                      className="bg-[#032622] hover:bg-[#032622]/80 active:bg-[#032622]/60 text-[#F8F5E4] border-0 px-4 sm:px-5 md:px-6 lg:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-xs sm:text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                       style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
                     >
                       <span style={{ fontWeight: '900' }}>
@@ -200,13 +206,13 @@ export const Navbar = () => {
               </div>
 
               {/* Mobile Menu Button */}
-              <div className="lg:hidden ml-auto">
+              <div className="lg:hidden ml-auto flex-shrink-0">
                 <button
                   onClick={toggleMobileMenu}
-                  className="text-[#F8F5E4] p-2"
+                  className="text-[#F8F5E4] p-2 hover:bg-white/10 rounded transition-colors"
                   aria-label="Toggle mobile menu"
                 >
-                  {isMobileNavOpen ? <X size={24} /> : <Menu size={24} />}
+                  {isMobileNavOpen ? <X size={20} className="sm:w-6 sm:h-6" /> : <Menu size={20} className="sm:w-6 sm:h-6" />}
                 </button>
               </div>
             </div>
@@ -217,37 +223,45 @@ export const Navbar = () => {
       {/* Mobile Menu Overlay */}
       {isMobileNavOpen && (
         <div className="lg:hidden fixed inset-0 z-[70]">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={toggleMobileMenu}
+          />
           {/* Menu de navigation avec animation slide-right */}
           <div className="absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-[#F8F5E4] shadow-2xl transition-all duration-300 flex flex-col">
             {/* Header du menu */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#032622] flex-shrink-0">
-              <h3 className="text-lg font-semibold text-[#F8F5E4]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
-
-                  <span className="text-black font-bold text-sm" style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}>
-                    <Image src="/img/accueil/logo_elite_society_online_blanc.png" alt="ELITE SOCIETY" width={80} height={80} className="w-10 h-10 sm:w-14 sm:h-14 md:w-18 md:h-18 object-contain" />
-                  </span>
-                
-              </h3>
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-[#032622] flex-shrink-0">
+              <div className="flex items-center">
+                <Image 
+                  src="/img/accueil/logo_elite_society_online_blanc.png" 
+                  alt="ELITE SOCIETY" 
+                  width={80} 
+                  height={80} 
+                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain" 
+                />
+              </div>
               <button
                 onClick={toggleMobileMenu}
-                className="p-2 hover:bg-[#F8F5E4]/10 transition-colors"
+                className="p-2 hover:bg-[#F8F5E4]/10 active:bg-[#F8F5E4]/20 rounded transition-colors"
+                aria-label="Fermer le menu"
               >
-                <X className="w-6 h-6 text-[#F8F5E4]" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#F8F5E4]" />
               </button>
             </div>
 
             {/* Contenu de navigation avec scroll */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="py-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="py-2 sm:py-4">
                 {navigationItems.map((item) => (
                   <div key={item.label} className="border-b border-gray-200 last:border-b-0">
                     <Link
                       href={item.href}
                       onClick={toggleMobileMenu}
-                      className="w-full flex items-center justify-between px-6 py-4 text-[#032622] hover:bg-gray-50 transition-colors duration-200"
+                      className="w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 text-[#032622] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200"
                       style={{ fontFamily: 'var(--font-termina-bold)' }}
                     >
-                      <span>{item.label}</span>
+                      <span className="text-sm sm:text-base">{item.label}</span>
                     </Link>
                   </div>
                 ))}
@@ -255,7 +269,7 @@ export const Navbar = () => {
             </div>
 
             {/* Action Button - Toujours visible en bas */}
-            <div className="flex flex-col space-y-3 px-6 py-4 bg-[#F8F5E4] border-t border-gray-200 flex-shrink-0">
+            <div className="flex flex-col space-y-2 sm:space-y-3 px-4 sm:px-6 py-3 sm:py-4 bg-[#F8F5E4] border-t border-gray-200 flex-shrink-0">
               {!isLoading && (() => {
                 const config = getButtonConfig();
                 return (
@@ -264,7 +278,7 @@ export const Navbar = () => {
                       config.action();
                       toggleMobileMenu();
                     }}
-                    className="bg-[#032622] hover:bg-[#032622]/50 text-[#F8F5E4] border-0 px-6 py-3 tracking-wide transition-all duration-200 flex items-center justify-center"
+                    className="bg-[#032622] hover:bg-[#032622]/80 active:bg-[#032622]/60 text-[#F8F5E4] border-0 px-4 sm:px-6 py-2.5 sm:py-3 tracking-wide transition-all duration-200 flex items-center justify-center text-sm sm:text-base"
                     style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
                   >
                     <span style={{ fontWeight: '900' }}>

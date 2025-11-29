@@ -154,32 +154,33 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
       <div className="bg-[#F8F5E4] border-2 border-[#032622] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b-2 border-[#032622]">
+        <div className="flex items-center justify-between p-4 sm:p-5 md:p-6 border-b-2 border-[#032622]">
           <h2 
-            className="text-2xl font-bold text-[#032622] uppercase"
+            className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] uppercase break-words pr-2"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {addChapitreOnly || selectedModuleId ? 'AJOUTER UN CHAPITRAGE' : 'CRÉATION D\'UN COURS'}
           </h2>
           <button
             onClick={handleClose}
-            className="w-8 h-8 border-2 border-[#032622] bg-[#032622] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
+            className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-[#032622] bg-[#032622] hover:bg-[#F8F5E4] hover:text-[#032622] active:bg-[#032622]/80 transition-colors flex items-center justify-center flex-shrink-0"
+            aria-label="Fermer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
           {/* Cours - Masqué en mode "ajout de chapitre uniquement" */}
           {!addChapitreOnly && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <label 
-                  className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                  className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wider underline break-words"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   COURS
@@ -193,15 +194,15 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
                   }}
                   placeholder={selectedModuleId ? "Cours sélectionné ci-dessous" : "Nom du cours"}
                   disabled={!!selectedModuleId}
-                  className="w-full p-4 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent disabled:bg-gray-200 disabled:cursor-not-allowed"
+                  className="w-full p-3 sm:p-4 border-2 border-[#032622] bg-[#F8F5E4] text-sm sm:text-base text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent disabled:bg-gray-200 disabled:cursor-not-allowed"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 />
               </div>
 
               {existingModules.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label 
-                    className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                    className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wider underline break-words"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   >
                     COURS EXISTANT
@@ -221,7 +222,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
                         setChapitres([{ titre: '', isNew: true }]);
                       }
                     }}
-                    className="w-full p-4 border-2 border-[#032622] bg-gray-100 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                    className="w-full p-3 sm:p-4 border-2 border-[#032622] bg-gray-100 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                     disabled={isLoadingChapitres || !!preselectedCoursId}
                   >
@@ -239,9 +240,9 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
 
           {/* Afficher le cours sélectionné en mode "ajout de chapitre uniquement" */}
           {addChapitreOnly && preselectedCoursId && existingModules.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <label 
-                className="text-sm font-semibold text-[#032622] uppercase tracking-wider underline"
+                className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wider underline break-words"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 COURS
@@ -250,59 +251,60 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
                 type="text"
                 value={existingModules.find(m => m.id === preselectedCoursId)?.titre || ''}
                 disabled
-                className="w-full p-4 border-2 border-[#032622] bg-gray-200 text-[#032622] cursor-not-allowed"
+                className="w-full p-3 sm:p-4 border-2 border-[#032622] bg-gray-200 text-sm sm:text-base text-[#032622] cursor-not-allowed"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               />
             </div>
           )}
 
           {/* Chapitres */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
               <h3 
-                className="text-lg font-semibold text-[#032622] uppercase"
+                className="text-base sm:text-lg font-semibold text-[#032622] uppercase break-words"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 CHAPITRES
               </h3>
               <button
                 onClick={handleAddChapitre}
-                className="bg-[#032622] text-[#F8F5E4] px-4 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-2"
+                className="bg-[#032622] text-[#F8F5E4] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 AJOUTER UN CHAPITRE
               </button>
             </div>
 
             {isLoadingChapitres ? (
-              <div className="text-center py-4 text-[#032622]">
-                <p style={{ fontFamily: 'var(--font-termina-medium)' }}>Chargement des chapitres...</p>
+              <div className="text-center py-3 sm:py-4 text-[#032622]">
+                <p className="text-xs sm:text-sm md:text-base break-words" style={{ fontFamily: 'var(--font-termina-medium)' }}>Chargement des chapitres...</p>
               </div>
             ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
                 {chapitres.map((chapitreItem, index) => (
-                  <div key={chapitreItem.id || `new-${index}`} className="flex items-center gap-3">
+                  <div key={chapitreItem.id || `new-${index}`} className="flex items-center gap-2 sm:gap-3">
                   <input
                     type="text"
                       value={chapitreItem.titre}
                       onChange={(e) => handleChapitreChange(index, e.target.value)}
                       placeholder={chapitreItem.isNew ? `Nouveau chapitre ${index + 1}` : `Chapitre ${index + 1}`}
-                      className="flex-1 p-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent"
+                      className="flex-1 p-2.5 sm:p-3 border-2 border-[#032622] bg-[#F8F5E4] text-sm sm:text-base text-[#032622] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-transparent min-w-0"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   />
                     {!chapitreItem.isNew && (
-                      <span className="text-xs text-gray-500 px-2" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+                      <span className="text-[10px] sm:text-xs text-gray-500 px-1.5 sm:px-2 whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'var(--font-termina-medium)' }}>
                         Existant
                       </span>
                     )}
                     {chapitres.length > 1 && (
                     <button
                         onClick={() => handleRemoveChapitre(index)}
-                      className="w-8 h-8 border-2 border-[#032622] bg-[#032622] hover:bg-[#F8F5E4] hover:text-[#032622] transition-colors flex items-center justify-center"
+                      className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-[#032622] bg-[#032622] hover:bg-[#F8F5E4] hover:text-[#032622] active:bg-[#032622]/80 transition-colors flex items-center justify-center flex-shrink-0"
                         title={chapitreItem.isNew ? 'Supprimer ce chapitre' : 'Supprimer ce chapitre (sera supprimé lors de la sauvegarde)'}
+                        aria-label={chapitreItem.isNew ? 'Supprimer ce chapitre' : 'Supprimer ce chapitre'}
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   )}
                 </div>
@@ -313,7 +315,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t-2 border-[#032622]">
+        <div className="p-4 sm:p-5 md:p-6 border-t-2 border-[#032622]">
           <button
             onClick={handleSave}
             disabled={
@@ -322,7 +324,7 @@ export const CreateModule = ({ isOpen, onClose, onSave, existingModules = [], pr
               isLoadingChapitres ||
               (addChapitreOnly && !selectedModuleId && !preselectedCoursId)
             }
-            className="w-full bg-[#032622] text-[#F8F5E4] py-3 text-lg font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#032622] text-[#F8F5E4] py-2.5 sm:py-3 text-sm sm:text-base md:text-lg font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {addChapitreOnly || selectedModuleId ? 'AJOUTER LES CHAPITRES' : 'CRÉER LE COURS'}

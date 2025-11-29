@@ -120,10 +120,10 @@ export default function ReleveNotesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement du relevé de notes...</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-xs sm:text-sm md:text-base text-[#032622]">Chargement du relevé de notes...</p>
         </div>
       </div>
     );
@@ -132,50 +132,50 @@ export default function ReleveNotesPage() {
   return (
     <div className="min-h-screen bg-[#F8F5E4]">
       {/* Header */}
-      <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <button
             onClick={() => router.back()}
-            className="flex items-center space-x-2 text-[#032622] hover:opacity-70 transition-opacity"
+            className="flex items-center space-x-1.5 sm:space-x-2 text-[#032622] hover:opacity-70 active:opacity-50 transition-opacity"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-semibold">Retour</span>
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-semibold">Retour</span>
           </button>
 
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-[#032622] font-semibold">{userName}</span>
-              <User className="w-5 h-5 text-[#032622]" />
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <span className="text-xs sm:text-sm md:text-base text-[#032622] font-semibold truncate max-w-[150px] sm:max-w-none">{userName}</span>
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] flex-shrink-0" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-6 md:py-8">
         {/* Title */}
         <h1 
-          className="text-3xl font-bold text-[#032622] uppercase mb-8 text-center"
+          className="text-xl sm:text-2xl md:text-3xl font-bold text-[#032622] uppercase mb-4 sm:mb-6 md:mb-8 text-center"
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
           RELEVÉ DE NOTES
         </h1>
 
         {/* Table */}
-        <div className="bg-[#E8F5E9] border-4 border-[#032622] overflow-hidden">
-          <table className="w-full">
+        <div className="bg-[#E8F5E9] border-2 sm:border-4 border-[#032622] overflow-x-auto">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="bg-[#032622] text-[#F8F5E4]">
-                <th className="px-6 py-4 text-left font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-3 md:py-4 text-left font-bold uppercase text-[10px] sm:text-xs md:text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                   BLOCS DE COMPÉTENCES
                 </th>
-                <th className="px-6 py-4 text-center font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-3 md:py-4 text-center font-bold uppercase text-[10px] sm:text-xs md:text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                   MOYENNE DE L'ÉTUDIANT
                 </th>
-                <th className="px-6 py-4 text-center font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-3 md:py-4 text-center font-bold uppercase text-[10px] sm:text-xs md:text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                   MOYENNE DE LA PROMO
                 </th>
-                <th className="px-6 py-4 text-center font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-3 md:py-4 text-center font-bold uppercase text-[10px] sm:text-xs md:text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                   MEILLEURE MOYENNE DE LA PROMO
                 </th>
               </tr>
@@ -184,26 +184,26 @@ export default function ReleveNotesPage() {
               {releve.map((bloc) => (
                 <React.Fragment key={bloc.bloc_id}>
                   <tr className="border-b border-[#032622]/20">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-[#032622] uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                    <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4">
+                      <div className="font-bold text-xs sm:text-sm md:text-base text-[#032622] uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                         BLOC {bloc.numero_bloc}
                       </div>
-                      <div className="text-sm text-[#032622]/80 mt-1">
+                      <div className="text-[10px] sm:text-xs md:text-sm text-[#032622]/80 mt-1 break-words">
                         {bloc.titre}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-lg font-bold text-[#032622]">
+                    <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 text-center">
+                      <span className="text-sm sm:text-base md:text-lg font-bold text-[#032622]">
                         {formatNote(bloc.moyenne_etudiant)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-lg font-bold text-[#032622]">
+                    <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 text-center">
+                      <span className="text-sm sm:text-base md:text-lg font-bold text-[#032622]">
                         {formatNote(bloc.moyenne_promo)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-lg font-bold text-[#032622]">
+                    <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 text-center">
+                      <span className="text-sm sm:text-base md:text-lg font-bold text-[#032622]">
                         {formatNote(bloc.meilleure_moyenne_promo)}
                       </span>
                     </td>
@@ -212,17 +212,17 @@ export default function ReleveNotesPage() {
                   {/* Notes détaillées (quiz et études de cas) */}
                   {bloc.notes_detaillees && bloc.notes_detaillees.length > 0 && (
                     <tr className="border-b border-[#032622]/10 bg-[#F8F5E4]/50">
-                      <td colSpan={4} className="px-6 py-3">
-                        <div className="pl-6 space-y-1">
+                      <td colSpan={4} className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-3">
+                        <div className="pl-3 sm:pl-4 md:pl-6 space-y-1">
                           {bloc.notes_detaillees.map((note, index) => (
-                            <div key={index} className="flex items-center justify-between text-xs">
-                              <div className="flex items-center space-x-3">
-                                <span className="text-[#032622]/70 font-semibold min-w-[50px]">
+                            <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-0 text-[10px] sm:text-xs">
+                              <div className="flex items-center space-x-2 sm:space-x-3">
+                                <span className="text-[#032622]/70 font-semibold min-w-[45px] sm:min-w-[50px] flex-shrink-0">
                                   {note.type === 'quiz' ? 'Quiz:' : 'Étude:'}
                                 </span>
-                                <span className="text-[#032622]/80">{note.titre}</span>
+                                <span className="text-[#032622]/80 break-words">{note.titre}</span>
                               </div>
-                              <span className="text-[#032622] font-bold">
+                              <span className="text-[#032622] font-bold flex-shrink-0">
                                 {note.type === 'quiz' ? formatNoteQuiz(note.note) : formatNote(note.note)}/20
                               </span>
                             </div>
@@ -236,24 +236,24 @@ export default function ReleveNotesPage() {
               
               {/* Ligne des moyennes générales */}
               {moyennesGenerales && (
-                <tr className="bg-[#032622]/10 border-t-4 border-[#032622] font-bold">
-                  <td className="px-6 py-4">
-                    <span className="text-[#032622] uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                <tr className="bg-[#032622]/10 border-t-2 sm:border-t-4 border-[#032622] font-bold">
+                  <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4">
+                    <span className="text-xs sm:text-sm md:text-base text-[#032622] uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                       MOYENNES GÉNÉRALES
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-xl text-[#032622]">
+                  <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 text-center">
+                    <span className="text-base sm:text-lg md:text-xl text-[#032622]">
                       {formatNote(moyennesGenerales.moyenne_etudiant)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-xl text-[#032622]">
+                  <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 text-center">
+                    <span className="text-base sm:text-lg md:text-xl text-[#032622]">
                       {formatNote(moyennesGenerales.moyenne_promo)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-xl text-[#032622]">
+                  <td className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 text-center">
+                    <span className="text-base sm:text-lg md:text-xl text-[#032622]">
                       {formatNote(moyennesGenerales.meilleure_moyenne_promo)}
                     </span>
                   </td>
@@ -264,13 +264,13 @@ export default function ReleveNotesPage() {
         </div>
 
         {/* Export Button */}
-        <div className="mt-8">
+        <div className="mt-4 sm:mt-6 md:mt-8">
           <button
             onClick={handleExportPDF}
-            className="bg-[#032622] text-[#F8F5E4] px-6 py-3 font-bold uppercase hover:bg-[#032622]/90 transition-colors flex items-center space-x-2"
+            className="bg-[#032622] text-[#F8F5E4] px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex items-center justify-center space-x-2 text-xs sm:text-sm md:text-base w-full sm:w-auto"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            <Download className="w-5 h-5" />
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>EXPORTER EN PDF</span>
           </button>
         </div>

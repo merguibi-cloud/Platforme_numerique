@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
 import { signOut } from '@/lib/auth-api';
 import { Modal } from '../../validation/components/Modal';
 
@@ -126,6 +126,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   const router = useRouter();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['gestion'])); // Par défaut ouvert
   
@@ -226,14 +227,60 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
   }, []);
 
   return (
-    <div className={`${isCollapsed ? 'w-24' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
+    <>
+      {/* Mobile Menu Button - Caché quand le menu est ouvert */}
+      {!isMobileMenuOpen && (
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-[101] bg-[#032622] text-white p-2 rounded-lg shadow-lg hover:bg-[#01302C] active:bg-[#012a26] transition-colors"
+          aria-label="Ouvrir le menu"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Mobile Overlay - En arrière-plan, ne bloque pas la sidebar */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-[45]"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Au-dessus de l'overlay */}
+      <div className={`
+        ${isCollapsed ? 'w-24' : 'w-64'} 
+        bg-[#032622] 
+        min-h-screen 
+        flex 
+        flex-col 
+        transition-all 
+        duration-300 
+        fixed 
+        left-0 
+        top-0 
+        z-[50]
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Mobile Close Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMobileMenuOpen(false);
+          }}
+          className="lg:hidden absolute top-4 right-4 text-white hover:bg-gray-700 p-1 rounded transition-colors z-[51]"
+          aria-label="Fermer le menu"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
       {/* Logo et titre */}
       <div className={`${isCollapsed ? 'p-4' : 'p-6'} border-b border-gray-600`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           {isCollapsed ? (
             <button
               onClick={handleCollapse}
-              className="flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+              className="hidden lg:flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
             >
               <Image 
                 src="/menue_etudiant/ESObeige.png" 
@@ -264,7 +311,8 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
           </div>
           <button
             onClick={handleCollapse}
-                className="text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
+                className="hidden lg:flex text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
+            aria-label={isCollapsed ? "Développer le menu" : "Réduire le menu"}
           >
                 <ChevronLeft className="w-4 h-4" />
           </button>
@@ -274,7 +322,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       </div>
 
       {/* Menu principal */}
-      <div className="flex-1 py-6 overflow-y-auto">
+      <div className="flex-1 py-6 overflow-y-auto relative z-[51]">
         <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
           {menuItems.map((item) => {
             // Gestion des groupes avec sous-menus
@@ -287,8 +335,11 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
               return (
                 <div key={item.id}>
                   <button
-                    onClick={() => toggleGroup(item.id)}
-                    className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-3'} rounded-lg transition-colors duration-200 w-full ${
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleGroup(item.id);
+                    }}
+                    className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-3'} rounded-lg transition-colors duration-200 w-full relative z-[51] ${
                       hasActiveChild
                         ? 'text-[#F8F5E4]'
                         : 'text-white hover:bg-gray-700'
@@ -330,8 +381,12 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                           <Link
                             key={child.id}
                             href={child.href}
-                            onClick={() => setActiveItem(child.id)}
-                            className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors duration-200 ${
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveItem(child.id);
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors duration-200 relative z-[51] ${
                               isActive
                                 ? 'text-[#F8F5E4] bg-gray-700'
                                 : 'text-gray-300 hover:bg-gray-700'
@@ -364,8 +419,12 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
                             <div className="w-px h-3 bg-gray-600" />
                             <Link
                               href={child.href}
-                              onClick={() => setActiveItem(child.id)}
-                              className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveItem(child.id);
+                                setIsMobileMenuOpen(false);
+                              }}
+                              className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 relative z-[51] ${
                                 isActive ? 'bg-gray-700 text-[#F8F5E4]' : 'text-gray-200 hover:bg-gray-700'
                               }`}
                               title={child.label}
@@ -393,8 +452,12 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
             <Link
               key={item.id}
               href={item.href}
-              onClick={() => setActiveItem(item.id)}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveItem(item.id);
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 relative z-[51] ${
                 activeItem === item.id
                   ? 'text-[#F8F5E4]'
                   : 'text-white hover:bg-gray-700'
@@ -425,7 +488,7 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
       </div>
 
       {/* Menu du bas */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
+      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600 relative z-[51]`}>
         <nav className="space-y-2">
           {bottomMenuItems.map((item) => {
             if (item.id === 'logout') {
@@ -464,7 +527,11 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
               <Link
                 key={item.id}
                 href={item.href}
-                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 relative z-[51]`}
                 title={isCollapsed ? item.label : undefined}
               >
                 <Image 
@@ -510,5 +577,6 @@ export const AdminSidebar = ({ onCollapseChange }: AdminSidebarProps) => {
         isConfirm={false}
       />
     </div>
+    </>
   );
 };

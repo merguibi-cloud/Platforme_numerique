@@ -44,23 +44,23 @@ export default function ContratStep({ onNext, onPrev, onClose }: ContratStepProp
 
   return (
     <div className="min-h-screen bg-[#F8F5E4]">
-      <main className="px-4 sm:px-8 lg:px-16 py-4 sm:py-8">
+      <main className="px-2 sm:px-4 md:px-8 lg:px-16 py-4 sm:py-6 md:py-8">
         <ProgressHeader currentStep="CONTRAT" onClose={onClose} />
 
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Titre */}
-          <div className="text-left mb-12">
-            <h1 className="text-4xl font-bold text-[#032622] mb-6" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+          <div className="text-left mb-8 sm:mb-10 md:mb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] mb-4 sm:mb-5 md:mb-6" style={{ fontFamily: 'var(--font-termina-bold)' }}>
               SIGNATURE DE TON CONTRAT DE FORMATION
             </h1>
-            <p className="text-lg text-[#032622] max-w-2xl" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+            <p className="text-sm sm:text-base md:text-lg text-[#032622] max-w-2xl" style={{ fontFamily: 'var(--font-termina-medium)' }}>
               Ces documents nous permettent d'adopter ton accompagnement et de finaliser ton contrat. 
               Tu peux les ajouter dès maintenant ou plus tard depuis ton tableau de bord.
             </p>
           </div>
 
           {/* Zone de contrat PDF (boîte vide avec scrollbar) */}
-          <div className="bg-gray-200 border border-[#032622] rounded-lg overflow-hidden" style={{ minHeight: '500px', maxHeight: '600px' }}>
+          <div className="bg-gray-200 border border-[#032622] rounded-lg overflow-hidden min-h-[300px] sm:min-h-[400px] md:min-h-[500px] max-h-[400px] sm:max-h-[500px] md:max-h-[600px]">
             <div 
               className="w-full h-full overflow-y-auto p-6 contract-scrollbar"
               style={{
@@ -98,7 +98,7 @@ export default function ContratStep({ onNext, onPrev, onClose }: ContratStepProp
           {/* Bouton Signer électroniquement */}
           <div className="flex justify-end">
             <button
-              className="px-8 py-3 bg-[#032622] text-white hover:bg-[#021a17] transition-colors font-bold"
+              className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-[#032622] text-white hover:bg-[#021a17] active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm md:text-base"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               SIGNER ÉLECTRONIQUEMENT
@@ -106,25 +106,25 @@ export default function ContratStep({ onNext, onPrev, onClose }: ContratStepProp
           </div>
 
           {/* Checkbox Conditions Générales */}
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-2 sm:space-x-3">
             <input
               type="checkbox"
               id="accept-terms"
               checked={hasAcceptedTerms}
               onChange={(e) => setHasAcceptedTerms(e.target.checked)}
-              className="mt-1 w-4 h-4 border-[#032622] text-[#032622] focus:ring-[#032622]"
+              className="mt-1 w-4 h-4 sm:w-5 sm:h-5 border-[#032622] text-[#032622] focus:ring-[#032622] flex-shrink-0"
             />
-            <label htmlFor="accept-terms" className="text-sm text-[#032622]">
+            <label htmlFor="accept-terms" className="text-xs sm:text-sm text-[#032622]">
               J'ai pris connaissance et j'accepte les Conditions Générales de Vente et d'Utilisation, 
               ainsi que le Règlement intérieur du Campus Numérique Elite Society.
             </label>
           </div>
 
           {/* Boutons de navigation */}
-          <div className="flex justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
             <button
               onClick={onPrev}
-              className="px-8 py-3 border border-[#032622] text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white transition-colors font-bold"
+              className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 border border-[#032622] text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm md:text-base w-full sm:w-auto"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               RETOUR
@@ -133,9 +133,9 @@ export default function ContratStep({ onNext, onPrev, onClose }: ContratStepProp
             <button
               onClick={onNext}
               disabled={!hasAcceptedTerms}
-              className={`px-8 py-3 font-bold transition-colors ${
+              className={`px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 font-bold transition-colors text-xs sm:text-sm md:text-base w-full sm:w-auto ${
                 hasAcceptedTerms
-                  ? 'bg-[#6B7280] text-white hover:bg-[#4B5563]'
+                  ? 'bg-[#6B7280] text-white hover:bg-[#4B5563] active:bg-[#6B7280]/80'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
               style={{ fontFamily: 'var(--font-termina-bold)' }}

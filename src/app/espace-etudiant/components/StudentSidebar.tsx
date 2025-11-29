@@ -3,7 +3,7 @@ import { useState, useEffect, MouseEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
 import { signOut } from '@/lib/auth-api';
 import { Modal } from '../../validation/components/Modal';
 
@@ -78,6 +78,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
   const router = useRouter();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -154,7 +155,52 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
 
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
+    <>
+      {/* Mobile Menu Button - Caché quand le menu est ouvert */}
+      {!isMobileMenuOpen && (
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-[101] bg-[#032622] text-white p-2 rounded-lg shadow-lg hover:bg-[#01302C] active:bg-[#012a26] transition-colors"
+          aria-label="Ouvrir le menu"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Mobile Overlay - En arrière-plan, ne bloque pas la sidebar */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-[45]"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Au-dessus de l'overlay */}
+      <div className={`
+        ${isCollapsed ? 'w-16' : 'w-64'} 
+        bg-[#032622] 
+        min-h-screen 
+        flex 
+        flex-col 
+        transition-all 
+        duration-300 
+        fixed 
+        left-0 
+        top-0 
+        z-[50]
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Mobile Close Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMobileMenuOpen(false);
+          }}
+          className="lg:hidden absolute top-4 right-4 text-white hover:bg-gray-700 p-1 rounded transition-colors z-[51]"
+          aria-label="Fermer le menu"
+        >
+          <X className="w-6 h-6" />
+        </button>
       {/* Logo et titre */}
       <div className="p-6 border-b border-gray-600">
         <div className="flex items-center justify-between">
@@ -179,7 +225,8 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
           </div>
           <button
             onClick={handleCollapse}
-            className="text-white hover:bg-gray-700 p-1 rounded transition-colors"
+            className="hidden lg:block text-white hover:bg-gray-700 p-1 rounded transition-colors"
+            aria-label={isCollapsed ? "Développer le menu" : "Réduire le menu"}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -187,14 +234,18 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
       </div>
 
       {/* Menu principal */}
-      <div className="flex-1 py-6">
+      <div className="flex-1 py-6 relative z-[51]">
         <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
           {menuItems.map((item) => (
             <Link
               key={item.id}
               href={item.href}
-              onClick={() => setActiveItem(item.id)}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveItem(item.id);
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 relative z-[51] ${
                 activeItem === item.id
                   ? 'text-[#F8F5E4]'
                   : 'text-white hover:bg-gray-700'
@@ -222,7 +273,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
       </div>
 
       {/* Menu du bas */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
+      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600 relative z-[51]`}>
         <nav className="space-y-2">
           {bottomMenuItems.map((item) => {
             if (item.id === 'logout') {
@@ -261,7 +312,11 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
               <Link
                 key={item.id}
                 href={item.href}
-                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 relative z-[51]`}
                 title={isCollapsed ? item.label : undefined}
               >
                 <Image 
@@ -304,7 +359,8 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
         type="error"
         isConfirm={false}
       />
-    </div>
+      </div>
+    </>
   );
 };
 

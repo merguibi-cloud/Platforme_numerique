@@ -154,61 +154,62 @@ export const ModuleManagement = ({
     showVisualize?: boolean;
   }) => {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${color}`}></div>
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${color} flex-shrink-0`}></div>
           <h3 
-            className="text-lg font-bold text-[#032622] uppercase"
+            className="text-base sm:text-lg font-bold text-[#032622] uppercase break-words"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {title}
           </h3>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full border border-[#032622]">
-            <thead>
-              <tr className="bg-[#F8F5E4]">
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">COURS</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CHAPITRES</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">DERNIÈRE MODIFICATION</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">CRÉÉ PAR</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉDITER</th>
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">ÉTUDE DE CAS</th>
+        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="min-w-[800px] sm:min-w-0">
+            <table className="w-full border border-[#032622]">
+              <thead>
+                <tr className="bg-[#F8F5E4]">
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[120px]">COURS</th>
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[150px]">CHAPITRES</th>
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[120px]">DERNIÈRE MODIFICATION</th>
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[100px]">CRÉÉ PAR</th>
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[100px]">ÉDITER</th>
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[120px]">ÉTUDE DE CAS</th>
                 {showAssign && (
-                  <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[100px]">
                     ATTRIBUER
                   </th>
                 )}
                 {showVisualize && (
-                  <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[100px]">
                     VISUALISER
                   </th>
                 )}
                 {title === 'EN LIGNE' && (
-                  <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">
+                  <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[100px]">
                     CORRECTION
                   </th>
                 )}
-                <th className="border border-[#032622] p-3 text-left font-semibold uppercase text-sm text-[#032622]">SUPPRIMER</th>
+                <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[100px]">SUPPRIMER</th>
               </tr>
             </thead>
             <tbody>
               {modules.length === 0 ? (
                 <tr>
-                  <td colSpan={showAssign ? (showVisualize ? (title === 'EN LIGNE' ? 10 : 9) : (title === 'EN LIGNE' ? 9 : 8)) : (showVisualize ? (title === 'EN LIGNE' ? 9 : 8) : (title === 'EN LIGNE' ? 8 : 7))} className="border border-[#032622] p-8 text-center text-[#032622]">
-                    <p className="text-lg font-medium">{emptyMessage}</p>
+                  <td colSpan={showAssign ? (showVisualize ? (title === 'EN LIGNE' ? 10 : 9) : (title === 'EN LIGNE' ? 9 : 8)) : (showVisualize ? (title === 'EN LIGNE' ? 9 : 8) : (title === 'EN LIGNE' ? 8 : 7))} className="border border-[#032622] p-6 sm:p-8 text-center text-[#032622]">
+                    <p className="text-sm sm:text-base md:text-lg font-medium break-words">{emptyMessage}</p>
                   </td>
                 </tr>
               ) : (
                 modules.map((module) => (
                   <tr key={module.id} className="bg-[#032622]/10">
-                    <td className="border border-[#032622] p-3 text-[#032622]">
-                      <p className="font-semibold uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                    <td className="border border-[#032622] p-2 sm:p-3 text-[#032622]">
+                      <p className="text-xs sm:text-sm font-semibold uppercase break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                         {module.moduleName || 'Cours sans titre'}
                       </p>
                     </td>
-                    <td className="border border-[#032622] p-3 text-[#032622]">
+                    <td className="border border-[#032622] p-2 sm:p-3 text-[#032622]">
                       {(() => {
                         const coursList =
                           module.coursDetails && module.coursDetails.length > 0
@@ -219,32 +220,32 @@ export const ModuleManagement = ({
                               }));
 
                         return coursList.length > 0 ? (
-                          <div className="space-y-1">
+                          <div className="space-y-0.5 sm:space-y-1">
                             {coursList.map((cours) => (
-                              <p key={cours.id} className="text-sm normal-case text-[#032622]">
+                              <p key={cours.id} className="text-[10px] sm:text-xs md:text-sm normal-case text-[#032622] break-words">
                                 • {cours.titre}
                               </p>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-sm italic text-[#032622]/70">Aucun chapitre</span>
+                          <span className="text-[10px] sm:text-xs md:text-sm italic text-[#032622]/70">Aucun chapitre</span>
                         );
                       })()}
                     </td>
-                    <td className="border border-[#032622] p-3 text-[#032622]">
+                    <td className="border border-[#032622] p-2 sm:p-3 text-[#032622] text-[10px] sm:text-xs md:text-sm break-words">
                       {module.creationModification || '-'}
                     </td>
-                    <td className="border border-[#032622] p-3 text-[#032622]">
+                    <td className="border border-[#032622] p-2 sm:p-3 text-[#032622] text-[10px] sm:text-xs md:text-sm break-words">
                       {module.creePar || '-'}
                     </td>
                     <td className="border border-[#032622] p-0">
                       <button
                         onClick={() => handleEditCoursClick(module)}
-                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
-                        <Edit className="w-3 h-3" />
-                        {(() => {
+                        <Edit className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                        <span className="hidden sm:inline">{(() => {
                           const coursList = module.coursDetails && module.coursDetails.length > 0
                             ? module.coursDetails
                             : module.cours.map((titre, index) => ({
@@ -252,8 +253,9 @@ export const ModuleManagement = ({
                                 titre,
                               }));
                           const hasChapitres = coursList.length > 0 || (module.cours_count && module.cours_count > 0);
-                          return hasChapitres ? 'ÉDITER LE COURS' : 'AJOUTER UN CHAPITRAGE';
-                        })()}
+                          return hasChapitres ? 'ÉDITER' : 'CHAPITRAGE';
+                        })()}</span>
+                        <span className="sm:hidden">ÉDITER</span>
                       </button>
                     </td>
                     <td className="border border-[#032622] p-0">
@@ -261,22 +263,24 @@ export const ModuleManagement = ({
                         onClick={() => {
                           router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${module.id}/etude-cas`);
                         }}
-                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
-                        <FileText className="w-3 h-3" />
-                        {module.hasEtudeCas ? 'ÉDITER L\'ÉTUDE DE CAS' : 'AJOUTER UNE ÉTUDE DE CAS'}
+                        <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                        <span className="hidden sm:inline">{module.hasEtudeCas ? 'ÉDITER ÉTUDE' : 'AJOUTER ÉTUDE'}</span>
+                        <span className="sm:hidden">ÉTUDE</span>
                       </button>
                     </td>
                     {showAssign && (
                       <td className="border border-[#032622] p-0">
                         <button
                           onClick={() => onAssignModule(module.id)}
-                          className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                          className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                           style={{ fontFamily: 'var(--font-termina-bold)' }}
                         >
-                          <ChevronDown className="w-3 h-3" />
-                          ATTRIBUER
+                          <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                          <span className="hidden sm:inline">ATTRIBUER</span>
+                          <span className="sm:hidden">ATTRIB.</span>
                         </button>
                       </td>
                     )}
@@ -284,11 +288,12 @@ export const ModuleManagement = ({
                       <td className="border border-[#032622] p-0">
                         <button
                           onClick={() => onVisualizeModule(module.id)}
-                          className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                          className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                           style={{ fontFamily: 'var(--font-termina-bold)' }}
                         >
-                          <Eye className="w-3 h-3" />
-                          VISUALISER
+                          <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                          <span className="hidden sm:inline">VISUALISER</span>
+                          <span className="sm:hidden">VOIR</span>
                         </button>
                       </td>
                     )}
@@ -298,22 +303,24 @@ export const ModuleManagement = ({
                           onClick={() => {
                             router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${module.id}/correction`);
                           }}
-                          className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                          className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                           style={{ fontFamily: 'var(--font-termina-bold)' }}
                         >
-                          <FileText className="w-3 h-3" />
-                          CORRECTION
+                          <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                          <span className="hidden sm:inline">CORRECTION</span>
+                          <span className="sm:hidden">CORR.</span>
                         </button>
                       </td>
                     )}
                     <td className="border border-[#032622] p-0">
                       <button
                         onClick={() => openDeleteModal(module)}
-                        className="w-full h-full text-[#032622] px-3 py-3 text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 transition-colors flex items-center justify-center gap-1 border-0"
+                        className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
-                        <Trash2 className="w-3 h-3" />
-                        SUPPRIMER
+                        <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                        <span className="hidden sm:inline">SUPPRIMER</span>
+                        <span className="sm:hidden">SUPPR.</span>
                       </button>
                     </td>
                   </tr>
@@ -321,6 +328,7 @@ export const ModuleManagement = ({
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     );
@@ -328,18 +336,18 @@ export const ModuleManagement = ({
 
   return (
     <>
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="space-y-2">
+        <div className="space-y-1 sm:space-y-2">
           <h1 
-            className="text-3xl font-bold text-[#032622] uppercase"
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-[#032622] uppercase break-words"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {blocNumber} - {blocTitle}
           </h1>
           {formationTitle && (
             <p 
-              className="text-sm text-[#032622]/70 italic"
+              className="text-xs sm:text-sm text-[#032622]/70 italic break-words"
               style={{ fontFamily: 'var(--font-termina-medium)' }}
             >
               Formation : {formationTitle}{formationEcole ? ` - ${formationEcole}` : ''}
@@ -350,15 +358,15 @@ export const ModuleManagement = ({
         {/* Add Module Button */}
         <button
           onClick={handleAddModuleClick}
-          className="bg-[#032622] text-[#F8F5E4] px-6 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 transition-colors flex items-center gap-2"
+          className="bg-[#032622] text-[#F8F5E4] px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto"
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           AJOUTER UN COURS
         </button>
 
         {/* Modules Tables */}
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-7 md:space-y-8">
           <ModuleTable 
             modules={modulesEnLigne} 
             title="EN LIGNE" 

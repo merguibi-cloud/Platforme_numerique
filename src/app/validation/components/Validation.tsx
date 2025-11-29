@@ -103,33 +103,33 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
         <ProgressHeader currentStep="VALIDATION" onClose={onClose} />
 
         {/* Content */}
-        <div className="p-6 mb-6 border border-[#032622] bg-[#F8F5E4]">
-          <div className="space-y-6">
+        <div className="p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 border border-[#032622] bg-[#F8F5E4]">
+          <div className="space-y-4 sm:space-y-5 md:space-y-6">
             {isSubmitted ? (
               // Candidature déjà envoyée
-              <div className="text-center py-12">
-                <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-6" />
-                <h3 className="text-2xl font-bold text-[#032622] mb-4 uppercase">Candidature envoyée !</h3>
-                <p className="text-[#032622] mb-2">Votre candidature a été soumise avec succès.</p>
-                <p className="text-[#032622]/70 text-sm">
+              <div className="text-center py-8 sm:py-10 md:py-12">
+                <CheckCircle className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 text-green-600 mx-auto mb-4 sm:mb-5 md:mb-6" />
+                <h3 className="text-xl sm:text-2xl font-bold text-[#032622] mb-3 sm:mb-4 uppercase">Candidature envoyée !</h3>
+                <p className="text-base sm:text-lg text-[#032622] mb-2">Votre candidature a été soumise avec succès.</p>
+                <p className="text-sm sm:text-base text-[#032622]/70">
                   Notre équipe pédagogique va examiner votre dossier et vous reviendra dans les plus brefs délais.
                 </p>
-                <div className="mt-8 p-4 bg-[#C2C6B6]/30 border border-[#032622]/20">
-                  <p className="text-sm text-[#032622] font-bold">
+                <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-[#C2C6B6]/30 border border-[#032622]/20">
+                  <p className="text-xs sm:text-sm text-[#032622] font-bold break-words">
                     📧 Un email de confirmation a été envoyé à : {candidatureData?.email}
                   </p>
                 </div>
               </div>
             ) : (
               // Prêt à envoyer
-              <div className="text-center py-12">
-                <Send className="w-20 h-20 text-[#032622] mx-auto mb-6" />
-                <h3 className="text-2xl font-bold text-[#032622] mb-4 uppercase">Envoi de la candidature</h3>
-                <p className="text-[#032622] mb-6">
+              <div className="text-center py-8 sm:py-10 md:py-12">
+                <Send className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 text-[#032622] mx-auto mb-4 sm:mb-5 md:mb-6" />
+                <h3 className="text-xl sm:text-2xl font-bold text-[#032622] mb-3 sm:mb-4 uppercase">Envoi de la candidature</h3>
+                <p className="text-sm sm:text-base text-[#032622] mb-4 sm:mb-5 md:mb-6 px-2">
                   Vous êtes sur le point d'envoyer votre candidature. Assurez-vous que toutes les informations sont correctes.
                 </p>
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left">
-                  <p className="text-sm text-yellow-800">
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 mb-4 sm:mb-5 md:mb-6 text-left">
+                  <p className="text-xs sm:text-sm text-yellow-800">
                     ⚠️ <strong>Important :</strong> Une fois envoyée, votre candidature sera examinée par notre équipe pédagogique. 
                     Vous pourrez ne pourriez plus modifier vos informations si nécessaire, mais le statut passera en "CANDIDATURE ENVOYÉE".
                   </p>
@@ -137,16 +137,16 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
                 <button
                   onClick={handleSubmitCandidature}
                   disabled={isSubmitting}
-                  className="px-8 py-4 bg-[#032622] text-white font-bold hover:bg-[#032622]/90 transition-colors disabled:opacity-50 text-lg uppercase flex items-center gap-3 mx-auto"
+                  className="px-6 sm:px-8 py-3 sm:py-4 bg-[#032622] text-white font-bold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 text-sm sm:text-base md:text-lg uppercase flex items-center gap-2 sm:gap-3 mx-auto"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
                       <span>ENVOI EN COURS...</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Envoyer ma candidature</span>
                     </>
                   )}
@@ -157,12 +157,12 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border border-[#032622]">
-          <div className="flex justify-between">
+        <div className="p-4 sm:p-5 md:p-6 border border-[#032622]">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
             <button
               onClick={onPrev}
               disabled={isSubmitting}
-              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors disabled:opacity-50"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
             >
               RETOUR
             </button>
@@ -170,7 +170,7 @@ export const Validation = ({ onClose, onPrev }: ValidationProps) => {
             {isSubmitted && (
               <button
                 onClick={onClose}
-                className="px-6 py-3 bg-[#032622] text-white hover:bg-[#032622]/90 transition-colors"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#032622] text-white hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors text-sm sm:text-base w-full sm:w-auto"
               >
                 RETOUR À L'ACCUEIL
               </button>

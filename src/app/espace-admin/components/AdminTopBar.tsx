@@ -17,7 +17,7 @@ export const AdminTopBar = ({
   const hasNotifications = showNotifications && notificationCount > 0;
 
   return (
-    <div className={`flex justify-end items-center space-x-4 ${className}`}>
+    <div className={`flex justify-end items-center space-x-4 ${className} relative z-[99]`}>
       {showNotifications && (
         <div className="relative">
           <Bell className="w-6 h-6 text-[#032622]" />

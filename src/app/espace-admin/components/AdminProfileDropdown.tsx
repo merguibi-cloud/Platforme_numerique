@@ -1,31 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { signOut } from "@/lib/auth-api";
+import { useState, useEffect, useRef } from "react";
 import { useAdminUser } from "./AdminUserProvider";
 
 export const AdminProfileDropdown = () => {
-  const router = useRouter();
   const adminUser = useAdminUser();
-  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSignOut = async () => {
-    if (isSigningOut) return;
-
-    setIsSigningOut(true);
-    try {
-      const result = await signOut();
-      if (result.success) {
-        router.push("/");
-        router.refresh();
+  // Fermer le menu quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
       }
-    } catch (error) {
-    } finally {
-      setIsSigningOut(false);
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  };
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   const displayLabel = adminUser.isLoading ? "Chargement..." : adminUser.displayName;
   const roleLabel = adminUser.isLoading ? " " : adminUser.roleLabel;
@@ -33,8 +32,11 @@ export const AdminProfileDropdown = () => {
   const photoProfil = adminUser.photoProfil;
 
   return (
-    <div className="relative group">
-      <div className="flex items-center space-x-3 cursor-pointer">
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        className="flex items-center space-x-3 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
         {photoProfil ? (
           <img
             src={photoProfil}
@@ -57,23 +59,26 @@ export const AdminProfileDropdown = () => {
         </div>
       </div>
 
-      <div className="absolute right-0 mt-3 w-52 border border-[#032622] bg-[#F8F5E4] shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
-        <nav className="flex flex-col divide-y divide-[#032622]/20 text-sm text-[#032622]">
-          <Link href="/espace-admin/compte" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
-            Mon compte
-          </Link>
-          <Link href="/espace-admin/parametres" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
-            Paramètres
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-3 text-left hover:bg-[#eae5cf] transition-colors disabled:opacity-60"
-            disabled={isSigningOut}
-          >
-            {isSigningOut ? "Déconnexion..." : "Se déconnecter"}
-          </button>
-        </nav>
-      </div>
+      {isOpen && (
+        <div className="absolute right-0 mt-3 w-52 border border-[#032622] bg-[#F8F5E4] shadow-lg z-[100]">
+          <nav className="flex flex-col divide-y divide-[#032622]/20 text-sm text-[#032622]">
+            <Link 
+              href="/espace-admin/compte" 
+              className="px-4 py-3 hover:bg-[#eae5cf] transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Mon compte
+            </Link>
+            <Link 
+              href="/espace-admin/parametres" 
+              className="px-4 py-3 hover:bg-[#eae5cf] transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Paramètres
+            </Link>
+          </nav>
+        </div>
+      )}
     </div>
   );
 };

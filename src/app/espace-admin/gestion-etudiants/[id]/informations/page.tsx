@@ -176,12 +176,12 @@ export default function EtudiantInformationsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen">
-        <AdminTopBar notificationCount={1} className="mb-6" />
-        <div className="flex items-center justify-center h-64">
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] min-h-screen">
+        <AdminTopBar notificationCount={1} className="mb-4 sm:mb-5 md:mb-6" />
+        <div className="flex items-center justify-center h-48 sm:h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-            <p className="text-[#032622]">Chargement des informations...</p>
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+            <p className="text-xs sm:text-sm md:text-base text-[#032622]">Chargement des informations...</p>
           </div>
         </div>
       </div>
@@ -190,10 +190,10 @@ export default function EtudiantInformationsPage() {
 
   if (!data) {
     return (
-      <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen">
-        <AdminTopBar notificationCount={1} className="mb-6" />
-        <div className="text-center py-12">
-          <p className="text-[#032622] text-lg">Étudiant non trouvé</p>
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] min-h-screen">
+        <AdminTopBar notificationCount={1} className="mb-4 sm:mb-5 md:mb-6" />
+        <div className="text-center py-8 sm:py-10 md:py-12">
+          <p className="text-sm sm:text-base md:text-lg text-[#032622]">Étudiant non trouvé</p>
         </div>
       </div>
     );
@@ -245,45 +245,45 @@ export default function EtudiantInformationsPage() {
   ].filter(doc => doc.path);
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen">
-      <AdminTopBar notificationCount={1} className="mb-6" />
+    <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] min-h-screen">
+      <AdminTopBar notificationCount={1} className="mb-4 sm:mb-5 md:mb-6" />
 
       {/* Bouton retour */}
       <button
         onClick={() => router.back()}
-        className="flex items-center space-x-2 text-[#032622] hover:underline mb-6"
+        className="flex items-center space-x-1.5 sm:space-x-2 text-[#032622] hover:underline active:text-[#032622]/80 mb-4 sm:mb-5 md:mb-6 transition-colors"
       >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-semibold">Retour</span>
+        <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="text-xs sm:text-sm md:text-base font-semibold">Retour</span>
       </button>
 
       {/* En-tête */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-5 md:mb-6">
         <h1
-          className="text-3xl md:text-4xl font-bold text-[#032622] mb-2"
+          className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#032622] mb-1 sm:mb-2 break-words"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
           INFORMATIONS DE {nomComplet}
         </h1>
-        <p className="text-[#032622]/70 text-sm md:text-base">
+        <p className="text-xs sm:text-sm md:text-base text-[#032622]/70 break-words">
           Profil complet de l'étudiant
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Colonne principale (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6">
           {/* Informations personnelles */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
             <h2
-              className="text-xl font-bold text-[#032622] mb-4 uppercase"
+              className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4 uppercase"
               style={{ fontFamily: "var(--font-termina-bold)" }}
             >
               INFORMATIONS PERSONNELLES
             </h2>
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-4 sm:gap-5 md:gap-6">
               {/* Photo */}
-              <div className="w-32 h-40 border border-[#032622]/50 bg-[#C9C6B4] flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <div className="w-full sm:w-32 h-48 sm:h-40 border border-[#032622]/50 bg-[#C9C6B4] flex items-center justify-center flex-shrink-0 overflow-hidden mx-auto sm:mx-0">
                 {photoUrl ? (
                   <Image
                     src={photoUrl}
@@ -291,71 +291,72 @@ export default function EtudiantInformationsPage() {
                     width={128}
                     height={160}
                     className="w-full h-full object-cover"
+                    sizes="(max-width: 640px) 100%, 128px"
                   />
                 ) : (
-                  <User className="w-16 h-16 text-[#032622]/50" />
+                  <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-[#032622]/50" />
                 )}
               </div>
 
               {/* Informations en 2 colonnes */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div className="space-y-3">
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">CIVILITÉ:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.civilite || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.civilite || '-'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">NOM:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.nom || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.nom || '-'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">PRÉNOM:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.prenom || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.prenom || '-'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">DATE DE NAISSANCE:</span>
-                    <span className="ml-2 text-[#032622]">
+                    <span className="ml-1 sm:ml-2 text-[#032622]">
                       {candidature?.date_naissance 
                         ? new Date(candidature.date_naissance).toLocaleDateString('fr-FR')
                         : '-'}
                     </span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">TYPE DE FORMATION:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.type_formation || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.type_formation || '-'}</span>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">TÉLÉPHONE:</span>
-                    <span className="ml-2 text-[#032622]">{data.telephone || candidature?.telephone || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{data.telephone || candidature?.telephone || '-'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">EMAIL:</span>
-                    <span className="ml-2 text-[#032622]">{data.email || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622] break-all">{data.email || '-'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">ADRESSE:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.adresse || '-'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.adresse || '-'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">CODE POSTAL:</span>
-                    <span className="ml-2 text-[#032622]">
+                    <span className="ml-1 sm:ml-2 text-[#032622]">
                       {candidature?.code_postal || ''}
                       {candidature?.ville && `, ${candidature.ville}`}
                     </span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">PAYS:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.pays || 'France'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.pays || 'France'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">ÉTUDIANT ÉTRANGER:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.etudiant_etranger || 'non'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.etudiant_etranger || 'non'}</span>
                   </div>
-                  <div>
+                  <div className="break-words">
                     <span className="font-bold text-[#032622] uppercase">A UNE ENTREPRISE:</span>
-                    <span className="ml-2 text-[#032622]">{candidature?.a_une_entreprise || 'non'}</span>
+                    <span className="ml-1 sm:ml-2 text-[#032622]">{candidature?.a_une_entreprise || 'non'}</span>
                   </div>
                 </div>
               </div>
@@ -364,25 +365,25 @@ export default function EtudiantInformationsPage() {
 
           {/* Formation */}
           {data.formation && (
-            <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+            <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
               <h2
-                className="text-xl font-bold text-[#032622] mb-4 uppercase"
+                className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4 uppercase"
                 style={{ fontFamily: "var(--font-termina-bold)" }}
               >
                 FORMATION
               </h2>
-              <div className="space-y-2 text-sm text-[#032622]">
-                <p><span className="font-semibold">ÉCOLE:</span> {data.formation.ecole}</p>
-                <p><span className="font-semibold">FORMATION:</span> {data.formation.titre}</p>
-                <p><span className="font-semibold">TYPE DE FORMATION:</span> {candidature?.type_formation || 'FORMATION INITIALE'}</p>
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-[#032622]">
+                <p className="break-words"><span className="font-semibold">ÉCOLE:</span> <span className="ml-1 sm:ml-2">{data.formation.ecole}</span></p>
+                <p className="break-words"><span className="font-semibold">FORMATION:</span> <span className="ml-1 sm:ml-2">{data.formation.titre}</span></p>
+                <p className="break-words"><span className="font-semibold">TYPE DE FORMATION:</span> <span className="ml-1 sm:ml-2">{candidature?.type_formation || 'FORMATION INITIALE'}</span></p>
               </div>
             </div>
           )}
 
           {/* Documents */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
             <h2
-              className="text-xl font-bold text-[#032622] mb-4 uppercase"
+              className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4 uppercase"
               style={{ fontFamily: "var(--font-termina-bold)" }}
             >
               DOCUMENTS
@@ -395,12 +396,12 @@ export default function EtudiantInformationsPage() {
                 return (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 border border-[#032622]/30 bg-[#F8F5E4]"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-2 sm:p-3 border border-[#032622]/30 bg-[#F8F5E4]"
                   >
-                    <span className="text-sm font-semibold text-[#032622]">{doc.name}</span>
-                    <div className="flex items-center space-x-2">
+                    <span className="text-xs sm:text-sm font-semibold text-[#032622] break-words flex-1 min-w-0">{doc.name}</span>
+                    <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
                       <span
-                        className={`px-2 py-1 text-xs font-semibold text-white ${
+                        className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white whitespace-nowrap ${
                           hasDocument ? 'bg-[#4CAF50]' : 'bg-[#D96B6B]'
                         }`}
                       >
@@ -410,16 +411,16 @@ export default function EtudiantInformationsPage() {
                         <>
                           <button
                             onClick={() => handleViewDocument(docUrl)}
-                            className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1"
+                            className="text-[#032622] hover:underline active:text-[#032622]/80 text-xs sm:text-sm font-semibold flex items-center space-x-0.5 sm:space-x-1 transition-colors"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                             <span>VOIR</span>
                           </button>
                           <button
                             onClick={() => handleDownloadDocument(docUrl, doc.name)}
-                            className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1"
+                            className="text-[#032622] hover:underline active:text-[#032622]/80 text-xs sm:text-sm font-semibold flex items-center space-x-0.5 sm:space-x-1 transition-colors"
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             <span>TÉLÉCHARGER</span>
                           </button>
                         </>
@@ -433,32 +434,32 @@ export default function EtudiantInformationsPage() {
         </div>
 
         {/* Sidebar droite (1/3) */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {/* Informations complémentaires */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
             <h2
-              className="text-xl font-bold text-[#032622] mb-4 uppercase"
+              className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4 uppercase"
               style={{ fontFamily: "var(--font-termina-bold)" }}
             >
               INFORMATIONS COMPLÉMENTAIRES
             </h2>
-            <div className="space-y-3 text-sm text-[#032622]">
-              <div>
+            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#032622]">
+              <div className="break-words">
                 <span className="font-semibold">STATUT:</span>
-                <span className="ml-2 capitalize">{data.statut}</span>
+                <span className="ml-1 sm:ml-2 capitalize">{data.statut}</span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="font-semibold">DATE D'INSCRIPTION:</span>
-                <span className="ml-2">
+                <span className="ml-1 sm:ml-2">
                   {data.date_inscription 
                     ? new Date(data.date_inscription).toLocaleDateString('fr-FR')
                     : '-'}
                 </span>
               </div>
               {candidature?.paid_at && (
-                <div>
+                <div className="break-words">
                   <span className="font-semibold">DATE DE PAIEMENT:</span>
-                  <span className="ml-2">
+                  <span className="ml-1 sm:ml-2">
                     {new Date(candidature.paid_at).toLocaleDateString('fr-FR')}
                   </span>
                 </div>

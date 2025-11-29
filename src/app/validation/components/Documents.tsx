@@ -342,7 +342,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         // Aperçu pour nouveau fichier image
         const previewUrl = URL.createObjectURL(file);
         return (
-          <div className="w-full h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
+          <div className="w-full h-24 sm:h-28 md:h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
             <img 
               src={previewUrl} 
               alt="Aperçu" 
@@ -358,7 +358,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
       } else if (url) {
         // Aperçu pour fichier existant image
         return (
-          <div className="w-full h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
+          <div className="w-full h-24 sm:h-28 md:h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
             <img 
               src={url} 
               alt="Aperçu" 
@@ -376,16 +376,16 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
     // Icône pour fichiers PDF et autres
     return (
-      <div className="w-full h-32 bg-[#F8F5E4] flex flex-col items-center justify-center gap-2 relative group">
+      <div className="w-full h-24 sm:h-28 md:h-32 bg-[#F8F5E4] flex flex-col items-center justify-center gap-1 sm:gap-2 relative group">
         {isPDF ? (
           <>
-            <FileText className="w-12 h-12 text-[#032622]" strokeWidth={1.5} />
-            <span className="text-xs font-medium text-[#032622]">PDF</span>
+            <FileText className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#032622]" strokeWidth={1.5} />
+            <span className="text-[10px] sm:text-xs font-medium text-[#032622]">PDF</span>
           </>
         ) : (
           <>
-            <FileText className="w-12 h-12 text-[#032622]" strokeWidth={1.5} />
-            <span className="text-xs font-medium text-[#032622] uppercase">{ext || 'DOC'}</span>
+            <FileText className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#032622]" strokeWidth={1.5} />
+            <span className="text-[10px] sm:text-xs font-medium text-[#032622] uppercase">{ext || 'DOC'}</span>
           </>
         )}
         <div className="absolute inset-0 bg-[#032622]/0 group-hover:bg-[#032622]/5 transition-colors"></div>
@@ -550,22 +550,22 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
         {/* Message d'alerte si fichiers manquants */}
         {missingFiles.length > 0 && (
-          <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
-            <div className="flex items-start">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-50 border-l-4 border-yellow-400">
+            <div className="flex items-start gap-2 sm:gap-0">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
+              <div className="ml-0 sm:ml-3 flex-1 min-w-0">
+                <h3 className="text-xs sm:text-sm font-medium text-yellow-800">
                   Fichiers manquants détectés
                 </h3>
-                <div className="mt-2 text-sm text-yellow-700">
+                <div className="mt-1 sm:mt-2 text-xs sm:text-sm text-yellow-700">
                   <p>Les fichiers suivants sont enregistrés mais introuvables dans le storage :</p>
                   <ul className="list-disc list-inside mt-1">
                     {missingFiles.map((file, index) => (
-                      <li key={index}>{file}</li>
+                      <li key={index} className="break-words">{file}</li>
                     ))}
                   </ul>
                   <p className="mt-2 font-medium">
@@ -577,50 +577,52 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
           </div>
         )}
 
-        <div className="p-6 mb-6">
-          <div className="space-y-8">
+        <div className="p-3 sm:p-4 md:p-6 mb-4 sm:mb-5 md:mb-6">
+          <div className="space-y-6 sm:space-y-7 md:space-y-8">
             
             {/* CV */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGER VOTRE CV*</h3>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-[#032622] mb-3 sm:mb-4">TÉLÉCHARGER VOTRE CV*</h3>
               
               {/* Fichier existant ou nouveau */}
               {(existingFiles.cv.path || formData.cv) ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className="border border-[#032622]  overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                     {getFilePreview(
                       formData.cv, 
                       existingFiles.cv.url, 
                       formData.cv?.name || existingFiles.cv.path
                     )}
-                    <div className="p-3">
-                      <div className="flex items-start justify-between">
+                    <div className="p-2 sm:p-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-[#032622] truncate">
+                          <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                             {formData.cv?.name || existingFiles.cv.path.split('/').pop()}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                             {formData.cv ? 'Nouveau' : 'Existant'}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-1 ml-1">
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 ml-1 flex-shrink-0">
                           {existingFiles.cv.url && !formData.cv && (
                             <a 
                               href={existingFiles.cv.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#032622] hover:text-[#032622]/70 p-1"
+                              className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 p-1"
                               title="Télécharger"
+                              aria-label="Télécharger"
                             >
-                              <Download className="w-3 h-3" />
+                              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             </a>
                           )}
                           <button 
                             onClick={() => formData.cv ? removeNewFile('cv') : removeExistingFile('cv')}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
                             title="Supprimer"
+                            aria-label="Supprimer"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </div>
@@ -629,19 +631,19 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                 </div>
               ) : (
                 <div
-                  className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
+                  className="border-2 border-dashed border-[#032622]/30 p-6 sm:p-8 md:p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 active:bg-[#032622]/10 transition-all cursor-pointer group"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'cv')}
                   onClick={() => document.getElementById('cv-upload')?.click()}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
-                      <Upload className="w-8 h-8 text-[#032622]" />
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                      <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#032622]" />
                     </div>
                     <div>
-                      <p className="text-[#032622] font-medium mb-1">Déposez votre CV ici</p>
-                      <p className="text-[#032622]/60 text-sm">ou cliquez pour sélectionner un fichier</p>
-                      <p className="text-[#032622]/40 text-xs mt-2">PDF, DOC, DOCX</p>
+                      <p className="text-xs sm:text-sm md:text-base text-[#032622] font-medium mb-1">Déposez votre CV ici</p>
+                      <p className="text-[#032622]/60 text-xs sm:text-sm">ou cliquez pour sélectionner un fichier</p>
+                      <p className="text-[#032622]/40 text-[10px] sm:text-xs mt-1 sm:mt-2">PDF, DOC, DOCX</p>
                     </div>
                   </div>
               <input
@@ -657,45 +659,47 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
             {/* Diplôme */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE DERNIER DIPLÔME OBTENU*</h3>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-[#032622] mb-3 sm:mb-4">TÉLÉCHARGEZ VOTRE DERNIER DIPLÔME OBTENU*</h3>
               
               {/* Fichier existant ou nouveau */}
               {(existingFiles.diplome.path || formData.diplome) ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                     {getFilePreview(
                       formData.diplome, 
                       existingFiles.diplome.url, 
                       formData.diplome?.name || existingFiles.diplome.path
                     )}
-                    <div className="p-3">
-                      <div className="flex items-start justify-between">
+                    <div className="p-2 sm:p-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-[#032622] truncate">
+                          <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                             {formData.diplome?.name || existingFiles.diplome.path.split('/').pop()}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                             {formData.diplome ? 'Nouveau' : 'Existant'}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-1 ml-1">
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 ml-1 flex-shrink-0">
                           {existingFiles.diplome.url && !formData.diplome && (
                             <a 
                               href={existingFiles.diplome.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#032622] hover:text-[#032622]/70 p-1"
+                              className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 p-1"
                               title="Télécharger"
+                              aria-label="Télécharger"
                             >
-                              <Download className="w-3 h-3" />
+                              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             </a>
                           )}
                           <button 
                             onClick={() => formData.diplome ? removeNewFile('diplome') : removeExistingFile('diplome')}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
                             title="Supprimer"
+                            aria-label="Supprimer"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </div>
@@ -709,14 +713,14 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                   onDrop={(e) => handleDrop(e, 'diplome')}
                   onClick={() => document.getElementById('diplome-upload')?.click()}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
-                      <Upload className="w-8 h-8 text-[#032622]" />
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                      <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#032622]" />
                     </div>
                     <div>
-                      <p className="text-[#032622] font-medium mb-1">Déposez votre diplôme ici</p>
-                      <p className="text-[#032622]/60 text-sm">ou cliquez pour sélectionner un fichier</p>
-                      <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG</p>
+                      <p className="text-xs sm:text-sm md:text-base text-[#032622] font-medium mb-1">Déposez votre diplôme ici</p>
+                      <p className="text-[#032622]/60 text-xs sm:text-sm">ou cliquez pour sélectionner un fichier</p>
+                      <p className="text-[#032622]/40 text-[10px] sm:text-xs mt-1 sm:mt-2">PDF, JPG, PNG</p>
                     </div>
                   </div>
               <input
@@ -732,39 +736,41 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
             {/* Relevés de notes */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOS RELEVÉS DE NOTES DES 2 DERNIÈRES ANNÉES*</h3>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-[#032622] mb-3 sm:mb-4">TÉLÉCHARGEZ VOS RELEVÉS DE NOTES DES 2 DERNIÈRES ANNÉES*</h3>
               
               {/* Grille de fichiers */}
               {(existingFiles.releves.length > 0 || formData.releves.length > 0) && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   {/* Fichiers existants */}
                   {existingFiles.releves.map((file, index) => (
                     <div key={`existing-${index}`} className="border border-[#032622]  overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                       {getFilePreview(null, file.url, file.path)}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
+                      <div className="p-2 sm:p-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[#032622] truncate">
+                            <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                               {file.path.split('/').pop()}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">Existant</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Existant</p>
                           </div>
-                          <div className="flex items-center space-x-1 ml-1">
+                          <div className="flex items-center space-x-1 sm:space-x-1.5 ml-1 flex-shrink-0">
                             <a 
                               href={file.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#032622] hover:text-[#032622]/70 p-1"
+                              className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 p-1"
                               title="Télécharger"
+                              aria-label="Télécharger"
                             >
-                              <Download className="w-3 h-3" />
+                              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             </a>
                             <button 
                               onClick={() => removeExistingFile('releves', index)}
-                              className="text-red-600 hover:text-red-800 p-1"
+                              className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
                               title="Supprimer"
+                              aria-label="Supprimer"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </div>
@@ -776,20 +782,21 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                   {formData.releves.map((file, index) => (
                     <div key={`new-${index}`} className="border border-[#032622]  overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                       {getFilePreview(file, null, file.name)}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
+                      <div className="p-2 sm:p-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[#032622] truncate">
+                            <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                               {file.name}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">Nouveau</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Nouveau</p>
                           </div>
                           <button 
                             onClick={() => removeNewFile('releves', index)}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1 flex-shrink-0"
                             title="Supprimer"
+                            aria-label="Supprimer"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </div>
@@ -800,19 +807,19 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
               {/* Zone de drop */}
               <div
-                className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
+                className="border-2 border-dashed border-[#032622]/30 p-6 sm:p-8 md:p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 active:bg-[#032622]/10 transition-all cursor-pointer group"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, 'releves')}
                 onClick={() => document.getElementById('releves-upload')?.click()}
               >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
-                    <Upload className="w-8 h-8 text-[#032622]" />
+                <div className="flex flex-col items-center gap-2 sm:gap-3">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                    <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#032622]" />
                   </div>
                   <div>
-                    <p className="text-[#032622] font-medium mb-1">Déposez vos relevés ici</p>
-                    <p className="text-[#032622]/60 text-sm">ou cliquez pour sélectionner plusieurs fichiers</p>
-                    <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • Plusieurs fichiers acceptés</p>
+                    <p className="text-xs sm:text-sm md:text-base text-[#032622] font-medium mb-1">Déposez vos relevés ici</p>
+                    <p className="text-[#032622]/60 text-xs sm:text-sm">ou cliquez pour sélectionner plusieurs fichiers</p>
+                    <p className="text-[#032622]/40 text-[10px] sm:text-xs mt-1 sm:mt-2">PDF, JPG, PNG • Plusieurs fichiers acceptés</p>
                   </div>
                 </div>
                 <input
@@ -828,45 +835,47 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
 
             {/* Lettre de motivation */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE LETTRE DE MOTIVATION*</h3>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-[#032622] mb-3 sm:mb-4">TÉLÉCHARGEZ VOTRE LETTRE DE MOTIVATION*</h3>
               
               {/* Fichier existant ou nouveau */}
               {(existingFiles.lettreMotivation.path || formData.lettreMotivation) ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                     {getFilePreview(
                       formData.lettreMotivation, 
                       existingFiles.lettreMotivation.url, 
                       formData.lettreMotivation?.name || existingFiles.lettreMotivation.path
                     )}
-                    <div className="p-3">
-                      <div className="flex items-start justify-between">
+                    <div className="p-2 sm:p-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-[#032622] truncate">
+                          <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                             {formData.lettreMotivation?.name || existingFiles.lettreMotivation.path.split('/').pop()}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                             {formData.lettreMotivation ? 'Nouveau' : 'Existant'}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-1 ml-1">
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 ml-1 flex-shrink-0">
                           {existingFiles.lettreMotivation.url && !formData.lettreMotivation && (
                             <a 
                               href={existingFiles.lettreMotivation.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#032622] hover:text-[#032622]/70 p-1"
+                              className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 p-1"
                               title="Télécharger"
+                              aria-label="Télécharger"
                             >
-                              <Download className="w-3 h-3" />
+                              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             </a>
                           )}
                           <button 
                             onClick={() => formData.lettreMotivation ? removeNewFile('lettreMotivation') : removeExistingFile('lettreMotivation')}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
                             title="Supprimer"
+                            aria-label="Supprimer"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </div>
@@ -875,19 +884,19 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
                 </div>
               ) : (
                 <div
-                  className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
+                  className="border-2 border-dashed border-[#032622]/30 p-6 sm:p-8 md:p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 active:bg-[#032622]/10 transition-all cursor-pointer group"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'lettreMotivation')}
                   onClick={() => document.getElementById('lettre-motivation-upload')?.click()}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
-                      <Upload className="w-8 h-8 text-[#032622]" />
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                      <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#032622]" />
                     </div>
                     <div>
-                      <p className="text-[#032622] font-medium mb-1">Déposez votre lettre de motivation ici</p>
-                      <p className="text-[#032622]/60 text-sm">ou cliquez pour sélectionner un fichier</p>
-                      <p className="text-[#032622]/40 text-xs mt-2">PDF, DOC, DOCX</p>
+                      <p className="text-xs sm:text-sm md:text-base text-[#032622] font-medium mb-1">Déposez votre lettre de motivation ici</p>
+                      <p className="text-[#032622]/60 text-xs sm:text-sm">ou cliquez pour sélectionner un fichier</p>
+                      <p className="text-[#032622]/40 text-[10px] sm:text-xs mt-1 sm:mt-2">PDF, DOC, DOCX</p>
                     </div>
                   </div>
                   <input
@@ -904,11 +913,11 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border border-[#032622]">
-          <div className="flex justify-between items-center">
+        <div className="p-4 sm:p-5 md:p-6 border border-[#032622]">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
             <button
               onClick={onPrev}
-              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto order-3 sm:order-1"
               disabled={isSaving}
             >
               RETOUR
@@ -916,7 +925,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
             
             <button
               onClick={handleSaveDraft}
-              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors disabled:opacity-50"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] active:bg-[#C2C6B6]/80 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto order-2 sm:order-2"
               disabled={isSaving}
             >
               ENREGISTRER BROUILLON
@@ -924,7 +933,7 @@ export const Documents = ({ onClose, onNext, onPrev }: DocumentsProps) => {
             
             <button
               onClick={handleNext}
-              className="px-6 py-3 bg-[#032622] text-white hover:bg-[#032622]/90 transition-colors disabled:opacity-50"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#032622] text-white hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto order-1 sm:order-3"
               disabled={isSaving}
             >
               {isSaving ? 'SAUVEGARDE...' : 'SUIVANT'}

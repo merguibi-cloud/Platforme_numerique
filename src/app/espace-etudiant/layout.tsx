@@ -67,9 +67,9 @@ export default function StudentLayout({
   return (
     <>
       <SessionTracker />
-      <div className="flex min-h-screen bg-[#F8F5E4]">
+      <div className="flex min-h-screen bg-[#F8F5E4] overflow-x-hidden max-w-full">
         <StudentSidebar onCollapseChange={setIsCollapsed} />
-        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <main className={`flex-1 transition-all duration-300 lg:${isCollapsed ? 'ml-16' : 'ml-64'} pt-16 lg:pt-0 overflow-x-hidden max-w-full`}>
           {children}
         </main>
       </div>

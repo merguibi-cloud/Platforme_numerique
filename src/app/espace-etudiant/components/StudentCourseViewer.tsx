@@ -998,10 +998,10 @@ export const StudentCourseViewer = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement du cours...</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-xs sm:text-sm md:text-base text-[#032622]">Chargement du cours...</p>
         </div>
       </div>
     );
@@ -1009,13 +1009,13 @@ export const StudentCourseViewer = ({
 
   if (!data.cours) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-[#032622] text-lg mb-4">Cours non trouvé</p>
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg text-[#032622] mb-3 sm:mb-4">Cours non trouvé</p>
           {onBack && (
             <button
               onClick={onBack}
-              className="px-6 py-3 bg-[#032622] text-[#F8F5E4] rounded-lg font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+              className="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] rounded-lg font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors text-xs sm:text-sm"
             >
               Retour
             </button>
@@ -1029,14 +1029,14 @@ export const StudentCourseViewer = ({
     <div className="min-h-screen bg-[#F8F5E4] flex">
       <div className="flex-1 flex flex-col">
         <div className="bg-[#F8F5E4] border-b border-[#032622]/20">
-          <div className="px-6 py-4">
+          <div className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4">
             {onBack && (
               <button
                 onClick={onBack}
-                className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70 transition-colors mb-4"
+                className="flex items-center gap-1.5 sm:gap-2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors mb-3 sm:mb-4 text-sm sm:text-base"
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="font-bold uppercase text-xs sm:text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                   Retour aux formations
                 </span>
               </button>
@@ -1054,17 +1054,17 @@ export const StudentCourseViewer = ({
         <div className="flex-1 flex overflow-hidden relative">
           <button
             onClick={() => setIsSidebarRightCollapsed(prev => !prev)}
-            className={`absolute top-4 z-20 p-2 text-[#032622] border-2 border-[#032622] hover:bg-[#032622]/90 transition-all duration-300 ${
-              isSidebarRightCollapsed ? 'right-4' : 'right-[400px]'
+            className={`hidden lg:block absolute top-3 sm:top-4 z-20 p-1.5 sm:p-2 text-[#032622] border-2 border-[#032622] hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-all duration-300 bg-[#F8F5E4] ${
+              isSidebarRightCollapsed ? 'right-3 sm:right-4' : 'right-[320px] xl:right-[400px]'
             }`}
             aria-label={isSidebarRightCollapsed ? 'Ouvrir la sidebar' : 'Fermer la sidebar'}
           >
             {isSidebarRightCollapsed ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             )}
@@ -1072,16 +1072,16 @@ export const StudentCourseViewer = ({
 
           <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F5E4]">
             <div className="flex-1 overflow-y-auto">
-              <div className={`mx-auto px-6 py-8 min-h-full transition-all duration-300 w-full ${
+              <div className={`mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-6 md:py-8 min-h-full transition-all duration-300 w-full ${
                 isSidebarRightCollapsed ? 'max-w-full' : 'max-w-6xl'
               }`}>
                 {currentView === 'cours' && (
-                  <div className="relative min-h-[400px]">
+                  <div className="relative min-h-[300px] sm:min-h-[400px]">
                     {currentChapitre ? (
                       <CourseContentViewer cours={currentChapitre} isPreview={false} />
                     ) : (
-                      <div className="text-center text-[#032622] py-12">
-                        <p className="text-lg mb-4">Aucun chapitre disponible dans ce cours</p>
+                      <div className="text-center text-[#032622] py-8 sm:py-10 md:py-12">
+                        <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4">Aucun chapitre disponible dans ce cours</p>
                       </div>
                     )}
                   </div>
@@ -1137,8 +1137,8 @@ export const StudentCourseViewer = ({
             />
           </div>
 
-          <div className={`flex-shrink-0 overflow-hidden bg-[#F8F5E4] border-l border-[#032622]/20 transition-all duration-300 ${
-            isSidebarRightCollapsed ? 'w-0' : 'w-96'
+          <div className={`hidden lg:block flex-shrink-0 overflow-hidden bg-[#F8F5E4] border-l border-[#032622]/20 transition-all duration-300 ${
+            isSidebarRightCollapsed ? 'w-0' : 'w-80 xl:w-96'
           }`}>
             {!isSidebarRightCollapsed && (
               <div className="h-full overflow-y-auto">
@@ -1190,36 +1190,36 @@ export const StudentCourseViewer = ({
           }}
         >
           <div 
-            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-4 sm:p-6 md:p-8 max-w-3xl w-full mx-2 sm:mx-4 rounded-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 
-              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] mb-3 sm:mb-4 text-center uppercase"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               PRÊT À VALIDER TON ÉTUDE DE CAS ?
             </h3>
-            <p className="text-[#032622] mb-6 text-center">
+            <p className="text-xs sm:text-sm text-[#032622] mb-4 sm:mb-5 md:mb-6 text-center">
               Assure-toi d'avoir bien relu ton travail avant de l'envoyer. Une fois validé, tu ne pourras plus revenir en arrière.
             </p>
             {getEtudeCasAnswers && !getEtudeCasAnswers().allQuestionsAnswered && (
-              <div className="mb-6 p-4 bg-yellow-100 border-2 border-yellow-500 rounded">
-                <p className="text-[#032622] font-bold text-center">
+              <div className="mb-4 sm:mb-5 md:mb-6 p-3 sm:p-4 bg-yellow-100 border-2 border-yellow-500 rounded">
+                <p className="text-xs sm:text-sm text-[#032622] font-bold text-center">
                   ⚠️ ATTENTION : Tu n'as pas répondu à toutes les questions.
                 </p>
               </div>
             )}
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={() => setShowEtudeCasConfirmModal(false)}
-                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                className="flex-1 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors text-xs sm:text-sm"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 RETOURNER AUX QUESTIONS
               </button>
               <button
                 onClick={handleConfirmEtudeCasSubmit}
-                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                className="flex-1 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 active:bg-[#F8F5E4]/80 transition-colors text-xs sm:text-sm"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 CONFIRMER L'ENVOI
@@ -1240,16 +1240,16 @@ export const StudentCourseViewer = ({
           }}
         >
           <div 
-            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            className="bg-[#F8F5E4] border-4 border-[#032622] p-4 sm:p-6 md:p-8 max-w-3xl w-full mx-2 sm:mx-4 rounded-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 
-              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] mb-3 sm:mb-4 text-center uppercase"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               {blocCompleted ? 'FÉLICITATIONS !' : 'ÉTUDE DE CAS SOUMISE'}
             </h3>
-            <p className="text-[#032622] mb-2 text-center font-bold">
+            <p className="text-xs sm:text-sm text-[#032622] mb-2 sm:mb-3 text-center font-bold break-words">
               {blocCompleted 
                 ? 'Félicitations ! Vous avez terminé ce bloc. Le bloc suivant est maintenant débloqué.'
                 : nextCourse
@@ -1257,19 +1257,19 @@ export const StudentCourseViewer = ({
                   : 'Votre étude de cas a été soumise avec succès !'
               }
             </p>
-            <div className="flex gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4 sm:mt-5 md:mt-6">
               {nextCourse ? (
                 <>
                   <button
                     onClick={handleContinueLater}
-                    className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                    className="flex-1 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 active:bg-[#F8F5E4]/80 transition-colors text-xs sm:text-sm"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   >
                     CONTINUER PLUS TARD
                   </button>
                   <button
                     onClick={handleContinueToNextCourse}
-                    className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                    className="flex-1 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors text-xs sm:text-sm"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   >
                     CONTINUER VERS LE COURS
@@ -1278,7 +1278,7 @@ export const StudentCourseViewer = ({
               ) : (
                 <button
                   onClick={handleContinueLater}
-                  className="w-full px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                  className="w-full px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors text-xs sm:text-sm"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   RETOUR AUX FORMATIONS

@@ -256,10 +256,10 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement des modules...</p>
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-xs sm:text-sm md:text-base text-[#032622] break-words">Chargement des modules...</p>
         </div>
       </div>
     );
@@ -267,19 +267,19 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
 
   return (
     <div className="min-h-screen bg-[#F8F5E4] flex">
-      <div className="flex-1 p-6">
-        <div className="space-y-8">
-          <AdminTopBar notificationCount={0} className="mb-6" />
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10">
+        <div className="space-y-4 sm:space-y-6 md:space-y-8">
+          <AdminTopBar notificationCount={0} className="mb-4 sm:mb-5 md:mb-6" />
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <button
               onClick={handleBackToBlocs}
-              className="text-[#032622] hover:text-[#032622]/70 transition-colors flex items-center gap-2"
+              className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Retour aux blocs
+              <span className="break-words">Retour aux blocs</span>
             </button>
             
             <ModuleManagement

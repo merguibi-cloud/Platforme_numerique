@@ -85,22 +85,22 @@ export default function EditChapitrePage({ params }: EditChapitrePageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#032622]/20 mx-auto mb-6"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-[#032622] mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+            <div className="animate-spin rounded-full h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 border-4 border-[#032622]/20 mx-auto mb-4 sm:mb-5 md:mb-6"></div>
+            <div className="animate-spin rounded-full h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 border-t-4 border-[#032622] mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
           </div>
-          <p className="text-[#032622] text-lg font-bold mb-2" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+          <p className="text-sm sm:text-base md:text-lg text-[#032622] font-bold mb-1.5 sm:mb-2 break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
             CHARGEMENT DES INFORMATIONS
           </p>
-          <p className="text-[#032622]/70 text-sm" style={{ fontFamily: 'var(--font-rota-medium)' }}>
+          <p className="text-xs sm:text-sm text-[#032622]/70 break-words" style={{ fontFamily: 'var(--font-rota-medium)' }}>
             Préparation de l'éditeur de cours...
           </p>
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-            <div className="w-2 h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          <div className="mt-4 sm:mt-5 md:mt-6 flex items-center justify-center gap-1.5 sm:gap-2">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
           </div>
         </div>
       </div>

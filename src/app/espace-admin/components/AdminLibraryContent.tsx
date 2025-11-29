@@ -231,52 +231,52 @@ const AdminLibraryContent = () => {
   }, [filteredTableDocs, sortOrder]);
 
   return (
-    <div className="space-y-10">
-      <section className="space-y-6">
-        <header className="flex items-start justify-between">
-          <div className="space-y-2">
+    <div className="space-y-6 sm:space-y-8 md:space-y-10">
+      <section className="space-y-4 sm:space-y-5 md:space-y-6">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="space-y-1.5 sm:space-y-2 flex-1 min-w-0">
             <h1
-              className="text-4xl font-bold text-[#032622]"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] break-words"
               style={{ fontFamily: "var(--font-termina-bold)" }}
             >
               BIBLIOTHÈQUE NUMÉRIQUE
             </h1>
-            <p className="text-sm text-[#032622]/70 max-w-2xl">
+            <p className="text-xs sm:text-sm text-[#032622]/70 max-w-2xl break-words">
               Centralisez et partagez l'ensemble des ressources pédagogiques, replays et méthodologies
               pour les différentes écoles de la plateforme.
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <Bookmark className="w-6 h-6 text-[#032622]" />
+          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
+            <Bookmark className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622]" />
             <div className="relative">
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#D96B6B]" />
-              <FileText className="w-6 h-6 text-[#032622]" />
+              <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#D96B6B]" />
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622]" />
             </div>
-            <div className="w-12 h-12 rounded-full bg-[#01302C] text-[#032622] flex items-center justify-center text-lg">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#01302C] text-[#032622] flex items-center justify-center text-sm sm:text-base md:text-lg">
               YF
             </div>
           </div>
         </header>
 
-        <div className="border border-[#032622] bg-[#032622] h-44" />
+        <div className="border border-[#032622] bg-[#032622] h-32 sm:h-36 md:h-44" />
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-2 w-full sm:w-auto">
             <h2
-              className="text-sm font-semibold text-[#032622] tracking-wider"
+              className="text-xs sm:text-sm font-semibold text-[#032622] tracking-wider"
               style={{ fontFamily: "var(--font-termina-bold)" }}
             >
               DOCUMENTS PAR ÉCOLES
             </h2>
-            <div className="flex flex-wrap items-center gap-10">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-10">
               {schools.map((school) => (
-                <div key={school.id} className="flex items-center justify-center px-2">
+                <div key={school.id} className="flex items-center justify-center px-1 sm:px-2">
                   <Image
                     src={school.logo}
                     alt={school.name}
                     width={180}
                     height={70}
-                    className="h-14 w-44 object-contain"
+                    className="h-10 w-28 sm:h-12 sm:w-36 md:h-14 md:w-44 object-contain"
                   />
                 </div>
               ))}
@@ -285,9 +285,9 @@ const AdminLibraryContent = () => {
 
           <button 
             onClick={() => setShowImportModal(true)}
-            className="inline-flex items-center space-x-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-4 py-2 text-sm font-semibold hover:bg-[#eae5cf] transition-colors"
+            className="inline-flex items-center space-x-1.5 sm:space-x-2 border border-[#032622] bg-[#F8F5E4] text-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold hover:bg-[#eae5cf] active:bg-[#e0dbc5] transition-colors whitespace-nowrap w-full sm:w-auto justify-center"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Nouvelle importation</span>
           </button>
         </div>
@@ -297,20 +297,20 @@ const AdminLibraryContent = () => {
       <DocumentShelf title="LES PLUS TÉLÉCHARGÉS" documents={mostDownloaded} onDocumentClick={setSelectedDocument} />
       <DocumentShelf title="DERNIERS REPLAY" documents={latestReplay} onDocumentClick={setSelectedDocument} />
 
-      <section className="space-y-6">
+      <section className="space-y-4 sm:space-y-5 md:space-y-6">
         <div className="relative w-full max-w-xl">
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Recherche"
-            className="w-full border border-[#032622] bg-[#F8F5E4] px-4 py-3 text-sm text-[#032622] focus:outline-none focus:border-[#01302C]"
+            className="w-full border border-[#032622] bg-[#F8F5E4] pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm text-[#032622] focus:outline-none focus:border-[#01302C]"
           />
-          <Search className="w-5 h-5 text-[#032622] absolute right-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] absolute right-3 sm:right-4 top-1/2 -translate-y-1/2" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-[#032622]">
-          <button className="inline-flex items-center space-x-2 border border-[#032622] px-4 py-2 hover:bg-[#eae5cf] transition-colors">
-            <Plus className="w-4 h-4" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold text-[#032622]">
+          <button className="inline-flex items-center space-x-1.5 sm:space-x-2 border border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-[#eae5cf] active:bg-[#e0dbc5] transition-colors">
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Nouveau</span>
           </button>
           <FilterButton

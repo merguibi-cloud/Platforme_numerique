@@ -432,59 +432,61 @@ const AgendaComponent = () => {
   const hours = Array.from({ length: 15 }, (_, i) => i + 9); // 9h à 23h
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5 md:space-y-6">
       {/* Header avec navigation et boutons */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
           <button
             onClick={() => handleNavigation("prev")}
-            className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors border border-gray-400"
+            className="p-1.5 sm:p-2 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded transition-colors border border-gray-400"
+            aria-label="Précédent"
           >
-            <ChevronLeft className="w-5 h-5 text-[#032622]" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622]" />
           </button>
-          <div className="px-4 py-2 bg-gray-200 border border-gray-400 rounded text-[#032622] font-semibold">
+          <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 border border-gray-400 rounded text-xs sm:text-sm md:text-base text-[#032622] font-semibold whitespace-nowrap">
             {getHeaderTitle()}
           </div>
           <button
             onClick={() => handleNavigation("next")}
-            className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors border border-gray-400"
+            className="p-1.5 sm:p-2 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded transition-colors border border-gray-400"
+            aria-label="Suivant"
           >
-            <ChevronRight className="w-5 h-5 text-[#032622]" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622]" />
           </button>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 w-full sm:w-auto">
           {/* Boutons AUJOURD'HUI / SEMAINE / MOIS */}
-          <div className="flex border border-[#032622]">
+          <div className="flex border border-[#032622] flex-1 sm:flex-initial">
             <button
               onClick={() => {
                 setViewMode("today");
                 setCurrentDate(new Date());
               }}
-              className={`px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`flex-1 sm:flex-initial px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold transition-colors ${
                 viewMode === "today"
                   ? "bg-[#032622] text-white"
-                  : "bg-white text-[#032622] hover:bg-gray-100"
+                  : "bg-white text-[#032622] hover:bg-gray-100 active:bg-gray-200"
               }`}
             >
               AUJOURD'HUI
             </button>
             <button
               onClick={() => setViewMode("week")}
-              className={`px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`flex-1 sm:flex-initial px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold transition-colors ${
                 viewMode === "week"
                   ? "bg-white text-[#032622] border-2 border-[#032622]"
-                  : "bg-white text-[#032622] hover:bg-gray-100"
+                  : "bg-white text-[#032622] hover:bg-gray-100 active:bg-gray-200"
               }`}
             >
               SEMAINE
             </button>
             <button
               onClick={() => setViewMode("month")}
-              className={`px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`flex-1 sm:flex-initial px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold transition-colors ${
                 viewMode === "month"
                   ? "bg-[#032622] text-white"
-                  : "bg-white text-[#032622] hover:bg-gray-100"
+                  : "bg-white text-[#032622] hover:bg-gray-100 active:bg-gray-200"
               }`}
             >
               MOIS
@@ -494,29 +496,30 @@ const AgendaComponent = () => {
           {/* Bouton Ajouter */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="w-12 h-12 bg-[#032622] text-white border border-[#032622] flex items-center justify-center hover:bg-[#032622]/90 transition-colors"
+            className="w-10 h-10 sm:w-12 sm:h-12 bg-[#032622] text-white border border-[#032622] flex items-center justify-center hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex-shrink-0"
+            aria-label="Ajouter un événement"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
       </div>
 
       {/* Vue AUJOURD'HUI */}
       {viewMode === "today" && (
-        <div className="border border-[#032622] bg-[#F8F5E4]">
+        <div className="border border-[#032622] bg-[#F8F5E4] overflow-x-auto">
           {/* En-tête du jour */}
-          <div className="bg-[#032622] text-white p-4 font-bold text-lg">
+          <div className="bg-[#032622] text-white p-3 sm:p-4 font-bold text-sm sm:text-base md:text-lg">
             {formatDateForHeader(currentDate).toUpperCase()}
           </div>
           
           {/* Planning horaire */}
-          <div className="flex relative" style={{ minHeight: "600px" }}>
+          <div className="flex relative" style={{ minHeight: "400px", minWidth: "320px" }}>
             {/* Colonne des heures */}
-            <div className="w-20 border-r border-[#032622] bg-[#F8F5E4]">
+            <div className="w-16 sm:w-20 border-r border-[#032622] bg-[#F8F5E4] flex-shrink-0">
               {hours.map((hour) => (
                 <div
                   key={hour}
-                  className="h-16 border-b border-[#032622] flex items-start justify-end pr-2 pt-1 text-sm text-[#032622]"
+                  className="h-12 sm:h-16 border-b border-[#032622] flex items-start justify-end pr-1 sm:pr-2 pt-1 text-xs sm:text-sm text-[#032622]"
                 >
                   {hour}:00
                 </div>
@@ -570,26 +573,26 @@ const AgendaComponent = () => {
 
       {/* Vue SEMAINE */}
       {viewMode === "week" && (
-        <div className="border border-[#032622] bg-[#F8F5E4]">
+        <div className="border border-[#032622] bg-[#F8F5E4] overflow-x-auto">
           {/* En-têtes des jours de la semaine */}
-          <div className="grid grid-cols-7 border-b border-[#032622]">
+          <div className="grid grid-cols-7 border-b border-[#032622] min-w-[560px]">
             {weekDays.map((day, index) => {
               const weekDates = getWeekDates(currentDate);
               const dayDate = weekDates[index];
               return (
                 <div
                   key={day}
-                  className="p-4 text-center border-r border-[#032622] last:border-r-0 bg-[#032622] text-white font-semibold"
+                  className="p-2 sm:p-3 md:p-4 text-center border-r border-[#032622] last:border-r-0 bg-[#032622] text-white font-semibold"
                 >
-                  <div className="text-xs mb-1">{day}</div>
-                  <div className="text-sm">{dayDate.getDate()}</div>
+                  <div className="text-[10px] sm:text-xs mb-0.5 sm:mb-1">{day}</div>
+                  <div className="text-xs sm:text-sm">{dayDate.getDate()}</div>
                 </div>
               );
             })}
           </div>
 
           {/* Grille de la semaine */}
-          <div className="grid grid-cols-7">
+          <div className="grid grid-cols-7 min-w-[560px]">
             {getWeekDates(currentDate).map((dayDate, index) => {
               const dateStr = dayDate.toISOString().split('T')[0];
               const dayEvents = getEventsForDate(dateStr);
@@ -598,7 +601,7 @@ const AgendaComponent = () => {
               return (
                 <div
                   key={index}
-                  className={`min-h-[400px] p-2 border-r border-b border-[#032622] last:border-r-0 ${
+                  className={`min-h-[300px] sm:min-h-[350px] md:min-h-[400px] p-1.5 sm:p-2 border-r border-b border-[#032622] last:border-r-0 ${
                     isToday ? "bg-[#eae5cf]" : "bg-[#F8F5E4]"
                   }`}
                 >
@@ -636,13 +639,13 @@ const AgendaComponent = () => {
 
       {/* Vue MOIS */}
       {viewMode === "month" && (
-        <div className="border border-[#032622] bg-[#F8F5E4]">
+        <div className="border border-[#032622] bg-[#F8F5E4] overflow-x-auto">
           {/* En-têtes des jours de la semaine */}
-          <div className="grid grid-cols-7 border-b border-[#032622]">
+          <div className="grid grid-cols-7 border-b border-[#032622] min-w-[560px]">
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="p-4 text-center text-sm font-semibold text-[#032622] border-r border-[#032622] last:border-r-0"
+                className="p-2 sm:p-3 md:p-4 text-center text-[10px] sm:text-xs md:text-sm font-semibold text-[#032622] border-r border-[#032622] last:border-r-0"
               >
                 {day}
               </div>
@@ -650,14 +653,14 @@ const AgendaComponent = () => {
           </div>
 
           {/* Grille du calendrier */}
-          <div className="grid grid-cols-7">
+          <div className="grid grid-cols-7 min-w-[560px]">
             {getDaysInMonth(currentDate).map((day, index) => {
               const dayEvents = getEventsForDate(day.fullDate);
               
               return (
                 <div
                   key={index}
-                  className={`min-h-[120px] p-2 border-r border-b border-[#032622] last:border-r-0 ${
+                  className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] p-1 sm:p-1.5 md:p-2 border-r border-b border-[#032622] last:border-r-0 ${
                     !day.isCurrentMonth ? "text-[#032622]/40 bg-gray-100" : "text-[#032622] bg-[#F8F5E4]"
                   } ${day.isToday ? "bg-[#eae5cf]" : ""}`}
                 >

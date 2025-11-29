@@ -154,10 +154,10 @@ export const FormationManagement = () => {
   return (
     <div className="min-h-screen bg-[#F8F5E4] flex">
       {/* Contenu principal */}
-      <div className="flex-1 p-6">
-        <div className="space-y-8">
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10">
+        <div className="space-y-4 sm:space-y-6 md:space-y-8">
           {/* Header avec notifications et profil */}
-          <AdminTopBar notificationCount={0} className="mb-6" />
+          <AdminTopBar notificationCount={0} className="mb-4 sm:mb-5 md:mb-6" />
 
           {!selectedFormation ? (
             <>

@@ -87,39 +87,39 @@ export default function ChangePasswordPage() {
 
   if (isChecking) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#F8F5E4]">
+      <div className="flex items-center justify-center min-h-screen bg-[#F8F5E4] p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Vérification...</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-[#032622]">Vérification...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-[#F8F5E4] border-4 border-[#032622] p-8">
+    <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-3 sm:p-4 md:p-6">
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-[#F8F5E4] border-2 sm:border-4 border-[#032622] p-4 sm:p-6 md:p-8">
           <h1
-            className="text-3xl font-bold text-[#032622] mb-6 text-center"
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-[#032622] mb-4 sm:mb-5 md:mb-6 text-center break-words"
             style={{ fontFamily: "var(--font-termina-bold)" }}
           >
             CRÉER VOTRE MOT DE PASSE
           </h1>
 
-          <p className="text-[#032622]/70 mb-6 text-center">
+          <p className="text-xs sm:text-sm md:text-base text-[#032622]/70 mb-4 sm:mb-5 md:mb-6 text-center break-words">
             Pour des raisons de sécurité, vous devez créer un nouveau mot de passe pour accéder à votre espace administrateur.
           </p>
 
           {error && (
-            <div className="bg-[#D96B6B] text-white p-4 mb-6 border-2 border-[#032622]">
-              <p className="font-semibold">{error}</p>
+            <div className="bg-[#D96B6B] text-white p-3 sm:p-4 mb-4 sm:mb-5 md:mb-6 border-2 border-[#032622]">
+              <p className="text-xs sm:text-sm font-semibold break-words">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                 CRÉER UN MOT DE PASSE
               </label>
               <div className="relative">
@@ -129,21 +129,22 @@ export default function ChangePasswordPage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 pr-12 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                  className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-2 sm:py-2.5 pr-10 sm:pr-12 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                   placeholder="Minimum 8 caractères"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70"
+                  className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1"
+                  aria-label={showNewPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
-                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showNewPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                 CONFIRMER LE MOT DE PASSE
               </label>
               <div className="relative">
@@ -153,15 +154,16 @@ export default function ChangePasswordPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 pr-12 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                  className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-2 sm:py-2.5 pr-10 sm:pr-12 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                   placeholder="Répétez le nouveau mot de passe"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70"
+                  className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1"
+                  aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
               </div>
             </div>
@@ -169,7 +171,7 @@ export default function ChangePasswordPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#032622] text-[#F8F5E4] px-6 py-3 font-semibold hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#032622] text-[#F8F5E4] px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm md:text-base font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "CRÉATION EN COURS..." : "CRÉER MON MOT DE PASSE"}
             </button>

@@ -147,44 +147,49 @@ export default function EtudiantDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
-        <div className="text-[#032622]">Chargement...</div>
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-[#032622]">Chargement...</p>
+        </div>
       </div>
     );
   }
 
   if (!etudiantData) {
     return (
-      <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
-        <div className="text-[#032622]">Étudiant non trouvé</div>
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] min-h-screen flex items-center justify-center">
+        <div className="text-center px-4">
+          <p className="text-sm sm:text-base text-[#032622]">Étudiant non trouvé</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-[#F8F5E4] min-h-screen">
-      <AdminTopBar notificationCount={1} className="mb-6" />
+    <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] min-h-screen">
+      <AdminTopBar notificationCount={1} className="mb-4 sm:mb-5 md:mb-6" />
 
       {/* Bouton retour */}
       <button
         onClick={() => router.back()}
-        className="flex items-center space-x-2 text-[#032622] hover:underline mb-6"
+        className="flex items-center space-x-1.5 sm:space-x-2 text-[#032622] hover:underline active:text-[#032622]/80 mb-4 sm:mb-5 md:mb-6 transition-colors"
       >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-semibold">Retour</span>
+        <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="text-xs sm:text-sm md:text-base font-semibold">Retour</span>
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Colonne principale (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6">
           {/* Header du profil */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <span className="px-3 py-1 bg-[#87CEEB] text-[#032622] text-xs font-semibold uppercase">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-[#87CEEB] text-[#032622] text-[10px] sm:text-xs font-semibold uppercase">
                   ÉTUDIANT
                 </span>
-                <span className="text-[#032622] text-sm font-semibold">
+                <span className="text-xs sm:text-sm text-[#032622] font-semibold">
                   #{etudiantData.id_etudiant}
                 </span>
               </div>
@@ -194,120 +199,120 @@ export default function EtudiantDetailPage() {
                   alt="Flag"
                   width={20}
                   height={20}
-                  className="w-5 h-5"
+                  className="w-4 h-4 sm:w-5 sm:h-5"
                 />
               </div>
             </div>
             <h1
-              className="text-2xl md:text-3xl font-bold text-[#032622] mb-2"
+              className="text-xl sm:text-2xl md:text-3xl font-bold text-[#032622] mb-1 sm:mb-2 break-words"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               PROFIL DE {etudiantData.prenom.toUpperCase()} {etudiantData.nom.toUpperCase()}
             </h1>
-            <p className="text-sm text-[#032622]/70">
+            <p className="text-xs sm:text-sm text-[#032622]/70 break-words">
               DERNIÈRE CONNEXION A LA FORMATION: {etudiantData.derniere_connexion || 'Jamais'}
             </p>
           </div>
 
           {/* Statistiques */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-[#032622]">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
+            <div className="mb-3 sm:mb-4">
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                <span className="text-xs sm:text-sm font-semibold text-[#032622] truncate flex-1 min-w-0 pr-2">
                   {etudiantData.formation_titre}
                 </span>
-                <span className="text-sm font-semibold text-[#032622]">
+                <span className="text-xs sm:text-sm font-semibold text-[#032622] whitespace-nowrap">
                   {etudiantData.progression}%
                 </span>
               </div>
-              <div className="w-full bg-[#032622]/20 h-3">
+              <div className="w-full bg-[#032622]/20 h-2 sm:h-3">
                 <div
-                  className="bg-[#032622] h-3 transition-all"
+                  className="bg-[#032622] h-2 sm:h-3 transition-all"
                   style={{ width: `${etudiantData.progression}%` }}
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-5 md:mt-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#032622]">{etudiantData.temps_total}</div>
-                <div className="text-xs text-[#032622]/70 mt-1">Temps total</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] break-words">{etudiantData.temps_total}</div>
+                <div className="text-[10px] sm:text-xs text-[#032622]/70 mt-0.5 sm:mt-1">Temps total</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#032622]">
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622]">
                   {etudiantData.blocs_completes}/{etudiantData.blocs_totaux}
                 </div>
-                <div className="text-xs text-[#032622]/70 mt-1">Blocs de compétences</div>
+                <div className="text-[10px] sm:text-xs text-[#032622]/70 mt-0.5 sm:mt-1">Blocs de compétences</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#032622]">{etudiantData.quiz_passes}</div>
-                <div className="text-xs text-[#032622]/70 mt-1">Quiz passés</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622]">{etudiantData.quiz_passes}</div>
+                <div className="text-[10px] sm:text-xs text-[#032622]/70 mt-0.5 sm:mt-1">Quiz passés</div>
               </div>
             </div>
           </div>
 
           {/* Dernières notes */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
             <h2
-              className="text-xl font-bold text-[#032622] mb-4"
+              className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               DERNIÈRES NOTES
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[400px]">
                 <thead>
                   <tr className="border-b border-[#032622]">
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-[#032622]">BLOC</th>
-                    <th className="px-4 py-2 text-center text-sm font-semibold text-[#032622]">NOTE 1</th>
-                    <th className="px-4 py-2 text-center text-sm font-semibold text-[#032622]">NOTE 2</th>
-                    <th className="px-4 py-2 text-center text-sm font-semibold text-[#032622]">TEMPS</th>
+                    <th className="px-3 sm:px-4 py-2 text-left text-[10px] sm:text-xs md:text-sm font-semibold text-[#032622] whitespace-nowrap">BLOC</th>
+                    <th className="px-3 sm:px-4 py-2 text-center text-[10px] sm:text-xs md:text-sm font-semibold text-[#032622] whitespace-nowrap">NOTE 1</th>
+                    <th className="px-3 sm:px-4 py-2 text-center text-[10px] sm:text-xs md:text-sm font-semibold text-[#032622] whitespace-nowrap">NOTE 2</th>
+                    <th className="px-3 sm:px-4 py-2 text-center text-[10px] sm:text-xs md:text-sm font-semibold text-[#032622] whitespace-nowrap">TEMPS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {etudiantData.dernieresNotes.map((note, index) => (
                     <tr key={index} className="border-b border-[#032622]/20">
-                      <td className="px-4 py-3 text-sm font-semibold text-[#032622]">{note.bloc}</td>
-                      <td className="px-4 py-3 text-center text-sm text-[#032622]">{note.note1}</td>
-                      <td className="px-4 py-3 text-center text-sm text-[#032622]">{note.note2}</td>
-                      <td className="px-4 py-3 text-center text-sm text-[#032622]">{note.temps}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-[#032622] break-words">{note.bloc}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm text-[#032622]">{note.note1}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm text-[#032622]">{note.note2}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm text-[#032622] whitespace-nowrap">{note.temps}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <button className="mt-4 text-sm font-semibold text-[#032622] hover:underline">
+            <button className="mt-3 sm:mt-4 text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 transition-colors">
               VOIR LE RELEVÉ DE NOTE
             </button>
           </div>
 
           {/* Agenda optimisé */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 overflow-x-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
               <h2
-                className="text-xl font-bold text-[#032622]"
+                className="text-lg sm:text-xl font-bold text-[#032622]"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 AGENDA
               </h2>
-              <div className="flex items-center space-x-2">
-                <select className="px-3 py-1 border border-[#032622] bg-[#F8F5E4] text-[#032622] text-sm">
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <select className="flex-1 sm:flex-initial px-2 sm:px-3 py-1 text-xs sm:text-sm border border-[#032622] bg-[#F8F5E4] text-[#032622]">
                   <option>
                     {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase()}
                   </option>
                 </select>
-                <button className="text-sm font-semibold text-[#032622] hover:underline">
+                <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 transition-colors whitespace-nowrap">
                   TOUT VOIR
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-7 gap-1 mb-2">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1.5 sm:mb-2 min-w-[280px]">
               {joursSemaine.map((jour) => (
-                <div key={jour} className="text-center text-[10px] font-semibold text-[#032622] py-1 bg-[#C9C6B4]">
+                <div key={jour} className="text-center text-[9px] sm:text-[10px] font-semibold text-[#032622] py-0.5 sm:py-1 bg-[#C9C6B4]">
                   {jour}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
               {calendrierDates.map((date, index) => {
                 const isEntreprise = date.mois === 'actuel' && joursEntreprise.includes(date.jour);
                 const isAujourdhui = date.mois === 'actuel' && date.jour === aujourdhui;
@@ -317,7 +322,7 @@ export default function EtudiantDetailPage() {
                 return (
                   <div
                     key={index}
-                    className={`w-[30px] h-[30px] flex flex-col items-center justify-center text-[10px] text-[#032622] relative ${
+                    className={`w-[24px] h-[24px] sm:w-[30px] sm:h-[30px] flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-[#032622] relative ${
                       isAujourdhui
                         ? 'bg-[#032622] text-[#F8F5E4] font-semibold'
                         : isEntreprise
@@ -328,35 +333,35 @@ export default function EtudiantDetailPage() {
                     }`}
                   >
                     {pointInfo && pointInfo.position === 'top' && (
-                      <div className={`absolute top-0.5 w-1.5 h-1.5 ${pointInfo.couleur === 'orange' ? 'bg-orange-500' : 'bg-[#032622]'}`} />
+                      <div className={`absolute top-0.5 w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${pointInfo.couleur === 'orange' ? 'bg-orange-500' : 'bg-[#032622]'}`} />
                     )}
                     <span>{date.jour}</span>
                     {pointInfo && pointInfo.position === 'bottom' && (
-                      <div className={`absolute  bottom-0.5 w-1.5 h-1.5 ${pointInfo.couleur === 'orange' ? 'bg-orange-500' : 'bg-[#032622]'}`} />
+                      <div className={`absolute bottom-0.5 w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${pointInfo.couleur === 'orange' ? 'bg-orange-500' : 'bg-[#032622]'}`} />
                     )}
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center space-x-4 mt-3 text-[10px]">
-              <div className="flex items-center space-x-1.5">
-                <div className="w-3 h-3 bg-[#032622]"></div>
-                <span className="text-[#032622]">AUJOURD'HUI</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3 text-[9px] sm:text-[10px]">
+              <div className="flex items-center space-x-1 sm:space-x-1.5">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-[#032622] rounded-full"></div>
+                <span className="text-[#032622] whitespace-nowrap">AUJOURD'HUI</span>
               </div>
-              <div className="flex items-center space-x-1.5">
-                <div className="w-3 h-3 bg-[#C9C6B4]"></div>
-                <span className="text-[#032622]">JOUR EN ENTREPRISE</span>
+              <div className="flex items-center space-x-1 sm:space-x-1.5">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-[#C9C6B4] rounded-full"></div>
+                <span className="text-[#032622] whitespace-nowrap">JOUR EN ENTREPRISE</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Sidebar droite (1/3) */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {/* Section principale avec photo, infos et boutons */}
-          <div className="bg-[#F8F5E4] p-6">
+          <div className="bg-[#F8F5E4] p-4 sm:p-5 md:p-6 border border-[#032622]">
              {/* Photo de profil rectangulaire */}
-             <div className="w-50 h-60 border border-[#032622] bg-[#C9C6B4] flex items-center justify-center mb-6 overflow-hidden">
+             <div className="w-full aspect-[4/5] sm:aspect-[3/4] md:aspect-[4/5] max-w-xs mx-auto border border-[#032622] bg-[#C9C6B4] flex items-center justify-center mb-4 sm:mb-5 md:mb-6 overflow-hidden">
                {etudiantData.photo_url ? (
                  <Image
                    src={etudiantData.photo_url}
@@ -364,43 +369,44 @@ export default function EtudiantDetailPage() {
                    width={192}
                    height={192}
                    className="w-full h-full object-cover"
+                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 200px, 192px"
                  />
                ) : (
-                 <User className="w-16 h-16 text-[#032622]/50" />
+                 <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-[#032622]/50" />
                )}
              </div>
 
             {/* Informations */}
-            <div className="space-y-3 mb-6 text-sm text-[#032622]">
-              <p>
+            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-5 md:mb-6 text-xs sm:text-sm text-[#032622]">
+              <p className="break-words">
                 <span className="font-semibold">MEMBRE DEPUIS :</span> LE {etudiantData.membre_depuis}
               </p>
-              <p>
+              <p className="break-words">
                 <span className="font-semibold">DERNIÈRE CONNEXION :</span> LE {etudiantData.derniere_connexion_globale}
               </p>
-              <p>
+              <p className="break-words">
                 <span className="font-semibold">TEMPS GLOBAL SUR LA PLATEFORME :</span> {etudiantData.temps_global}
               </p>
             </div>
 
             {/* Boutons d'action */}
-            <div className="space-y-3 mb-4">
+            <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
               <button 
                 onClick={() => router.push(`/espace-admin/gestion-etudiants/${id}/informations`)}
-                className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm md:text-base font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
               >
                 VOIR INFORMATIONS
               </button>
-              <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors">
+              <button className="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm md:text-base font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors">
                 ENVOYEZ UN MESSAGE
               </button>
-              <button className="w-full px-4 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors">
+              <button className="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm md:text-base font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors">
                 PRÉVOIR UN RENDEZ-VOUS
               </button>
             </div>
 
             {/* Lien suspendre le compte */}
-            <button className="w-full text-left text-[#032622] font-semibold hover:underline mb-4">
+            <button className="w-full text-left text-xs sm:text-sm text-[#032622] font-semibold hover:underline active:text-[#032622]/80 transition-colors mb-3 sm:mb-4">
               SUSPENDRE L'ACCES AU COMPTE
             </button>
 
@@ -408,22 +414,22 @@ export default function EtudiantDetailPage() {
             <button
               onClick={() => setShowDeleteModal(true)}
               disabled={isDeleting}
-              className="w-full px-4 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 bg-red-600 text-white text-xs sm:text-sm md:text-base font-semibold hover:bg-red-700 active:bg-red-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isDeleting ? 'SUPPRESSION EN COURS...' : 'SUPPRIMER LE COMPTE'}
             </button>
           </div>
 
           {/* Temps de connexion avec recharts */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
             <h2
-              className="text-xl font-bold text-[#032622] mb-4"
+              className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               TEMPS DE CONNEXION
             </h2>
             {tempsConnexionData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={150}>
+              <ResponsiveContainer width="100%" height={120}>
                 <BarChart data={tempsConnexionData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                   <XAxis 
                     dataKey="jour" 
@@ -456,27 +462,27 @@ export default function EtudiantDetailPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="bg-white border border-[#032622]/30 p-8 text-center text-[#032622]/50">
-                <p className="text-sm">Aucune donnée de connexion disponible</p>
+              <div className="bg-white border border-[#032622]/30 p-6 sm:p-8 text-center text-[#032622]/50">
+                <p className="text-xs sm:text-sm">Aucune donnée de connexion disponible</p>
               </div>
             )}
           </div>
 
           {/* Signalements */}
-          <div className="border border-[#032622] bg-[#F8F5E4] p-6">
+          <div className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
             <h2
-              className="text-xl font-bold text-[#032622] mb-4"
+              className="text-lg sm:text-xl font-bold text-[#032622] mb-3 sm:mb-4"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               SIGNALEMENTS
             </h2>
             {etudiantData.signalements && etudiantData.signalements.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {etudiantData.signalements.map((signalement) => (
-                  <div key={signalement.id} className="bg-white border border-[#032622]/30 p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-sm font-semibold text-[#032622]">{signalement.type_signalement}</span>
-                      <span className={`text-xs px-2 py-1 ${
+                  <div key={signalement.id} className="bg-white border border-[#032622]/30 p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                      <span className="text-xs sm:text-sm font-semibold text-[#032622] break-words">{signalement.type_signalement}</span>
+                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 whitespace-nowrap ${
                         signalement.statut === 'ouvert' ? 'bg-red-100 text-red-800' :
                         signalement.statut === 'en_cours' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-green-100 text-green-800'
@@ -484,16 +490,16 @@ export default function EtudiantDetailPage() {
                         {signalement.statut.toUpperCase()}
                       </span>
                     </div>
-                    <p className="text-xs text-[#032622]/70">{signalement.description}</p>
-                    <p className="text-xs text-[#032622]/50 mt-2">
+                    <p className="text-xs text-[#032622]/70 break-words">{signalement.description}</p>
+                    <p className="text-[10px] sm:text-xs text-[#032622]/50 mt-1.5 sm:mt-2">
                       {new Date(signalement.created_at).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white border border-[#032622]/30 p-8 text-center text-[#032622]/50">
-                <p className="text-sm">Aucun signalement</p>
+              <div className="bg-white border border-[#032622]/30 p-6 sm:p-8 text-center text-[#032622]/50">
+                <p className="text-xs sm:text-sm">Aucun signalement</p>
               </div>
             )}
           </div>

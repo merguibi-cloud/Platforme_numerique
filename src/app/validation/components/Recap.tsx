@@ -239,8 +239,8 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
-          <p className="mt-4 text-[#032622]">Chargement du récapitulatif...</p>
+          <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#032622]"></div>
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-[#032622]">Chargement du récapitulatif...</p>
         </div>
       </div>
     );
@@ -249,11 +249,11 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
   if (!candidatureData) {
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center text-[#032622]">
-          <p>Erreur lors du chargement des données</p>
+        <div className="text-center text-[#032622] px-4">
+          <p className="text-sm sm:text-base">Erreur lors du chargement des données</p>
           <button 
             onClick={onPrev}
-            className="mt-4 px-6 py-3 border border-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+            className="mt-4 px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors text-sm sm:text-base"
           >
             RETOUR
           </button>
@@ -269,37 +269,37 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
         <ProgressHeader currentStep="DOSSIER" onClose={onClose} />
 
         {/* Titre de la section */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#032622] uppercase">Récapitulatif de votre candidature</h2>
-          <p className="text-[#032622]/70 mt-2">Veuillez vérifier attentivement toutes les informations avant de valider</p>
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#032622] uppercase">Récapitulatif de votre candidature</h2>
+          <p className="text-xs sm:text-sm text-[#032622]/70 mt-1 sm:mt-2">Veuillez vérifier attentivement toutes les informations avant de valider</p>
         </div>
 
         {/* Document de récapitulatif */}
-        <div className="w-full mb-6 p-8 border border-[#032622] bg-[#F8F5E4]">
+        <div className="w-full mb-4 sm:mb-6 p-4 sm:p-6 md:p-8 border border-[#032622] bg-[#F8F5E4]">
           {/* Section photo et informations personnelles */}
-          <div className="flex gap-6 mb-8 pb-8 border-b border-[#032622]/20">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-[#032622]/20">
             {/* Photo de profil */}
-            <div className="w-48 h-60 border border-[#032622] bg-[#C2C6B6] flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-full sm:w-40 md:w-48 h-48 sm:h-56 md:h-60 border border-[#032622] bg-[#C2C6B6] flex items-center justify-center flex-shrink-0 overflow-hidden mx-auto sm:mx-0">
               {photoUrl ? (
                 <img src={photoUrl} alt="Photo d'identité" className="w-full h-full object-cover" />
               ) : (
-              <User className="w-16 h-16 text-[#032622]" />
+              <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-[#032622]" />
               )}
             </div>
             
             {/* Informations personnelles */}
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#032622] uppercase">Informations personnelles</h3>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
+                <h3 className="text-base sm:text-lg font-bold text-[#032622] uppercase">Informations personnelles</h3>
                 <button
                   onClick={() => router.push('/validation?step=informations')}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors text-sm"
+                  className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors text-xs sm:text-sm w-full sm:w-auto justify-center"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>MODIFIER</span>
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-8 text-[#032622]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 text-sm sm:text-base text-[#032622]">
                 {/* Colonne gauche */}
                 <div className="space-y-3">
                   <div>
@@ -350,25 +350,25 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
             
             {/* Documents */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#032622] uppercase">Documents déposés</h3>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
+                <h3 className="text-base sm:text-lg font-bold text-[#032622] uppercase">Documents déposés</h3>
                 <button
                   onClick={() => router.push('/validation?step=documents')}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors text-sm"
+                  className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors text-xs sm:text-sm w-full sm:w-auto justify-center"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>MODIFIER</span>
                 </button>
             </div>
             
               {/* CV */}
-              <div className="flex items-center justify-between p-4 bg-[#F8F5E4] border border-[#032622]/20">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-[#032622]" />
-            <div>
-                    <span className="font-bold">CV</span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 p-3 sm:p-4 bg-[#F8F5E4] border border-[#032622]/20">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] flex-shrink-0" />
+            <div className="min-w-0">
+                    <span className="font-bold text-sm sm:text-base">CV</span>
                     {candidatureData.cv_path && (
-                      <p className="text-sm text-[#032622]/70">{candidatureData.cv_path.split('/').pop()}</p>
+                      <p className="text-xs sm:text-sm text-[#032622]/70 truncate">{candidatureData.cv_path.split('/').pop()}</p>
                     )}
                   </div>
                 </div>
@@ -377,13 +377,13 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
                     href={documentUrls.cv}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
+                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors text-xs sm:text-sm w-full sm:w-auto justify-center"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span>TÉLÉCHARGER</span>
                   </a>
                 ) : (
-                  <span className="text-sm text-[#032622]/60 italic">Non déposé</span>
+                  <span className="text-xs sm:text-sm text-[#032622]/60 italic">Non déposé</span>
                 )}
             </div>
             
@@ -514,30 +514,30 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
         </div>
 */}
         {/* Checkboxes */}
-        <div className="w-full mb-6 p-6 border border-[#032622] bg-[#F8F5E4]">
-          <h3 className="text-lg font-bold text-[#032622] mb-4 uppercase">Validation finale</h3>
-          <div className="space-y-4">
-            <label className="flex items-start gap-3 cursor-pointer hover:bg-[#C2C6B6]/30 p-3 transition-colors">
+        <div className="w-full mb-4 sm:mb-6 p-4 sm:p-5 md:p-6 border border-[#032622] bg-[#F8F5E4]">
+          <h3 className="text-base sm:text-lg font-bold text-[#032622] mb-3 sm:mb-4 uppercase">Validation finale</h3>
+          <div className="space-y-3 sm:space-y-4">
+            <label className="flex items-start gap-2 sm:gap-3 cursor-pointer hover:bg-[#C2C6B6]/30 p-2 sm:p-3 transition-colors">
             <input
               type="checkbox"
               checked={acceptConditions}
               onChange={(e) => setAcceptConditions(e.target.checked)}
-                className="mt-1 w-5 h-5 cursor-pointer"
+                className="mt-1 w-4 h-4 sm:w-5 sm:h-5 cursor-pointer flex-shrink-0"
             />
-              <span className="text-[#032622] flex-1">
+              <span className="text-xs sm:text-sm text-[#032622] flex-1">
                 J'accepte les conditions générales d'utilisation et la politique de confidentialité de la plateforme. 
                 J'ai lu et compris les termes et conditions applicables à ma candidature.
             </span>
           </label>
           
-            <label className="flex items-start gap-3 cursor-pointer hover:bg-[#C2C6B6]/30 p-3 transition-colors">
+            <label className="flex items-start gap-2 sm:gap-3 cursor-pointer hover:bg-[#C2C6B6]/30 p-2 sm:p-3 transition-colors">
             <input
               type="checkbox"
               checked={attestCorrect}
               onChange={(e) => setAttestCorrect(e.target.checked)}
-                className="mt-1 w-5 h-5 cursor-pointer"
+                className="mt-1 w-4 h-4 sm:w-5 sm:h-5 cursor-pointer flex-shrink-0"
             />
-              <span className="text-[#032622] flex-1">
+              <span className="text-xs sm:text-sm text-[#032622] flex-1">
                 J'atteste sur l'honneur que toutes les informations fournies dans ce formulaire sont exactes et complètes. 
                 Je suis conscient(e) que toute fausse déclaration peut entraîner le rejet de ma candidature.
             </span>
@@ -545,8 +545,8 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
           </div>
           
           {(!acceptConditions || !attestCorrect) && (
-            <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
-              <p className="text-sm text-yellow-800">
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-yellow-50 border-l-4 border-yellow-400">
+              <p className="text-xs sm:text-sm text-yellow-800">
                 ⚠️ Vous devez accepter les deux conditions pour pouvoir continuer
               </p>
             </div>
@@ -554,12 +554,12 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border border-[#032622]">
-          <div className="flex justify-between">
+        <div className="p-4 sm:p-5 md:p-6 border border-[#032622]">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
             <button
               onClick={onPrev}
               disabled={isSaving}
-              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors disabled:opacity-50"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto order-2 sm:order-1"
             >
               RETOUR
             </button>
@@ -567,7 +567,7 @@ export const Recap = ({ onClose, onNext, onPrev }: RecapProps) => {
             <button
               onClick={handleNext}
               disabled={!acceptConditions || !attestCorrect || isSaving}
-              className="px-6 py-3 bg-[#032622] text-white hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#032622] text-white hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs sm:text-sm md:text-base w-full sm:w-auto order-1 sm:order-2"
             >
               {isSaving ? (
                 <>

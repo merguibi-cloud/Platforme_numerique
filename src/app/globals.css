@@ -92,3 +92,34 @@ select::-moz-selection {
   background-color: #032622 !important;
   color: #F8F5E4 !important;
 }
+
+/* Animation pour le carrousel d'images - défilement infini */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Prévention du débordement horizontal sur les carrousels */
+.overflow-x-hidden {
+  overflow-x: hidden !important;
+  max-width: 100%;
+}
+
+/* S'assurer que les conteneurs de carrousel ne débordent pas */
+.carousel-container {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+}

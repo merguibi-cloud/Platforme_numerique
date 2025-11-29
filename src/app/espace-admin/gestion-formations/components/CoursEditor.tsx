@@ -769,22 +769,22 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#032622]/20 mx-auto mb-6"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-[#032622] mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+            <div className="animate-spin rounded-full h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 border-4 border-[#032622]/20 mx-auto mb-4 sm:mb-5 md:mb-6"></div>
+            <div className="animate-spin rounded-full h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 border-t-4 border-[#032622] mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
           </div>
-          <p className="text-[#032622] text-lg font-bold mb-2" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+          <p className="text-sm sm:text-base md:text-lg text-[#032622] font-bold mb-1.5 sm:mb-2 break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
             CHARGEMENT DU COURS
           </p>
-          <p className="text-[#032622]/70 text-sm" style={{ fontFamily: 'var(--font-rota-medium)' }}>
+          <p className="text-xs sm:text-sm text-[#032622]/70 break-words" style={{ fontFamily: 'var(--font-rota-medium)' }}>
             Veuillez patienter pendant le chargement des données...
           </p>
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-            <div className="w-2 h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          <div className="mt-4 sm:mt-5 md:mt-6 flex items-center justify-center gap-1.5 sm:gap-2">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#032622] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
           </div>
         </div>
       </div>
@@ -800,26 +800,29 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   return (
     <div className="min-h-screen bg-[#F8F5E4]">
       {/* Header */}
-      <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-6 py-4">
-        <div className="flex mb-[5%] items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row mb-3 sm:mb-4 md:mb-[5%] items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
             {/* Flèche de retour */}
             <button
               onClick={handleBack}
-              className="flex items-center justify-center w-10 h-10 bg-[#032622] text-[#F8F5E4] rounded hover:bg-[#032622]/80 transition-colors"
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-[#032622] text-[#F8F5E4] rounded hover:bg-[#032622]/80 active:bg-[#032622]/70 transition-colors flex-shrink-0"
               title="Retour à la liste des cours"
+              aria-label="Retour à la liste des cours"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5" />
             </button>
           </div>
           
           {/* Header avec notifications et profil */}
-          <AdminTopBar notificationCount={0} className="mb-6" />
+          <div className="w-full sm:w-auto">
+            <AdminTopBar notificationCount={0} className="mb-0 sm:mb-6" />
+          </div>
         </div>
       </div>
       {/* Main Content */}
       <div className="w-full">
-        <div className="w-full space-y-6 px-6">
+        <div className="w-full space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6">
         </div>
 
         {/* Éditeur de contenu - Pleine largeur */}

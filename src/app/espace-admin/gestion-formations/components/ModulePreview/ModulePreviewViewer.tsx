@@ -458,10 +458,10 @@ export const ModulePreviewViewer = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement de la visualisation...</p>
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-xs sm:text-sm md:text-base text-[#032622] break-words">Chargement de la visualisation...</p>
         </div>
       </div>
     );
@@ -469,13 +469,13 @@ export const ModulePreviewViewer = ({
 
   if (!data.cours) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-[#032622] text-lg mb-4">Cours non trouvé</p>
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-[#032622] mb-3 sm:mb-4 break-words">Cours non trouvé</p>
           {onBack && (
             <button
               onClick={onBack}
-              className="px-6 py-3 bg-[#032622] text-[#F8F5E4] rounded-lg font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+              className="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm md:text-base rounded-lg font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
             >
               Retour
             </button>
@@ -486,19 +486,19 @@ export const ModulePreviewViewer = ({
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F5E4] flex">
+    <div className="min-h-screen bg-[#F8F5E4] flex flex-col lg:flex-row">
       {/* Contenu principal */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="bg-[#F8F5E4] border-b border-[#032622]/20">
-          <div className="px-6 py-4">
+          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
             {/* Bouton retour en haut */}
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70 transition-colors mb-4"
+              className="flex items-center gap-1.5 sm:gap-2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors mb-3 sm:mb-4"
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="font-bold uppercase text-xs sm:text-sm break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                 Retour à la gestion
               </span>
             </button>
@@ -518,17 +518,17 @@ export const ModulePreviewViewer = ({
            {/* Bouton toggle sidebar droite - visible même quand la sidebar est cachée */}
            <button
              onClick={() => setIsSidebarRightCollapsed(prev => !prev)}
-             className={`absolute top-4 z-20 p-2  text-[#032622] border-2 border-[#032622] hover:bg-[#032622]/90 transition-all duration-300 ${
-               isSidebarRightCollapsed ? 'right-4' : 'right-[400px]'
+             className={`absolute top-2 sm:top-4 z-20 p-1.5 sm:p-2 bg-[#F8F5E4] text-[#032622] border-2 border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4] active:bg-[#032622]/80 transition-all duration-300 ${
+               isSidebarRightCollapsed ? 'right-2 sm:right-4' : 'right-[calc(100%-16px)] sm:right-[400px]'
              }`}
              aria-label={isSidebarRightCollapsed ? 'Ouvrir la sidebar' : 'Fermer la sidebar'}
            >
             {isSidebarRightCollapsed ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             )}
@@ -537,16 +537,16 @@ export const ModulePreviewViewer = ({
           {/* Zone de contenu avec navigation */}
           <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F5E4]">
             <div className="flex-1 overflow-y-auto">
-              <div className={`mx-auto px-6 py-8 min-h-full transition-all duration-300 w-full ${
+              <div className={`mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 min-h-full transition-all duration-300 w-full ${
                 isSidebarRightCollapsed ? 'max-w-full' : 'max-w-6xl'
               }`}>
                 {currentView === 'cours' && (
-                  <div className="relative min-h-[400px]">
+                  <div className="relative min-h-[300px] sm:min-h-[400px]">
                     {currentChapitre ? (
                       <CourseContentViewer cours={currentChapitre} isPreview={true} />
                     ) : (
-                      <div className="text-center text-[#032622] py-12">
-                        <p className="text-lg mb-4">Aucun chapitre disponible dans ce cours</p>
+                      <div className="text-center text-[#032622] py-8 sm:py-10 md:py-12">
+                        <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4 break-words">Aucun chapitre disponible dans ce cours</p>
                       </div>
                     )}
                   </div>
@@ -572,8 +572,8 @@ export const ModulePreviewViewer = ({
                 )}
 
                 {currentView === 'cours' && !currentChapitre && (
-                  <div className="text-center text-[#032622] py-12">
-                    <p className="text-lg mb-4">Aucun chapitre disponible dans ce cours</p>
+                  <div className="text-center text-[#032622] py-8 sm:py-10 md:py-12">
+                    <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4 break-words">Aucun chapitre disponible dans ce cours</p>
                   </div>
                 )}
               </div>
@@ -592,11 +592,11 @@ export const ModulePreviewViewer = ({
           </div>
 
           {/* Sidebar droite */}
-          <div className={`flex-shrink-0 overflow-hidden bg-[#F8F5E4] border-l border-[#032622]/20 transition-all duration-300 ${
-            isSidebarRightCollapsed ? 'w-0' : 'w-96'
+          <div className={`hidden lg:flex flex-shrink-0 overflow-hidden bg-[#F8F5E4] border-l border-[#032622]/20 transition-all duration-300 ${
+            isSidebarRightCollapsed ? 'w-0' : 'w-full lg:w-80 xl:w-96'
           }`}>
             {!isSidebarRightCollapsed && (
-              <div className="h-full overflow-y-auto">
+              <div className="h-full overflow-y-auto w-full">
                 <ModulePreviewSidebar
                   cours={allCours}
                   currentCoursId={coursId}
@@ -618,7 +618,7 @@ export const ModulePreviewViewer = ({
       {/* Modal de confirmation pour passer au quiz */}
       {showQuizModal && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={(e) => {
             // Fermer le modal si on clique sur le fond (pas sur le contenu)
             if (e.target === e.currentTarget) {
@@ -627,29 +627,29 @@ export const ModulePreviewViewer = ({
           }}
         >
           <div 
-            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            className="bg-[#F8F5E4] border-2 sm:border-4 border-[#032622] p-4 sm:p-6 md:p-8 max-w-3xl w-full mx-0 sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 
-              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] mb-3 sm:mb-4 text-center uppercase break-words"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               TU ARRIVES AU QUIZ
             </h3>
-            <p className="text-[#032622] mb-6 text-center">
+            <p className="text-sm sm:text-base text-[#032622] mb-4 sm:mb-5 md:mb-6 text-center break-words">
               Prêt à tester tes connaissances ?
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
               <button
                 onClick={handleContinueReading}
-                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                className="flex-1 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#F8F5E4] border-2 border-[#032622] text-xs sm:text-sm md:text-base text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 active:bg-[#F8F5E4]/80 transition-colors"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 RÉVISER ENCORE
               </button>
               <button
                 onClick={handleGoToQuiz}
-                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                className="flex-1 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-xs sm:text-sm md:text-base text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 COMMENCER LE QUIZ
@@ -662,7 +662,7 @@ export const ModulePreviewViewer = ({
       {/* Modal de confirmation pour passer à l'étude de cas */}
       {showEtudeCasModal && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={(e) => {
             // Fermer le modal si on clique sur le fond (pas sur le contenu)
             if (e.target === e.currentTarget) {
@@ -671,29 +671,29 @@ export const ModulePreviewViewer = ({
           }}
         >
           <div 
-            className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-3xl w-full mx-4"
+            className="bg-[#F8F5E4] border-2 sm:border-4 border-[#032622] p-4 sm:p-6 md:p-8 max-w-3xl w-full mx-0 sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 
-              className="text-2xl font-bold text-[#032622] mb-4 text-center uppercase"
+              className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] mb-3 sm:mb-4 text-center uppercase break-words"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               TU ARRIVES À L'ÉTUDE DE CAS
             </h3>
-            <p className="text-[#032622] mb-6 text-center">
+            <p className="text-sm sm:text-base text-[#032622] mb-4 sm:mb-5 md:mb-6 text-center break-words">
               Prêt à commencer l'étude de cas du module ?
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
               <button
                 onClick={handleContinueToEtudeCas}
-                className="flex-1 px-6 py-3 bg-[#F8F5E4] border-2 border-[#032622] text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+                className="flex-1 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#F8F5E4] border-2 border-[#032622] text-xs sm:text-sm md:text-base text-[#032622] font-bold uppercase hover:bg-[#F8F5E4]/90 active:bg-[#F8F5E4]/80 transition-colors"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 CONTINUER À RÉVISER
               </button>
               <button
                 onClick={handleGoToEtudeCas}
-                className="flex-1 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+                className="flex-1 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-xs sm:text-sm md:text-base text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 COMMENCER L'ÉTUDE DE CAS

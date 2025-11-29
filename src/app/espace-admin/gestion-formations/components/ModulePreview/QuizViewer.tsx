@@ -126,16 +126,16 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
     } : calculateScore();
     
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-5 md:space-y-6">
         {/* Résultat */}
         <div className="text-center">
-          <div className="inline-block bg-[#032622] p-8 mb-4">
-            <div className="text-6xl font-bold text-[#F8F5E4] mb-2">{result.score}/20</div>
-            <div className="text-lg text-[#F8F5E4]/80">
+          <div className="inline-block bg-[#032622] p-4 sm:p-6 md:p-8 mb-3 sm:mb-4">
+            <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#F8F5E4] mb-1 sm:mb-2">{result.score}/20</div>
+            <div className="text-sm sm:text-base md:text-lg text-[#F8F5E4]/80 break-words">
               {result.correct} / {result.total} questions correctes
             </div>
             {readOnly && (
-              <div className="text-sm text-[#F8F5E4]/60 mt-2">
+              <div className="text-xs sm:text-sm text-[#F8F5E4]/60 mt-1.5 sm:mt-2 break-words">
                 Vous avez déjà complété ce quiz
               </div>
             )}
@@ -143,7 +143,7 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
         </div>
 
         {/* Détail des réponses */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {questions.map((question, qIndex) => {
             const userAnswerIds = userAnswers[question.id] || [];
             const correctAnswerIds = question.reponses_possibles?.filter(r => r.est_correcte).map(r => r.id) || [];
@@ -153,21 +153,21 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
               : userAnswerIds.length === 1 && correctAnswerIds.includes(userAnswerIds[0]);
 
             return (
-              <div key={question.id} className="bg-[#F8F5E4] border-2 border-[#032622] p-6">
-                <div className="flex items-start gap-3 mb-4">
+              <div key={question.id} className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6">
+                <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
                   {isCorrect ? (
-                    <Check className="w-6 h-6 text-[#5AA469] flex-shrink-0 mt-1" />
+                    <Check className="w-5 h-5 sm:w-6 sm:h-6 text-[#5AA469] flex-shrink-0 mt-0.5 sm:mt-1" />
                   ) : (
-                    <X className="w-6 h-6 text-[#D96B6B] flex-shrink-0 mt-1" />
+                    <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#D96B6B] flex-shrink-0 mt-0.5 sm:mt-1" />
                   )}
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-[#032622] mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-bold text-[#032622] mb-1.5 sm:mb-2 break-words">
                       QUESTION {qIndex + 1} / {question.question}
                     </h3>
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-4">
+                <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
                   {question.reponses_possibles?.map((reponse) => {
                     const isUserAnswer = userAnswerIds.includes(reponse.id);
                     const isCorrectAnswer = reponse.est_correcte;
@@ -194,21 +194,21 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
                     return (
                       <div
                         key={reponse.id}
-                        className={`${bgColor} ${borderColor} border-2 p-4 flex items-center gap-3`}
+                        className={`${bgColor} ${borderColor} border-2 p-3 sm:p-4 flex items-center gap-2 sm:gap-3`}
                       >
-                  {isSelected && isCorrectAnswer && <Check className="w-5 h-5 text-[#F8F5E4]" />}
-                  {isSelected && !isCorrectAnswer && <X className="w-5 h-5 text-[#F8F5E4]" />}
-                  {!isSelected && isCorrectAnswer && <Check className="w-5 h-5 text-[#5AA469]" />}
-                        <span className={`${textColor} font-semibold flex-1`}>{reponse.reponse}</span>
+                  {isSelected && isCorrectAnswer && <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#F8F5E4] flex-shrink-0" />}
+                  {isSelected && !isCorrectAnswer && <X className="w-4 h-4 sm:w-5 sm:h-5 text-[#F8F5E4] flex-shrink-0" />}
+                  {!isSelected && isCorrectAnswer && <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#5AA469] flex-shrink-0" />}
+                        <span className={`${textColor} text-sm sm:text-base font-semibold flex-1 break-words`}>{reponse.reponse}</span>
                       </div>
                     );
                   })}
                 </div>
 
                 {question.justification && (
-                  <div className="bg-[#032622] text-[#F8F5E4] p-4">
-                    <h4 className="font-bold mb-2">Pourquoi cette réponse ?</h4>
-                    <p className="text-sm">{question.justification}</p>
+                  <div className="bg-[#032622] text-[#F8F5E4] p-3 sm:p-4">
+                    <h4 className="text-sm sm:text-base font-bold mb-1.5 sm:mb-2 break-words">Pourquoi cette réponse ?</h4>
+                    <p className="text-xs sm:text-sm break-words">{question.justification}</p>
                   </div>
                 )}
               </div>
@@ -222,46 +222,46 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
   }
 
   if (!currentQuestion) {
-    return <div className="text-center text-[#032622]">Aucune question disponible</div>;
+    return <div className="text-center text-xs sm:text-sm md:text-base text-[#032622] break-words p-4">Aucune question disponible</div>;
   }
 
   const isMultiple = currentQuestion.type_question === 'choix_multiple';
   const selectedForCurrent = selectedAnswers[currentQuestion.id] || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5 md:space-y-6">
       {/* En-tête du quiz */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-[#032622] uppercase mb-2" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+      <div className="text-center mb-6 sm:mb-7 md:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#032622] uppercase mb-1.5 sm:mb-2 break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
           {quiz.titre || 'Quiz de fin de module'}
         </h2>
         {quiz.description && (
-          <p className="text-[#032622]/70">{quiz.description}</p>
+          <p className="text-sm sm:text-base text-[#032622]/70 break-words">{quiz.description}</p>
         )}
       </div>
 
       {/* Question actuelle */}
-      <div className="bg-[#F8F5E4] border-2 border-[#032622] p-8">
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-[#032622] mb-4">
+      <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6 lg:p-8">
+        <div className="mb-4 sm:mb-5 md:mb-6">
+          <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#032622] mb-3 sm:mb-4 break-words">
             QUESTION {currentQuestionIndex + 1} / {questions.length} / {currentQuestion.question}
           </h3>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {currentQuestion.type_question === 'vrai_faux' ? (
             // Questions Vrai/Faux
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
               {currentQuestion.reponses_possibles?.map((reponse) => {
                 const isSelected = selectedForCurrent.includes(reponse.id);
                 return (
                   <button
                     key={reponse.id}
                     onClick={() => handleAnswerSelect(currentQuestion.id, reponse.id, false)}
-                    className={`px-6 py-4 border-2 font-bold transition-colors ${
+                    className={`px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-2 text-xs sm:text-sm md:text-base font-bold transition-colors ${
                       isSelected
                         ? 'bg-[#032622] text-[#F8F5E4] border-[#032622]'
-                        : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
+                        : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4] active:bg-[#032622]/80'
                     }`}
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   >
@@ -278,10 +278,10 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
                 <button
                   key={reponse.id}
                   onClick={() => handleAnswerSelect(currentQuestion.id, reponse.id, isMultiple)}
-                  className={`w-full text-left px-6 py-4 border-2 font-bold transition-colors ${
+                  className={`w-full text-left px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 md:py-4 border-2 text-xs sm:text-sm md:text-base font-bold transition-colors break-words ${
                     isSelected
                       ? 'bg-[#032622] text-[#F8F5E4] border-[#032622]'
-                      : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
+                      : 'bg-[#F8F5E4] text-[#032622] border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4] active:bg-[#032622]/80'
                   }`}
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
@@ -294,28 +294,28 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 md:gap-4">
         <button
           onClick={handlePrevious}
           disabled={currentQuestionIndex === 0}
-          className={`flex items-center gap-2 px-6 py-3 font-bold uppercase transition-colors ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-bold uppercase transition-colors ${
             currentQuestionIndex === 0
               ? 'bg-[#F8F5E4] text-[#032622]/50 border-2 border-[#032622]/30 cursor-not-allowed'
-              : 'bg-[#F8F5E4] text-[#032622] border-2 border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4]'
+              : 'bg-[#F8F5E4] text-[#032622] border-2 border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4] active:bg-[#032622]/80'
           }`}
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           PRÉCÉDENTE
         </button>
 
         <button
           onClick={handleNext}
-          className="flex items-center gap-2 px-6 py-3 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors"
+          className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-xs sm:text-sm md:text-base text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
-          {currentQuestionIndex === questions.length - 1 ? 'TERMINER' : 'SUIVANTE'}
-          <ArrowRight className="w-5 h-5" />
+          <span className="break-words">{currentQuestionIndex === questions.length - 1 ? 'TERMINER' : 'SUIVANTE'}</span>
+          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
         </button>
       </div>
     </div>

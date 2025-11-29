@@ -332,7 +332,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       if (file) {
         const previewUrl = URL.createObjectURL(file);
         return (
-          <div className="w-full h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
+          <div className="w-full h-24 sm:h-28 md:h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
             <img 
               src={previewUrl} 
               alt="Aperçu" 
@@ -347,7 +347,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
         );
       } else if (url) {
         return (
-          <div className="w-full h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
+          <div className="w-full h-24 sm:h-28 md:h-32 bg-[#F8F5E4] flex items-center justify-center overflow-hidden relative group">
             <img 
               src={url} 
               alt="Aperçu" 
@@ -364,16 +364,16 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     }
 
     return (
-      <div className="w-full h-32 bg-[#F8F5E4] flex flex-col items-center justify-center gap-2 relative group">
+      <div className="w-full h-24 sm:h-28 md:h-32 bg-[#F8F5E4] flex flex-col items-center justify-center gap-1 sm:gap-2 relative group">
         {isPDF ? (
           <>
-            <FileText className="w-12 h-12 text-[#032622]" strokeWidth={1.5} />
-            <span className="text-xs font-medium text-[#032622]">PDF</span>
+            <FileText className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#032622]" strokeWidth={1.5} />
+            <span className="text-[10px] sm:text-xs font-medium text-[#032622]">PDF</span>
           </>
         ) : (
           <>
-            <FileText className="w-12 h-12 text-[#032622]" strokeWidth={1.5} />
-            <span className="text-xs font-medium text-[#032622] uppercase">{ext || 'DOC'}</span>
+            <FileText className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#032622]" strokeWidth={1.5} />
+            <span className="text-[10px] sm:text-xs font-medium text-[#032622] uppercase">{ext || 'DOC'}</span>
           </>
         )}
         <div className="absolute inset-0 bg-[#032622]/0 group-hover:bg-[#032622]/5 transition-colors"></div>
@@ -570,10 +570,10 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
           <div className="space-y-6">
             
       {/* Section photo et informations de la formation */}
-      <div className="w-full mb-6">
-        <div className="flex gap-6">
+      <div className="w-full mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           {/* Photo de profil */}
-          <div className="relative w-48 h-60 border border-[#032622] flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-50">
+          <div className="relative w-full sm:w-40 md:w-48 h-48 sm:h-56 md:h-60 border border-[#032622] flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-50 mx-auto sm:mx-0">
             {photoPreview ? (
               <>
                 <img 
@@ -583,31 +583,32 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                 />
                 <button
                   onClick={handleRemovePhoto}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 transition-colors"
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1.5 sm:p-1 rounded-full hover:bg-red-700 active:bg-red-800 transition-colors z-10"
                   title="Supprimer la photo"
+                  aria-label="Supprimer la photo"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </>
             ) : (
-              <User className="w-16 h-16 text-gray-400" />
+              <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-gray-400" />
             )}
           </div>
           
           {/* Informations de la formation */}
           <div className="flex-1">
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-[#032622] mb-1 uppercase">
+            <div className="mb-4 sm:mb-6 md:mb-8">
+              <h3 className="text-base sm:text-lg font-bold text-[#032622] mb-1 uppercase">
                 {formationData?.formation_titre || 'Formation non spécifiée'}
               </h3>
-              <p className="text-[#032622] font-medium uppercase">
+              <p className="text-sm sm:text-base text-[#032622] font-medium uppercase">
                 {formationData?.formation_ecole ? `Chez ${formationData.formation_ecole}` : ''}
               </p>
             </div>
             
             {/* Section téléchargement photo */}
             <div>
-              <h4 className="text-lg font-bold text-[#032622] mb-2">TÉLÉCHARGEZ VOTRE PHOTO D'IDENTITÉ</h4>
+              <h4 className="text-base sm:text-lg font-bold text-[#032622] mb-2">TÉLÉCHARGEZ VOTRE PHOTO D'IDENTITÉ</h4>
               <input
                 type="file"
                 accept="image/*"
@@ -617,11 +618,11 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               />
               <label
                 htmlFor="photo-upload"
-                className="inline-block text-[#032622] px-4 py-2 cursor-pointer hover:bg-[#032622]/30 transition-colors border border-[#032622]"
+                className="inline-block text-[#032622] px-4 sm:px-5 py-2 sm:py-2.5 cursor-pointer hover:bg-[#032622]/30 active:bg-[#032622]/20 transition-colors border border-[#032622] text-sm sm:text-base"
               >
                 Choisir un fichier
               </label>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm mt-1 break-words">
                 {photoIdentite 
                   ? `Nouveau fichier: ${photoIdentite.name}` 
                   : existingPhotoPath 
@@ -635,38 +636,38 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
       </div>
             {/* Civilité */}
             <div>
-              <label className="block text-sm font-medium text-[#032622] mb-2">CIVILITÉ*</label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
+              <label className="block text-xs sm:text-sm font-medium text-[#032622] mb-2">CIVILITÉ*</label>
+              <div className="flex flex-wrap gap-3 sm:gap-4">
+                <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.civilite === 'MADAME'}
                     onChange={(e) => handleInputChange('civilite', e.target.checked ? 'MADAME' : '')}
-                    className="mr-2"
+                    className="mr-2 w-4 h-4 sm:w-5 sm:h-5"
                   />
-                  <span className="text-[#032622] font-bold uppercase">MADAME</span>
+                  <span className="text-xs sm:text-sm text-[#032622] font-bold uppercase">MADAME</span>
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.civilite === 'MONSIEUR'}
                     onChange={(e) => handleInputChange('civilite', e.target.checked ? 'MONSIEUR' : '')}
-                    className="mr-2"
+                    className="mr-2 w-4 h-4 sm:w-5 sm:h-5"
                   />
-                  <span className="text-[#032622] font-bold uppercase">MONSIEUR</span>
+                  <span className="text-xs sm:text-sm text-[#032622] font-bold uppercase">MONSIEUR</span>
                 </label>
               </div>
             </div>
 
             {/* Champs de saisie - 2 colonnes */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <input
                   type="text"
                   placeholder="NOM*"
                   value={formData.nom}
                   onChange={(e) => handleInputChange('nom', e.target.value)}
-                  className="w-full p-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
                 />
               </div>
               <div>
@@ -675,7 +676,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   placeholder="PRÉNOM*"
                   value={formData.prenom}
                   onChange={(e) => handleInputChange('prenom', e.target.value)}
-                  className="w-full p-3 border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
                 />
               </div>
               <div>
@@ -685,7 +686,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={true}
-                  className="w-full p-3 border border-[#032622] bg-gray-300 text-[#032622] focus:outline-none focus:border-[#032622] cursor-not-allowed"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] bg-gray-300 text-[#032622] focus:outline-none cursor-not-allowed"
                 />
               </div>
               <div>
@@ -695,7 +696,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   value={formData.telephone}
                   onChange={(e) => handleInputChange('telephone', e.target.value)}
                   disabled={true}
-                  className="w-full p-3 border border-[#032622] bg-gray-300 text-[#032622] focus:outline-none focus:border-[#032622] cursor-not-allowed"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] bg-gray-300 text-[#032622] focus:outline-none cursor-not-allowed"
                 />
               </div>
             </div>
@@ -707,19 +708,19 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                 placeholder="ADRESSE*"
                 value={formData.adresse}
                 onChange={(e) => handleInputChange('adresse', e.target.value)}
-                className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
               />
             </div>
 
             {/* Code postal, ville, pays - 3 colonnes */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div>
                 <input
                   type="text"
                   placeholder="CODE POSTAL*"
                   value={formData.codePostal}
                   onChange={(e) => handleInputChange('codePostal', e.target.value)}
-                  className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
                 />
               </div>
               <div>
@@ -728,7 +729,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   placeholder="VILLE*"
                   value={formData.ville}
                   onChange={(e) => handleInputChange('ville', e.target.value)}
-                  className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
                 />
               </div>
               <div>
@@ -737,7 +738,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   placeholder="PAYS*"
                   value={formData.pays}
                   onChange={(e) => handleInputChange('pays', e.target.value)}
-                  className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
                 />
               </div>
             </div>
@@ -747,7 +748,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               <select
                 value={formData.typeFormation}
                 onChange={(e) => handleInputChange('typeFormation', e.target.value)}
-                className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] bg-[#F8F5E4] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
               >
                 <option value="">TYPE DE FORMATION*</option>
                 <option value="initial">Formation Initiale</option>
@@ -761,7 +762,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                 <select
                   value={formData.aUneEntreprise}
                   onChange={(e) => handleInputChange('aUneEntreprise', e.target.value)}
-                  className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] bg-[#F8F5E4] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
                 >
                   <option value="">AVEZ-VOUS UNE ENTREPRISE?*</option>
                   <option value="oui">Oui</option>
@@ -775,7 +776,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               <select
                 value={formData.etudiantEtranger}
                 onChange={(e) => handleInputChange('etudiantEtranger', e.target.value)}
-                className="w-full p-3 border border-[#032622] text-[#032622] focus:outline-none focus:border-[#032622]"
+                className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] text-[#032622] bg-[#F8F5E4] focus:outline-none focus:ring-2 focus:ring-[#032622] focus:border-[#032622]"
               >
                 <option value="">ÊTES-VOUS UN ÉTUDIANT ÉTRANGER?*</option>
                 <option value="oui">Oui</option>
@@ -785,39 +786,41 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
 
             {/* Pièce d'identité */}
             <div>
-              <h3 className="text-lg font-bold text-[#032622] mb-4">TÉLÉCHARGEZ VOTRE PIÈCE D'IDENTITÉ RECTO/VERSO* (Maximum 2 documents)</h3>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-[#032622] mb-3 sm:mb-4">TÉLÉCHARGEZ VOTRE PIÈCE D'IDENTITÉ RECTO/VERSO* (Maximum 2 documents)</h3>
               
               {/* Grille de fichiers */}
               {(existingPieceIdentite.length > 0 || formData.pieceIdentite.length > 0) && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   {/* Fichiers existants */}
                   {existingPieceIdentite.map((file, index) => (
                     <div key={`existing-${index}`} className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                       {getFilePreview(null, file.url, file.path)}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
+                      <div className="p-2 sm:p-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[#032622] truncate">
+                            <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                               {file.path.split('/').pop()}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">Existant</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Existant</p>
                           </div>
-                          <div className="flex items-center space-x-1 ml-1">
+                          <div className="flex items-center space-x-1 sm:space-x-1.5 ml-1 flex-shrink-0">
                             <a 
                               href={file.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#032622] hover:text-[#032622]/70 p-1"
+                              className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 p-1"
                               title="Télécharger"
+                              aria-label="Télécharger"
                             >
-                              <Download className="w-3 h-3" />
+                              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             </a>
                             <button 
                               onClick={() => removeExistingPieceIdentite(index)}
-                              className="text-red-600 hover:text-red-800 p-1"
+                              className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
                               title="Supprimer"
+                              aria-label="Supprimer"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </div>
@@ -829,20 +832,21 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
                   {formData.pieceIdentite.map((file, index) => (
                     <div key={`new-${index}`} className="border border-[#032622] overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                       {getFilePreview(file, null, file.name)}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between">
+                      <div className="p-2 sm:p-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[#032622] truncate">
+                            <p className="text-[10px] sm:text-xs font-medium text-[#032622] truncate">
                               {file.name}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">Nouveau</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Nouveau</p>
                           </div>
                           <button 
                             onClick={() => removeNewPieceIdentite(index)}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1 flex-shrink-0"
                             title="Supprimer"
+                            aria-label="Supprimer"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </div>
@@ -854,19 +858,19 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
               {/* Zone de drop - affichée seulement si moins de 2 documents */}
               {(existingPieceIdentite.length + formData.pieceIdentite.length < 2) && (
                 <div
-                  className="border-2 border-dashed border-[#032622]/30 p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 transition-all cursor-pointer group"
+                  className="border-2 border-dashed border-[#032622]/30 p-6 sm:p-8 md:p-12 text-center bg-[#F8F5E4] hover:border-[#032622] hover:bg-[#032622]/5 active:bg-[#032622]/10 transition-all cursor-pointer group"
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   onClick={() => document.getElementById('identite-upload')?.click()}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
-                      <Upload className="w-8 h-8 text-[#032622]" />
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#032622]/10 flex items-center justify-center group-hover:bg-[#032622]/20 transition-colors">
+                      <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#032622]" />
                     </div>
                     <div>
-                      <p className="text-[#032622] font-medium mb-1">Déposez votre pièce d'identité ici</p>
-                      <p className="text-[#032622]/60 text-sm">Recto et verso • ou cliquez pour sélectionner</p>
-                      <p className="text-[#032622]/40 text-xs mt-2">PDF, JPG, PNG • Maximum 2 fichiers</p>
+                      <p className="text-xs sm:text-sm md:text-base text-[#032622] font-medium mb-1">Déposez votre pièce d'identité ici</p>
+                      <p className="text-[#032622]/60 text-xs sm:text-sm">Recto et verso • ou cliquez pour sélectionner</p>
+                      <p className="text-[#032622]/40 text-[10px] sm:text-xs mt-1 sm:mt-2">PDF, JPG, PNG • Maximum 2 fichiers</p>
                     </div>
                   </div>
                   <input
@@ -883,14 +887,14 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
 
             {/* Checkbox d'acceptation */}
             <div>
-              <label className="flex items-start gap-3">
+              <label className="flex items-start gap-2 sm:gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.accepteDonnees}
                   onChange={(e) => handleInputChange('accepteDonnees', e.target.checked)}
-                  className="mt-1"
+                  className="mt-1 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                 />
-                <span className="text-[#032622] text-sm">
+                <span className="text-xs sm:text-sm text-[#032622]">
                   J'accepte que mes données soient utilisées pour le traitement de ma candidature et pour être contacté(e) par un conseiller.*
                 </span>
               </label>
@@ -904,8 +908,8 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
     return (
       <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
-          <p className="mt-4 text-[#032622]">Chargement des données...</p>
+          <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#032622]"></div>
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-[#032622]">Chargement des données...</p>
         </div>
       </div>
     );
@@ -914,21 +918,21 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
   return (
     <div className="min-h-screen bg-[#F8F5E4]">
       {/* Contenu principal */}
-      <main className="px-2 sm:px-4 py-4 sm:py-8">
+      <main className="px-2 sm:px-4 py-4 sm:py-6 md:py-8">
         <ProgressHeader currentStep="INFORMATIONS" onClose={onClose} />
 
         {/* Content */}
-        <div className="p-6 mb-6">
+        <div className="p-3 sm:p-4 md:p-6 mb-4 sm:mb-5 md:mb-6">
           {renderStepContent()}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border border-[#032622]">
-          <div className="flex justify-between items-center">
+        <div className="p-4 sm:p-5 md:p-6 border border-[#032622]">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
             <button
               onClick={handlePrev}
               disabled={true}
-              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto order-3 sm:order-1"
             >
               RETOUR
             </button>
@@ -936,7 +940,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
             <button
               onClick={handleSaveDraft}
               disabled={isSaving}
-              className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors disabled:opacity-50"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] active:bg-[#C2C6B6]/80 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto order-2 sm:order-2"
             >
               ENREGISTRER BROUILLON
             </button>
@@ -944,7 +948,7 @@ export const Information = ({ onClose, userEmail, formationData }: InformationPr
             <button
               onClick={handleNext}
               disabled={isSaving}
-              className="px-6 py-3 bg-[#032622] text-white hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#032622] text-white hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base w-full sm:w-auto order-1 sm:order-3"
             >
               {isSaving ? (
                 <>

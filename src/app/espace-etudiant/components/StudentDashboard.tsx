@@ -166,28 +166,31 @@ export const StudentDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 bg-[#F8F5E4] min-h-screen p-6">
+    <div className="space-y-4 sm:space-y-6 bg-[#F8F5E4] min-h-screen p-3 sm:p-4 md:p-6">
       {/* En-tête avec notifications */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
+        <div className="flex-1">
           <h1 
-            className="text-4xl font-bold text-[#032622] mb-2"
+            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#032622] mb-2"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {profile ? (
-              `BONJOUR, ${profile.prenom.toUpperCase()} ${profile.nom.toUpperCase()}`
+              <>
+                <span className="block sm:inline">BONJOUR,</span>{' '}
+                <span className="block sm:inline">{profile.prenom.toUpperCase()} {profile.nom.toUpperCase()}</span>
+              </>
             ) : (
               'BONJOUR'
             )}
           </h1>
           {dashboardData?.formation && (
-            <p className="text-lg text-[#032622] font-medium">
+            <p className="text-sm sm:text-base md:text-lg text-[#032622] font-medium">
               {dashboardData.formation.titre}
             </p>
           )}
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button className="p-2 text-[#032622] hover:bg-gray-100 rounded-full">
             <Image 
               src="/menue_etudiant/nonselectionner/Enregistrer.png" 
@@ -243,7 +246,7 @@ export const StudentDashboard = () => {
               
               {/* Dropdown menu */}
               {isDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[100]">
                   <div className="py-2">
                     <Link
                       href="/espace-etudiant/mes-documents"
@@ -270,28 +273,28 @@ export const StudentDashboard = () => {
       </div>
 
       {/* Carte de progression principale */}
-      <div className="bg-[#032622] text-white p-6 rounded-lg">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-[#032622]" fill="currentColor" viewBox="0 0 20 20">
+      <div className="bg-[#032622] text-white p-4 sm:p-5 md:p-6 rounded-lg">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622]" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
               </svg>
             </div>
             <div>
               <h2 
-                className="text-xl font-bold mb-2"
+                className="text-lg sm:text-xl font-bold mb-1 sm:mb-2"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 EXCELLENT PROGRÈS!
               </h2>
-              <p className="text-sm opacity-90">
+              <p className="text-xs sm:text-sm opacity-90">
                 Vous avez terminé {dashboardData?.progression.pourcentage || 0}% de votre formation
               </p>
             </div>
           </div>
           <button 
-            className="bg-white text-[#032622] px-6 py-3 font-bold rounded-lg hover:bg-gray-100 transition-colors"
+            className="bg-white text-[#032622] px-4 sm:px-6 py-2 sm:py-3 font-bold rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors w-full sm:w-auto text-sm sm:text-base"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             CONTINUER
@@ -306,9 +309,9 @@ export const StudentDashboard = () => {
       </div>
 
       {/* Contenu principal en grille */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Section gauche - Activités */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6">
           {/* Carte d'activités */}
           <div className="bg-[#F8F5E4] border border-black">
             {/* En-tête avec titre et pourcentage */}
@@ -339,23 +342,23 @@ export const StudentDashboard = () => {
             {/* Section avec informations */}
             <div className="px-6 py-4 border-b border-black">
               {/* Informations en ligne */}
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-12">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-wrap gap-6 sm:gap-8 md:gap-12">
                   <div>
-                    <div className="text-4xl font-bold text-[#032622] mb-1">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] mb-1">
                       {dashboardData?.activite.tempsTotalHeures || 0}H
                     </div>
-                    <div className="text-sm text-[#032622]">Temps total</div>
+                    <div className="text-xs sm:text-sm text-[#032622]">Temps total</div>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold text-[#032622] mb-1">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] mb-1">
                       {dashboardData?.competences.current || 0}/{dashboardData?.competences.total || 0}
                     </div>
-                    <div className="text-sm text-[#032622]">Blocs de compétences</div>
+                    <div className="text-xs sm:text-sm text-[#032622]">Blocs de compétences</div>
                   </div>
                 </div>
                 <button 
-                  className="bg-[#032622] text-white px-6 py-3 font-bold hover:bg-[#044a3a] transition-colors"
+                  className="bg-[#032622] text-white px-4 sm:px-6 py-2 sm:py-3 font-bold hover:bg-[#044a3a] active:bg-[#032622]/80 transition-colors w-full sm:w-auto text-sm sm:text-base"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   {dashboardData?.aCommence ? 'REPRENDRE' : 'COMMENCER'}
@@ -364,7 +367,7 @@ export const StudentDashboard = () => {
             </div>
             
             {/* Contenu principal - Graphiques côte à côte */}
-            <div className="grid grid-cols-2 gap-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
               {/* Section gauche - Légende et diagramme circulaire */}
               <div className="p-6 border-r border-black flex flex-col justify-between">
                 {/* Légende avec nombres */}

@@ -47,10 +47,10 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement...</p>
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-xs sm:text-sm md:text-base text-[#032622] break-words">Chargement...</p>
         </div>
       </div>
     );
@@ -59,26 +59,29 @@ export default function QuizPage({ params }: QuizPageProps) {
   return (
     <div className="min-h-screen bg-[#F8F5E4]">
       {/* Header */}
-      <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="bg-[#F8F5E4] border-b border-[#032622]/20 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
             <button
               onClick={handleBack}
-              className="flex items-center justify-center w-10 h-10 bg-[#032622] text-[#F8F5E4] rounded hover:bg-[#032622]/80 transition-colors"
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-[#032622] text-[#F8F5E4] rounded hover:bg-[#032622]/80 active:bg-[#032622]/70 transition-colors flex-shrink-0"
               title="Retour au chapitre"
+              aria-label="Retour au chapitre"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5" />
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-[#032622] break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                 CRÉATION DE QUIZ DU CHAPITRE
               </h1>
               {chapitreInfo && (
-                <p className="text-sm text-[#032622]/70">{chapitreInfo.titre}</p>
+                <p className="text-xs sm:text-sm text-[#032622]/70 break-words">{chapitreInfo.titre}</p>
               )}
             </div>
           </div>
-          <AdminTopBar notificationCount={0} />
+          <div className="w-full sm:w-auto">
+            <AdminTopBar notificationCount={0} />
+          </div>
         </div>
       </div>
 

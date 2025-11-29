@@ -310,99 +310,102 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-[#F8F5E4] p-8 rounded-lg">
-          <p className="text-[#032622]">Chargement du quiz...</p>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+        <div className="bg-[#F8F5E4] p-4 sm:p-6 md:p-8 rounded-lg max-w-md w-full">
+          <p className="text-xs sm:text-sm md:text-base text-[#032622] break-words text-center">Chargement du quiz...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-[#F8F5E4] w-full max-w-4xl m-4 border-2 border-[#032622] relative">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-0 sm:p-3 md:p-4">
+      <div className="bg-[#F8F5E4] w-full max-w-4xl m-0 sm:m-4 border-2 border-[#032622] relative min-h-screen sm:min-h-0">
         {/* Header */}
-        <div className="bg-[#032622] text-[#F8F5E4] p-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+        <div className="bg-[#032622] text-[#F8F5E4] p-3 sm:p-4 flex items-center justify-between gap-2">
+          <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold uppercase break-words pr-2" style={{ fontFamily: 'var(--font-termina-bold)' }}>
             CRÉATION DE QUIZ DE LA PARTIE
           </h2>
           <button
             onClick={onClose}
-            className="text-[#F8F5E4] hover:text-[#032622] transition-colors"
+            className="text-[#F8F5E4] hover:text-[#032622] active:text-[#F8F5E4]/80 transition-colors flex-shrink-0"
+            aria-label="Fermer"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+        <div className="p-3 sm:p-4 md:p-5 lg:p-6 space-y-4 sm:space-y-5 md:space-y-6 max-h-[calc(100vh-180px)] sm:max-h-[80vh] overflow-y-auto">
           {/* Bouton Ajouter une question */}
           <button
             onClick={addQuestion}
-            className="w-full bg-[#032622] text-[#F8F5E4] py-3 px-4 font-bold uppercase flex items-center justify-center gap-2 hover:bg-[#032622]/90 transition-colors"
+            className="w-full bg-[#032622] text-[#F8F5E4] py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm md:text-base font-bold uppercase flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             AJOUTER UNE QUESTION
           </button>
 
           {/* Questions */}
           {questions.map((question, qIndex) => (
-            <div key={qIndex} className="border-2 border-[#032622] p-4 bg-[#F8F5E4] space-y-4">
+            <div key={qIndex} className="border-2 border-[#032622] p-3 sm:p-4 bg-[#F8F5E4] space-y-3 sm:space-y-4">
               {/* En-tête de la question */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-[#032622] uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs sm:text-sm font-bold text-[#032622] uppercase break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                   QUESTION {qIndex + 1}
                 </h3>
                 <button
                   onClick={() => removeQuestion(qIndex)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-red-600 hover:text-red-800 active:text-red-900 transition-colors flex-shrink-0"
+                  aria-label={`Supprimer la question ${qIndex + 1}`}
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
 
               {/* Question et type */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
                 <input
                   type="text"
                   value={question.question}
                   onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
                   placeholder="ECRIS LA QUESTION ICI..."
-                  className="flex-1 px-4 py-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] font-bold"
+                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border-2 border-[#032622] bg-[#F8F5E4] text-xs sm:text-sm md:text-base text-[#032622] font-bold min-w-0"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 />
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <select
                     value={question.type_question}
                     onChange={(e) => updateQuestion(qIndex, 'type_question', e.target.value)}
-                    className="bg-[#032622] text-[#F8F5E4] px-4 py-3 pr-10 font-bold uppercase appearance-none cursor-pointer"
+                    className="bg-[#032622] text-[#F8F5E4] px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 pr-8 sm:pr-10 text-xs sm:text-sm md:text-base font-bold uppercase appearance-none cursor-pointer w-full sm:w-auto"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   >
                     <option value="choix_unique">CHOIX UNIQUE</option>
                     <option value="choix_multiple">CHOIX MULTIPLE</option>
                     <option value="vrai_faux">VRAI/FAUX</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#F8F5E4] pointer-events-none" />
+                  <ChevronDown className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[#F8F5E4] pointer-events-none" />
                 </div>
               </div>
 
               {/* Réponses */}
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {question.reponses.map((reponse, rIndex) => (
-                  <div key={rIndex} className="flex items-center gap-3">
+                  <div key={rIndex} className="flex items-center gap-2 sm:gap-3">
                     <button
                       onClick={() => updateReponse(qIndex, rIndex, 'est_correcte', !reponse.est_correcte)}
-                      className={`w-10 h-10 flex items-center justify-center border-2 border-[#032622] ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center border-2 border-[#032622] flex-shrink-0 transition-colors ${
                         reponse.est_correcte
                           ? 'bg-[#032622] text-[#F8F5E4]'
                           : 'bg-[#F8F5E4] text-[#032622]'
                       }`}
+                      aria-label={reponse.est_correcte ? "Réponse correcte" : "Réponse incorrecte"}
                     >
                       {reponse.est_correcte ? (
-                        <Check className="w-5 h-5" />
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                     </button>
                     <input
@@ -414,7 +417,7 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
                           ? 'Ecris une bonne réponse'
                           : 'Ecris une mauvaise réponse'
                       }
-                      className={`flex-1 px-4 py-3 border-2 border-[#032622] ${
+                      className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border-2 border-[#032622] text-xs sm:text-sm md:text-base min-w-0 ${
                         reponse.est_correcte
                           ? 'bg-[#032622] text-[#F8F5E4] placeholder-[#F8F5E4]/70'
                           : 'bg-[#F8F5E4] text-[#032622]'
@@ -424,16 +427,17 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
                     {question.reponses.length > 2 && (
                       <button
                         onClick={() => removeReponse(qIndex, rIndex)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-red-600 hover:text-red-800 active:text-red-900 transition-colors flex-shrink-0"
+                        aria-label="Supprimer cette réponse"
                       >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     )}
                   </div>
                 ))}
                 <button
                   onClick={() => addReponse(qIndex)}
-                  className="text-[#032622] hover:text-[#032622]/70 font-bold text-sm uppercase"
+                  className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 font-bold text-xs sm:text-sm uppercase transition-colors"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   + Ajouter une réponse
@@ -441,15 +445,15 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
               </div>
 
               {/* Justification */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2">
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={question.hasJustification}
                     onChange={(e) => updateQuestion(qIndex, 'hasJustification', e.target.checked)}
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 cursor-pointer"
                   />
-                  <span className="font-bold text-[#032622] uppercase" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                  <span className="text-xs sm:text-sm font-bold text-[#032622] uppercase break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                     JUSTIFICATION
                   </span>
                 </label>
@@ -458,7 +462,7 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
                     value={question.justification || ''}
                     onChange={(e) => updateQuestion(qIndex, 'justification', e.target.value)}
                     placeholder="Ecris la justification ici..."
-                    className="w-full px-4 py-3 border-2 border-[#032622] bg-[#032622] text-[#F8F5E4] min-h-[100px] font-bold"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-[#032622] bg-[#032622] text-xs sm:text-sm md:text-base text-[#F8F5E4] min-h-[80px] sm:min-h-[100px] font-bold resize-none focus:outline-none focus:ring-2 focus:ring-[#F8F5E4]"
                     style={{ fontFamily: 'var(--font-termina-bold)' }}
                   />
                 )}
@@ -468,10 +472,10 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
         </div>
 
         {/* Footer */}
-        <div className="bg-[#032622] p-4 flex justify-end gap-4">
+        <div className="bg-[#032622] p-3 sm:p-4 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 md:gap-4">
           <button
             onClick={onClose}
-            className="bg-[#F8F5E4] text-[#032622] px-6 py-3 font-bold uppercase hover:bg-[#F8F5E4]/90 transition-colors"
+            className="bg-[#F8F5E4] text-[#032622] px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-bold uppercase hover:bg-[#F8F5E4]/90 active:bg-[#F8F5E4]/80 transition-colors w-full sm:w-auto"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             ANNULER
@@ -479,7 +483,7 @@ export const QuizEditor = ({ coursId, moduleId, existingQuizId, onClose, onSave 
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="bg-[#032622] text-[#F8F5E4] px-6 py-3 font-bold uppercase hover:bg-[#032622]/90 transition-colors disabled:opacity-50"
+            className="bg-[#F8F5E4] text-[#032622] px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-bold uppercase hover:bg-[#F8F5E4]/90 active:bg-[#F8F5E4]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {isSaving ? 'SAUVEGARDE...' : 'SOUMETTRE MON QUIZ'}

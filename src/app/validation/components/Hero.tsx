@@ -7,7 +7,7 @@ interface HeroProps {
 
 export const Hero = ({ children }: HeroProps) => {
   return (
-    <div className="relative w-full h-[300px]">
+    <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px]">
       {/* Image de fond */}
       <div className="absolute inset-0 w-full h-full">
         <Image
@@ -21,7 +21,7 @@ export const Hero = ({ children }: HeroProps) => {
       </div>
       
       {/* Contenu overlay */}
-      <div className="relative z-10 w-full h-[300px]">
+      <div className="relative z-10 w-full h-[200px] sm:h-[250px] md:h-[300px]">
         {children}
       </div>
     </div>

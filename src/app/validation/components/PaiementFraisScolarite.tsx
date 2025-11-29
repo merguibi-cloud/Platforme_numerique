@@ -241,26 +241,26 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
   }), []);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       {/* Options de paiement */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* Carte de crédit */}
         <div className="border border-[#032622] bg-[#F8F5E4]">
           <button
             type="button"
             onClick={() => setPaymentMethod('card')}
-            className="w-full p-4 flex items-center justify-between bg-[#F8F5E4] hover:bg-[#eae5cf] transition-colors"
+            className="w-full p-3 sm:p-4 flex items-center justify-between bg-[#F8F5E4] hover:bg-[#eae5cf] active:bg-[#eae5cf]/80 transition-colors"
           >
-            <span className="font-bold text-[#032622]">CARTE DE CRÉDIT</span>
-            <span className="text-[#032622]">{paymentMethod === 'card' ? '▼' : '▲'}</span>
+            <span className="font-bold text-xs sm:text-sm md:text-base text-[#032622]">CARTE DE CRÉDIT</span>
+            <span className="text-[#032622] text-sm sm:text-base">{paymentMethod === 'card' ? '▼' : '▲'}</span>
           </button>
           {paymentMethod === 'card' && (
-            <div className="p-6 space-y-4 border-t border-[#032622]">
+            <div className="p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4 border-t border-[#032622]">
               <div>
-                <label className="block text-sm font-bold text-[#032622] mb-2">NOM SUR LA CARTE</label>
+                <label className="block text-xs sm:text-sm font-bold text-[#032622] mb-2">NOM SUR LA CARTE</label>
                 <input
                   type="text"
-                  className="w-full p-3 border border-[#032622] bg-[#F8F5E4] text-[#032622]"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-[#032622] bg-[#F8F5E4] text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                   placeholder="Nom complet"
                   value={cardholderName}
                   onChange={(e) => setCardholderName(e.target.value)}
@@ -268,21 +268,21 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#032622] mb-2">NUMÉRO DE CARTE</label>
-                <div className="p-3 border border-[#032622] bg-[#F8F5E4]">
+                <label className="block text-xs sm:text-sm font-bold text-[#032622] mb-2">NUMÉRO DE CARTE</label>
+                <div className="p-2.5 sm:p-3 border border-[#032622] bg-[#F8F5E4]">
                   <CardNumberElement options={cardElementOptions} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-[#032622] mb-2">MM/YY</label>
-                  <div className="p-3 border border-[#032622] bg-[#F8F5E4] ">
+                  <label className="block text-xs sm:text-sm font-bold text-[#032622] mb-2">MM/YY</label>
+                  <div className="p-2.5 sm:p-3 border border-[#032622] bg-[#F8F5E4]">
                     <CardExpiryElement options={cardElementOptions} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-[#032622] mb-2">CVC</label>
-                  <div className="p-3 border border-[#032622] bg-[#F8F5E4] ">
+                  <label className="block text-xs sm:text-sm font-bold text-[#032622] mb-2">CVC</label>
+                  <div className="p-2.5 sm:p-3 border border-[#032622] bg-[#F8F5E4]">
                     <CardCvcElement options={cardElementOptions} />
                   </div>
                 </div>
@@ -296,22 +296,22 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
           <button
             type="button"
             onClick={() => setPaymentMethod('transfer')}
-            className="w-full p-4 flex items-center justify-between bg-[#F8F5E4] hover:bg-[#eae5cf] transition-colors"
+            className="w-full p-3 sm:p-4 flex items-center justify-between bg-[#F8F5E4] hover:bg-[#eae5cf] active:bg-[#eae5cf]/80 transition-colors"
           >
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <input
                 type="checkbox"
                 checked={paymentMethod === 'transfer'}
                 onChange={() => setPaymentMethod('transfer')}
-                className="w-4 h-4"
+                className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
               />
-              <span className="font-bold text-[#032622]">VIREMENT BANCAIRE</span>
+              <span className="font-bold text-xs sm:text-sm md:text-base text-[#032622]">VIREMENT BANCAIRE</span>
             </div>
-            <span className="text-[#032622]">{paymentMethod === 'transfer' ? '▼' : '▲'}</span>
+            <span className="text-[#032622] text-sm sm:text-base">{paymentMethod === 'transfer' ? '▼' : '▲'}</span>
           </button>
           {paymentMethod === 'transfer' && (
-            <div className="p-6 border-t border-[#032622]">
-              <p className="text-sm text-[#032622] mb-4">
+            <div className="p-4 sm:p-5 md:p-6 border-t border-[#032622]">
+              <p className="text-xs sm:text-sm text-[#032622]">
                 Pas disponible pour l'instant, utilise plutôt la carte de crédit ou <span className="font-bold">contacte l'école</span> pour effectuer le paiement.
               </p>
             </div>
@@ -320,23 +320,23 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
       </div>
 
       {/* Checkbox tiers payeur */}
-      <div className="flex items-start space-x-3">
+      <div className="flex items-start gap-2 sm:gap-3">
         <input
           type="checkbox"
           id="third-party-payer"
           checked={isThirdPartyPayer}
           onChange={(e) => setIsThirdPartyPayer(e.target.checked)}
-          className="mt-1 w-4 h-4"
+          className="mt-1 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 cursor-pointer"
         />
-        <label htmlFor="third-party-payer" className="text-sm text-[#032622]">
+        <label htmlFor="third-party-payer" className="text-xs sm:text-sm text-[#032622] cursor-pointer">
           JE NE SUIS PAS LE TITULAIRE DU MOYEN DE PAIEMENT UTILISÉ POUR CETTE TRANSACTION
         </label>
       </div>
 
       {/* Affichage des erreurs juste au-dessus du bouton */}
       {errorMessage && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p className="font-bold text-sm">{errorMessage}</p>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded">
+          <p className="font-bold text-xs sm:text-sm break-words">{errorMessage}</p>
         </div>
       )}
 
@@ -344,10 +344,10 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
       <button
         type="submit"
         disabled={isProcessing || (paymentMethod === 'card' && !stripe)}
-        className={`w-full py-4 px-8 font-bold text-white transition-colors ${
+        className={`w-full py-3 sm:py-4 px-6 sm:px-8 font-bold text-white transition-colors text-sm sm:text-base ${
           isProcessing || (paymentMethod === 'card' && !stripe)
             ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-[#6B7280] hover:bg-[#4B5563]'
+            : 'bg-[#6B7280] hover:bg-[#4B5563] active:bg-[#374151]'
         }`}
         style={{ fontFamily: 'var(--font-termina-bold)' }}
       >
@@ -426,38 +426,38 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
 
   return (
     <div className="min-h-screen bg-[#F8F5E4]">
-      <main className="px-4 sm:px-8 lg:px-16 py-4 sm:py-8">
+      <main className="px-2 sm:px-4 md:px-8 lg:px-16 py-4 sm:py-6 md:py-8">
         <ProgressHeader currentStep="INSCRIPTION" onClose={onClose} />
 
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-7 md:space-y-8">
           {/* Titre */}
-          <div className="text-left mb-12">
-            <h1 className="text-4xl font-bold text-[#032622] mb-6" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+          <div className="text-left mb-6 sm:mb-8 md:mb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] mb-3 sm:mb-4 md:mb-6" style={{ fontFamily: 'var(--font-termina-bold)' }}>
               CONFIRME TA PLACE SUR LE CAMPUS NUMÉRIQUE
             </h1>
-            <p className="text-lg text-[#032622] max-w-2xl" style={{ fontFamily: 'var(--font-termina-medium)' }}>
+            <p className="text-sm sm:text-base md:text-lg text-[#032622] max-w-2xl" style={{ fontFamily: 'var(--font-termina-medium)' }}>
               Les frais techniques permettent de confirmer ton dossier et de créer ton espace étudiant.
             </p>
           </div>
 
           {/* Résumé des frais */}
-          <div className="space-y-4">
-            <div className="bg-gray-200 p-4 flex justify-between items-center">
-              <span className="font-bold text-[#032622]">FRAIS D'INSCRIPTION:</span>
-              <span className="font-bold text-[#032622]">{FRAIS_INSCRIPTION}€</span>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="bg-gray-200 p-3 sm:p-4 flex justify-between items-center">
+              <span className="font-bold text-sm sm:text-base text-[#032622]">FRAIS D'INSCRIPTION:</span>
+              <span className="font-bold text-sm sm:text-base text-[#032622]">{FRAIS_INSCRIPTION}€</span>
             </div>
-            <div className="bg-gray-400 p-4 flex justify-between items-center">
-              <span className="font-bold text-[#032622]">TOTAL:</span>
-              <span className="font-bold text-[#032622]">{FRAIS_INSCRIPTION}€</span>
+            <div className="bg-gray-400 p-3 sm:p-4 flex justify-between items-center">
+              <span className="font-bold text-sm sm:text-base text-[#032622]">TOTAL:</span>
+              <span className="font-bold text-sm sm:text-base text-[#032622]">{FRAIS_INSCRIPTION}€</span>
             </div>
           </div>
 
           {/* Boîte d'information */}
-          <div className="bg-[#032622] p-6 flex items-start space-x-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center">
-              <span className="text-[#032622] font-bold text-xl">i</span>
+          <div className="bg-[#032622] p-4 sm:p-5 md:p-6 flex items-start gap-3 sm:gap-4">
+            <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center">
+              <span className="text-[#032622] font-bold text-base sm:text-lg md:text-xl">i</span>
             </div>
-            <div className="text-white text-sm">
+            <div className="text-white text-xs sm:text-sm flex-1">
               <p>
                 CES FRAIS VALIDENT TON INSCRIPTION ET CRÉE UN ACCÈS À LA PLATEFORME. Ils couvrent les coûts de création de son compte, de vérification de dossier. 
                 <span className="font-bold"> ATTENTION : ces frais ne sont pas remboursables</span>
@@ -467,23 +467,23 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
 
           {/* Section paiement */}
           {isLoading ? (
-            <div className="bg-gray-100 border border-gray-300 p-6 text-center">
-              <p className="text-gray-700 font-bold text-lg mb-2">Chargement des informations...</p>
-              <p className="text-gray-600 text-sm">Veuillez patienter.</p>
+            <div className="bg-gray-100 border border-gray-300 p-4 sm:p-5 md:p-6 text-center">
+              <p className="text-gray-700 font-bold text-base sm:text-lg mb-2">Chargement des informations...</p>
+              <p className="text-gray-600 text-xs sm:text-sm">Veuillez patienter.</p>
             </div>
           ) : hasPaid ? (
-            <div className="bg-green-100 border border-green-500 p-6 text-center">
-              <p className="text-green-800 font-bold text-lg mb-2">✅ Paiement effectué avec succès</p>
-              <p className="text-green-700 text-sm">Vous pouvez passer à l'étape suivante.</p>
+            <div className="bg-green-100 border border-green-500 p-4 sm:p-5 md:p-6 text-center">
+              <p className="text-green-800 font-bold text-base sm:text-lg mb-2">✅ Paiement effectué avec succès</p>
+              <p className="text-green-700 text-xs sm:text-sm">Vous pouvez passer à l'étape suivante.</p>
             </div>
           ) : !candidatureData?.id ? (
-            <div className="bg-yellow-100 border border-yellow-500 p-6 text-center">
-              <p className="text-yellow-800 font-bold text-lg mb-2">⚠️ Candidature non trouvée</p>
-              <p className="text-yellow-700 text-sm">Veuillez compléter les étapes précédentes avant de procéder au paiement.</p>
+            <div className="bg-yellow-100 border border-yellow-500 p-4 sm:p-5 md:p-6 text-center">
+              <p className="text-yellow-800 font-bold text-base sm:text-lg mb-2">⚠️ Candidature non trouvée</p>
+              <p className="text-yellow-700 text-xs sm:text-sm">Veuillez compléter les étapes précédentes avant de procéder au paiement.</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+            <div className="space-y-4 sm:space-y-5 md:space-y-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#032622]" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                 MOYENS DE PAIEMENTS
               </h2>
               <Elements key={`elements-${candidatureData?.id || 'default'}`} stripe={stripePromise} options={stripeOptions}>
@@ -493,10 +493,10 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
           )}
 
           {/* Boutons de navigation */}
-          <div className="flex justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
             <button
               onClick={onPrev}
-              className="px-8 py-3 border border-[#032622] text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white transition-colors font-bold"
+              className="px-6 sm:px-8 py-2.5 sm:py-3 border border-[#032622] text-[#032622] bg-[#F8F5E4] hover:bg-[#032622] hover:text-white active:bg-[#032622]/80 transition-colors font-bold text-sm sm:text-base w-full sm:w-auto order-2 sm:order-1"
               style={{ fontFamily: 'var(--font-termina-bold)' }}
             >
               RETOUR
@@ -505,7 +505,7 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
             {hasPaid && (
               <button
                 onClick={onNext}
-                className="px-8 py-3 bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors font-bold"
+                className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#6B7280] text-white hover:bg-[#4B5563] active:bg-[#374151] transition-colors font-bold text-sm sm:text-base w-full sm:w-auto order-1 sm:order-2"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 SUIVANT

@@ -278,10 +278,10 @@ export default function CorrectionDetailPage() {
     return (
       <div className="min-h-screen bg-[#F8F5E4]">
         <AdminTopBar />
-        <div className="flex items-center justify-center min-h-[80vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#032622] mx-auto mb-4"></div>
-            <p className="text-[#032622]">Chargement de la correction...</p>
+        <div className="flex items-center justify-center min-h-[80vh] p-4">
+          <div className="text-center max-w-md mx-auto">
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+            <p className="text-xs sm:text-sm md:text-base text-[#032622] break-words">Chargement de la correction...</p>
           </div>
         </div>
       </div>
@@ -292,8 +292,8 @@ export default function CorrectionDetailPage() {
     return (
       <div className="min-h-screen bg-[#F8F5E4]">
         <AdminTopBar />
-        <div className="flex items-center justify-center min-h-[80vh]">
-          <p className="text-[#032622] text-lg">Erreur lors du chargement des données</p>
+        <div className="flex items-center justify-center min-h-[80vh] p-4">
+          <p className="text-sm sm:text-base md:text-lg text-[#032622] break-words text-center">Erreur lors du chargement des données</p>
         </div>
       </div>
     );
@@ -303,36 +303,36 @@ export default function CorrectionDetailPage() {
     <div className="min-h-screen bg-[#F8F5E4]">
       <AdminTopBar />
       
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         {/* En-tête avec bouton retour */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-5 md:mb-6">
           <button
             onClick={() => router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/correction`)}
-            className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70 transition-colors mb-4"
+            className="flex items-center gap-1.5 sm:gap-2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors mb-3 sm:mb-4"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-bold uppercase text-sm" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="font-bold uppercase text-xs sm:text-sm break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
               Retour aux rendus
             </span>
           </button>
 
-          <div className="flex items-start justify-between mb-4">
-            <div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="flex-1 min-w-0">
               <h1 
-                className="text-4xl font-bold text-[#032622] uppercase mb-2"
+                className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] uppercase mb-1 sm:mb-2 break-words"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 CORRECTION
               </h1>
-              <p className="text-lg text-[#032622] font-semibold uppercase">
+              <p className="text-sm sm:text-base md:text-lg text-[#032622] font-semibold uppercase break-words">
                 BLOC {data.bloc.numero_bloc} - {data.bloc.titre}
               </p>
-              <p className="text-sm text-[#032622] uppercase mt-1">
+              <p className="text-xs sm:text-sm text-[#032622] uppercase mt-0.5 sm:mt-1 break-words">
                 ETUDE DE CAS
               </p>
             </div>
             {data.etude_cas.date_limite && (
-              <div className="bg-[#032622] text-[#F8F5E4] px-4 py-2 font-bold uppercase text-sm">
+              <div className="bg-[#032622] text-[#F8F5E4] px-3 sm:px-4 py-1.5 sm:py-2 font-bold uppercase text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
                 TEMPS {data.etude_cas.date_limite}
               </div>
             )}
@@ -340,19 +340,19 @@ export default function CorrectionDetailPage() {
         </div>
 
         {/* CONTEXTE */}
-        <div className="bg-[#F8F5E4] border-2 border-[#032622] p-6 mb-8">
+        <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6 mb-6 sm:mb-7 md:mb-8">
           <h2 
-            className="text-xl font-bold text-[#032622] uppercase mb-4"
+            className="text-lg sm:text-xl font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             CONTEXTE
           </h2>
           {data.etude_cas.fichier_consigne && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between p-4 bg-[#F8F5E4] border-2 border-[#032622] rounded">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-[#032622]" />
-                  <span className="text-[#032622] font-bold text-sm">
+            <div className="mb-3 sm:mb-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 bg-[#F8F5E4] border-2 border-[#032622] rounded">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622] flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-[#032622] font-bold break-words">
                     {data.etude_cas.nom_fichier_consigne || 'Fichier consigne'}
                   </span>
                 </div>
@@ -361,65 +361,65 @@ export default function CorrectionDetailPage() {
                   download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 transition-colors font-bold text-sm uppercase"
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm uppercase w-full sm:w-auto whitespace-nowrap"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   Télécharger
                 </a>
               </div>
             </div>
           )}
-          <div className="text-[#032622] whitespace-pre-wrap">
+          <div className="text-xs sm:text-sm md:text-base text-[#032622] whitespace-pre-wrap break-words">
             {data.etude_cas.consigne}
           </div>
         </div>
 
         {/* QUESTIONS */}
-        <div className="space-y-8 mb-8">
+        <div className="space-y-6 sm:space-y-7 md:space-y-8 mb-6 sm:mb-7 md:mb-8">
           {data.questions.map((question, index) => (
-            <div key={question.id} className="bg-[#F8F5E4] border-2 border-[#032622] p-6">
+            <div key={question.id} className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6">
               <h3 
-                className="text-xl font-bold text-[#032622] uppercase mb-4"
+                className="text-lg sm:text-xl font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
                 style={{ fontFamily: 'var(--font-termina-bold)' }}
               >
                 QUESTION {index + 1}
               </h3>
               
-              <div className="mb-4">
-                <p className="text-[#032622] font-semibold mb-2">{question.question}</p>
+              <div className="mb-3 sm:mb-4">
+                <p className="text-sm sm:text-base text-[#032622] font-semibold mb-1.5 sm:mb-2 break-words">{question.question}</p>
                 {question.contenu_question && (
-                  <div className="text-[#032622] mb-4 whitespace-pre-wrap">
+                  <div className="text-xs sm:text-sm md:text-base text-[#032622] mb-3 sm:mb-4 whitespace-pre-wrap break-words">
                     {question.contenu_question}
                   </div>
                 )}
               </div>
 
               {/* Réponse de l'étudiant */}
-              <div className="mb-6 p-4 bg-[#F8F5E4] border-2 border-[#032622] rounded">
-                <p className="text-sm font-bold text-[#032622] uppercase mb-2">Réponse de l'étudiant :</p>
-                <div className="text-[#032622]">
+              <div className="mb-4 sm:mb-5 md:mb-6 p-3 sm:p-4 bg-[#F8F5E4] border-2 border-[#032622] rounded">
+                <p className="text-xs sm:text-sm font-bold text-[#032622] uppercase mb-1.5 sm:mb-2 break-words">Réponse de l'étudiant :</p>
+                <div className="text-xs sm:text-sm md:text-base text-[#032622] break-words">
                   {question.type_question === 'piece_jointe' && question.reponse_etudiant ? (
                     <a
                       href={question.reponse_etudiant}
                       download
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70"
+                      className="flex items-center gap-1.5 sm:gap-2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors"
                     >
-                      <FileText className="w-4 h-4" />
-                      <span className="font-bold">Fichier joint</span>
+                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="font-bold break-words">Fichier joint</span>
                     </a>
                   ) : (
-                    <p className="whitespace-pre-wrap">{getReponseText(question)}</p>
+                    <p className="whitespace-pre-wrap break-words">{getReponseText(question)}</p>
                   )}
                 </div>
               </div>
 
               {/* Correction */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-1.5 sm:mb-2 break-words">
                     NOTE *
                   </label>
                   <input
@@ -429,18 +429,18 @@ export default function CorrectionDetailPage() {
                     step="0.5"
                     value={corrections[question.id]?.note || 0}
                     onChange={(e) => handleNoteChange(question.id, parseFloat(e.target.value) || 0)}
-                    className="w-full px-4 py-2 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] font-bold"
+                    className="w-full px-3 sm:px-4 py-2 border-2 border-[#032622] bg-[#F8F5E4] text-sm sm:text-base text-[#032622] font-bold focus:outline-none focus:ring-2 focus:ring-[#032622]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-[#032622] uppercase mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-1.5 sm:mb-2 break-words">
                     MESSAGE
                   </label>
                   <textarea
                     value={corrections[question.id]?.message || ''}
                     onChange={(e) => handleMessageChange(question.id, e.target.value)}
-                    className="w-full px-4 py-2 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] font-bold min-h-[100px]"
+                    className="w-full px-3 sm:px-4 py-2 border-2 border-[#032622] bg-[#F8F5E4] text-sm sm:text-base text-[#032622] font-bold min-h-[80px] sm:min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[#032622] resize-none"
                     placeholder="Commentaire facultatif..."
                   />
                 </div>
@@ -454,7 +454,7 @@ export default function CorrectionDetailPage() {
           <button
             onClick={handleSaveCorrections}
             disabled={isSaving}
-            className="px-8 py-4 bg-[#032622] text-[#F8F5E4] font-bold uppercase hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm md:text-base font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
             {isSaving ? 'ENREGISTREMENT...' : (data?.soumission.note !== null && data?.soumission.note !== undefined ? 'MODIFIER LA CORRECTION' : 'METTRE LA NOTE GLOBALE')}

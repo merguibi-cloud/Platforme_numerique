@@ -388,19 +388,19 @@ export const Accueil = ({
                   </h3>
                   
                   {/* Étapes de progression */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 sm:space-y-2">
                     {/* Étape INFORMATIONS */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className={`w-4 h-4 sm:w-5 sm:h-5 border-2 border-[#032622] flex items-center justify-center flex-shrink-0 ${
                         completedSteps.includes('INFORMATIONS') ? 'bg-[#032622]' : 'bg-transparent'
                       }`}>
                         {completedSteps.includes('INFORMATIONS') && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
                       </div>
-                      <span className={`text-sm font-bold ${
+                      <span className={`text-xs sm:text-sm font-bold ${
                         completedSteps.includes('INFORMATIONS') ? 'text-[#032622]' : 'text-[#032622]/60'
                       }`}>
                         INFORMATIONS
@@ -408,20 +408,20 @@ export const Accueil = ({
                     </div>
                     
                     {/* Ligne de connexion */}
-                    <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
+                    <div className="ml-2 sm:ml-[10px] w-0.5 h-3 sm:h-4 bg-[#032622]/40"></div>
                     
                     {/* Étape INSCRIPTION */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className={`w-4 h-4 sm:w-5 sm:h-5 border-2 border-[#032622] flex items-center justify-center flex-shrink-0 ${
                         completedSteps.includes('INSCRIPTION') ? 'bg-[#032622]' : 'bg-transparent'
                       }`}>
                         {completedSteps.includes('INSCRIPTION') && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
                       </div>
-                      <span className={`text-sm font-bold ${
+                      <span className={`text-xs sm:text-sm font-bold ${
                         completedSteps.includes('INSCRIPTION') ? 'text-[#032622]' : 'text-[#032622]/60'
                       }`}>
                         INSCRIPTION
@@ -429,20 +429,20 @@ export const Accueil = ({
                     </div>
                     
                     {/* Ligne de connexion */}
-                    <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
+                    <div className="ml-2 sm:ml-[10px] w-0.5 h-3 sm:h-4 bg-[#032622]/40"></div>
                     
                     {/* Étape DOCUMENTS */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className={`w-4 h-4 sm:w-5 sm:h-5 border-2 border-[#032622] flex items-center justify-center flex-shrink-0 ${
                         completedSteps.includes('DOCUMENTS') ? 'bg-[#032622]' : 'bg-transparent'
                       }`}>
                         {completedSteps.includes('DOCUMENTS') && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
                       </div>
-                      <span className={`text-sm font-bold ${
+                      <span className={`text-xs sm:text-sm font-bold ${
                         completedSteps.includes('DOCUMENTS') ? 'text-[#032622]' : 'text-[#032622]/60'
                       }`}>
                         DOCUMENTS
@@ -450,20 +450,20 @@ export const Accueil = ({
                     </div>
                     
                     {/* Ligne de connexion */}
-                    <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
+                    <div className="ml-2 sm:ml-[10px] w-0.5 h-3 sm:h-4 bg-[#032622]/40"></div>
                     
                     {/* Étape DOSSIER */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className={`w-4 h-4 sm:w-5 sm:h-5 border-2 border-[#032622] flex items-center justify-center flex-shrink-0 ${
                         completedSteps.includes('DOSSIER') ? 'bg-[#032622]' : 'bg-transparent'
                       }`}>
                         {completedSteps.includes('DOSSIER') && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
                       </div>
-                      <span className={`text-sm font-bold ${
+                      <span className={`text-xs sm:text-sm font-bold ${
                         completedSteps.includes('DOSSIER') ? 'text-[#032622]' : 'text-[#032622]/60'
                       }`}>
                         DOSSIER
@@ -471,20 +471,20 @@ export const Accueil = ({
                     </div>
                     
                     {/* Ligne de connexion */}
-                    <div className="ml-[10px] w-0.5 h-4 bg-[#032622]/40"></div>
+                    <div className="ml-2 sm:ml-[10px] w-0.5 h-3 sm:h-4 bg-[#032622]/40"></div>
                     
                     {/* Étape VALIDATION */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 border-2 border-[#032622] flex items-center justify-center ${
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className={`w-4 h-4 sm:w-5 sm:h-5 border-2 border-[#032622] flex items-center justify-center flex-shrink-0 ${
                         completedSteps.includes('VALIDATION') ? 'bg-[#032622]' : 'bg-transparent'
                       }`}>
                         {completedSteps.includes('VALIDATION') && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
                       </div>
-                      <span className={`text-sm font-bold ${
+                      <span className={`text-xs sm:text-sm font-bold ${
                         completedSteps.includes('VALIDATION') ? 'text-[#032622]' : 'text-[#032622]/60'
                       }`}>
                         VALIDATION
@@ -598,19 +598,19 @@ export const Accueil = ({
 
       {/* Modale de changement de formation */}
       {showChangeFormationModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => {
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4" onClick={() => {
           setShowChangeFormationModal(false);
           setSelectedNewFormation(null);
         }}>
-          <div className="bg-[#F8F5E4] border-2 border-[#032622] max-w-6xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col rounded-lg sm:rounded-none overflow-hidden" onClick={(e) => e.stopPropagation()}>
             
             {/* Header */}
-            <div className="p-6 border-b border-[#032622] flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#032622] uppercase">Changer de formation</h2>
+            <div className="p-4 sm:p-5 md:p-6 border-b border-[#032622] flex-shrink-0">
+              <div className="flex items-start sm:items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] uppercase">Changer de formation</h2>
                   {hasStarted && (
-                    <p className="text-sm text-red-600 mt-1">⚠️ Votre candidature actuelle sera supprimée</p>
+                    <p className="text-xs sm:text-sm text-red-600 mt-1">⚠️ Votre candidature actuelle sera supprimée</p>
                   )}
                 </div>
                 <button
@@ -618,23 +618,24 @@ export const Accueil = ({
                     setShowChangeFormationModal(false);
                     setSelectedNewFormation(null);
                   }}
-                  className="text-[#032622] hover:text-[#032622]/70"
+                  className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 flex-shrink-0 p-1"
+                  aria-label="Fermer"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
             </div>
 
             {/* Formation actuelle */}
-            <div className="px-6 py-4 bg-[#C2C6B6]/20 border-b border-[#032622]/20 flex-shrink-0">
-              <p className="text-sm text-[#032622]">
+            <div className="px-4 sm:px-5 md:px-6 py-3 sm:py-4 bg-[#C2C6B6]/20 border-b border-[#032622]/20 flex-shrink-0">
+              <p className="text-xs sm:text-sm text-[#032622] break-words">
                 <span className="font-bold">Formation actuelle :</span> {formationData?.formation_titre || 'Non spécifiée'}
               </p>
             </div>
 
             {/* Filtres */}
-            <div className="px-6 py-4 border-b border-[#032622]/20 flex-shrink-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="px-4 sm:px-5 md:px-6 py-3 sm:py-4 border-b border-[#032622]/20 flex-shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Recherche */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#032622] w-4 h-4" />
@@ -695,40 +696,40 @@ export const Accueil = ({
             </div>
 
             {/* Liste des formations */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
               {loadingFormations ? (
-                <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
-                  <p className="mt-4 text-[#032622]">Chargement des formations...</p>
+                <div className="text-center py-8 sm:py-12">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#032622]"></div>
+                  <p className="mt-3 sm:mt-4 text-sm sm:text-base text-[#032622]">Chargement des formations...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {filteredFormations.map((formation) => (
                     <div
                       key={formation.id}
                       onClick={() => setSelectedNewFormation(formation.id)}
-                      className={`bg-[#032622] shadow-lg overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-[320px] relative ${
-                        selectedNewFormation === formation.id ? 'ring-4 ring-[#F8F5E4]' : 'hover:shadow-xl'
+                      className={`bg-[#032622] shadow-lg overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-[280px] sm:h-[300px] md:h-[320px] relative ${
+                        selectedNewFormation === formation.id ? 'ring-2 sm:ring-4 ring-[#F8F5E4]' : 'hover:shadow-xl'
                       }`}
                     >
                       {/* Checkbox */}
-                      <div className={`absolute top-3 left-3 w-6 h-6 border-2 rounded flex items-center justify-center transition-colors z-10 ${
+                      <div className={`absolute top-2 sm:top-3 left-2 sm:left-3 w-5 h-5 sm:w-6 sm:h-6 border-2 rounded flex items-center justify-center transition-colors z-10 ${
                         selectedNewFormation === formation.id
                           ? 'bg-[#F8F5E4] border-[#F8F5E4] text-[#032622]'
                           : 'bg-white border-gray-300'
                       }`}>
                         {selectedNewFormation === formation.id && (
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                       </div>
 
                       {/* Badge RNCP */}
-                      <div className="absolute top-3 right-3 bg-[#F8F5E4] text-[#032622] px-2 py-1 text-xs font-bold z-10">
+                      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-[#F8F5E4] text-[#032622] px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold z-10">
                         CERTIFIÉE RNCP
                       </div>
 
                       {/* Image */}
-                      <div className="h-32 bg-gray-200 relative overflow-hidden flex-shrink-0">
+                      <div className="h-24 sm:h-28 md:h-32 bg-gray-200 relative overflow-hidden flex-shrink-0">
                         <Image
                           src={formation.image}
                           alt={formation.titre}
@@ -742,16 +743,16 @@ export const Accueil = ({
                       </div>
 
                       {/* Contenu */}
-                      <div className="p-4 flex flex-col flex-grow">
-                        <h3 className="text-sm font-bold mb-2 text-[#F8F5E4] leading-tight h-10 overflow-hidden">
+                      <div className="p-3 sm:p-4 flex flex-col flex-grow">
+                        <h3 className="text-xs sm:text-sm font-bold mb-2 text-[#F8F5E4] leading-tight min-h-[36px] sm:h-10 overflow-hidden">
                           {formation.titre}
                         </h3>
-                        <p className="text-[#F8F5E4] text-xs mb-3 leading-relaxed flex-grow h-12 overflow-hidden">
+                        <p className="text-[#F8F5E4] text-[10px] sm:text-xs mb-2 sm:mb-3 leading-relaxed flex-grow min-h-[40px] sm:h-12 overflow-hidden">
                           {formation.description}
                         </p>
-                        <div className="flex items-center justify-between mt-auto">
-                          <span className="text-[#F8F5E4] font-bold">{formation.prix}€</span>
-                          <div className="w-10 h-10 flex items-center justify-center">
+                        <div className="flex items-center justify-between mt-auto gap-2">
+                          <span className="text-[#F8F5E4] font-bold text-xs sm:text-sm">{formation.prix}€</span>
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0">
                             <Image
                               src={formation.icon}
                               alt={formation.ecole}
@@ -775,13 +776,13 @@ export const Accueil = ({
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-[#032622] flex justify-between items-center flex-shrink-0">
+            <div className="p-4 sm:p-5 md:p-6 border-t border-[#032622] flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0 flex-shrink-0">
               <button
                 onClick={() => {
                   setShowChangeFormationModal(false);
                   setSelectedNewFormation(null);
                 }}
-                className="px-6 py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] transition-colors"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 border border-[#032622] text-[#032622] hover:bg-[#C2C6B6] active:bg-[#C2C6B6]/80 transition-colors text-sm sm:text-base w-full sm:w-auto"
               >
                 ANNULER
               </button>
@@ -789,7 +790,7 @@ export const Accueil = ({
               <button
                 onClick={handleConfirmChangeFormation}
                 disabled={!selectedNewFormation || isChangingFormation}
-                className="px-8 py-3 bg-[#032622] text-white font-bold hover:bg-[#032622]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-[#032622] text-white font-bold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base w-full sm:w-auto whitespace-nowrap"
               >
                 {isChangingFormation ? 'CHANGEMENT EN COURS...' : 'VALIDER LA NOUVELLE FORMATION'}
               </button>

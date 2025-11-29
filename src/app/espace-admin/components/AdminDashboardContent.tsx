@@ -716,20 +716,20 @@ const AdminDashboardContent = () => {
   const totalTeachersOnline = data.teachers.filter((t: TeacherStatus) => t.status === "online").length;
 
   return (
-    <div className="flex-1 p-10 bg-[#F8F5E4]">
-      <AdminTopBar notificationCount={6} className="mb-8" />
+    <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 bg-[#F8F5E4]">
+      <AdminTopBar notificationCount={6} className="mb-4 sm:mb-6 md:mb-8" />
 
-      <div className="space-y-8">
-        <div className="space-y-3">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8">
+        <div className="space-y-2 sm:space-y-3">
           <h1
-            className="text-4xl font-bold text-[#032622]"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] break-words"
             style={{ fontFamily: "var(--font-termina-bold)" }}
           >
             {adminUser.isLoading 
               ? "BONJOUR..." 
               : `BONJOUR, ${adminUser.displayName.toUpperCase()}`}
           </h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <DropdownSelector
               label="ÉCOLE"
               value={selectedSchool}
@@ -745,8 +745,8 @@ const AdminDashboardContent = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6">
             <CoursesCard 
               courses={formattedCourses} 
               isLoading={isLoadingCourses}
@@ -758,7 +758,7 @@ const AdminDashboardContent = () => {
             <CorrectionsCard corrections={data.corrections} />
             <AgendaCard agenda={data.agenda} />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-5 md:space-y-6">
             <MessagesCard messages={data.messages} />
             <ProfileCard />
             <PromoCard 
@@ -782,13 +782,13 @@ interface DropdownSelectorProps {
 }
 
 const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => (
-  <div className="border border-[#032622] px-4 py-3 flex justify-between items-center bg-[#F8F5E4] relative">
-    <div className="flex-1">
-      <p className="text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
+  <div className="border border-[#032622] px-3 sm:px-4 py-2 sm:py-3 flex justify-between items-center bg-[#F8F5E4] relative">
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] sm:text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="text-lg font-semibold text-[#032622] bg-[#F8F5E4] focus:outline-none appearance-none w-full pr-8 cursor-pointer"
+        className="text-sm sm:text-base md:text-lg font-semibold text-[#032622] bg-[#F8F5E4] focus:outline-none appearance-none w-full pr-6 sm:pr-8 cursor-pointer truncate"
         style={{ fontFamily: 'var(--font-termina-medium)' }}
       >
         {options.map((option) => (
@@ -803,7 +803,7 @@ const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorP
         ))}
       </select>
     </div>
-    <ChevronDown className="w-5 h-5 text-[#032622] absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+    <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none flex-shrink-0" />
   </div>
 );
 
@@ -823,10 +823,10 @@ const CoursesCard = ({
   const hasCourses = courses.toValidate.length > 0 || courses.online.length > 0;
 
   return (
-    <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-      <div className="flex justify-between items-center">
+    <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <h2
-          className="text-2xl font-bold text-[#032622]"
+          className="text-xl sm:text-2xl font-bold text-[#032622]"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
           COURS
@@ -839,29 +839,29 @@ const CoursesCard = ({
               ? `/espace-admin/gestion-formations/${formationId}`
               : "/espace-admin/gestion-formations"
           }
-          className="text-sm font-semibold text-[#032622] border border-[#032622] px-4 py-2 inline-flex items-center space-x-2 hover:bg-[#eae5cf] transition-colors"
+          className="text-xs sm:text-sm font-semibold text-[#032622] border border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center space-x-1.5 sm:space-x-2 hover:bg-[#eae5cf] active:bg-[#e0dbc5] transition-colors whitespace-nowrap"
         >
-          <PencilLine className="w-4 h-4" />
+          <PencilLine className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Accéder aux cours</span>
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement des cours...</p>
+        <div className="text-center py-6 sm:py-8">
+          <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-[#032622]">Chargement des cours...</p>
         </div>
       ) : !formationId ? (
-        <div className="text-center py-8">
-          <p className="text-[#032622]">Veuillez sélectionner une formation pour voir les cours</p>
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-sm sm:text-base text-[#032622] break-words">Veuillez sélectionner une formation pour voir les cours</p>
         </div>
       ) : !hasCourses ? (
-        <div className="text-center py-8">
-          <p className="text-[#032622] text-lg mb-2">Aucun cours disponible</p>
-          <p className="text-[#032622]/70 text-sm">Créez votre premier cours pour commencer</p>
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-base sm:text-lg text-[#032622] mb-1 sm:mb-2">Aucun cours disponible</p>
+          <p className="text-xs sm:text-sm text-[#032622]/70">Créez votre premier cours pour commencer</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {courses.toValidate.length > 0 && (
             <BlockCoursesList title="À VALIDER" colorClass="bg-[#F0C75E]" courses={courses.toValidate} />
           )}
@@ -915,35 +915,35 @@ const UsersManagementCard = () => {
   const hasInscriptions = inscriptions.leads.length > 0 || inscriptions.candidats.length > 0;
 
   return (
-    <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-      <div className="flex justify-between items-center">
+    <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <h2
-          className="text-2xl font-bold text-[#032622]"
+          className="text-xl sm:text-2xl font-bold text-[#032622]"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
           GESTION DES INSCRIPTIONS
         </h2>
         <Link
           href="/espace-admin/gestion-inscriptions"
-          className="text-sm font-semibold text-[#032622] border border-[#032622] px-4 py-2 inline-flex items-center space-x-2 hover:bg-[#eae5cf] transition-colors"
+          className="text-xs sm:text-sm font-semibold text-[#032622] border border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center space-x-1.5 sm:space-x-2 hover:bg-[#eae5cf] active:bg-[#e0dbc5] transition-colors whitespace-nowrap"
         >
-          <UserCog className="w-4 h-4" />
+          <UserCog className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Accéder à la gestion</span>
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622] mx-auto mb-4"></div>
-          <p className="text-[#032622]">Chargement des inscriptions...</p>
+        <div className="text-center py-6 sm:py-8">
+          <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-[#032622]">Chargement des inscriptions...</p>
         </div>
       ) : !hasInscriptions ? (
-        <div className="text-center py-8">
-          <p className="text-[#032622] text-lg mb-2">Aucune inscription disponible</p>
-          <p className="text-[#032622]/70 text-sm">Les nouvelles inscriptions apparaîtront ici</p>
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-base sm:text-lg text-[#032622] mb-1 sm:mb-2">Aucune inscription disponible</p>
+          <p className="text-xs sm:text-sm text-[#032622]/70">Les nouvelles inscriptions apparaîtront ici</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {inscriptions.leads.length > 0 && (
             <BlockInscriptionsList title="LEADS" colorClass="bg-[#F0C75E]" inscriptions={inscriptions.leads} type="lead" />
           )}
@@ -966,10 +966,10 @@ const BlockCoursesList = ({
   courses: CourseItem[];
 }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       <div className="flex items-center space-x-2">
-        <span className={`w-2 h-2 rounded-full ${colorClass}`} />
-        <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${colorClass}`} />
+        <h3 className="text-base sm:text-lg font-semibold text-[#032622]">{title}</h3>
       </div>
       <div className="space-y-2">
         {courses.map((course) => {
@@ -991,16 +991,16 @@ const BlockCoursesList = ({
           return (
             <div
               key={course.id}
-              className="grid grid-cols-12 items-center border border-[#032622]/40 px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
+              className="grid grid-cols-1 sm:grid-cols-12 items-start sm:items-center gap-2 sm:gap-0 border border-[#032622]/40 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#032622] bg-[#F8F5E4]"
             >
-              <span className="col-span-4 uppercase tracking-wide font-semibold">
+              <span className="col-span-1 sm:col-span-4 uppercase tracking-wide font-semibold break-words">
                 {course.titre}
               </span>
-              <span className="col-span-3">{statusLabel}</span>
-              <span className="col-span-3">{course.module}</span>
+              <span className="col-span-1 sm:col-span-3 text-[#032622]/80">{statusLabel}</span>
+              <span className="col-span-1 sm:col-span-3 text-[#032622]/80 truncate">{course.module}</span>
               <Link
                 href={courseUrl}
-                className="col-span-2 text-right font-semibold text-[#032622] hover:underline"
+                className="col-span-1 sm:col-span-2 text-left sm:text-right font-semibold text-[#032622] hover:underline active:text-[#032622]/80"
               >
                 {course.statut === "en_cours_examen" ? "À vérifier" : "Modifier"}
               </Link>
@@ -1067,10 +1067,10 @@ const BlockInscriptionsList = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       <div className="flex items-center space-x-2">
-        <span className={`w-2 h-2 rounded-full ${colorClass}`} />
-        <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${colorClass}`} />
+        <h3 className="text-base sm:text-lg font-semibold text-[#032622]">{title}</h3>
       </div>
       <div className="space-y-2">
         {inscriptions.map((inscription) => {
@@ -1080,20 +1080,20 @@ const BlockInscriptionsList = ({
           return (
             <div
               key={inscription.id}
-              className="grid grid-cols-12 gap-2 md:gap-4 items-center border border-[#032622]/40 px-3 md:px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
+              className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-center border border-[#032622]/40 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#032622] bg-[#F8F5E4]"
             >
-              <span className="col-span-12 md:col-span-4 uppercase tracking-wide font-semibold truncate">
+              <span className="col-span-1 sm:col-span-4 uppercase tracking-wide font-semibold truncate">
                 {inscription.name}
               </span>
-              <span className="col-span-12 md:col-span-4 text-xs md:text-sm truncate">
+              <span className="col-span-1 sm:col-span-4 text-[#032622]/80 truncate">
                 {inscription.formation || "-"}
               </span>
-              <span className={`col-span-6 md:col-span-2 px-2 py-1 text-xs font-semibold text-white ${statusColor} text-center`}>
+              <span className={`col-span-1 sm:col-span-2 px-2 py-1 text-[10px] sm:text-xs font-semibold text-white ${statusColor} text-center`}>
                 {statusLabel}
               </span>
               <Link
                 href={`/espace-admin/gestion-inscriptions/${type}/${inscription.id}`}
-                className="col-span-6 md:col-span-2 text-right font-semibold text-[#032622] hover:underline"
+                className="col-span-1 sm:col-span-2 text-left sm:text-right font-semibold text-[#032622] hover:underline active:text-[#032622]/80"
               >
                 Voir
               </Link>
@@ -1106,32 +1106,32 @@ const BlockInscriptionsList = ({
 };
 
 const MessagesCard = ({ messages }: { messages: FormationData["messages"] }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <div className="flex justify-between items-center">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+    <div className="flex justify-between items-center gap-2">
       <h2
-        className="text-2xl font-bold text-[#032622] flex items-center space-x-2"
+        className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] flex items-center space-x-1.5 sm:space-x-2"
         style={{ fontFamily: "var(--font-termina-bold)" }}
       >
         <span>MESSAGERIE</span>
-        <span className="bg-[#D96B6B] text-white text-xs rounded-full px-2 py-0.5">
+        <span className="bg-[#D96B6B] text-white text-[10px] sm:text-xs rounded-full px-1.5 sm:px-2 py-0.5">
           {messages.length}
         </span>
       </h2>
-      <button className="text-sm font-semibold text-[#032622]">Tout voir</button>
+      <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 whitespace-nowrap">Tout voir</button>
     </div>
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {messages.map((message) => (
-        <article key={message.id} className="border border-[#032622]/30 px-4 py-3 bg-[#F8F5E4]">
-          <header className="flex justify-between items-center mb-2">
-            <div className="space-y-1">
-              <p className="text-[#032622] font-semibold">{message.author}</p>
-              <p className="text-xs uppercase tracking-wide text-[#032622]/70">
+        <article key={message.id} className="border border-[#032622]/30 px-3 sm:px-4 py-2 sm:py-3 bg-[#F8F5E4]">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0 flex-1">
+              <p className="text-sm sm:text-base text-[#032622] font-semibold truncate">{message.author}</p>
+              <p className="text-[10px] sm:text-xs uppercase tracking-wide text-[#032622]/70">
                 {message.role}
               </p>
             </div>
-            <span className="text-xs text-[#032622]/70">{message.timeAgo}</span>
+            <span className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">{message.timeAgo}</span>
           </header>
-          <p className="text-sm text-[#032622]/80 leading-relaxed">{message.excerpt}</p>
+          <p className="text-xs sm:text-sm text-[#032622]/80 leading-relaxed break-words">{message.excerpt}</p>
         </article>
       ))}
     </div>
@@ -1143,15 +1143,15 @@ const CorrectionsCard = ({
 }: {
   corrections: FormationData["corrections"];
 }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <header className="flex justify-between items-center">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+    <header className="flex justify-between items-center gap-2">
       <h2
-        className="text-2xl font-bold text-[#032622]"
+        className="text-xl sm:text-2xl font-bold text-[#032622]"
         style={{ fontFamily: "var(--font-termina-bold)" }}
       >
         CORRECTION
       </h2>
-      <button className="text-sm font-semibold text-[#032622]">Tout voir</button>
+      <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 whitespace-nowrap">Tout voir</button>
     </header>
 
     <CorrectionList title="EN RETARD" items={corrections.late} />
@@ -1166,29 +1166,29 @@ const CorrectionList = ({
   title: string;
   items: CorrectionItem[];
 }) => (
-  <div className="space-y-3">
-    <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+  <div className="space-y-2 sm:space-y-3">
+    <h3 className="text-base sm:text-lg font-semibold text-[#032622]">{title}</h3>
     <div className="space-y-2">
       {items.map((item) => (
         <div
           key={item.id}
-          className="grid grid-cols-12 gap-4 items-center border border-[#032622]/30 px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
+          className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-start sm:items-center border border-[#032622]/30 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#032622] bg-[#F8F5E4]"
         >
-          <div className="col-span-5">
-            <p className="font-semibold uppercase tracking-wide leading-snug">
+          <div className="col-span-1 sm:col-span-5 min-w-0">
+            <p className="font-semibold uppercase tracking-wide leading-snug break-words">
               {item.blockName}
             </p>
           </div>
-          <div className="col-span-2">
-            <span className={`px-3 py-1 text-xs uppercase font-semibold ${statusColors[item.status]}`}>
+          <div className="col-span-1 sm:col-span-2">
+            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs uppercase font-semibold ${statusColors[item.status]}`}>
               {item.status === "en_retard" ? "En retard" : "Corrigé"}
             </span>
           </div>
-          <span className="col-span-2">{item.submissionDate}</span>
-          <span className="col-span-2">{item.assignedTo}</span>
+          <span className="col-span-1 sm:col-span-2 text-[#032622]/80">{item.submissionDate}</span>
+          <span className="col-span-1 sm:col-span-2 text-[#032622]/80 truncate">{item.assignedTo}</span>
           <Link
             href="/espace-admin/gestion-formations"
-            className="col-span-1 text-right text-xs font-semibold text-[#032622] hover:underline"
+            className="col-span-1 text-left sm:text-right text-[10px] sm:text-xs font-semibold text-[#032622] hover:underline active:text-[#032622]/80"
           >
             Voir
           </Link>
@@ -1199,25 +1199,25 @@ const CorrectionList = ({
 );
 
 const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <header className="flex justify-between items-center">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+    <header className="flex justify-between items-center gap-2">
       <div>
         <h2
-          className="text-2xl font-bold text-[#032622]"
+          className="text-xl sm:text-2xl font-bold text-[#032622]"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
           AGENDA
         </h2>
-        <p className="text-sm text-[#032622]/70">Septembre 2025</p>
+        <p className="text-xs sm:text-sm text-[#032622]/70">Septembre 2025</p>
       </div>
-      <button className="text-sm font-semibold text-[#032622]">Tout voir</button>
+      <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 whitespace-nowrap">Tout voir</button>
     </header>
 
-    <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-[#032622]">
+    <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs md:text-sm font-medium text-[#032622]">
       {monthWeeks.flat().map((day, index) => (
         <div
           key={`${day}-${index}`}
-          className={`py-2 ${index % 7 === 0 ? "text-[#032622]" : ""} ${
+          className={`py-1 sm:py-1.5 md:py-2 ${index % 7 === 0 ? "text-[#032622]" : ""} ${
             day === "30" ? "bg-[#F8F5E4] text-[#032622] border-2 border-[#032622]" : "bg-[#F8F5E4]"
           } border border-[#032622]/20`}
         >
@@ -1231,10 +1231,10 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
         <Link
           key={event.id}
           href="/espace-admin/agenda"
-          className="flex items-center space-x-3 text-sm text-[#032622] hover:underline"
+          className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 text-xs sm:text-sm text-[#032622] hover:underline active:text-[#032622]/80"
         >
           <div
-            className={`w-2 h-2 rounded-full ${
+            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${
               event.status === "important"
                 ? "bg-[#D96B6B]"
                 : event.status === "late"
@@ -1242,8 +1242,8 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
                 : "bg-[#4CAF50]"
             }`}
           />
-          <p>{event.title}</p>
-          <span className="text-xs text-[#032622]/70">{event.date}</span>
+          <p className="break-words">{event.title}</p>
+          <span className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">{event.date}</span>
         </Link>
       ))}
     </div>
@@ -1251,8 +1251,8 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
 );
 
 const ProfileCard = () => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6">
-    <div className="w-full aspect-square border border-[#032622]/50 bg-[#C9C6B4]" />
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
+    <div className="w-full aspect-square border border-[#032622]/50 bg-[#C9C6B4] rounded-sm" />
   </section>
 );
 
@@ -1267,10 +1267,10 @@ const PromoCard = ({
   totalStudentsOnline: number;
   totalTeachersOnline: number;
 }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-6">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
     <header>
       <h2
-        className="text-xl font-bold text-[#032622]"
+        className="text-lg sm:text-xl font-bold text-[#032622]"
         style={{ fontFamily: "var(--font-termina-bold)" }}
       >
         PROMO
@@ -1278,27 +1278,27 @@ const PromoCard = ({
     </header>
 
     {/* Section Formateurs */}
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Formateurs
         </h3>
-        <p className="text-xs text-[#032622]/70">
+        <p className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">
           {totalTeachersOnline} en ligne
         </p>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         {teachers.map((teacher) => (
-          <div key={teacher.id} className="flex items-center justify-between text-sm text-[#032622]">
-            <div className="flex items-center space-x-3">
-              <span className={`w-3 h-3 rounded-full ${studentStatusColors[teacher.status]}`} />
-              <div>
-                <p className="font-semibold">{teacher.name}</p>
-                <p className="text-xs text-[#032622]/60">{teacher.specialty}</p>
+          <div key={teacher.id} className="flex items-center justify-between text-xs sm:text-sm text-[#032622] gap-2">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${studentStatusColors[teacher.status]}`} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold truncate">{teacher.name}</p>
+                <p className="text-[10px] sm:text-xs text-[#032622]/60 truncate">{teacher.specialty}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 text-[#032622]/60">
-              <MessageCircle className="w-4 h-4" />
+            <div className="flex items-center space-x-2 sm:space-x-3 text-[#032622]/60 flex-shrink-0">
+              <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
         ))}
@@ -1309,25 +1309,25 @@ const PromoCard = ({
     <div className="border-t border-[#032622]/20" />
 
     {/* Section Étudiants */}
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Étudiants
         </h3>
-        <p className="text-xs text-[#032622]/70">
+        <p className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">
           {totalStudentsOnline} en ligne
         </p>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         {students.map((student) => (
-          <div key={student.id} className="flex items-center justify-between text-sm text-[#032622]">
-            <div className="flex items-center space-x-3">
-              <span className={`w-3 h-3 rounded-full ${studentStatusColors[student.status]}`} />
-              <p className="font-semibold">{student.name}</p>
+          <div key={student.id} className="flex items-center justify-between text-xs sm:text-sm text-[#032622] gap-2">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${studentStatusColors[student.status]}`} />
+              <p className="font-semibold truncate">{student.name}</p>
             </div>
-            <div className="flex items-center space-x-3 text-[#032622]/60">
-              <Users className="w-4 h-4" />
-              <MessageCircle className="w-4 h-4" />
+            <div className="flex items-center space-x-2 sm:space-x-3 text-[#032622]/60 flex-shrink-0">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
         ))}

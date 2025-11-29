@@ -287,47 +287,47 @@ export default function AttributionPage() {
   };
 
   return (
-    <div className="flex-1 p-10">
-        <AdminTopBar notificationCount={0} className="mb-6" />
-        <div className="space-y-6">
+    <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4]">
+        <AdminTopBar notificationCount={0} className="mb-4 sm:mb-5 md:mb-6" />
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {/* Titre */}
           <h1
-            className="text-4xl font-bold text-[#032622]"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] break-words"
             style={{ fontFamily: "var(--font-termina-bold)" }}
           >
             ESPACE D'ATTRIBUTION
           </h1>
 
           {/* Boutons d'action */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4 relative">
               <button
                 onClick={handleNewClick}
-                className="flex items-center space-x-2 bg-[#032622] text-[#F8F5E4] px-6 py-3 font-semibold hover:bg-[#032622]/90 transition-colors"
+                className="flex items-center justify-center space-x-1.5 sm:space-x-2 bg-[#032622] text-[#F8F5E4] px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>NOUVEAU</span>
               </button>
               <div className="relative">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center space-x-2 border-2 border-[#032622] text-[#032622] px-6 py-3 font-semibold hover:bg-[#032622]/10 transition-colors"
+                  className="flex items-center justify-center space-x-1.5 sm:space-x-2 border-2 border-[#032622] text-[#032622] px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-semibold hover:bg-[#032622]/10 active:bg-[#032622]/5 transition-colors w-full sm:w-auto"
                 >
-                  <ChevronDown className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                   <span>FILTRES</span>
                 </button>
                 {showFilters && (
-                  <div className="absolute top-full left-0 mt-2 bg-[#F8F5E4] border-2 border-[#032622] p-4 min-w-[250px] z-10 shadow-lg">
-                    <div className="space-y-4">
+                  <div className="absolute top-full left-0 mt-2 bg-[#F8F5E4] border-2 border-[#032622] p-3 sm:p-4 min-w-[200px] sm:min-w-[250px] z-10 shadow-lg">
+                    <div className="space-y-3 sm:space-y-4">
                       {/* Filtre École */}
                       <div>
-                        <label className="block text-sm font-semibold text-[#032622] mb-2">
+                        <label className="block text-xs sm:text-sm font-semibold text-[#032622] mb-1.5 sm:mb-2">
                           École
                         </label>
                         <select
                           value={filterEcole}
                           onChange={(e) => setFilterEcole(e.target.value)}
-                          className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                          className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                         >
                           <option value="">Toutes les écoles</option>
                           {ecoles.map((ecole) => (
@@ -341,13 +341,13 @@ export default function AttributionPage() {
 
                       {/* Filtre Rôle */}
                       <div>
-                        <label className="block text-sm font-semibold text-[#032622] mb-2">
+                        <label className="block text-xs sm:text-sm font-semibold text-[#032622] mb-1.5 sm:mb-2">
                           Rôle
                         </label>
                         <select
                           value={filterRole}
                           onChange={(e) => setFilterRole(e.target.value)}
-                          className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                          className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                         >
                           <option value="">Tous les rôles</option>
                           {roles.map((role) => (
@@ -360,13 +360,13 @@ export default function AttributionPage() {
 
                       {/* Filtre Statut */}
                       <div>
-                        <label className="block text-sm font-semibold text-[#032622] mb-2">
+                        <label className="block text-xs sm:text-sm font-semibold text-[#032622] mb-1.5 sm:mb-2">
                           Statut
                         </label>
                         <select
                           value={filterStatus}
                           onChange={(e) => setFilterStatus(e.target.value)}
-                          className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                          className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                         >
                           <option value="">Tous les statuts</option>
                           <option value="actif">Actif</option>
@@ -381,7 +381,7 @@ export default function AttributionPage() {
                           setFilterRole("");
                           setFilterStatus("");
                         }}
-                        className="w-full bg-[#032622] text-[#F8F5E4] px-4 py-2 font-semibold hover:bg-[#032622]/90 transition-colors"
+                        className="w-full bg-[#032622] text-[#F8F5E4] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors"
                       >
                         Réinitialiser
                       </button>
@@ -394,51 +394,51 @@ export default function AttributionPage() {
 
           {/* Barre de recherche */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#032622]" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[#032622]" />
             <input
               type="text"
               placeholder="Recherche par nom ou prénom"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-12 py-3 text-[#032622] placeholder-[#032622]/50 focus:outline-none focus:ring-2 focus:ring-[#032622]"
+              className="w-full bg-[#F8F5E4] border-2 border-[#032622] pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base text-[#032622] placeholder-[#032622]/50 focus:outline-none focus:ring-2 focus:ring-[#032622]"
             />
           </div>
 
           {/* Message d'erreur */}
           {error && (
-            <div className="bg-[#D96B6B] text-white p-4 border-2 border-[#032622]">
-              <p className="font-semibold">{error}</p>
+            <div className="bg-[#D96B6B] text-white p-3 sm:p-4 border-2 border-[#032622]">
+              <p className="text-xs sm:text-sm font-semibold break-words">{error}</p>
             </div>
           )}
 
           {/* Message de succès */}
           {successMessage && (
-            <div className="bg-[#4CAF50] text-white p-4 border-2 border-[#032622]">
-              <p className="font-semibold">{successMessage}</p>
+            <div className="bg-[#4CAF50] text-white p-3 sm:p-4 border-2 border-[#032622]">
+              <p className="text-xs sm:text-sm font-semibold break-words">{successMessage}</p>
             </div>
           )}
 
           {/* Tableau */}
-          <div className="border-2 border-[#032622] bg-[#F8F5E4]">
-            <table className="w-full">
+          <div className="border-2 border-[#032622] bg-[#F8F5E4] overflow-x-auto">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b-2 border-[#032622]">
-                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-[10px] sm:text-xs md:text-sm text-[#032622] font-bold uppercase tracking-wide whitespace-nowrap">
                     NOM/PRÉNOM
                   </th>
-                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-[10px] sm:text-xs md:text-sm text-[#032622] font-bold uppercase tracking-wide whitespace-nowrap">
                     MAIL
                   </th>
-                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-[10px] sm:text-xs md:text-sm text-[#032622] font-bold uppercase tracking-wide whitespace-nowrap">
                     ÉCOLE
                   </th>
-                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-[10px] sm:text-xs md:text-sm text-[#032622] font-bold uppercase tracking-wide whitespace-nowrap">
                     ROLE
                   </th>
-                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-[10px] sm:text-xs md:text-sm text-[#032622] font-bold uppercase tracking-wide whitespace-nowrap">
                     STATUT
                   </th>
-                  <th className="text-left py-4 px-6 text-[#032622] font-bold uppercase tracking-wide">
+                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-[10px] sm:text-xs md:text-sm text-[#032622] font-bold uppercase tracking-wide whitespace-nowrap">
                     ÉDITION
                   </th>
                 </tr>
@@ -448,7 +448,7 @@ export default function AttributionPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="text-center py-8 text-[#032622]/70"
+                      className="text-center py-6 sm:py-8 text-xs sm:text-sm text-[#032622]/70"
                     >
                       Chargement...
                     </td>
@@ -457,7 +457,7 @@ export default function AttributionPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="text-center py-8 text-[#032622]/70"
+                      className="text-center py-6 sm:py-8 text-xs sm:text-sm text-[#032622]/70 break-words px-4"
                     >
                       Aucun administrateur trouvé
                     </td>
@@ -466,19 +466,23 @@ export default function AttributionPage() {
                   filteredAdmins.map((admin) => (
                     <tr
                       key={admin.id}
-                      className="border-b border-[#032622]/30 hover:bg-[#F8F5E4]/80"
+                      className="border-b border-[#032622]/30 hover:bg-[#F8F5E4]/80 transition-colors"
                     >
-                      <td className="py-4 px-6 text-[#032622] font-semibold uppercase">
+                      <td className="py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-[#032622] font-semibold uppercase break-words">
                         {admin.nom} {admin.prenom}
                       </td>
-                      <td className="py-4 px-6 text-[#032622]">{admin.mail}</td>
-                      <td className="py-4 px-6 text-[#032622]">
+                      <td className="py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-[#032622] break-words">
+                        {admin.mail}
+                      </td>
+                      <td className="py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-[#032622] break-words">
                         {admin.role === "ADMINISTRATEUR" ? "TOUTES LES ÉCOLES" : admin.ecole}
                       </td>
-                      <td className="py-4 px-6 text-[#032622]">{admin.role}</td>
-                      <td className="py-4 px-6">
+                      <td className="py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-[#032622] break-words">
+                        {admin.role}
+                      </td>
+                      <td className="py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6">
                         <span
-                          className={`px-3 py-1 text-xs uppercase font-semibold ${
+                          className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs uppercase font-semibold whitespace-nowrap ${
                             admin.status === "pending"
                               ? "bg-[#F0C75E] text-[#032622]"
                               : "bg-[#4CAF50] text-white"
@@ -487,30 +491,32 @@ export default function AttributionPage() {
                           {admin.status === "pending" ? "EN ATTENTE" : "ACTIF"}
                         </span>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
+                      <td className="py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
                           <button
                             onClick={() => handleEditClick(admin)}
-                            className="text-[#032622] hover:text-[#032622]/70 transition-colors"
+                            className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1"
                             title="Modifier"
+                            aria-label="Modifier"
                           >
-                            <Pencil className="w-5 h-5" />
+                            <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(admin.id)}
                             disabled={currentAdminId === admin.id}
-                            className={`transition-colors ${
+                            className={`transition-colors p-1 ${
                               currentAdminId === admin.id
                                 ? "text-[#032622]/30 cursor-not-allowed"
-                                : "text-[#032622] hover:text-[#D96B6B]"
+                                : "text-[#032622] hover:text-[#D96B6B] active:text-[#D96B6B]/80"
                             }`}
                             title={
                               currentAdminId === admin.id
                                 ? "Vous ne pouvez pas vous supprimer vous-même"
                                 : "Supprimer"
                             }
+                            aria-label="Supprimer"
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         </div>
                       </td>
@@ -524,11 +530,11 @@ export default function AttributionPage() {
 
         {/* Modal des identifiants */}
         {showCredentialsModal && credentials && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-[#F8F5E4] border-2 sm:border-4 border-[#032622] p-4 sm:p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
+              <div className="flex justify-between items-center mb-4 sm:mb-5 md:mb-6 gap-2">
                 <h2
-                  className="text-2xl font-bold text-[#032622] uppercase"
+                  className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] uppercase break-words"
                   style={{ fontFamily: "var(--font-termina-bold)" }}
                 >
                   IDENTIFIANTS ADMINISTRATEUR
@@ -538,28 +544,29 @@ export default function AttributionPage() {
                     setShowCredentialsModal(false);
                     setCredentials(null);
                   }}
-                  className="text-[#032622] hover:text-[#032622]/70 transition-colors"
+                  className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1 flex-shrink-0"
+                  aria-label="Fermer"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
 
-              <div className="space-y-4 mb-6">
-                <p className="text-[#032622] font-semibold text-center">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-5 md:mb-6">
+                <p className="text-xs sm:text-sm md:text-base text-[#032622] font-semibold text-center break-words">
                   Veuillez transmettre ces identifiants à l'administrateur :
                 </p>
                 
-                <div className="bg-white border-2 border-[#032622] p-6 space-y-4">
+                <div className="bg-white border-2 border-[#032622] p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                       ADRESSE EMAIL
                     </label>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         value={credentials.email}
                         readOnly
-                        className="flex-1 bg-[#F8F5E4] border-2 border-[#032622] px-4 py-3 text-[#032622] font-mono text-lg"
+                        className="flex-1 bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-lg text-[#032622] font-mono"
                       />
                       <button
                         onClick={async () => {
@@ -579,7 +586,7 @@ export default function AttributionPage() {
                             setShowCopySuccess(true);
                           }
                         }}
-                        className="px-6 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors whitespace-nowrap"
+                        className="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors whitespace-nowrap"
                         title="Copier l'email"
                       >
                         COPIER
@@ -588,15 +595,15 @@ export default function AttributionPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                       MOT DE PASSE TEMPORAIRE
                     </label>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         value={credentials.password}
                         readOnly
-                        className="flex-1 bg-[#F8F5E4] border-2 border-[#032622] px-4 py-3 text-[#032622] font-mono text-lg font-bold"
+                        className="flex-1 bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-lg text-[#032622] font-mono font-bold"
                       />
                       <button
                         onClick={async () => {
@@ -616,7 +623,7 @@ export default function AttributionPage() {
                             setShowCopySuccess(true);
                           }
                         }}
-                        className="px-6 py-3 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors whitespace-nowrap"
+                        className="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors whitespace-nowrap"
                         title="Copier le mot de passe"
                       >
                         COPIER
@@ -625,14 +632,14 @@ export default function AttributionPage() {
                   </div>
                 </div>
 
-                <div className="bg-[#F0C75E] border-2 border-[#032622] p-4">
-                  <p className="text-[#032622] text-sm font-semibold text-center">
+                <div className="bg-[#F0C75E] border-2 border-[#032622] p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-[#032622] font-semibold text-center break-words">
                     ⚠️ IMPORTANT : L'administrateur peut se connecter avec ces identifiants. L'email sera confirmé automatiquement lors de la première connexion.
                   </p>
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-4 pt-4 border-t-2 border-[#032622]">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 md:gap-4 pt-3 sm:pt-4 border-t-2 border-[#032622]">
                 <button
                   onClick={async () => {
                     try {
@@ -652,7 +659,7 @@ export default function AttributionPage() {
                       setShowCopySuccess(true);
                     }
                   }}
-                  className="px-6 py-2 border-2 border-[#032622] text-[#032622] font-semibold hover:bg-[#032622]/10 transition-colors"
+                  className="px-4 sm:px-5 md:px-6 py-2 text-xs sm:text-sm border-2 border-[#032622] text-[#032622] font-semibold hover:bg-[#032622]/10 active:bg-[#032622]/5 transition-colors w-full sm:w-auto"
                 >
                   TOUT COPIER
                 </button>
@@ -661,7 +668,7 @@ export default function AttributionPage() {
                     setShowCredentialsModal(false);
                     setCredentials(null);
                   }}
-                  className="px-6 py-2 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors"
+                  className="px-4 sm:px-5 md:px-6 py-2 text-xs sm:text-sm bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors w-full sm:w-auto"
                 >
                   FERMER
                 </button>
@@ -672,27 +679,28 @@ export default function AttributionPage() {
 
         {/* Modal de formulaire */}
         {showForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-[#F8F5E4] border-4 border-[#032622] p-8 max-w-2xl w-full mx-4">
-              <div className="flex justify-between items-center mb-6">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-[#F8F5E4] border-2 sm:border-4 border-[#032622] p-4 sm:p-6 md:p-8 max-w-2xl w-full mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4 sm:mb-5 md:mb-6 gap-2">
                 <h2
-                  className="text-2xl font-bold text-[#032622]"
+                  className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] break-words"
                   style={{ fontFamily: "var(--font-termina-bold)" }}
                 >
                   {editingAdmin ? "MODIFIER" : "NOUVEAU"} ADMINISTRATEUR
                 </h2>
                 <button
                   onClick={handleFormCancel}
-                  className="text-[#032622] hover:text-[#032622]/70 transition-colors"
+                  className="text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1 flex-shrink-0"
+                  aria-label="Fermer"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
 
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleFormSubmit} className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                       NOM
                     </label>
                     <input
@@ -702,11 +710,11 @@ export default function AttributionPage() {
                         setFormData({ ...formData, nom: e.target.value.toUpperCase() })
                       }
                       required
-                      className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                      className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                       PRÉNOM
                     </label>
                     <input
@@ -716,13 +724,13 @@ export default function AttributionPage() {
                         setFormData({ ...formData, prenom: e.target.value.toUpperCase() })
                       }
                       required
-                      className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                      className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                     MAIL
                   </label>
                   <input
@@ -732,12 +740,12 @@ export default function AttributionPage() {
                       setFormData({ ...formData, mail: e.target.value.toUpperCase() })
                     }
                     required
-                    className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                    className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                     ROLE
                   </label>
                   <select
@@ -752,7 +760,7 @@ export default function AttributionPage() {
                       });
                     }}
                     required
-                    className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                    className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                   >
                     <option value="">Sélectionner un rôle</option>
                     {roles.map((role) => (
@@ -765,7 +773,7 @@ export default function AttributionPage() {
 
                 {formData.role && formData.role !== "ADMINISTRATEUR" && (
                   <div>
-                    <label className="block text-sm font-semibold text-[#032622] uppercase tracking-wide mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
                       ÉCOLE
                     </label>
                     <select
@@ -774,7 +782,7 @@ export default function AttributionPage() {
                         setFormData({ ...formData, ecole: e.target.value })
                       }
                       required
-                      className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-4 py-2 text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                      className="w-full bg-[#F8F5E4] border-2 border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-[#032622] focus:outline-none focus:ring-2 focus:ring-[#032622]"
                     >
                       <option value="">Sélectionner une école</option>
                       {ecoles.map((ecole) => (
@@ -786,17 +794,17 @@ export default function AttributionPage() {
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-4 pt-4">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 md:gap-4 pt-3 sm:pt-4">
                   <button
                     type="button"
                     onClick={handleFormCancel}
-                    className="px-6 py-2 border-2 border-[#032622] text-[#032622] font-semibold hover:bg-[#032622]/10 transition-colors"
+                    className="px-4 sm:px-5 md:px-6 py-2 text-xs sm:text-sm border-2 border-[#032622] text-[#032622] font-semibold hover:bg-[#032622]/10 active:bg-[#032622]/5 transition-colors w-full sm:w-auto"
                   >
                     ANNULER
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 transition-colors"
+                    className="px-4 sm:px-5 md:px-6 py-2 text-xs sm:text-sm bg-[#032622] text-[#F8F5E4] font-semibold hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors w-full sm:w-auto"
                   >
                     {editingAdmin ? "MODIFIER" : "CRÉER"}
                   </button>

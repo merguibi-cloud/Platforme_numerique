@@ -70,7 +70,7 @@ export const CourseContentViewer = ({ cours, isPreview = true }: CourseContentVi
   };
 
   return (
-    <div className="space-y-8 w-full">
+    <div className="space-y-6 sm:space-y-7 md:space-y-8 w-full">
       {/* Vidéo principale si type video */}
       {cours.type_contenu === 'video' && cours.url_video && (
         <div className="relative bg-[#032622] aspect-video rounded-lg overflow-hidden border-2 border-[#032622]">
@@ -86,16 +86,16 @@ export const CourseContentViewer = ({ cours, isPreview = true }: CourseContentVi
           
           {/* Overlay avec informations */}
           {!isVideoPlaying && (
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+            <div className="absolute top-2 sm:top-3 md:top-4 left-2 sm:left-3 md:left-4 right-2 sm:right-3 md:right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
               {cours.duree_video && (
-                <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                  <span className="text-[#032622] text-xs font-bold uppercase">
+                <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-[#032622]/20">
+                  <span className="text-[#032622] text-[10px] sm:text-xs font-bold uppercase break-words">
                     Durée: {formatDuration(cours.duree_video)}
                   </span>
                 </div>
               )}
-              <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-[#032622]/20">
-                <span className="text-[#032622] text-xs font-bold uppercase">HD 1080p</span>
+              <div className="bg-[#F8F5E4]/95 backdrop-blur-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-[#032622]/20">
+                <span className="text-[#032622] text-[10px] sm:text-xs font-bold uppercase">HD 1080p</span>
               </div>
             </div>
           )}
@@ -108,7 +108,7 @@ export const CourseContentViewer = ({ cours, isPreview = true }: CourseContentVi
           ref={contentRef}
           className="ProseMirror tiptap-editor-container w-full"
           style={{
-            padding: '24px',
+            padding: '12px 16px 16px 20px',
             color: '#032622',
             fontFamily: 'var(--font-termina-bold)',
             wordWrap: 'break-word',
@@ -125,8 +125,8 @@ export const CourseContentViewer = ({ cours, isPreview = true }: CourseContentVi
 
       {/* Fichiers complémentaires */}
       {cours.fichiers_complementaires && cours.fichiers_complementaires.length > 0 && (
-        <div className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg p-6">
-          <h3 className="text-lg font-bold text-[#032622] uppercase mb-4" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+        <div className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg p-4 sm:p-5 md:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
             SUPPORTS COMPLÉMENTAIRES
           </h3>
           <div className="space-y-2">
@@ -142,16 +142,16 @@ export const CourseContentViewer = ({ cours, isPreview = true }: CourseContentVi
                   href={fichier}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 bg-white border-2 border-[#032622] rounded hover:bg-[#032622]/5 transition-colors"
+                  className="flex items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 bg-white border-2 border-[#032622] rounded hover:bg-[#032622]/5 active:bg-[#032622]/10 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    {isPDF && <FileText className="w-5 h-5 text-red-600" />}
-                    {isImage && <ImageIcon className="w-5 h-5 text-blue-600" />}
-                    {isVideo && <Video className="w-5 h-5 text-purple-600" />}
-                    {!isPDF && !isImage && !isVideo && <FileText className="w-5 h-5 text-[#032622]" />}
-                    <span className="text-[#032622] font-bold text-sm">{fileName}</span>
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    {isPDF && <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0" />}
+                    {isImage && <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />}
+                    {isVideo && <Video className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />}
+                    {!isPDF && !isImage && !isVideo && <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] flex-shrink-0" />}
+                    <span className="text-xs sm:text-sm text-[#032622] font-bold break-words">{fileName}</span>
                   </div>
-                  <Download className="w-4 h-4 text-[#032622]" />
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#032622] flex-shrink-0" />
                 </a>
               );
             })}

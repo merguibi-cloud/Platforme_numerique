@@ -123,60 +123,64 @@ export default function AdminComptePage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 p-6">
-        <div className="flex items-center justify-center h-64">
-          <p className="text-[#032622]">Chargement...</p>
+      <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4]">
+        <div className="flex items-center justify-center h-48 sm:h-56 md:h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+            <p className="text-sm sm:text-base text-[#032622]">Chargement...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 bg-[#F8F5E4] space-y-4 sm:space-y-5 md:space-y-6">
       <div className="flex items-center justify-between">
         <h1
-          className="text-3xl font-bold text-[#032622]"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] break-words"
           style={{ fontFamily: 'var(--font-termina-bold)' }}
         >
           MON COMPTE
         </h1>
       </div>
 
-      <div className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg p-8 max-w-2xl">
-        <div className="space-y-8">
+      <div className="bg-[#F8F5E4] border-2 border-[#032622] rounded-lg p-4 sm:p-5 md:p-6 lg:p-8 max-w-2xl">
+        <div className="space-y-6 sm:space-y-7 md:space-y-8">
           {/* Photo de profil */}
           <div>
-            <label className="block text-sm font-bold text-[#032622] uppercase mb-4">
+            <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-3 sm:mb-4">
               PHOTO DE PROFIL
             </label>
             
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               {/* Aperçu de la photo */}
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 {photoPreview ? (
                   <div className="relative">
                     <img
                       src={photoPreview}
                       alt="Photo de profil"
-                      className="w-32 h-32 rounded-full object-cover border-4 border-[#032622]"
+                      className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full object-cover border-2 sm:border-4 border-[#032622]"
                     />
                     <button
                       onClick={handleRemovePhoto}
-                      className="absolute -top-2 -right-2 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:opacity-90"
+                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:opacity-90 active:opacity-75 transition-opacity"
                       title="Supprimer la photo"
+                      aria-label="Supprimer la photo"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-[#032622] flex items-center justify-center border-4 border-[#032622]">
-                    <User className="w-16 h-16 text-white" />
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full bg-[#032622] flex items-center justify-center border-2 sm:border-4 border-[#032622]">
+                    <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white" />
                   </div>
                 )}
               </div>
 
               {/* Bouton d'upload */}
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-3 sm:space-y-4 w-full">
                 <label className="block">
                   <input
                     type="file"
@@ -185,17 +189,17 @@ export default function AdminComptePage() {
                     className="hidden"
                     id="photo-upload"
                   />
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <label
                       htmlFor="photo-upload"
-                      className="px-6 py-3 bg-[#032622] text-white font-semibold rounded hover:opacity-90 cursor-pointer flex items-center gap-2"
+                      className="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 bg-[#032622] text-white text-xs sm:text-sm md:text-base font-semibold rounded hover:opacity-90 active:opacity-80 cursor-pointer flex items-center gap-1.5 sm:gap-2 transition-opacity"
                     >
-                      <Upload className="w-5 h-5" />
-                      {photoPreview ? "CHANGER LA PHOTO" : "AJOUTER UNE PHOTO"}
+                      <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="whitespace-nowrap">{photoPreview ? "CHANGER LA PHOTO" : "AJOUTER UNE PHOTO"}</span>
                     </label>
                   </div>
                 </label>
-                <p className="text-xs text-[#032622]/70">
+                <p className="text-[10px] sm:text-xs text-[#032622]/70">
                   Formats acceptés : JPG, PNG, GIF (max 5MB)
                 </p>
               </div>
@@ -203,69 +207,69 @@ export default function AdminComptePage() {
           </div>
 
           {/* Informations de l'administrateur */}
-          <div className="space-y-6 pt-6 border-t-2 border-[#032622]">
+          <div className="space-y-4 sm:space-y-5 md:space-y-6 pt-4 sm:pt-5 md:pt-6 border-t-2 border-[#032622]">
             <div>
-              <label className="block text-sm font-bold text-[#032622] uppercase mb-3">
+              <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-2 sm:mb-3">
                 NOM
               </label>
               <input
                 type="text"
                 value={adminData?.nom || ""}
                 readOnly
-                className="w-full px-5 py-4 bg-[#F8F5E4] border-2 border-[#032622] rounded text-[#032622]"
+                className="w-full px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-4 bg-[#F8F5E4] border-2 border-[#032622] rounded text-sm sm:text-base text-[#032622]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#032622] uppercase mb-3">
+              <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-2 sm:mb-3">
                 PRÉNOM
               </label>
               <input
                 type="text"
                 value={adminData?.prenom || ""}
                 readOnly
-                className="w-full px-5 py-4 bg-[#F8F5E4] border-2 border-[#032622] rounded text-[#032622]"
+                className="w-full px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-4 bg-[#F8F5E4] border-2 border-[#032622] rounded text-sm sm:text-base text-[#032622]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#032622] uppercase mb-3">
+              <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-2 sm:mb-3">
                 EMAIL
               </label>
               <input
                 type="email"
                 value={adminData?.email || ""}
                 readOnly
-                className="w-full px-5 py-4 bg-[#F8F5E4] border-2 border-[#032622] rounded text-[#032622]"
+                className="w-full px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-4 bg-[#F8F5E4] border-2 border-[#032622] rounded text-sm sm:text-base text-[#032622] break-words"
               />
             </div>
           </div>
 
           {/* Messages d'erreur et de succès */}
           {error && (
-            <div className="p-4 bg-red-100 border-2 border-red-600 rounded text-red-700">
+            <div className="p-3 sm:p-4 bg-red-100 border-2 border-red-600 rounded text-xs sm:text-sm text-red-700 break-words">
               {error}
             </div>
           )}
           {success && (
-            <div className="p-4 bg-green-100 border-2 border-green-600 rounded text-green-700">
+            <div className="p-3 sm:p-4 bg-green-100 border-2 border-green-600 rounded text-xs sm:text-sm text-green-700 break-words">
               {success}
             </div>
           )}
 
           {/* Bouton de sauvegarde */}
-          <div className="flex gap-4 pt-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-5 md:pt-6">
             <button
               onClick={handleSave}
               disabled={isSaving || (!selectedFile && photoPreview === (adminData?.photo_profil || null))}
-              className="px-8 py-4 bg-[#032622] text-white font-semibold rounded hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 sm:px-7 md:px-8 py-3 sm:py-3.5 md:py-4 bg-[#032622] text-white text-xs sm:text-sm md:text-base font-semibold rounded hover:opacity-90 active:opacity-80 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity w-full sm:w-auto"
             >
-              <Save className="w-5 h-5" />
+              <Save className="w-4 h-4 sm:w-5 sm:h-5" />
               {isSaving ? "ENREGISTREMENT..." : "ENREGISTRER"}
             </button>
             <button
               onClick={() => router.back()}
-              className="px-8 py-4 bg-gray-300 text-[#032622] font-semibold rounded hover:opacity-90"
+              className="px-6 sm:px-7 md:px-8 py-3 sm:py-3.5 md:py-4 bg-gray-300 text-[#032622] text-xs sm:text-sm md:text-base font-semibold rounded hover:opacity-90 active:opacity-80 transition-opacity w-full sm:w-auto"
             >
               ANNULER
             </button>
