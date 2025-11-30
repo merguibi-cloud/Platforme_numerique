@@ -145,7 +145,7 @@ export default function AdminVieEtudiante() {
                 </h3>
               </div>
             </article>
-
+/* 
             {/* Actualité Card */}
             <article
               className="relative flex-1 min-h-[160px] sm:min-h-[180px] md:min-h-[200px] overflow-hidden border border-[#032622] bg-[#032622] text-white cursor-pointer"
@@ -168,7 +168,7 @@ export default function AdminVieEtudiante() {
         </div>
       </section>
 
-      {/* Section ÉVÉNEMENT À VENIR */}
+      {/* Section ÉVÉNEMENT À VENIR 
       <section className="space-y-3 sm:space-y-4">
         <h2
           className="text-lg sm:text-xl font-bold uppercase text-[#032622] break-words"
@@ -179,7 +179,7 @@ export default function AdminVieEtudiante() {
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {upcomingEvents.map((item) => (
             <div key={item.id} className="border border-[#032622] bg-white overflow-hidden max-w-full">
-              {/* Image de l'événement */}
+              {/* Image de l'événement 
               <div className="h-40 sm:h-44 md:h-48 relative">
                 <Image 
                   src={item.image}
@@ -188,7 +188,7 @@ export default function AdminVieEtudiante() {
                   className="object-cover"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
-                {/* Badge */}
+                {/* Badge 
                 <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
                   <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest ${
                     item.badge === 'MASTERCLASS' 
@@ -199,7 +199,7 @@ export default function AdminVieEtudiante() {
                   </span>
                 </div>
               </div>
-              {/* Contenu de la carte */}
+              {/* Contenu de la carte 
               <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 bg-[#F8F5E4]">
                 <h3 
                   className="text-xs sm:text-sm font-bold uppercase text-[#032622] break-words"
@@ -221,7 +221,7 @@ export default function AdminVieEtudiante() {
       </section>
 
 
-      {/* Section ÉVÉNEMENTS PASSÉS */}
+      {/* Section ÉVÉNEMENTS PASSÉS 
       <section className="space-y-3 sm:space-y-4">
         <h2
           className="text-lg sm:text-xl font-bold uppercase text-[#032622] break-words"
@@ -230,7 +230,7 @@ export default function AdminVieEtudiante() {
           ÉVÉNEMENTS PASSÉS
         </h2>
         <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
-          {/* Replay Masterclass */}
+          {/* Replay Masterclass 
           <div className="border border-[#032622] bg-white overflow-hidden max-w-full">
             <div className="h-40 sm:h-44 md:h-48 relative">
               <Image 
@@ -262,7 +262,7 @@ export default function AdminVieEtudiante() {
             </div>
           </div>
 
-          {/* Rentrée Edifice */}
+          {/* Rentrée Edifice 
           <div className="border border-[#032622] bg-white overflow-hidden max-w-full">
             <div className="h-40 sm:h-44 md:h-48 relative">
               <Image 
@@ -296,7 +296,7 @@ export default function AdminVieEtudiante() {
         </div>
       </section>
 
-      {/* Section AVANTAGES ÉTUDIANTS */}
+      {/* Section AVANTAGES ÉTUDIANTS 
       <section className="space-y-4 sm:space-y-5 md:space-y-6">
         <h2
           className="text-xl sm:text-2xl font-bold uppercase text-[#032622] break-words"
@@ -306,7 +306,7 @@ export default function AdminVieEtudiante() {
         </h2>
         <div className="relative overflow-x-hidden w-full max-w-full carousel-container">
           <div className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 animate-scroll" style={{ willChange: 'transform' }}>
-            {/* EN VOITURE */}
+            {/* EN VOITURE 
             <a href="https://www.envoituresimone.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
               <div className="relative w-full aspect-[580/310] overflow-hidden">
                 <Image 
@@ -327,7 +327,7 @@ export default function AdminVieEtudiante() {
               </div>
             </a>
 
-            {/* NEXITY */}
+            {/* NEXITY 
             <a href="https://www.nexity.fr/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
               <div className="relative w-full aspect-[580/310] overflow-hidden">
                 <Image 
@@ -348,7 +348,7 @@ export default function AdminVieEtudiante() {
               </div>
             </a>
 
-            {/* STATUT FR */}
+            {/* STATUT FR 
             <a href="https://statut-francais.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
               <div className="relative w-full aspect-[580/310] overflow-hidden">
                 <Image 
@@ -369,7 +369,7 @@ export default function AdminVieEtudiante() {
               </div>
             </a>
 
-            {/* STUDEFI */}
+            {/* STUDEFI 
             <a href="https://www.studefi.fr/main.php" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
               <div className="relative w-full aspect-[580/310] overflow-hidden">
                 <Image 
@@ -390,7 +390,7 @@ export default function AdminVieEtudiante() {
               </div>
             </a>
 
-            {/* Duplication pour défilement continu */}
+            {/* Duplication pour défilement continu 
             <a href="https://www.envoituresimone.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
               <div className="relative w-full aspect-[580/310] overflow-hidden">
                 <Image 
@@ -434,13 +434,14 @@ export default function AdminVieEtudiante() {
         </div>
       </section>
 
-      {/* Bouton flottant messagerie */}
+      {/* Bouton flottant messagerie 
       <button
         className="fixed bottom-8 right-8 w-12 h-12 bg-[#032622] text-white rounded shadow-lg flex items-center justify-center z-50"
         aria-label="Ouvrir la messagerie"
       >
         <MessageCircle className="w-6 h-6" />
       </button>
+       */}
     </div>
   );
 }

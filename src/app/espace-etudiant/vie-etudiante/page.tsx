@@ -143,7 +143,7 @@ export default function BibliothequePage() {
         </div>
       </section>
 
-      {/* Section À venir cette semaine */}
+      {/* Section À venir cette semaine 
       <section className="space-y-3 sm:space-y-4">
         <h2
           className="text-base sm:text-lg md:text-xl font-bold uppercase text-[#032622]"
@@ -164,7 +164,7 @@ export default function BibliothequePage() {
         </div>
       </section>
 
-      {/* Section TOUS LES ÉVÉNEMENTS */}
+      {/* Section TOUS LES ÉVÉNEMENTS 
       <section className="space-y-4 sm:space-y-5 md:space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <h2
@@ -178,10 +178,10 @@ export default function BibliothequePage() {
           </button>
         </div>
 
-        {/* Barre de filtres */}
+        {/* Barre de filtres 
         <div className="bg-[#F8F5E4] border border-[#032622] p-3 sm:p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3">
-            {/* Recherche */}
+            {/* Recherche 
             <div className="sm:col-span-2 lg:col-span-2 relative">
               <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-[#032622]/50" />
               <input
@@ -191,7 +191,7 @@ export default function BibliothequePage() {
               />
             </div>
 
-            {/* Type d'événement */}
+            {/* Type d'événement 
             <select className="px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-[#032622] bg-white text-[10px] sm:text-xs font-semibold uppercase text-[#032622]/70 focus:outline-none focus:ring-2 focus:ring-[#032622] cursor-pointer">
               <option>TYPE D&apos;ÉVÉNEMENT ▾</option>
               <option>Masterclass</option>
@@ -199,7 +199,7 @@ export default function BibliothequePage() {
               <option>Conférence</option>
             </select>
 
-            {/* École */}
+            {/* École 
             <select className="px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-[#032622] bg-white text-[10px] sm:text-xs font-semibold uppercase text-[#032622]/70 focus:outline-none focus:ring-2 focus:ring-[#032622] cursor-pointer">
               <option>ÉCOLE ▾</option>
               <option>Leader Society</option>
@@ -207,7 +207,7 @@ export default function BibliothequePage() {
               <option>Finance Society</option>
             </select>
 
-            {/* Période */}
+            {/* Période 
             <select className="px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-[#032622] bg-white text-[10px] sm:text-xs font-semibold uppercase text-[#032622]/70 focus:outline-none focus:ring-2 focus:ring-[#032622] cursor-pointer">
               <option>PÉRIODE ▾</option>
               <option>Aujourd&apos;hui</option>
@@ -215,7 +215,7 @@ export default function BibliothequePage() {
               <option>Ce mois-ci</option>
             </select>
 
-            {/* Statut */}
+            {/* Statut 
             <select className="px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-[#032622] bg-white text-[10px] sm:text-xs font-semibold uppercase text-[#032622]/70 focus:outline-none focus:ring-2 focus:ring-[#032622] cursor-pointer">
               <option>STATUT ▾</option>
               <option>À venir</option>
@@ -224,7 +224,7 @@ export default function BibliothequePage() {
             </select>
           </div>
 
-          {/* Bouton Filtres avancés */}
+            {/* Bouton Filtres avancés 
           <div className="mt-3 sm:mt-4 flex justify-end">
             <button className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#032622] text-white text-[10px] sm:text-xs font-semibold uppercase tracking-widest hover:bg-[#044a3a] active:bg-[#033a2f] transition-colors">
               <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -234,13 +234,14 @@ export default function BibliothequePage() {
       </div>
       </section>
 
-      {/* Bouton flottant messagerie */}
+      {/* Bouton flottant messagerie 
       <button
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 w-10 h-10 sm:w-12 sm:h-12 bg-[#032622] text-white rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-[#044a3a] active:bg-[#033a2f] transition-colors"
         aria-label="Ouvrir la messagerie"
       >
         <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
+      */}
     </div>
   );
 }

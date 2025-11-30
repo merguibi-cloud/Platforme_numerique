@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Upload, X, Save, User } from "lucide-react";
 import { useAdminUser } from "../components/AdminUserProvider";
+import { getSignedImageUrl } from "@/lib/storage-utils";
 
 export default function AdminComptePage() {
   const router = useRouter();
@@ -15,10 +17,42 @@ export default function AdminComptePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadAdminData();
   }, []);
+
+  // Charger l'URL signée de l'image
+  useEffect(() => {
+    if (photoPreview && !selectedFile) {
+      // Si c'est une URL (pas une preview locale), obtenir une URL signée
+      if (photoPreview.startsWith('http://') || photoPreview.startsWith('https://')) {
+        setImageError(false);
+        getSignedImageUrl(photoPreview, 'photo_profil')
+          .then((signedUrl) => {
+            if (signedUrl) {
+              setImageUrl(signedUrl);
+            } else {
+              setImageError(true);
+            }
+          })
+          .catch((error) => {
+            console.error("Erreur lors de l'obtention de l'URL signée:", error);
+            setImageError(true);
+          });
+      } else {
+        // C'est une preview locale (data URL)
+        setImageUrl(photoPreview);
+      }
+    } else if (photoPreview && selectedFile) {
+      // Preview locale d'un fichier sélectionné
+      setImageUrl(photoPreview);
+    } else {
+      setImageUrl(null);
+    }
+  }, [photoPreview, selectedFile]);
 
   const loadAdminData = async () => {
     try {
@@ -30,6 +64,8 @@ export default function AdminComptePage() {
           setAdminData(result.admin);
           if (result.admin.photo_profil) {
             setPhotoPreview(result.admin.photo_profil);
+          } else {
+            setPhotoPreview(null);
           }
         }
       }
@@ -57,6 +93,7 @@ export default function AdminComptePage() {
 
       setSelectedFile(file);
       setError(null);
+      setImageError(false);
       
       // Créer une preview
       const reader = new FileReader();
@@ -70,6 +107,8 @@ export default function AdminComptePage() {
   const handleRemovePhoto = () => {
     setSelectedFile(null);
     setPhotoPreview(null);
+    setImageUrl(null);
+    setImageError(false);
     setError(null);
   };
 
@@ -100,12 +139,25 @@ export default function AdminComptePage() {
         if (result.success) {
           setSuccess("Photo de profil mise à jour avec succès");
           setSelectedFile(null);
-          // Recharger les données
+          
+          // Si l'API retourne directement l'URL de la photo, l'utiliser
+          if (result.photo_profil) {
+            setPhotoPreview(result.photo_profil);
+            setImageError(false);
+          } else if (result.photo_profil === null) {
+            // Photo supprimée
+            setPhotoPreview(null);
+            setImageUrl(null);
+          }
+          
+          // Recharger les données pour synchroniser
           await loadAdminData();
           // Rafraîchir le contexte utilisateur
           if (adminUser.refresh) {
-            adminUser.refresh();
+            await adminUser.refresh();
           }
+          // Réinitialiser l'erreur d'image pour forcer le rechargement
+          setImageError(false);
         } else {
           setError(result.error || "Erreur lors de la mise à jour");
         }
@@ -156,16 +208,23 @@ export default function AdminComptePage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               {/* Aperçu de la photo */}
               <div className="relative flex-shrink-0">
-                {photoPreview ? (
-                  <div className="relative">
-                    <img
-                      src={photoPreview}
+                {imageUrl && !imageError ? (
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-2 sm:border-4 border-[#032622]">
+                    <Image
+                      src={imageUrl}
                       alt="Photo de profil"
-                      className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full object-cover border-2 sm:border-4 border-[#032622]"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                      onError={(e) => {
+                        console.warn("Impossible de charger l'image de profil");
+                        setImageError(true);
+                      }}
+                      sizes="(max-width: 640px) 96px, (max-width: 768px) 112px, 128px"
                     />
                     <button
                       onClick={handleRemovePhoto}
-                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:opacity-90 active:opacity-75 transition-opacity"
+                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:opacity-90 active:opacity-75 transition-opacity z-10"
                       title="Supprimer la photo"
                       aria-label="Supprimer la photo"
                     >
@@ -173,7 +232,7 @@ export default function AdminComptePage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full bg-[#032622] flex items-center justify-center border-2 sm:border-4 border-[#032622]">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full bg-[#032622] flex items-center justify-center border-2 sm:border-4 border-[#032622]">
                     <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white" />
                   </div>
                 )}

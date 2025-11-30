@@ -37,6 +37,7 @@ interface CandidatData {
     piece_identite_paths?: string[];
     lettre_motivation_path?: string;
     created_at?: string;
+    paid_at?: string | null;
   } | null;
   formation: {
     id: number;
@@ -464,7 +465,7 @@ export default function CandidatDetailPage() {
           </h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 border border-[#032622]/30 bg-[#F8F5E4]">
-              <span className="text-sm font-semibold text-[#032622]">CONTRAT DE FORMATION</span>
+              {/* <span className="text-sm font-semibold text-[#032622]">CONTRAT DE FORMATION</span> 
               <div className="flex items-center space-x-2">
                 <span className="px-2 py-1 text-xs font-semibold text-white bg-[#4CAF50]">
                   SIGNÉ
@@ -478,6 +479,7 @@ export default function CandidatDetailPage() {
                   <span>TÉLÉCHARGER</span>
                 </button>
               </div>
+              */}
             </div>
           </div>
         </div>
@@ -490,63 +492,19 @@ export default function CandidatDetailPage() {
           >
             PAIEMENT
           </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 border border-[#032622]/30 bg-[#F8F5E4]">
-              <span className="text-sm font-semibold text-[#032622]">Frais de Scolarité</span>
-              <div className="flex items-center space-x-2">
-                <span className="px-2 py-1 text-xs font-semibold text-white bg-[#4CAF50]">
-                  PAYÉ
-                </span>
-                <button className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1">
-                  <Eye className="w-4 h-4" />
-                  <span>VOIR</span>
-                </button>
-                <button className="text-[#032622] hover:underline text-sm font-semibold flex items-center space-x-1">
-                  <Download className="w-4 h-4" />
-                  <span>TÉLÉCHARGER</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm text-[#032622]">
-                <span className="font-semibold">Coût de la Formation:</span> 10 000,00€
-              </p>
-              <div className="space-y-2">
-                {[
-                  { date: '10 OCTOBRE 2023', statut: 'paye', montant: '950,00€' },
-                  { date: '10 NOVEMBRE 2023', statut: 'en_attente', montant: '950,00€' },
-                  { date: '10 DÉCEMBRE 2023', statut: 'en_attente', montant: '950,00€' },
-                  { date: '10 JANVIER 2024', statut: 'en_attente', montant: '950,00€' },
-                ].map((paiement, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 border border-[#032622]/20 bg-[#F8F5E4]"
-                  >
-                    <span className="text-xs text-[#032622]">{paiement.date}</span>
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold text-white ${
-                          paiement.statut === 'paye'
-                            ? 'bg-[#4CAF50]'
-                            : 'bg-[#F0C75E]'
-                        }`}
-                      >
-                        {paiement.statut === 'paye' ? 'PAYÉ' : 'EN ATTENTE'}
-                      </span>
-                      <span className="text-xs font-semibold text-[#032622]">
-                        {paiement.montant}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="pt-2 border-t border-[#032622]/20">
-                <p className="text-sm font-semibold text-[#032622] text-right">
-                  Total: 950,00€
-                </p>
-              </div>
-            </div>
+          <div className="flex items-center justify-between p-3 border border-[#032622]/30 bg-[#F8F5E4]">
+            <span className="text-sm font-semibold text-[#032622]">Frais de Scolarité</span>
+            <span
+              className={`px-3 py-1 text-xs font-semibold text-white ${
+                candidature?.paid_at && candidature.paid_at !== null && candidature.paid_at !== ''
+                  ? 'bg-[#4CAF50]'
+                  : 'bg-[#D96B6B]'
+              }`}
+            >
+              {candidature?.paid_at && candidature.paid_at !== null && candidature.paid_at !== ''
+                ? 'PAYÉ'
+                : 'NON PAYÉ'}
+            </span>
           </div>
         </div>
       </div>
