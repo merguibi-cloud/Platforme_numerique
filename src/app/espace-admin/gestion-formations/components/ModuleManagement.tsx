@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, FileText, ChevronDown, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, FileText, ChevronDown, Trash2, Eye, EyeOff } from 'lucide-react';
 import { CreateModule } from './CreateModule';
 import { Modal } from '@/app/Modal';
 
@@ -36,6 +36,7 @@ interface ModuleManagementProps {
   onVisualizeModule: (moduleId: string) => void;
   onEditCours: (moduleId: string, coursId?: string) => void;
   onDeleteModule: (moduleId: string, scope: 'module' | 'cours', coursId?: string) => void;
+  onRefreshModules?: () => Promise<void>;
 }
 
 export const ModuleManagement = ({
@@ -53,6 +54,7 @@ export const ModuleManagement = ({
   onVisualizeModule,
   onEditCours,
   onDeleteModule,
+  onRefreshModules,
 }: ModuleManagementProps) => {
   const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -64,6 +66,14 @@ export const ModuleManagement = ({
     cours: { id: string; titre: string }[];
   } | null>(null);
   const [selectedCoursId, setSelectedCoursId] = useState<string | null>(null);
+  const [statusChangeTarget, setStatusChangeTarget] = useState<{
+    id: string;
+    title: string;
+    currentStatut: ModuleWithStatus['statut'];
+    newStatut: 'en_ligne' | 'brouillon';
+  } | null>(null);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [statusChangeError, setStatusChangeError] = useState<string | null>(null);
 
   const openDeleteModal = (module: ModuleWithStatus) => {
     const coursList = module.coursDetails ?? [];
@@ -126,6 +136,68 @@ export const ModuleManagement = ({
     setPreselectedCoursId(null);
   };
 
+  const handleStatusIconClick = (module: ModuleWithStatus) => {
+    // Ne pas permettre le changement si le statut est 'manquant'
+    if (module.statut === 'manquant') {
+      return;
+    }
+
+    const newStatut = module.statut === 'en_ligne' ? 'brouillon' : 'en_ligne';
+    setStatusChangeTarget({
+      id: module.id,
+      title: module.moduleName || 'ce cours',
+      currentStatut: module.statut,
+      newStatut,
+    });
+    setStatusChangeError(null);
+  };
+
+  const closeStatusChangeModal = () => {
+    setStatusChangeTarget(null);
+    setStatusChangeError(null);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!statusChangeTarget) return;
+
+    setIsChangingStatus(true);
+    setStatusChangeError(null);
+
+    try {
+      const action = statusChangeTarget.newStatut === 'en_ligne' ? 'publish' : 'unpublish';
+      const response = await fetch('/api/cours', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          coursId: parseInt(statusChangeTarget.id),
+          action,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Recharger uniquement les modules
+        if (onRefreshModules) {
+          await onRefreshModules();
+        } else {
+          router.refresh();
+        }
+        closeStatusChangeModal();
+      } else {
+        setStatusChangeError(result.error || 'Erreur lors du changement de statut');
+      }
+    } catch (error) {
+      setStatusChangeError('Erreur réseau lors du changement de statut');
+      console.error('Erreur lors du changement de statut:', error);
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
   console.log('[ModuleManagement] Modules reçus:', modules.length, modules);
 
   const modulesEnLigne = modules.filter(m => m.statut === 'en_ligne');
@@ -153,6 +225,41 @@ export const ModuleManagement = ({
     showAssign?: boolean;
     showVisualize?: boolean;
   }) => {
+    const iconRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const rowRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({});
+
+    // Synchroniser les hauteurs des icônes avec les lignes du tableau
+    useEffect(() => {
+      const syncHeights = () => {
+        modules.forEach((module) => {
+          const rowElement = rowRefs.current[module.id];
+          const iconElement = iconRefs.current[module.id];
+          
+          if (rowElement && iconElement) {
+            const rowHeight = rowElement.offsetHeight;
+            iconElement.style.height = `${rowHeight}px`;
+          }
+        });
+      };
+
+      // Synchroniser après le rendu initial
+      syncHeights();
+
+      // Réécouter les changements de taille (responsive, contenu dynamique)
+      const resizeObserver = new ResizeObserver(syncHeights);
+      
+      modules.forEach((module) => {
+        const rowElement = rowRefs.current[module.id];
+        if (rowElement) {
+          resizeObserver.observe(rowElement);
+        }
+      });
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }, [modules]);
+
     return (
       <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -165,9 +272,72 @@ export const ModuleManagement = ({
           </h3>
         </div>
         
-        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-          <div className="min-w-[800px] sm:min-w-0">
-            <table className="w-full border border-[#032622]">
+        <div className="relative">
+          {/* Tableau avec les icônes alignées */}
+          <div className="flex gap-3 sm:gap-4">
+            {/* Icônes alignées à gauche */}
+            <div className="flex flex-col flex-shrink-0">
+              {/* Header invisible pour aligner avec le thead */}
+              <div className="h-[48px] sm:h-[56px] flex items-center justify-center opacity-0 pointer-events-none mb-0">
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              {modules.length === 0 ? (
+                <div className="h-[48px] sm:h-[56px] flex items-center justify-center">
+                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 opacity-0" />
+                </div>
+              ) : (
+                modules.map((module) => (
+                  <div
+                    key={module.id}
+                    ref={(el) => {
+                      iconRefs.current[module.id] = el;
+                    }}
+                    className="flex items-start justify-center"
+                    style={{
+                      paddingTop: '0.5rem', // p-2 = 0.5rem
+                      paddingBottom: '0.5rem', // p-2 = 0.5rem
+                      minHeight: '48px', // Hauteur minimale
+                    }}
+                  >
+                    <button
+                      onClick={() => handleStatusIconClick(module)}
+                      disabled={module.statut === 'manquant' || isChangingStatus}
+                      className={`
+                        flex items-center justify-center 
+                        w-8 h-8 sm:w-10 sm:h-10
+                        rounded transition-colors flex-shrink-0
+                        ${module.statut === 'manquant' 
+                          ? 'opacity-50 cursor-not-allowed' 
+                          : 'cursor-pointer hover:bg-[#032622]/10 active:bg-[#032622]/20'
+                        }
+                        ${isChangingStatus ? 'opacity-50 cursor-wait' : ''}
+                      `}
+                      style={{
+                        marginTop: '0.125rem', // Petit ajustement pour aligner avec le texte du titre
+                      }}
+                      title={
+                        module.statut === 'manquant' 
+                          ? 'Cours manquant - impossible de changer le statut'
+                          : module.statut === 'en_ligne'
+                          ? 'Mettre en brouillon (hors ligne)'
+                          : 'Mettre en ligne'
+                      }
+                    >
+                      {module.statut === 'en_ligne' ? (
+                        <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                      ) : (
+                        <EyeOff className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
+                      )}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Tableau */}
+            <div className="flex-1 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className="min-w-[800px] sm:min-w-0">
+                <table className="w-full border border-[#032622]">
               <thead>
                 <tr className="bg-[#F8F5E4]">
                   <th className="border border-[#032622] p-2 sm:p-3 text-left font-semibold uppercase text-[10px] sm:text-xs md:text-sm text-[#032622] whitespace-nowrap min-w-[120px]">COURS</th>
@@ -203,7 +373,14 @@ export const ModuleManagement = ({
                 </tr>
               ) : (
                 modules.map((module) => (
-                  <tr key={module.id} className="bg-[#032622]/10">
+                  <tr 
+                    key={module.id} 
+                    id={`module-row-${module.id}`}
+                    ref={(el) => {
+                      rowRefs.current[module.id] = el;
+                    }}
+                    className="bg-[#032622]/10"
+                  >
                     <td className="border border-[#032622] p-2 sm:p-3 text-[#032622]">
                       <p className="text-xs sm:text-sm font-semibold uppercase break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
                         {module.moduleName || 'Cours sans titre'}
@@ -328,11 +505,13 @@ export const ModuleManagement = ({
               )}
             </tbody>
           </table>
+            </div>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <>
@@ -444,6 +623,37 @@ export const ModuleManagement = ({
           closeDeleteModal();
         }}
         onCancel={closeDeleteModal}
+      />
+
+      {/* Modal de changement de statut */}
+      <Modal
+        isOpen={Boolean(statusChangeTarget)}
+        onClose={closeStatusChangeModal}
+        title={
+          statusChangeTarget?.newStatut === 'en_ligne'
+            ? 'Mettre le cours en ligne'
+            : 'Mettre le cours hors ligne'
+        }
+        message={
+          statusChangeTarget
+            ? (statusChangeError 
+                ? `Erreur : ${statusChangeError}\n\n${statusChangeTarget.newStatut === 'en_ligne'
+                    ? `Voulez-vous vraiment mettre le cours "${statusChangeTarget.title}" en ligne ?\n\nLe cours sera visible pour les étudiants.`
+                    : `Voulez-vous vraiment mettre le cours "${statusChangeTarget.title}" hors ligne ?\n\nLe cours ne sera plus visible pour les étudiants et passera en brouillon.`}`
+                : isChangingStatus
+                  ? `Changement en cours...\n\n${statusChangeTarget.newStatut === 'en_ligne'
+                      ? `Mise en ligne du cours "${statusChangeTarget.title}" en cours.`
+                      : `Mise hors ligne du cours "${statusChangeTarget.title}" en cours.`}`
+                  : statusChangeTarget.newStatut === 'en_ligne'
+                    ? `Voulez-vous vraiment mettre le cours "${statusChangeTarget.title}" en ligne ?\n\nLe cours sera visible pour les étudiants.`
+                    : `Voulez-vous vraiment mettre le cours "${statusChangeTarget.title}" hors ligne ?\n\nLe cours ne sera plus visible pour les étudiants et passera en brouillon.`)
+            : ''
+        }
+        type={statusChangeError ? 'error' : 'warning'}
+        isConfirm={true}
+        confirmDisabled={isChangingStatus}
+        onConfirm={confirmStatusChange}
+        onCancel={closeStatusChangeModal}
       />
     </>
   );

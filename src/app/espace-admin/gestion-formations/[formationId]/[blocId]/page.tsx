@@ -297,6 +297,7 @@ export default function ModuleManagementPage({ params }: ModuleManagementPagePro
               onVisualizeModule={handleVisualizeModule}
               onEditCours={handleEditCours}
               onDeleteModule={handleDeleteModule}
+              onRefreshModules={loadModules}
             />
           </div>
         </div>

@@ -463,19 +463,30 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (action === 'publish') {
-      // Publier le cours (mettre tous les chapitres en actif)
-      const { error: updateError } = await supabase
-        .from('chapitres_cours')
-        .update({ actif: true })
-        .eq('cours_id', coursId);
+      // Publier le cours (mettre tous les chapitres en actif et le statut en 'en_ligne')
+      const [chapitresResult, coursResult] = await Promise.all([
+        supabase
+          .from('chapitres_cours')
+          .update({ actif: true })
+          .eq('cours_id', coursId),
+        supabase
+          .from('cours_apprentissage')
+          .update({ 
+            statut: 'en_ligne',
+            actif: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', coursId)
+      ]);
 
-      if (updateError) {
+      if (chapitresResult.error || coursResult.error) {
+        const errorMessage = chapitresResult.error?.message || coursResult.error?.message || 'Erreur inconnue';
         await logAuditAction(request, {
           action_type: 'VALIDATE',
           table_name: 'cours_apprentissage',
           resource_id: coursId.toString(),
           status: 'error',
-          error_message: updateError.message,
+          error_message: errorMessage,
           description: `Échec de publication du cours ${cours?.titre || coursId}`
         }).catch(() => {});
         return NextResponse.json({ error: 'Erreur lors de la publication' }, { status: 500 });
@@ -489,19 +500,30 @@ export async function PUT(request: NextRequest) {
         description: `Publication du cours "${cours?.titre || coursId}"`
       }).catch(() => {});
     } else if (action === 'unpublish') {
-      // Dépublier le cours (mettre tous les chapitres en inactif)
-      const { error: updateError } = await supabase
-        .from('chapitres_cours')
-        .update({ actif: false })
-        .eq('cours_id', coursId);
+      // Dépublier le cours (mettre tous les chapitres en inactif et le statut en 'brouillon')
+      const [chapitresResult, coursResult] = await Promise.all([
+        supabase
+          .from('chapitres_cours')
+          .update({ actif: false })
+          .eq('cours_id', coursId),
+        supabase
+          .from('cours_apprentissage')
+          .update({ 
+            statut: 'brouillon',
+            actif: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', coursId)
+      ]);
 
-      if (updateError) {
+      if (chapitresResult.error || coursResult.error) {
+        const errorMessage = chapitresResult.error?.message || coursResult.error?.message || 'Erreur inconnue';
         await logAuditAction(request, {
           action_type: 'REJECT',
           table_name: 'cours_apprentissage',
           resource_id: coursId.toString(),
           status: 'error',
-          error_message: updateError.message,
+          error_message: errorMessage,
           description: `Échec de dépublication du cours ${cours?.titre || coursId}`
         }).catch(() => {});
         return NextResponse.json({ error: 'Erreur lors de la dépublication' }, { status: 500 });
