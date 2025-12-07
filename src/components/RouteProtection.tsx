@@ -24,8 +24,20 @@ export default function RouteProtection({
         const userResponse = await fetch('/api/auth/user');
         const userData = await userResponse.json();
         
+        // Vérifier si c'est une erreur 401 (session expirée)
         if (!userData.success || !userData.user) {
-          router.push(redirectTo);
+          if (!userResponse.ok && userResponse.status === 401) {
+            const hasToken = typeof document !== 'undefined' && 
+              document.cookie.includes('sb-access-token=');
+            
+            if (hasToken) {
+              router.push('/?session_expired=true');
+            } else {
+              router.push(redirectTo);
+            }
+          } else {
+            router.push(redirectTo);
+          }
           return;
         }
 
@@ -34,7 +46,18 @@ export default function RouteProtection({
         const profileData = await profileResponse.json();
         
         if (!profileData.success || !profileData.profile) {
-          router.push(redirectTo);
+          if (!profileResponse.ok && profileResponse.status === 401) {
+            const hasToken = typeof document !== 'undefined' && 
+              document.cookie.includes('sb-access-token=');
+            
+            if (hasToken) {
+              router.push('/?session_expired=true');
+            } else {
+              router.push(redirectTo);
+            }
+          } else {
+            router.push(redirectTo);
+          }
           return;
         }
 

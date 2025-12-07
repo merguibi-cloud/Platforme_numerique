@@ -30,7 +30,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         const sessionResult = await getSessionRole();
 
         if (!sessionResult.success || !sessionResult.role) {
-          router.replace('/');
+          // Vérifier si c'est une session expirée
+          const hasToken = typeof document !== 'undefined' && 
+            document.cookie.includes('sb-access-token=');
+          
+          if (hasToken && sessionResult.error === 'Non authentifié') {
+            router.replace('/?session_expired=true');
+          } else {
+            router.replace('/');
+          }
           return;
         }
 

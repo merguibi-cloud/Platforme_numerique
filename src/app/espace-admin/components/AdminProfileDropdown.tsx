@@ -12,6 +12,8 @@ export const AdminProfileDropdown = () => {
   const [imageError, setImageError] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const photoProfilCacheRef = useRef<string | null>(null);
+  const signedUrlCacheRef = useRef<string | null>(null);
 
   // Fermer le menu quand on clique en dehors
   useEffect(() => {
@@ -30,26 +32,55 @@ export const AdminProfileDropdown = () => {
     };
   }, [isOpen]);
 
-  // Charger l'URL signée de l'image
+  // Charger l'URL signée de l'image seulement si l'URL source change vraiment
   useEffect(() => {
-    if (adminUser.photoProfil) {
+    const currentPhotoProfil = adminUser.photoProfil;
+    
+    // Si la photo de profil n'a pas changé, utiliser l'URL en cache
+    if (currentPhotoProfil === photoProfilCacheRef.current && signedUrlCacheRef.current) {
+      setImageUrl(signedUrlCacheRef.current);
       setImageError(false);
-      getSignedImageUrl(adminUser.photoProfil, 'photo_profil')
-        .then((signedUrl) => {
-          if (signedUrl) {
-            setImageUrl(signedUrl);
-          } else {
-            setImageError(true);
-          }
-        })
-        .catch((error) => {
-          console.error("Erreur lors de l'obtention de l'URL signée:", error);
-          setImageError(true);
-        });
-    } else {
-      setImageUrl(null);
+      return;
     }
-  }, [adminUser.photoProfil]);
+
+    // Si pas de photo, réinitialiser
+    if (!currentPhotoProfil) {
+      photoProfilCacheRef.current = null;
+      signedUrlCacheRef.current = null;
+      setImageUrl(null);
+      setImageError(false);
+      return;
+    }
+
+    // Nouvelle photo ou photo changée, charger l'URL signée
+    photoProfilCacheRef.current = currentPhotoProfil;
+    setImageError(false);
+    
+    getSignedImageUrl(currentPhotoProfil, 'photo_profil')
+      .then((signedUrl) => {
+        // Vérifier que la source n'a pas changé pendant le chargement
+        if (photoProfilCacheRef.current === currentPhotoProfil) {
+          if (signedUrl) {
+            signedUrlCacheRef.current = signedUrl;
+            setImageUrl(signedUrl);
+            setImageError(false);
+          } else {
+            signedUrlCacheRef.current = null;
+            setImageError(true);
+            setImageUrl(null);
+          }
+        }
+      })
+      .catch((error) => {
+        // Vérifier que la source n'a pas changé pendant le chargement
+        if (photoProfilCacheRef.current === currentPhotoProfil) {
+          console.error("Erreur lors de l'obtention de l'URL signée:", error);
+          signedUrlCacheRef.current = null;
+          setImageError(true);
+          setImageUrl(null);
+        }
+      });
+  }, [adminUser.photoProfil]); // Dépendance uniquement sur l'URL source
 
   const displayLabel = adminUser.isLoading ? "Chargement..." : adminUser.displayName;
   const roleLabel = adminUser.isLoading ? " " : adminUser.roleLabel;

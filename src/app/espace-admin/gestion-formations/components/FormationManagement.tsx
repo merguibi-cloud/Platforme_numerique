@@ -1,24 +1,20 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAllFormations } from '@/lib/formations';
 import { Formation } from '@/types/formations';
 import { SchoolSelection, getSchoolConfig } from './SchoolSelection';
 import { FormationSelection } from './FormationSelection';
 import AdminTopBar from '../../components/AdminTopBar';
 import { BlocksListView } from './BlocksListView';
-import { Modal } from '../../../validation/components/Modal';
 
 export const FormationManagement = () => {
+  const router = useRouter();
   const [allFormations, setAllFormations] = useState<Formation[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string>('');
   const [selectedFormation, setSelectedFormation] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  
-  // États pour les modals
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
-  const [modalTitle, setModalTitle] = useState('');
 
   // Charger toutes les formations au montage du composant
   useEffect(() => {
@@ -85,33 +81,33 @@ export const FormationManagement = () => {
   };
 
   const handleViewBlock = (blockId: string) => {
-    setModalTitle('Voir le bloc');
-    setModalMessage(`Vous voulez voir les détails du bloc ${blockId}. Cette fonctionnalité sera bientôt disponible.`);
-    setShowInfoModal(true);
+    // Rediriger vers la page de gestion des modules du bloc
+    if (selectedFormation) {
+      router.push(`/espace-admin/gestion-formations/${selectedFormation}/${blockId}`);
+    }
   };
 
   const handleEditBlock = (blockId: string) => {
-    setModalTitle('Éditer le bloc');
-    setModalMessage(`Vous voulez éditer le bloc ${blockId}. Cette fonctionnalité sera bientôt disponible.`);
-    setShowInfoModal(true);
+    // Rediriger vers la page de gestion des blocs
+    // Note: L'édition sera gérée dans BlocManagement avec le modal EditBloc
+    if (selectedFormation) {
+      router.push(`/espace-admin/gestion-formations/${selectedFormation}`);
+    }
   };
 
   const handleAddBlock = () => {
-    setModalTitle('Ajouter un bloc');
-    setModalMessage('Vous voulez ajouter un nouveau bloc à cette formation. Cette fonctionnalité sera bientôt disponible.');
-    setShowInfoModal(true);
+    // Rediriger vers la page de gestion des blocs pour ajouter un nouveau bloc
+    if (selectedFormation) {
+      router.push(`/espace-admin/gestion-formations/${selectedFormation}`);
+    }
   };
 
   const handleDeleteBlock = (blockId: string) => {
-    setModalTitle('Supprimer le bloc');
-    setModalMessage(`Vous voulez supprimer le bloc ${blockId}. Cette fonctionnalité sera bientôt disponible.`);
-    setShowInfoModal(true);
-  };
-
-  const handleModalClose = () => {
-    setShowInfoModal(false);
-    setModalMessage('');
-    setModalTitle('');
+    // Rediriger vers la page de gestion des blocs
+    // Note: La suppression sera gérée dans BlocManagement avec le modal de confirmation
+    if (selectedFormation) {
+      router.push(`/espace-admin/gestion-formations/${selectedFormation}`);
+    }
   };
 
   // Charger les blocs depuis la BDD
@@ -190,16 +186,6 @@ export const FormationManagement = () => {
           )}
         </div>
       </div>
-
-      {/* Modal d'information */}
-      <Modal
-        isOpen={showInfoModal}
-        onClose={handleModalClose}
-        title={modalTitle}
-        message={modalMessage}
-        type="info"
-        isConfirm={false}
-      />
     </div>
   );
 };

@@ -36,7 +36,16 @@ export async function middleware(request: NextRequest) {
   const roleResult = await getRequestUserWithRole(request);
 
   if (!roleResult.success || !roleResult.role) {
-    return NextResponse.redirect(new URL("/", request.url));
+    // Vérifier si c'est une session expirée (token présent mais invalide)
+    const hasAccessToken = request.cookies.get("sb-access-token")?.value;
+    const redirectUrl = new URL("/", request.url);
+    
+    // Si un token existe mais est invalide, c'est une session expirée
+    if (hasAccessToken && roleResult.error === "Non authentifié") {
+      redirectUrl.searchParams.set("session_expired", "true");
+    }
+    
+    return NextResponse.redirect(redirectUrl);
   }
 
   const allowedRoles = protectedRoutes[protectedRoute];

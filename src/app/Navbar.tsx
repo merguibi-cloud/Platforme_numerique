@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { LoginWithFormationSelection } from './LoginWithFormationSelection';
-import { getCurrentUser, signOut } from '@/lib/auth-api';
+import { getCurrentUser, signOut, getSessionRole } from '@/lib/auth-api';
 
 const navigationItems = [
   { label: "FORMATIONS", href: "/formations" },
@@ -21,6 +21,7 @@ export const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<{name: string, role: string} | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Vérifier l'état de connexion au chargement
   useEffect(() => {
@@ -97,32 +98,72 @@ export const Navbar = () => {
     checkAuthStatus();
   };
 
-  const handleUserAccess = () => {
-    if (!userInfo) return;
+  const handleUserAccess = async () => {
+    if (isRedirecting) return; // Éviter les clics multiples
     
-    // Redirection selon le rôle
-    switch (userInfo.role) {
+    setIsRedirecting(true);
+    
+    try {
+      // Si on a déjà les infos utilisateur, utiliser directement
+      if (userInfo && userInfo.role) {
+        redirectBasedOnRole(userInfo.role);
+        return;
+      }
+
+      // Sinon, récupérer le rôle depuis la session
+      const sessionResult = await getSessionRole();
+      
+      if (sessionResult.success && sessionResult.role) {
+        redirectBasedOnRole(sessionResult.role);
+      } else if (sessionResult.redirectTo) {
+        // Utiliser la redirection retournée par l'API
+        router.push(sessionResult.redirectTo);
+      } else {
+        // Par défaut, rediriger vers validation
+        router.push('/validation');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération du rôle:', error);
+      // En cas d'erreur, rediriger vers validation
+      router.push('/validation');
+    } finally {
+      setIsRedirecting(false);
+    }
+  };
+
+  const redirectBasedOnRole = (role: string) => {
+    let targetPath = '/validation'; // Par défaut
+    
+    switch (role) {
       case 'admin':
       case 'superadmin':
-        router.push('/espace-admin/dashboard');
+        targetPath = '/espace-admin/dashboard';
         break;
       case 'pedagogie':
       case 'commercial':
       case 'adv':
-        router.push('/espace-admin/dashboard');
+        targetPath = '/espace-admin/dashboard';
         break;
       case 'formateur':
-        router.push('/espace-animateur');
+        targetPath = '/espace-animateur';
         break;
       case 'etudiant':
-        router.push('/espace-etudiant');
+        targetPath = '/espace-etudiant';
         break;
       case 'lead':
       case 'candidat':
-        router.push('/validation');
+        targetPath = '/validation';
         break;
       default:
-        router.push('/validation');
+        targetPath = '/validation';
+    }
+    
+    // Utiliser replace pour forcer la navigation même si on est déjà sur la page d'accueil
+    if (pathname !== targetPath) {
+      router.push(targetPath);
+    } else {
+      // Si on est déjà sur la page, forcer un refresh
+      router.refresh();
     }
   };
 
@@ -141,7 +182,7 @@ export const Navbar = () => {
 
   // Déterminer le texte et l'action du bouton
   const getButtonConfig = () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isLoading) {
       return { text: 'ME CONNECTER', action: openLogin };
     }
     
@@ -149,7 +190,13 @@ export const Navbar = () => {
       return { text: 'SE DÉCONNECTER', action: handleLogout };
     }
     
-    return { text: 'DASHBOARD', action: handleUserAccess };
+    // Si authentifié (même sans userInfo), permettre l'accès au dashboard
+    if (isAuthenticated) {
+      return { text: 'DASHBOARD', action: handleUserAccess };
+    }
+    
+    // Par défaut, ouvrir le login
+    return { text: 'ME CONNECTER', action: openLogin };
   };
 
 
@@ -194,11 +241,12 @@ export const Navbar = () => {
                   return (
                     <button 
                       onClick={config.action}
-                      className="bg-[#032622] hover:bg-[#032622]/80 active:bg-[#032622]/60 text-[#F8F5E4] border-0 px-4 sm:px-5 md:px-6 lg:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-xs sm:text-sm md:text-base flex items-center justify-center whitespace-nowrap"
+                      disabled={isRedirecting}
+                      className="bg-[#032622] hover:bg-[#032622]/80 active:bg-[#032622]/60 disabled:opacity-50 disabled:cursor-not-allowed text-[#F8F5E4] border-0 px-4 sm:px-5 md:px-6 lg:px-8 py-2 sm:py-2.5 tracking-wide transition-all duration-200 text-xs sm:text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                       style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
                     >
                       <span style={{ fontWeight: '900' }}>
-                        {config.text}
+                        {isRedirecting ? 'CHARGEMENT...' : config.text}
                       </span>
                     </button>
                   );
@@ -274,15 +322,18 @@ export const Navbar = () => {
                 const config = getButtonConfig();
                 return (
                   <button 
-                    onClick={() => {
-                      config.action();
+                    onClick={async () => {
+                      if (typeof config.action === 'function') {
+                        await config.action();
+                      }
                       toggleMobileMenu();
                     }}
-                    className="bg-[#032622] hover:bg-[#032622]/80 active:bg-[#032622]/60 text-[#F8F5E4] border-0 px-4 sm:px-6 py-2.5 sm:py-3 tracking-wide transition-all duration-200 flex items-center justify-center text-sm sm:text-base"
+                    disabled={isRedirecting}
+                    className="bg-[#032622] hover:bg-[#032622]/80 active:bg-[#032622]/60 disabled:opacity-50 disabled:cursor-not-allowed text-[#F8F5E4] border-0 px-4 sm:px-6 py-2.5 sm:py-3 tracking-wide transition-all duration-200 flex items-center justify-center text-sm sm:text-base"
                     style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '900' }}
                   >
                     <span style={{ fontWeight: '900' }}>
-                      {config.text}
+                      {isRedirecting ? 'CHARGEMENT...' : config.text}
                     </span>
                   </button>
                 );

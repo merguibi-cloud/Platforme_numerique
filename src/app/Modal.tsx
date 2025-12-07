@@ -138,8 +138,9 @@ export const Modal = ({
         </div>
         
         {/* Footer */}
-        <div className={`flex ${isConfirm ? 'justify-between' : 'justify-end'} p-4 border-t border-[#032622]`}>
-          {isConfirm ? (
+        {!children && (
+          <div className={`flex ${isConfirm ? 'justify-between' : 'justify-end'} p-4 border-t border-[#032622]`}>
+            {isConfirm ? (
             <>
               <button
                 onClick={onCancel || onClose}
@@ -170,7 +171,8 @@ export const Modal = ({
               OK
             </button>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Upload, X, Save, User } from "lucide-react";
@@ -19,38 +19,73 @@ export default function AdminComptePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const photoPreviewCacheRef = useRef<string | null>(null);
+  const signedUrlCacheRef = useRef<string | null>(null);
 
   useEffect(() => {
     loadAdminData();
   }, []);
 
-  // Charger l'URL signée de l'image
+  // Charger l'URL signée de l'image seulement si la source change
   useEffect(() => {
-    if (photoPreview && !selectedFile) {
-      // Si c'est une URL (pas une preview locale), obtenir une URL signée
-      if (photoPreview.startsWith('http://') || photoPreview.startsWith('https://')) {
-        setImageError(false);
-        getSignedImageUrl(photoPreview, 'photo_profil')
-          .then((signedUrl) => {
+    // Si c'est une preview locale (data URL ou fichier sélectionné), utiliser directement
+    if (selectedFile || (photoPreview && (photoPreview.startsWith('data:') || !photoPreview.startsWith('http')))) {
+      photoPreviewCacheRef.current = photoPreview;
+      signedUrlCacheRef.current = photoPreview;
+      setImageUrl(photoPreview);
+      setImageError(false);
+      return;
+    }
+
+    // Si c'est une URL et qu'elle n'a pas changé, utiliser le cache
+    if (photoPreview === photoPreviewCacheRef.current && signedUrlCacheRef.current) {
+      setImageUrl(signedUrlCacheRef.current);
+      setImageError(false);
+      return;
+    }
+
+    // Si pas de preview
+    if (!photoPreview) {
+      photoPreviewCacheRef.current = null;
+      signedUrlCacheRef.current = null;
+      setImageUrl(null);
+      setImageError(false);
+      return;
+    }
+
+    // Nouvelle URL, obtenir une URL signée
+    if (photoPreview.startsWith('http://') || photoPreview.startsWith('https://')) {
+      const currentPhotoPreview = photoPreview;
+      photoPreviewCacheRef.current = currentPhotoPreview;
+      setImageError(false);
+      
+      getSignedImageUrl(currentPhotoPreview, 'photo_profil')
+        .then((signedUrl) => {
+          // Vérifier que la source n'a pas changé pendant le chargement
+          if (photoPreviewCacheRef.current === currentPhotoPreview) {
             if (signedUrl) {
+              signedUrlCacheRef.current = signedUrl;
               setImageUrl(signedUrl);
+              setImageError(false);
             } else {
+              signedUrlCacheRef.current = null;
               setImageError(true);
             }
-          })
-          .catch((error) => {
+          }
+        })
+        .catch((error) => {
+          if (photoPreviewCacheRef.current === currentPhotoPreview) {
             console.error("Erreur lors de l'obtention de l'URL signée:", error);
+            signedUrlCacheRef.current = null;
             setImageError(true);
-          });
-      } else {
-        // C'est une preview locale (data URL)
-        setImageUrl(photoPreview);
-      }
-    } else if (photoPreview && selectedFile) {
-      // Preview locale d'un fichier sélectionné
-      setImageUrl(photoPreview);
+          }
+        });
     } else {
-      setImageUrl(null);
+      // Ce n'est pas une URL HTTP, utiliser directement
+      photoPreviewCacheRef.current = photoPreview;
+      signedUrlCacheRef.current = photoPreview;
+      setImageUrl(photoPreview);
+      setImageError(false);
     }
   }, [photoPreview, selectedFile]);
 
