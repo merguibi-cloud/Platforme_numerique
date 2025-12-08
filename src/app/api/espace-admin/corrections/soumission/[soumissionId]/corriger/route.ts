@@ -42,7 +42,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { corrections, note_globale, commentaire_global, justification } = body;
+    const { corrections, note_globale, commentaire_global, justification, note_document_externe, commentaire_document_externe } = body;
 
     if (!corrections || !Array.isArray(corrections)) {
       return NextResponse.json(
@@ -125,45 +125,101 @@ export async function POST(
         .select('note_attribuee, note_max')
         .eq('soumission_id', soumissionIdNum);
 
-      if (toutesCorrections && toutesCorrections.length > 0) {
-        const totalPoints = toutesCorrections.reduce((sum, c) => sum + parseFloat(c.note_attribuee), 0);
-        const totalMax = toutesCorrections.reduce((sum, c) => sum + parseFloat(c.note_max || 20), 0);
-        
-        // Récupérer le points_max de l'étude de cas
-        const { data: soumission } = await supabase
-          .from('soumissions_etude_cas')
-          .select('etudes_cas (points_max)')
-          .eq('id', soumissionIdNum)
-          .maybeSingle();
+      let totalPoints = 0;
+      let totalMax = 0;
 
-        // Toutes les études de cas sont notées sur 20
-        // Calculer la note sur 20 en fonction des points attribués
-        // Si totalMax = 20, alors note = totalPoints
-        // Sinon, on fait une règle de trois
-        const noteMaxEtudeCas = 20; // Toujours sur 20
-        
-        // Calculer la note sur 20
-        noteGlobaleCalculee = totalMax > 0 ? (totalPoints / totalMax) * noteMaxEtudeCas : 0;
-        
-        // S'assurer que la note ne dépasse pas 20
-        if (noteGlobaleCalculee > 20) {
-          noteGlobaleCalculee = 20;
+      if (toutesCorrections && toutesCorrections.length > 0) {
+        totalPoints = toutesCorrections.reduce((sum, c) => sum + parseFloat(c.note_attribuee), 0);
+        totalMax = toutesCorrections.reduce((sum, c) => sum + parseFloat(c.note_max || 20), 0);
+      }
+      
+      // Calculer la note des questions sur 20
+      let noteQuestions = 0;
+      if (totalMax > 0 && toutesCorrections && toutesCorrections.length > 0) {
+        noteQuestions = (totalPoints / totalMax) * 20;
+      }
+      
+      // Ajouter la note du document externe si elle existe
+      if (note_document_externe !== undefined && note_document_externe !== null) {
+        const noteDocExterne = Math.min(Math.max(parseFloat(note_document_externe) || 0, 0), 20);
+        // Si on a des questions, on fait une moyenne simple entre questions et document externe
+        // Si on n'a pas de questions, la note globale est simplement la note du document externe
+        if (toutesCorrections && toutesCorrections.length > 0) {
+          // Moyenne simple : (note questions + note document externe) / 2
+          noteGlobaleCalculee = (noteQuestions + noteDocExterne) / 2;
+        } else {
+          // Pas de questions, la note globale est simplement la note du document externe
+          noteGlobaleCalculee = noteDocExterne;
         }
       } else {
-        noteGlobaleCalculee = 0;
+        // Pas de note de document externe, utiliser uniquement la note des questions
+        noteGlobaleCalculee = noteQuestions;
       }
+      
+      // S'assurer que la note ne dépasse pas 20
+      if (noteGlobaleCalculee > 20) {
+        noteGlobaleCalculee = 20;
+      }
+    }
+
+    // Construire le commentaire global en incluant le commentaire du document externe si présent
+    let commentaireFinal = commentaire_global || null;
+    let commentaireDocExterneFinal = null;
+    if (commentaire_document_externe && commentaire_document_externe.trim()) {
+      commentaireDocExterneFinal = commentaire_document_externe.trim();
+      const commentaireDocExterne = `\n\n--- COMMENTAIRE SUR LE DOCUMENT EXTERNE ---\n${commentaireDocExterneFinal}`;
+      commentaireFinal = commentaireFinal 
+        ? `${commentaireFinal}${commentaireDocExterne}` 
+        : commentaireDocExterne;
+    }
+
+    // Construire un objet JSON pour stocker les métadonnées de correction du document externe
+    // On va utiliser reponses_json ou créer un nouveau champ metadata_correction
+    // Pour l'instant, on stocke dans commentaire_correcteur avec un format structuré
+    // Mais on peut aussi utiliser un champ JSONB si disponible
+    
+    // Préparer les données de mise à jour
+    const updateData: any = {
+      note: Math.min(parseFloat(noteGlobaleCalculee), 20), // S'assurer que la note ne dépasse pas 20
+      commentaire_correcteur: commentaireFinal,
+      statut: 'corrige',
+      date_correction: new Date().toISOString(),
+      correcteur_id: user.id
+    };
+
+    // Stocker la note du document externe dans reponses_json si elle existe
+    // (ou créer un champ séparé si possible)
+    if (note_document_externe !== undefined && note_document_externe !== null) {
+      // Récupérer les reponses_json existantes pour ne pas les écraser
+      const { data: soumissionExistante } = await supabase
+        .from('soumissions_etude_cas')
+        .select('reponses_json')
+        .eq('id', soumissionIdNum)
+        .maybeSingle();
+      
+      let reponsesJson = soumissionExistante?.reponses_json || {};
+      if (typeof reponsesJson === 'string') {
+        try {
+          reponsesJson = JSON.parse(reponsesJson);
+        } catch {
+          reponsesJson = {};
+        }
+      }
+      
+      // Ajouter les métadonnées de correction du document externe
+      if (!reponsesJson.metadata_correction) {
+        reponsesJson.metadata_correction = {};
+      }
+      reponsesJson.metadata_correction.note_document_externe = parseFloat(note_document_externe);
+      reponsesJson.metadata_correction.commentaire_document_externe = commentaireDocExterneFinal;
+      
+      updateData.reponses_json = reponsesJson;
     }
 
     // Mettre à jour la soumission avec la note globale et le commentaire
     const { error: updateSoumissionError } = await supabase
       .from('soumissions_etude_cas')
-      .update({
-        note: Math.min(parseFloat(noteGlobaleCalculee), 20), // S'assurer que la note ne dépasse pas 20
-        commentaire_correcteur: commentaire_global || null,
-        statut: 'corrige',
-        date_correction: new Date().toISOString(),
-        correcteur_id: user.id
-      })
+      .update(updateData)
       .eq('id', soumissionIdNum);
 
     if (updateSoumissionError) {

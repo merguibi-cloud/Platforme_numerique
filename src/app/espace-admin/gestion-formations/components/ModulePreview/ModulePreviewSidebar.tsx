@@ -146,8 +146,13 @@ export const ModulePreviewSidebar = ({
               {/* Header du cours */}
               <button
                 onClick={() => {
-                  // Juste toggle, ne pas naviguer vers le cours
-                  toggleCours(c.id);
+                  if (c.id === currentCoursId) {
+                    // Si c'est le cours actuel, juste toggle l'expansion
+                    toggleCours(c.id);
+                  } else if (onCoursClick) {
+                    // Si c'est un autre cours, naviguer vers ce cours
+                    onCoursClick(c.id);
+                  }
                 }}
                 className={`w-full px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 text-left flex items-center justify-between gap-2 transition-colors ${
                   isExpanded

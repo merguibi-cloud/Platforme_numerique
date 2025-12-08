@@ -33,7 +33,7 @@ export async function GET(
     // Récupérer la soumission de l'étudiant pour cette étude de cas
     const { data: soumission, error: soumissionError } = await supabase
       .from('soumissions_etude_cas')
-      .select('*')
+      .select('*, fichiers_globaux')
       .eq('etude_cas_id', etudeCasIdNum)
       .eq('user_id', user.id)
       .order('date_soumission', { ascending: false })
@@ -116,6 +116,39 @@ export async function GET(
       };
     });
 
+    // Générer les URLs signées pour les fichiers globaux
+    let fichiersGlobauxUrls: string[] = [];
+    if (soumission.fichiers_globaux) {
+      try {
+        let fichiersPaths: string[] = [];
+        
+        // Parser si c'est un JSON, sinon utiliser directement
+        if (typeof soumission.fichiers_globaux === 'string') {
+          try {
+            const parsed = JSON.parse(soumission.fichiers_globaux);
+            fichiersPaths = Array.isArray(parsed) ? parsed : [soumission.fichiers_globaux];
+          } catch {
+            fichiersPaths = [soumission.fichiers_globaux];
+          }
+        } else if (Array.isArray(soumission.fichiers_globaux)) {
+          fichiersPaths = soumission.fichiers_globaux;
+        }
+        
+        // Générer les URLs signées pour chaque fichier
+        for (const filePath of fichiersPaths) {
+          const { data: urlData } = await supabase.storage
+            .from('etudes_cas')
+            .createSignedUrl(filePath, 3600);
+          
+          if (urlData?.signedUrl) {
+            fichiersGlobauxUrls.push(urlData.signedUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la génération des URLs des fichiers globaux:', error);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       soumission: {
@@ -123,7 +156,8 @@ export async function GET(
         note: soumission.note,
         statut: soumission.statut,
         date_soumission: soumission.date_soumission,
-        commentaire_etudiant: soumission.commentaire_etudiant
+        commentaire_etudiant: soumission.commentaire_etudiant,
+        fichiers_globaux: fichiersGlobauxUrls // URLs des fichiers globaux
       },
       questions: questionsAvecReponses
     });

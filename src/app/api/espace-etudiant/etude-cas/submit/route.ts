@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Uploader les fichiers si présents et les associer aux questions
     let fichierSoumisPath = null;
+    let fichiersGlobauxPaths: string[] = []; // Pour les fichiers globaux (questionId = 0)
     let validPaths: string[] = [];
     const files = formData.getAll('files') as File[];
     const fileQuestionMap: { [questionId: string]: string[] } = {}; // questionId -> filePaths
@@ -96,30 +97,43 @@ export async function POST(request: NextRequest) {
         }
 
         // Récupérer la questionId associée à ce fichier depuis le mapping
-        const questionId = fileQuestionMapping[index] || null;
+        // questionId = 0 signifie fichier global (document externe)
+        const questionId = fileQuestionMapping[index] !== undefined ? fileQuestionMapping[index] : null;
         
-        return { path: filePath, questionId: questionId ? questionId.toString() : null };
+        return { path: filePath, questionId: questionId !== null ? questionId.toString() : null };
       });
 
       const uploadedResults = await Promise.all(uploadPromises);
       
       // Organiser les fichiers par questionId
       uploadedResults.forEach((result) => {
-        if (result.path && result.questionId) {
-          if (!fileQuestionMap[result.questionId]) {
-            fileQuestionMap[result.questionId] = [];
+        if (result.path) {
+          if (result.questionId === '0') {
+            // Fichier global (document externe)
+            fichiersGlobauxPaths.push(result.path);
+          } else if (result.questionId) {
+            // Fichier associé à une question spécifique
+            if (!fileQuestionMap[result.questionId]) {
+              fileQuestionMap[result.questionId] = [];
+            }
+            fileQuestionMap[result.questionId].push(result.path);
           }
-          fileQuestionMap[result.questionId].push(result.path);
-          validPaths.push(result.path);
-        } else if (result.path) {
-          // Fichier sans questionId (fallback)
           validPaths.push(result.path);
         }
       });
       
+      // Stocker les fichiers globaux séparément dans fichiers_globaux
+      // et garder fichier_soumis pour les fichiers de questions (compatibilité)
       if (validPaths.length > 0) {
-        // Si plusieurs fichiers, on peut les stocker dans un tableau ou prendre le premier
-        fichierSoumisPath = validPaths.length === 1 ? validPaths[0] : JSON.stringify(validPaths);
+        // Pour compatibilité, on garde fichier_soumis pour les fichiers de questions
+        const fichiersQuestions = validPaths.filter((_, index) => {
+          const questionId = fileQuestionMapping[index];
+          return questionId !== undefined && questionId !== 0;
+        });
+        
+        if (fichiersQuestions.length > 0) {
+          fichierSoumisPath = fichiersQuestions.length === 1 ? fichiersQuestions[0] : JSON.stringify(fichiersQuestions);
+        }
       }
     }
 
@@ -134,12 +148,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer la soumission
+    // Stocker les fichiers globaux dans un champ JSON si plusieurs, sinon string simple
+    const fichiersGlobauxStorage = fichiersGlobauxPaths.length === 0 
+      ? null 
+      : fichiersGlobauxPaths.length === 1 
+        ? fichiersGlobauxPaths[0] 
+        : JSON.stringify(fichiersGlobauxPaths);
+
     const { data: soumission, error: soumissionError } = await supabase
       .from('soumissions_etude_cas')
       .insert({
         etude_cas_id: parseInt(etude_cas_id as string),
         user_id: user.id,
         fichier_soumis: fichierSoumisPath,
+        fichiers_globaux: fichiersGlobauxStorage, // Nouveau champ pour les fichiers globaux (document externe)
         commentaire_etudiant: commentaire_etudiant,
         reponses_json: reponsesParsed, // Stocker les réponses en JSON
         statut: 'en_attente',
@@ -215,6 +237,9 @@ export async function POST(request: NextRequest) {
       // Pour chaque questionId dans fileQuestionMap, créer une entrée dans reponses_etude_cas
       Object.entries(fileQuestionMap).forEach(([questionIdStr, filePaths]) => {
         const questionId = parseInt(questionIdStr);
+        // Ignorer questionId = 0 car ce sont les fichiers globaux (stockés dans fichiers_globaux)
+        if (questionId === 0) return;
+        
         const question = questions.find(q => q.id === questionId);
         
         if (question && question.type_question === 'piece_jointe' && filePaths.length > 0) {
@@ -238,6 +263,17 @@ export async function POST(request: NextRequest) {
           console.error('Erreur lors de l\'enregistrement des fichiers:', fichiersError);
         }
       }
+    }
+    
+    // Enregistrer aussi les fichiers globaux dans reponses_etude_cas avec question_id = NULL
+    // pour faciliter la récupération (optionnel, car déjà dans fichiers_globaux)
+    if (fichiersGlobauxPaths.length > 0) {
+      const fichiersGlobauxPath = fichiersGlobauxPaths.length === 1 
+        ? fichiersGlobauxPaths[0] 
+        : JSON.stringify(fichiersGlobauxPaths);
+      
+      // On pourrait créer une entrée spéciale avec question_id = NULL ou -1
+      // mais pour l'instant, on les stocke uniquement dans fichiers_globaux
     }
 
     // Récupérer le cours et le bloc pour créer une note

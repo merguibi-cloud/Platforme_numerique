@@ -70,7 +70,6 @@ export default function RouteProtection({
 
         setIsAuthorized(true);
       } catch (error) {
-        console.error('Erreur vérification RouteProtection:', error);
         router.push(redirectTo);
       } finally {
         setIsLoading(false);

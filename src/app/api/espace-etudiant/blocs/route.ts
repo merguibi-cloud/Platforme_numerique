@@ -88,14 +88,26 @@ export async function GET(request: NextRequest) {
           .eq('actif', true);
 
         // Récupérer les chapitres réellement lus par l'étudiant
-        const chapitreIds = chapitres?.map(c => c.id) || [];
-        const { data: chapitresLusData } = await supabase
-          .from('notes_etudiants')
-          .select('evaluation_id')
-          .eq('etudiant_id', etudiant.id)
-          .eq('bloc_id', bloc.id)
-          .eq('type_evaluation', 'cours')
-          .in('evaluation_id', chapitreIds);
+        const chapitreIdsArray = chapitres?.map(c => c.id) || [];
+        
+        // Récupérer les chapitres lus (sans filtrer par bloc_id car il peut être NULL ou différent selon le contexte)
+        // On filtre seulement par etudiant_id, type_evaluation et les chapitre IDs qui appartiennent au bloc
+        // Cela permet de récupérer tous les chapitres lus même si le bloc_id dans notes_etudiants n'est pas cohérent
+        let chapitresLusData: any[] = [];
+        if (chapitreIdsArray.length > 0) {
+          const { data, error } = await supabase
+            .from('notes_etudiants')
+            .select('evaluation_id, bloc_id')
+            .eq('etudiant_id', etudiant.id)
+            .eq('type_evaluation', 'cours')
+            .in('evaluation_id', chapitreIdsArray);
+          
+          if (error) {
+            console.error(`[Bloc ${bloc.numero_bloc}] Erreur récupération chapitres lus:`, error);
+          } else {
+            chapitresLusData = data || [];
+          }
+        }
 
         const chapitresLusIds = new Set(chapitresLusData?.map(c => c.evaluation_id) || []);
 
@@ -128,23 +140,41 @@ export async function GET(request: NextRequest) {
         ).length || 0;
 
         // Récupérer les quiz du bloc
-        const { data: quiz, error: quizError } = await supabase
+        // Les quiz peuvent être associés à un cours_id OU à un chapitre_id
+        // Récupérer d'abord les quiz par cours_id
+        const { data: quizByCours, error: quizError1 } = await supabase
           .from('quiz_evaluations')
           .select('id')
           .in('cours_id', coursIds)
           .eq('actif', true);
 
-        const quizIds = quiz?.map(q => q.id) || [];
+        // Récupérer les quiz par chapitre_id (les chapitres des cours du bloc)
+        const { data: quizByChapitre, error: quizError2 } = chapitreIdsArray.length > 0 ? await supabase
+          .from('quiz_evaluations')
+          .select('id')
+          .in('chapitre_id', chapitreIdsArray)
+          .eq('actif', true) : { data: null, error: null };
 
-        // Compter les quiz complétés
-        const { data: tentativesQuiz } = await supabase
-          .from('tentatives_quiz')
-          .select('quiz_id')
-          .in('quiz_id', quizIds)
-          .eq('user_id', user.id)
-          .eq('termine', true);
+        // Combiner les deux listes et dédupliquer
+        const quizIdsSet = new Set<number>();
+        quizByCours?.forEach(q => quizIdsSet.add(q.id));
+        quizByChapitre?.forEach(q => quizIdsSet.add(q.id));
+        const quizIds = Array.from(quizIdsSet);
 
-        const quizCompletes = new Set(tentativesQuiz?.map(t => t.quiz_id) || []).size;
+        // Compter les quiz complétés (utiliser notes_etudiants comme source de vérité)
+        // car c'est là que les notes sont créées lors de la soumission du quiz
+        let quizCompletes = 0;
+        if (quizIds.length > 0) {
+          const { data: notesQuiz } = await supabase
+            .from('notes_etudiants')
+            .select('evaluation_id')
+            .eq('etudiant_id', etudiant.id)
+            .eq('type_evaluation', 'quiz')
+            .in('evaluation_id', quizIds)
+            .not('note', 'is', null);
+          
+          quizCompletes = new Set(notesQuiz?.map(n => n.evaluation_id) || []).size;
+        }
 
         // Compter les études de cas complétées
         const { data: etudesCasData } = await supabase
@@ -165,13 +195,16 @@ export async function GET(request: NextRequest) {
         // Calculer le pourcentage de progression
         // Formule simple : (Chapitres lus + Quiz faits + Études de cas faites) / Total
         // Les vidéos ne comptent plus
-        const totalChapitres = chapitres?.filter(c => 
+        // IMPORTANT: Compter tous les chapitres texte/presentation de TOUS les cours du bloc
+        const chapitresTextePresentation = chapitres?.filter(c => 
           c.type_contenu === 'texte' || c.type_contenu === 'presentation'
-        ).length || 0;
-        const chapitresLusCount = chapitres?.filter(c => 
-          (c.type_contenu === 'texte' || c.type_contenu === 'presentation') &&
+        ) || [];
+        const totalChapitres = chapitresTextePresentation.length;
+        
+        // Compter les chapitres texte/presentation qui ont été lus
+        const chapitresLusCount = chapitresTextePresentation.filter(c => 
           chapitresLusIds.has(c.id)
-        ).length || 0;
+        ).length;
         
         const totalQuiz = quizIds.length;
         const totalEtudeCas = etudeCasIds.length;
@@ -184,6 +217,48 @@ export async function GET(request: NextRequest) {
         const progression = totalElements > 0 
           ? Math.round((elementsCompletes / totalElements) * 100) 
           : 0;
+
+        // Trouver le premier cours non complété
+        // Récupérer tous les cours du bloc (triés par ordre d'affichage) avec leurs IDs
+        const { data: tousCours } = await supabase
+          .from('cours_apprentissage')
+          .select('id, ordre_affichage')
+          .eq('bloc_id', bloc.id)
+          .eq('actif', true)
+          .eq('statut', 'en_ligne')
+          .order('ordre_affichage', { ascending: true });
+
+        let premierCoursNonComplete: { id: number } | null = null;
+        
+        if (tousCours && tousCours.length > 0) {
+          for (const cours of tousCours) {
+            // Vérifier si ce cours est complété
+            const chapitresDuCours = chapitres?.filter(c => c.cours_id === cours.id) || [];
+            if (chapitresDuCours.length > 0) {
+              const chapitresTexte = chapitresDuCours.filter(c => 
+                c.type_contenu === 'texte' || c.type_contenu === 'presentation'
+              );
+              
+              // Un cours est complété si tous ses chapitres texte sont lus
+              const tousChapitresTexteLus = chapitresTexte.length > 0 && 
+                chapitresTexte.every(ch => chapitresLusIds.has(ch.id));
+              
+              if (!tousChapitresTexteLus) {
+                // Ce cours n'est pas complété, c'est celui qu'on cherche
+                premierCoursNonComplete = cours;
+                break;
+              }
+            } else {
+              // Pas de chapitres texte, considérer comme non complété
+              premierCoursNonComplete = cours;
+              break;
+            }
+          }
+        }
+        
+        // Si tous les cours sont complétés, retourner le premier cours (pour "revoir")
+        const premierCours = tousCours && tousCours.length > 0 ? tousCours[0] : null;
+        const coursIdPourNavigation = premierCoursNonComplete?.id || premierCours?.id || null;
 
         return {
           id: bloc.id,
@@ -198,7 +273,8 @@ export async function GET(request: NextRequest) {
           quizCompletes: quizCompletes,
           quizTotal: totalQuiz,
           etudeCasSoumises: etudeCasSoumises,
-          etudeCasTotal: totalEtudeCas
+          etudeCasTotal: totalEtudeCas,
+          premier_cours_id: coursIdPourNavigation
         };
       })
     );
@@ -208,39 +284,25 @@ export async function GET(request: NextRequest) {
 
     // Déterminer quels blocs sont verrouillés
     // Le bloc 1 doit être à 100% pour débloquer le bloc 2, etc.
-    const blocsAvecVerrouillage = await Promise.all(
-      blocsFiltres.map(async (bloc, index) => {
-        let locked = false;
-        
-        if (bloc.numero_bloc === 1) {
-          // Le bloc 1 est toujours débloqué
-          locked = false;
-        } else {
-          // Vérifier si tous les blocs précédents sont à 100%
-          const blocsPrecedents = blocsFiltres.slice(0, index);
-          const tousBlocsPrecedentsCompletes = blocsPrecedents.every(b => b && b.progression === 100);
-          locked = !tousBlocsPrecedentsCompletes;
-        }
+    const blocsAvecVerrouillage = blocsFiltres.map((bloc, index) => {
+      let locked = false;
+      
+      if (bloc.numero_bloc === 1) {
+        // Le bloc 1 est toujours débloqué
+        locked = false;
+      } else {
+        // Vérifier si tous les blocs précédents sont à 100%
+        const blocsPrecedents = blocsFiltres.slice(0, index);
+        const tousBlocsPrecedentsCompletes = blocsPrecedents.every(b => b && b.progression === 100);
+        locked = !tousBlocsPrecedentsCompletes;
+      }
 
-        // Récupérer le premier cours en ligne du bloc pour la navigation
-        const { data: premierCours } = await supabase
-          .from('cours_apprentissage')
-          .select('id')
-          .eq('bloc_id', bloc.id)
-          .eq('actif', true)
-          .eq('statut', 'en_ligne')
-          .order('ordre_affichage', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-
-        return {
-          ...bloc,
-          locked: locked,
-          premier_cours_id: premierCours?.id || null,
-          formation_id: etudiant.formation_id
-        };
-      })
-    );
+      return {
+        ...bloc,
+        locked: locked,
+        formation_id: etudiant.formation_id
+      };
+    });
 
     return NextResponse.json({
       success: true,

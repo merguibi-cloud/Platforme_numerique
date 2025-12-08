@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { CoursApprentissage, ChapitreCours, QuizEvaluation, EtudeCas } from '@/types/formation-detailed';
@@ -62,7 +62,8 @@ export const StudentCourseViewer = ({
   const [quizReponses, setQuizReponses] = useState<any>(null); // Réponses du quiz déjà fait
   const [etudeCasReponses, setEtudeCasReponses] = useState<any>(null); // Réponses de l'étude de cas déjà soumise
   const [showEtudeCasConfirmModal, setShowEtudeCasConfirmModal] = useState(false); // Modal de confirmation pour soumettre l'étude de cas
-  const [getEtudeCasAnswers, setGetEtudeCasAnswers] = useState<(() => { answers: any; uploadedFiles: { [questionId: number]: File[] }; commentaire: string; allQuestionsAnswered: boolean }) | null>(null);
+  // Utiliser useRef au lieu de useState pour éviter les re-renders
+  const getEtudeCasAnswersRef = useRef<(() => { answers: any; uploadedFiles: { [questionId: number]: File[] }; globalFiles?: File[]; commentaire: string; allQuestionsAnswered: boolean }) | null>(null);
   
   // États pour les modals
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -85,6 +86,7 @@ export const StudentCourseViewer = ({
     progressionPourcentage: number;
     chapitresLus: number[];
     chapitresSautes: number[];
+    chapitresNonLus: number[];
     quizCompletes: number[];
     etudeCasSoumise: boolean;
     totalChapitres: number;
@@ -96,6 +98,11 @@ export const StudentCourseViewer = ({
   const [tempsPasseMinutes, setTempsPasseMinutes] = useState(0);
   
   const router = useRouter();
+
+  // Callback stable pour onGetAnswers
+  const handleGetEtudeCasAnswers = useCallback((getAnswers: () => { answers: any; uploadedFiles: { [questionId: number]: File[] }; globalFiles?: File[]; commentaire: string; allQuestionsAnswered: boolean }) => {
+    getEtudeCasAnswersRef.current = getAnswers;
+  }, []);
 
   // Démarrer le timer quand on entre dans le cours
   useEffect(() => {
@@ -196,6 +203,7 @@ export const StudentCourseViewer = ({
             progressionPourcentage: result.progressionPourcentage || 0,
             chapitresLus: result.chapitresLus?.map((c: any) => c.id) || [],
             chapitresSautes: result.chapitresSautes || [],
+            chapitresNonLus: result.chapitresNonLus?.map((c: any) => c.id) || [],
             quizCompletes: result.quizCompletes?.map((q: any) => q.id) || [],
             etudeCasSoumise: result.etudeCasSoumise || false,
             totalChapitres: result.totalChapitres || 0
@@ -482,6 +490,38 @@ export const StudentCourseViewer = ({
     }
   }, [etudeCasSoumis.size]);
 
+  // Charger les réponses de l'étude de cas (y compris les fichiers globaux) si elle est déjà soumise
+  useEffect(() => {
+    const loadEtudeCasReponses = async () => {
+      // Si on est sur la vue étude de cas et qu'elle est déjà soumise, charger les réponses
+      if (currentView === 'etude-cas' && data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+        try {
+          const response = await fetch(`/api/espace-etudiant/etude-cas/${data.etudeCas.id}/reponses`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              // Restructurer les données pour correspondre à ce qu'attend EtudeCasViewer
+              setEtudeCasReponses({
+                questions: result.questions || [],
+                commentaire_etudiant: result.soumission?.commentaire_etudiant || '',
+                fichiers_globaux: result.soumission?.fichiers_globaux || []
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des réponses de l\'étude de cas:', error);
+        }
+      }
+    };
+    
+    if (!isLoading && data.etudeCas) {
+      loadEtudeCasReponses();
+    }
+  }, [currentView, data.etudeCas, etudeCasSoumis, isLoading]);
+
   const currentChapitre = data.chapitres[currentChapitreIndex];
   const hasPreviousChapitre = currentChapitreIndex > 0;
   const hasNextChapitre = currentChapitreIndex < data.chapitres.length - 1;
@@ -544,6 +584,14 @@ export const StudentCourseViewer = ({
       } else if (hasEtudeCas) {
         // Pas de chapitre suivant, naviguer vers l'étude de cas (toujours accessible)
         navigateToEtudeCas();
+      } else {
+        // Fin du cours, vérifier s'il y a un cours suivant ou retourner aux formations
+        const nextCours = findNextCourse();
+        if (nextCours) {
+          router.push(`/espace-etudiant/cours/${formationId}/${blocId}/${nextCours.id}`);
+        } else {
+          router.push('/espace-etudiant/mes-formations');
+        }
       }
     } else if (currentView === 'quiz') {
       // Après avoir consulté le quiz (en mode lecture seule ou après soumission)
@@ -556,17 +604,29 @@ export const StudentCourseViewer = ({
         navigateToEtudeCas();
         setQuizCompleted(false);
       } else {
-        setCurrentView('cours');
+        // Fin du cours, vérifier s'il y a un cours suivant ou retourner aux formations
+        const nextCours = findNextCourse();
+        if (nextCours) {
+          router.push(`/espace-etudiant/cours/${formationId}/${blocId}/${nextCours.id}`);
+        } else {
+          router.push('/espace-etudiant/mes-formations');
+        }
         setQuizCompleted(false);
       }
     } else if (currentView === 'etude-cas') {
-      // Si l'étude de cas est déjà soumise, retourner aux formations
+      // Si l'étude de cas est déjà soumise, vérifier s'il y a un cours suivant
       if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
-        router.push('/espace-etudiant/mes-formations');
+        // Vérifier s'il y a un cours suivant non complété
+        const nextCours = findNextCourse();
+        if (nextCours) {
+          router.push(`/espace-etudiant/cours/${formationId}/${blocId}/${nextCours.id}`);
+        } else {
+          router.push('/espace-etudiant/mes-formations');
+        }
       } else {
         // Si l'étude de cas n'est pas encore soumise, afficher la popup de confirmation
-        if (getEtudeCasAnswers) {
-          const answersData = getEtudeCasAnswers();
+        if (getEtudeCasAnswersRef.current) {
+          const answersData = getEtudeCasAnswersRef.current();
           if (answersData.allQuestionsAnswered) {
             // Toutes les questions sont répondues, afficher la popup de confirmation
             setShowEtudeCasConfirmModal(true);
@@ -618,7 +678,10 @@ export const StudentCourseViewer = ({
   };
 
   const handleCoursClick = (clickedCoursId: number) => {
-    // Ne rien faire - le clic sur le cours ne fait que dérouler les chapitres
+    // Naviguer vers le cours cliqué si c'est un cours différent
+    if (clickedCoursId !== coursId) {
+      router.push(`/espace-etudiant/cours/${formationId}/${blocId}/${clickedCoursId}`);
+    }
   };
 
   // Fonction centralisée pour naviguer vers un chapitre
@@ -677,7 +740,13 @@ export const StudentCourseViewer = ({
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
-            setEtudeCasReponses(result);
+            // Restructurer les données pour correspondre à ce qu'attend EtudeCasViewer
+            // userSubmission doit contenir: questions, commentaire_etudiant, fichiers_globaux
+            setEtudeCasReponses({
+              questions: result.questions || [],
+              commentaire_etudiant: result.soumission?.commentaire_etudiant || '',
+              fichiers_globaux: result.soumission?.fichiers_globaux || []
+            });
           }
         }
       } catch (error) {
@@ -747,12 +816,80 @@ export const StudentCourseViewer = ({
     return null;
   };
 
+  // Fonction pour vérifier s'il y a encore du contenu non fait dans le cours actuel
+  const hasRemainingContentInCurrentCourse = () => {
+    // Vérifier s'il y a des chapitres non lus après le chapitre actuel
+    if (currentView === 'cours' && hasNextChapitre) {
+      return true;
+    }
+    
+    // Vérifier s'il y a un quiz pour le chapitre actuel qui n'est pas encore fait
+    if (currentView === 'cours' && hasQuizForCurrentChapitre) {
+      const currentChapitre = data.chapitres[currentChapitreIndex];
+      if (currentChapitre) {
+        const quizData = quizzesByChapitre.get(currentChapitre.id);
+        const quizId = quizData?.quiz.id;
+        if (quizId && !quizAvecNote.has(quizId)) {
+          return true;
+        }
+      }
+    }
+    
+    // Vérifier s'il y a une étude de cas non soumise
+    if (hasEtudeCas && data.etudeCas?.id && !etudeCasSoumis.has(data.etudeCas.id)) {
+      return true;
+    }
+    
+    // Vérifier s'il y a des chapitres non lus dans le cours
+    if (realProgress && realProgress.chapitresNonLus && realProgress.chapitresNonLus.length > 0) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Fonction pour vérifier si le cours actuel est complété
+  const isCurrentCourseCompleted = () => {
+    // Si on est dans l'étude de cas et qu'elle est soumise, le cours est complété
+    if (currentView === 'etude-cas' && data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+      // Vérifier s'il n'y a pas de chapitres suivants ou de quiz non faits
+      if (!hasNextChapitre && !hasQuizForCurrentChapitre) {
+        return true;
+      }
+    }
+    
+    // Si tous les chapitres sont lus, tous les quiz sont faits, et l'étude de cas est soumise
+    if (realProgress) {
+      const allChapitresLus = realProgress.chapitresLus.length === realProgress.totalChapitres;
+      const allQuizDone = quizzesByChapitre.size > 0 && 
+        Array.from(quizzesByChapitre.values()).every(q => quizAvecNote.has(q.quiz.id));
+      const etudeCasDone = !hasEtudeCas || (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id));
+      
+      return allChapitresLus && allQuizDone && etudeCasDone;
+    }
+    
+    return false;
+  };
+
   // Fonction pour confirmer et soumettre l'étude de cas
   const handleConfirmEtudeCasSubmit = async () => {
-    if (!getEtudeCasAnswers || !data.etudeCas) return;
+    if (!getEtudeCasAnswersRef.current || !data.etudeCas) return;
     
-    const answersData = getEtudeCasAnswers();
-    await handleEtudeCasSubmit(answersData.answers, answersData.uploadedFiles, answersData.commentaire);
+    const answersData = getEtudeCasAnswersRef.current();
+    
+    // Fusionner les fichiers globaux avec les fichiers uploadés
+    // Les fichiers globaux sont associés à questionId = 0
+    const allFiles = { ...answersData.uploadedFiles };
+    if (answersData.globalFiles && answersData.globalFiles.length > 0) {
+      // Si questionId 0 existe déjà, fusionner, sinon créer
+      if (allFiles[0]) {
+        allFiles[0] = [...allFiles[0], ...answersData.globalFiles];
+      } else {
+        allFiles[0] = answersData.globalFiles;
+      }
+    }
+    
+    await handleEtudeCasSubmit(answersData.answers, allFiles, answersData.commentaire);
     setShowEtudeCasConfirmModal(false);
   };
 
@@ -768,6 +905,7 @@ export const StudentCourseViewer = ({
       
       // Ajouter les fichiers avec leur questionId dans l'ordre
       // On envoie d'abord un JSON qui mappe l'index du fichier à sa questionId
+      // Note: les fichiers globaux sont associés à questionId = 0
       const fileQuestionMapping: { [index: number]: number } = {};
       let fileIndex = 0;
       Object.entries(fichiers).forEach(([questionId, files]) => {
@@ -922,8 +1060,12 @@ export const StudentCourseViewer = ({
   // Fonction pour calculer le label du bouton suivant
   const getNextButtonLabel = () => {
     if (currentView === 'etude-cas') {
-      // Si l'étude de cas est déjà soumise, afficher "RETOUR AUX FORMATIONS"
+      // Si l'étude de cas est déjà soumise, vérifier s'il y a un cours suivant
       if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+        const nextCours = findNextCourse();
+        if (nextCours) {
+          return 'PASSER AU COURS SUIVANT';
+        }
         return 'RETOUR AUX FORMATIONS';
       }
       return 'TERMINER';
@@ -935,6 +1077,14 @@ export const StudentCourseViewer = ({
       if (hasNextChapitre) {
         return 'PASSER AU CHAPITRE SUIVANT';
       } else if (hasEtudeCas) {
+        // Vérifier si l'étude de cas est déjà soumise
+        if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+          const nextCours = findNextCourse();
+          if (nextCours) {
+            return 'PASSER AU COURS SUIVANT';
+          }
+          return 'RETOUR AUX FORMATIONS';
+        }
         return 'PASSER À L\'ÉTUDE DE CAS';
       } else {
         // Fin du cours, vérifier s'il y a un cours suivant
@@ -944,8 +1094,7 @@ export const StudentCourseViewer = ({
         } else if (hasNextBlocState) {
           return 'PASSER AU BLOC SUIVANT';
         } else {
-          // Plus de blocs, quiz final (pas encore défini)
-          return 'PASSER AU QUIZ FINAL';
+          return 'RETOUR AUX FORMATIONS';
         }
       }
     }
@@ -957,6 +1106,14 @@ export const StudentCourseViewer = ({
       } else if (hasNextChapitre) {
         return 'PASSER AU CHAPITRE SUIVANT';
       } else if (hasEtudeCas) {
+        // Vérifier si l'étude de cas est déjà soumise
+        if (data.etudeCas?.id && etudeCasSoumis.has(data.etudeCas.id)) {
+          const nextCours = findNextCourse();
+          if (nextCours) {
+            return 'PASSER AU COURS SUIVANT';
+          }
+          return 'RETOUR AUX FORMATIONS';
+        }
         return 'PASSER À L\'ÉTUDE DE CAS';
       } else {
         // Fin du cours, vérifier s'il y a un cours suivant
@@ -966,8 +1123,7 @@ export const StudentCourseViewer = ({
         } else if (hasNextBlocState) {
           return 'PASSER AU BLOC SUIVANT';
         } else {
-          // Plus de blocs, quiz final (pas encore défini)
-          return 'PASSER AU QUIZ FINAL';
+          return 'RETOUR AUX FORMATIONS';
         }
       }
     }
@@ -1111,9 +1267,7 @@ export const StudentCourseViewer = ({
                     isPreview={false}
                     readOnly={etudeCasSoumis.has(data.etudeCas.id)}
                     userSubmission={etudeCasReponses}
-                    onGetAnswers={etudeCasSoumis.has(data.etudeCas.id) ? undefined : (getAnswers) => {
-                      setGetEtudeCasAnswers(() => getAnswers);
-                    }}
+                    onGetAnswers={etudeCasSoumis.has(data.etudeCas.id) ? undefined : handleGetEtudeCasAnswers}
                   />
                 )}
               </div>
@@ -1121,12 +1275,22 @@ export const StudentCourseViewer = ({
             
             <ModulePreviewNavigation
               hasPrevious={currentView === 'cours' ? hasPreviousChapitre : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
-              hasNext={currentView === 'cours' ? (() => {
-                // Toujours permettre la navigation vers le quiz ou l'étude de cas, même s'ils sont déjà faits
-                return hasNextChapitre || 
-                       hasQuizForCurrentChapitre || 
-                       (hasEtudeCas && !hasNextChapitre && !hasQuizForCurrentChapitre);
-              })() : currentView === 'quiz' ? true : currentView === 'etude-cas' ? true : false}
+              hasNext={(() => {
+                if (currentView === 'cours') {
+                  // Toujours permettre la navigation vers le quiz, chapitre suivant, ou étude de cas
+                  return hasNextChapitre || 
+                         hasQuizForCurrentChapitre || 
+                         hasEtudeCas ||
+                         findNextCourse() !== null;
+                } else if (currentView === 'quiz') {
+                  // Toujours permettre la navigation après un quiz
+                  return hasNextChapitre || hasEtudeCas || findNextCourse() !== null;
+                } else if (currentView === 'etude-cas') {
+                  // Toujours permettre la navigation (soit vers cours suivant, soit vers formations)
+                  return true;
+                }
+                return false;
+              })()}
               onPrevious={handlePrevious}
               onNext={handleNext}
               currentType={currentView}
@@ -1202,7 +1366,7 @@ export const StudentCourseViewer = ({
             <p className="text-xs sm:text-sm text-[#032622] mb-4 sm:mb-5 md:mb-6 text-center">
               Assure-toi d'avoir bien relu ton travail avant de l'envoyer. Une fois validé, tu ne pourras plus revenir en arrière.
             </p>
-            {getEtudeCasAnswers && !getEtudeCasAnswers().allQuestionsAnswered && (
+            {getEtudeCasAnswersRef.current && !getEtudeCasAnswersRef.current().allQuestionsAnswered && (
               <div className="mb-4 sm:mb-5 md:mb-6 p-3 sm:p-4 bg-yellow-100 border-2 border-yellow-500 rounded">
                 <p className="text-xs sm:text-sm text-[#032622] font-bold text-center">
                   ⚠️ ATTENTION : Tu n'as pas répondu à toutes les questions.

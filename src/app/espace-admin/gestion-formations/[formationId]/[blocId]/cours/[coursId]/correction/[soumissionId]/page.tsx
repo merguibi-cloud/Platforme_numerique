@@ -37,9 +37,12 @@ interface CorrectionData {
     date_soumission: string;
     commentaire_etudiant: string | null;
     fichier_soumis: string | null;
+    fichiers_globaux?: string[] | null; // URLs des fichiers globaux (document externe)
     statut: string;
     note: number | null;
     commentaire_correcteur: string | null;
+    note_document_externe?: number | null; // Note du document externe si disponible
+    commentaire_document_externe?: string | null; // Commentaire du document externe si disponible
   };
   etude_cas: {
     id: number;
@@ -79,6 +82,8 @@ export default function CorrectionDetailPage() {
   const [data, setData] = useState<CorrectionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [corrections, setCorrections] = useState<{ [questionId: number]: { note: number; message: string } }>({});
+  const [noteDocumentExterne, setNoteDocumentExterne] = useState<number>(0);
+  const [commentaireDocumentExterne, setCommentaireDocumentExterne] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -87,6 +92,9 @@ export default function CorrectionDetailPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [noteAvant, setNoteAvant] = useState<number | null>(null);
   const [noteApres, setNoteApres] = useState<number | null>(null);
+  const [initialCorrections, setInitialCorrections] = useState<{ [questionId: number]: { note: number; message: string } }>({});
+  const [initialNoteDocumentExterne, setInitialNoteDocumentExterne] = useState<number>(0);
+  const [initialCommentaireDocumentExterne, setInitialCommentaireDocumentExterne] = useState<string>('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -116,6 +124,73 @@ export default function CorrectionDetailPage() {
             }
           });
           setCorrections(initialCorrections);
+          setInitialCorrections(JSON.parse(JSON.stringify(initialCorrections))); // Copie profonde pour comparaison
+          
+          // Initialiser la note et le commentaire du document externe s'ils existent
+          if (result.soumission.fichiers_globaux && result.soumission.fichiers_globaux.length > 0) {
+            // Utiliser les métadonnées de correction si disponibles (stockées dans reponses_json)
+            // Sinon, essayer d'extraire depuis commentaire_correcteur (pour compatibilité avec les anciennes corrections)
+            let noteDocExterne = 0;
+            let commentaireDocExterne = '';
+            
+            if (result.soumission.note_document_externe !== null && result.soumission.note_document_externe !== undefined) {
+              // Utiliser la note stockée directement
+              noteDocExterne = parseFloat(result.soumission.note_document_externe) || 0;
+            } else if (result.soumission.note !== null && result.soumission.note !== undefined) {
+              // Calculer la note du document externe à partir de la note globale et des notes des questions
+              // Si noteGlobale = (noteQuestions + noteDocExterne) / 2
+              // Alors noteDocExterne = (noteGlobale * 2) - noteQuestions
+              let totalPointsQuestions = 0;
+              let totalMaxQuestions = 0;
+              result.questions.forEach((q: Question) => {
+                if (q.correction) {
+                  totalPointsQuestions += q.correction.note_attribuee;
+                  totalMaxQuestions += q.correction.note_max || 20;
+                }
+              });
+              
+              let noteQuestions = 0;
+              if (totalMaxQuestions > 0 && result.questions.length > 0) {
+                noteQuestions = (totalPointsQuestions / totalMaxQuestions) * 20;
+              }
+              
+              const noteGlobale = parseFloat(result.soumission.note);
+              
+              // Si on a des questions, calculer la note du document externe
+              if (result.questions.length > 0 && totalMaxQuestions > 0) {
+                // noteGlobale = (noteQuestions + noteDocExterne) / 2
+                noteDocExterne = (noteGlobale * 2) - noteQuestions;
+                // S'assurer que la note est entre 0 et 20
+                noteDocExterne = Math.max(0, Math.min(20, noteDocExterne));
+              } else {
+                // Pas de questions, la note globale = note du document externe
+                noteDocExterne = noteGlobale;
+              }
+            }
+            
+            if (result.soumission.commentaire_document_externe) {
+              // Utiliser le commentaire stocké directement
+              commentaireDocExterne = result.soumission.commentaire_document_externe;
+            } else if (result.soumission.commentaire_correcteur) {
+              // Extraire le commentaire du document externe depuis commentaire_correcteur (ancien format)
+              const commentaire = result.soumission.commentaire_correcteur;
+              const separator = '--- COMMENTAIRE SUR LE DOCUMENT EXTERNE ---';
+              const index = commentaire.indexOf(separator);
+              if (index !== -1) {
+                commentaireDocExterne = commentaire.substring(index + separator.length).trim();
+              }
+            }
+            
+            setNoteDocumentExterne(noteDocExterne);
+            setCommentaireDocumentExterne(commentaireDocExterne);
+            setInitialNoteDocumentExterne(noteDocExterne);
+            setInitialCommentaireDocumentExterne(commentaireDocExterne);
+          } else {
+            setNoteDocumentExterne(0);
+            setCommentaireDocumentExterne('');
+            setInitialNoteDocumentExterne(0);
+            setInitialCommentaireDocumentExterne('');
+          }
         } else {
           console.error('Erreur lors du chargement des données');
           setShowErrorModal(true);
@@ -164,17 +239,88 @@ export default function CorrectionDetailPage() {
 
     if (!allHaveNotes) {
       setShowErrorModal(true);
+      setErrorMessage("Veuillez noter toutes les questions.");
       return;
     }
 
-    // Si une note existe déjà, afficher le modal de justification
-    if (data.soumission.note !== null && data.soumission.note !== undefined) {
-      // Calculer la nouvelle note globale
-      const nouvelleNoteGlobale = data.questions.reduce((sum, q) => {
-        return sum + (corrections[q.id]?.note || 0);
-      }, 0);
+    // Si un document externe existe, vérifier que la note est renseignée
+    if (data.soumission.fichiers_globaux && data.soumission.fichiers_globaux.length > 0) {
+      if (noteDocumentExterne === undefined || noteDocumentExterne === null) {
+        setShowErrorModal(true);
+        setErrorMessage("Veuillez noter le document externe.");
+        return;
+      }
+    }
+
+    // Vérifier si quelque chose a changé
+    let hasChanges = false;
+    
+    // Vérifier les changements dans les corrections des questions
+    for (const q of data.questions) {
+      const currentCorrection = corrections[q.id];
+      const initialCorrection = initialCorrections[q.id];
       
-      // Vérifier si la note a changé
+      if (!initialCorrection) {
+        // Nouvelle correction
+        if (currentCorrection && (currentCorrection.note > 0 || currentCorrection.message.trim())) {
+          hasChanges = true;
+          break;
+        }
+      } else {
+        // Comparer avec la correction initiale
+        if (currentCorrection.note !== initialCorrection.note ||
+            (currentCorrection.message || '') !== (initialCorrection.message || '')) {
+          hasChanges = true;
+          break;
+        }
+      }
+    }
+    
+    // Vérifier les changements dans le document externe
+    if (!hasChanges && data.soumission.fichiers_globaux && data.soumission.fichiers_globaux.length > 0) {
+      if (noteDocumentExterne !== initialNoteDocumentExterne ||
+          commentaireDocumentExterne !== initialCommentaireDocumentExterne) {
+        hasChanges = true;
+      }
+    }
+
+    // Si rien n'a changé, ne pas permettre la sauvegarde
+    if (!hasChanges) {
+      setShowErrorModal(true);
+      setErrorMessage("Aucune modification détectée. Veuillez modifier au moins une note ou un commentaire avant de sauvegarder.");
+      return;
+    }
+
+    // Si une note existe déjà, vérifier si elle a changé et afficher le modal de justification si nécessaire
+    if (data.soumission.note !== null && data.soumission.note !== undefined) {
+      // Calculer la nouvelle note globale approximative pour comparaison
+      // Le calcul exact sera fait côté serveur
+      let totalPointsQuestions = 0;
+      let totalMaxQuestions = 0;
+      data.questions.forEach(q => {
+        const correction = corrections[q.id];
+        if (correction) {
+          totalPointsQuestions += correction.note || 0;
+          totalMaxQuestions += 20; // Chaque question est sur 20
+        }
+      });
+      
+      let noteQuestions = 0;
+      if (totalMaxQuestions > 0 && data.questions.length > 0) {
+        noteQuestions = (totalPointsQuestions / totalMaxQuestions) * 20;
+      }
+      
+      let nouvelleNoteGlobale = noteQuestions;
+      if (data.soumission.fichiers_globaux && data.soumission.fichiers_globaux.length > 0) {
+        if (noteDocumentExterne !== undefined && noteDocumentExterne !== null) {
+          if (data.questions.length > 0) {
+            nouvelleNoteGlobale = (noteQuestions + noteDocumentExterne) / 2;
+          } else {
+            nouvelleNoteGlobale = noteDocumentExterne;
+          }
+        }
+      }
+      
       const noteAvantValue = data.soumission.note;
       if (Math.abs(nouvelleNoteGlobale - noteAvantValue) > 0.01) {
         setNoteAvant(noteAvantValue);
@@ -184,7 +330,7 @@ export default function CorrectionDetailPage() {
       }
     }
 
-    // Si pas de note existante, sauvegarder directement
+    // Si pas de note existante ou si la note n'a pas changé, sauvegarder directement
     await saveCorrections();
   };
 
@@ -206,7 +352,9 @@ export default function CorrectionDetailPage() {
         credentials: 'include',
         body: JSON.stringify({
           corrections: correctionsArray,
-          justification: justificationText || null
+          justification: justificationText || null,
+          note_document_externe: data.soumission.fichiers_globaux && data.soumission.fichiers_globaux.length > 0 ? noteDocumentExterne : undefined,
+          commentaire_document_externe: data.soumission.fichiers_globaux && data.soumission.fichiers_globaux.length > 0 ? commentaireDocumentExterne : undefined
         })
       });
 
@@ -340,40 +488,166 @@ export default function CorrectionDetailPage() {
         </div>
 
         {/* CONTEXTE */}
-        <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6 mb-6 sm:mb-7 md:mb-8">
-          <h2 
-            className="text-lg sm:text-xl font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
-            style={{ fontFamily: 'var(--font-termina-bold)' }}
-          >
-            CONTEXTE
-          </h2>
-          {data.etude_cas.fichier_consigne && (
-            <div className="mb-3 sm:mb-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 bg-[#F8F5E4] border-2 border-[#032622] rounded">
-                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622] flex-shrink-0" />
-                  <span className="text-xs sm:text-sm text-[#032622] font-bold break-words">
-                    {data.etude_cas.nom_fichier_consigne || 'Fichier consigne'}
-                  </span>
+        {/* Toujours afficher la section CONTEXTE si les données existent */}
+        {data.etude_cas && (data.etude_cas.consigne || data.etude_cas.fichier_consigne) && (
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6 mb-6 sm:mb-7 md:mb-8">
+            <h2 
+              className="text-lg sm:text-xl font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              CONTEXTE
+            </h2>
+            
+            {/* Afficher le fichier consigne s'il existe */}
+            {data.etude_cas.fichier_consigne && (
+              <div className="mb-3 sm:mb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 bg-white border-2 border-[#032622] rounded">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622] flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-[#032622] font-bold break-words">
+                      {data.etude_cas.nom_fichier_consigne || (() => {
+                        // Essayer d'extraire le nom du fichier depuis l'URL
+                        try {
+                          if (data.etude_cas.fichier_consigne) {
+                            // Si c'est une URL, extraire le nom du fichier
+                            if (data.etude_cas.fichier_consigne.includes('http')) {
+                              const url = new URL(data.etude_cas.fichier_consigne);
+                              const pathParts = url.pathname.split('/');
+                              const fileName = pathParts[pathParts.length - 1]?.split('?')[0];
+                              return fileName || 'Fichier consigne';
+                            } else {
+                              // Si c'est un chemin, prendre le dernier segment
+                              const parts = data.etude_cas.fichier_consigne.split('/');
+                              return parts[parts.length - 1] || 'Fichier consigne';
+                            }
+                          }
+                        } catch (e) {
+                          // En cas d'erreur, utiliser le chemin tel quel ou un nom par défaut
+                          const parts = (data.etude_cas.fichier_consigne || '').split('/');
+                          return parts[parts.length - 1] || 'Fichier consigne';
+                        }
+                        return 'Fichier consigne';
+                      })()}
+                    </span>
+                  </div>
+                  <a
+                    href={data.etude_cas.fichier_consigne}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm uppercase w-full sm:w-auto whitespace-nowrap"
+                    style={{ fontFamily: 'var(--font-termina-bold)' }}
+                  >
+                    <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    Télécharger
+                  </a>
                 </div>
-                <a
-                  href={data.etude_cas.fichier_consigne}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm uppercase w-full sm:w-auto whitespace-nowrap"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
-                >
-                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  Télécharger
-                </a>
+              </div>
+            )}
+            
+            {/* Afficher le texte de la consigne s'il existe */}
+            {data.etude_cas.consigne && (
+              <div className="text-xs sm:text-sm md:text-base text-[#032622] whitespace-pre-wrap break-words">
+                {data.etude_cas.consigne}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FICHIERS GLOBAUX (DOCUMENT EXTERNE) */}
+        {data.soumission.fichiers_globaux && data.soumission.fichiers_globaux.length > 0 && (
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6 mb-6 sm:mb-7 md:mb-8">
+            <h2 
+              className="text-lg sm:text-xl font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              DOCUMENT EXTERNE
+            </h2>
+            <p className="text-xs sm:text-sm text-[#032622] mb-3 sm:mb-4 break-words">
+              L'étudiant a soumis un document externe contenant ses réponses :
+            </p>
+            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-5">
+              {data.soumission.fichiers_globaux.map((url: string, index: number) => {
+                const fileName = url.split('/').pop()?.split('?')[0] || `Document ${index + 1}`;
+                return (
+                  <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 bg-white border-2 border-[#032622] rounded">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-[#032622] font-bold break-words">{fileName}</span>
+                    </div>
+                    <a
+                      href={url}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm uppercase whitespace-nowrap"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      Télécharger
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Correction du document externe */}
+            <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t-2 border-[#032622]">
+              <h3 
+                className="text-base sm:text-lg font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                CORRECTION DU DOCUMENT EXTERNE
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-1.5 sm:mb-2 break-words">
+                    NOTE *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.5"
+                    value={noteDocumentExterne}
+                    onChange={(e) => setNoteDocumentExterne(Math.max(0, Math.min(parseFloat(e.target.value) || 0, 20)))}
+                    className="w-full px-3 sm:px-4 py-2 border-2 border-[#032622] bg-[#F8F5E4] text-sm sm:text-base text-[#032622] font-bold focus:outline-none focus:ring-2 focus:ring-[#032622]"
+                    required
+                  />
+                  <p className="text-xs text-[#032622]/70 mt-1 break-words">
+                    Note sur 20 pour le document externe
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-[#032622] uppercase mb-1.5 sm:mb-2 break-words">
+                    COMMENTAIRE
+                  </label>
+                  <textarea
+                    value={commentaireDocumentExterne}
+                    onChange={(e) => setCommentaireDocumentExterne(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 border-2 border-[#032622] bg-[#F8F5E4] text-sm sm:text-base text-[#032622] font-bold min-h-[80px] sm:min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[#032622] resize-none"
+                    placeholder="Commentaire sur le document externe..."
+                  />
+                </div>
               </div>
             </div>
-          )}
-          <div className="text-xs sm:text-sm md:text-base text-[#032622] whitespace-pre-wrap break-words">
-            {data.etude_cas.consigne}
           </div>
-        </div>
+        )}
+
+        {/* COMMENTAIRE ÉTUDIANT */}
+        {data.soumission.commentaire_etudiant && (
+          <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6 mb-6 sm:mb-7 md:mb-8">
+            <h2 
+              className="text-lg sm:text-xl font-bold text-[#032622] uppercase mb-3 sm:mb-4 break-words"
+              style={{ fontFamily: 'var(--font-termina-bold)' }}
+            >
+              COMMENTAIRE DE L'ÉTUDIANT
+            </h2>
+            <div className="text-xs sm:text-sm md:text-base text-[#032622] whitespace-pre-wrap break-words">
+              {data.soumission.commentaire_etudiant}
+            </div>
+          </div>
+        )}
 
         {/* QUESTIONS */}
         <div className="space-y-6 sm:space-y-7 md:space-y-8 mb-6 sm:mb-7 md:mb-8">
@@ -457,7 +731,7 @@ export default function CorrectionDetailPage() {
             className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 bg-[#032622] text-[#F8F5E4] text-xs sm:text-sm md:text-base font-bold uppercase hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            {isSaving ? 'ENREGISTREMENT...' : (data?.soumission.note !== null && data?.soumission.note !== undefined ? 'MODIFIER LA CORRECTION' : 'METTRE LA NOTE GLOBALE')}
+            {isSaving ? 'ENREGISTREMENT...' : (data?.soumission.note !== null && data?.soumission.note !== undefined ? 'MODIFIER LA CORRECTION' : 'ENREGISTRER LA CORRECTION')}
           </button>
         </div>
       </div>

@@ -22,6 +22,12 @@ function findProtectedRoute(pathname: string): string | undefined {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const sessionExpiredParam = request.nextUrl.searchParams.get("session_expired");
+
+  // Si le paramètre session_expired est déjà présent, laisser passer pour permettre l'affichage du modal
+  if (sessionExpiredParam === "true") {
+    return NextResponse.next();
+  }
 
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
@@ -38,13 +44,17 @@ export async function middleware(request: NextRequest) {
   if (!roleResult.success || !roleResult.role) {
     // Vérifier si c'est une session expirée (token présent mais invalide)
     const hasAccessToken = request.cookies.get("sb-access-token")?.value;
-    const redirectUrl = new URL("/", request.url);
     
     // Si un token existe mais est invalide, c'est une session expirée
+    // Rediriger vers la page actuelle avec le paramètre pour déclencher le modal
     if (hasAccessToken && roleResult.error === "Non authentifié") {
+      const redirectUrl = new URL(pathname, request.url);
       redirectUrl.searchParams.set("session_expired", "true");
+      return NextResponse.redirect(redirectUrl);
     }
     
+    // Sinon, rediriger vers la page d'accueil
+    const redirectUrl = new URL("/", request.url);
     return NextResponse.redirect(redirectUrl);
   }
 

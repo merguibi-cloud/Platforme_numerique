@@ -49,6 +49,7 @@ export async function GET(
         etude_cas_id,
         user_id,
         fichier_soumis,
+        fichiers_globaux,
         commentaire_etudiant,
         reponses_json,
         statut,
@@ -168,11 +169,25 @@ export async function GET(
 
     // Parser les réponses JSON si elles existent
     let reponsesParsed: Record<string, any> = {};
+    let metadataCorrection: { note_document_externe?: number; commentaire_document_externe?: string } | null = null;
     if (soumission.reponses_json) {
       try {
-        reponsesParsed = typeof soumission.reponses_json === 'string' 
+        const parsed = typeof soumission.reponses_json === 'string' 
           ? JSON.parse(soumission.reponses_json) 
           : soumission.reponses_json;
+        
+        // Extraire les métadonnées de correction du document externe si elles existent
+        if (parsed.metadata_correction) {
+          metadataCorrection = {
+            note_document_externe: parsed.metadata_correction.note_document_externe,
+            commentaire_document_externe: parsed.metadata_correction.commentaire_document_externe
+          };
+          // Ne pas inclure metadata_correction dans reponsesParsed pour éviter les conflits
+          reponsesParsed = { ...parsed };
+          delete reponsesParsed.metadata_correction;
+        } else {
+          reponsesParsed = parsed;
+        }
       } catch (e) {
         console.error('Erreur lors du parsing des réponses JSON:', e);
       }
@@ -264,10 +279,28 @@ export async function GET(
     // Générer les URLs signées pour les fichiers
     let fichierConsigneUrl = null;
     if (etudeCas?.fichier_consigne) {
-      const { data: consigneData } = await supabase.storage
-        .from('etudes_cas')
-        .createSignedUrl(etudeCas.fichier_consigne, 3600);
-      fichierConsigneUrl = consigneData?.signedUrl || null;
+      try {
+        // Essayer d'abord avec le bucket 'etudes-cas-consignes' (bucket standard pour les consignes)
+        let consigneData = await supabase.storage
+          .from('etudes-cas-consignes')
+          .createSignedUrl(etudeCas.fichier_consigne, 3600);
+        
+        if (consigneData.error) {
+          // Si ça échoue, essayer avec 'etudes_cas'
+          consigneData = await supabase.storage
+            .from('etudes_cas')
+            .createSignedUrl(etudeCas.fichier_consigne, 3600);
+        }
+        
+        fichierConsigneUrl = consigneData.data?.signedUrl || null;
+        
+        if (!fichierConsigneUrl) {
+          console.error('Impossible de générer l\'URL signée pour le fichier consigne:', etudeCas.fichier_consigne);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la génération de l\'URL du fichier consigne:', error);
+        fichierConsigneUrl = null;
+      }
     }
 
     let fichierSoumisUrl = null;
@@ -276,6 +309,39 @@ export async function GET(
         .from('etudes_cas')
         .createSignedUrl(soumission.fichier_soumis, 3600);
       fichierSoumisUrl = soumisData?.signedUrl || null;
+    }
+
+    // Générer les URLs signées pour les fichiers globaux
+    let fichiersGlobauxUrls: string[] = [];
+    if (soumission.fichiers_globaux) {
+      try {
+        let fichiersPaths: string[] = [];
+        
+        // Parser si c'est un JSON, sinon utiliser directement
+        if (typeof soumission.fichiers_globaux === 'string') {
+          try {
+            const parsed = JSON.parse(soumission.fichiers_globaux);
+            fichiersPaths = Array.isArray(parsed) ? parsed : [soumission.fichiers_globaux];
+          } catch {
+            fichiersPaths = [soumission.fichiers_globaux];
+          }
+        } else if (Array.isArray(soumission.fichiers_globaux)) {
+          fichiersPaths = soumission.fichiers_globaux;
+        }
+        
+        // Générer les URLs signées pour chaque fichier
+        for (const filePath of fichiersPaths) {
+          const { data: urlData } = await supabase.storage
+            .from('etudes_cas')
+            .createSignedUrl(filePath, 3600);
+          
+          if (urlData?.signedUrl) {
+            fichiersGlobauxUrls.push(urlData.signedUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la génération des URLs des fichiers globaux:', error);
+      }
     }
 
     return NextResponse.json({
@@ -290,19 +356,22 @@ export async function GET(
         date_soumission: soumission.date_soumission,
         commentaire_etudiant: soumission.commentaire_etudiant,
         fichier_soumis: fichierSoumisUrl,
+        fichiers_globaux: fichiersGlobauxUrls, // URLs des fichiers globaux
         statut: soumission.statut,
         note: soumission.note,
-        commentaire_correcteur: soumission.commentaire_correcteur
+        commentaire_correcteur: soumission.commentaire_correcteur,
+        note_document_externe: metadataCorrection?.note_document_externe ?? null,
+        commentaire_document_externe: metadataCorrection?.commentaire_document_externe ?? null
       },
       etude_cas: {
         id: etudeCas?.id,
         titre: etudeCas?.titre,
         description: etudeCas?.description,
-        consigne: etudeCas?.consigne,
-        fichier_consigne: fichierConsigneUrl,
-        nom_fichier_consigne: etudeCas?.nom_fichier_consigne,
-        date_limite: etudeCas?.date_limite,
-        points_max: etudeCas?.points_max
+        consigne: etudeCas?.consigne || null, // S'assurer que consigne est bien retourné même si null
+        fichier_consigne: fichierConsigneUrl, // URL signée générée ou null
+        nom_fichier_consigne: etudeCas?.nom_fichier_consigne || null,
+        date_limite: etudeCas?.date_limite || null,
+        points_max: etudeCas?.points_max || 20
       },
       cours: {
         id: cours?.id,

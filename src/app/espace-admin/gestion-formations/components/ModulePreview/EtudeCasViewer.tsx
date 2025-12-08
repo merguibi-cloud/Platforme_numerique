@@ -34,7 +34,7 @@ interface EtudeCasViewerProps {
   readOnly?: boolean;
   userSubmission?: any;
   onSubmit?: (reponses: any, fichiers: { [questionId: number]: File[] }, commentaire: string) => void;
-  onGetAnswers?: (getAnswers: () => { answers: any; uploadedFiles: { [questionId: number]: File[] }; commentaire: string; allQuestionsAnswered: boolean }) => void;
+  onGetAnswers?: (getAnswers: () => { answers: any; uploadedFiles: { [questionId: number]: File[] }; globalFiles?: File[]; commentaire: string; allQuestionsAnswered: boolean }) => void;
 }
 
 export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly = false, userSubmission = null, onSubmit, onGetAnswers }: EtudeCasViewerProps) => {
@@ -57,9 +57,23 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
   
   const [answers, setAnswers] = useState<{ [questionId: number]: any }>(initialAnswers);
   const [uploadedFiles, setUploadedFiles] = useState<{ [questionId: number]: File[] }>({});
+  // Fichiers globaux pour l'étude de cas (document externe avec toutes les réponses)
+  const [globalFiles, setGlobalFiles] = useState<File[]>([]);
+  // URLs des fichiers globaux en mode readOnly
+  const [globalFilesUrls, setGlobalFilesUrls] = useState<string[]>([]);
   const [commentaire, setCommentaire] = useState<string>(readOnly && userSubmission ? (userSubmission.commentaire_etudiant || '') : '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+
+  // Charger les fichiers globaux depuis userSubmission si en mode readOnly
+  useEffect(() => {
+    if (readOnly && userSubmission && userSubmission.fichiers_globaux) {
+      const fichiers = Array.isArray(userSubmission.fichiers_globaux) 
+        ? userSubmission.fichiers_globaux 
+        : [userSubmission.fichiers_globaux];
+      setGlobalFilesUrls(fichiers.filter((url: string) => url && url.trim() !== ''));
+    }
+  }, [readOnly, userSubmission]);
 
   const handleTextAnswer = (questionId: number, value: string) => {
     if (readOnly) return; // Ne pas permettre la modification en mode lecture seule
@@ -101,6 +115,62 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
     });
   };
 
+  // Gestion des fichiers globaux (document externe)
+  const handleGlobalFileUpload = (files: FileList | null) => {
+    if (readOnly || !files) return;
+    
+    const MAX_GLOBAL_FILES = 2;
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.pptx', '.ppt', '.txt', '.odt'];
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'application/vnd.oasis.opendocument.text'
+    ];
+
+    const newFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      // Vérifier le type de fichier
+      const isValidType = allowedMimeTypes.includes(file.type) || 
+                         allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+      
+      if (!isValidType) {
+        alert(`Le fichier "${file.name}" n'est pas un format autorisé. Formats acceptés: PDF, DOC, DOCX, PPT, PPTX, TXT, ODT`);
+        continue;
+      }
+
+      // Vérifier la taille (50 MB max)
+      const MAX_FILE_SIZE = 50 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`Le fichier "${file.name}" est trop volumineux. Taille maximale: 50 MB`);
+        continue;
+      }
+
+      newFiles.push(file);
+    }
+
+    // Limiter à MAX_GLOBAL_FILES fichiers maximum
+    const currentFiles = [...globalFiles];
+    const remainingSlots = MAX_GLOBAL_FILES - currentFiles.length;
+    const filesToAdd = newFiles.slice(0, remainingSlots);
+    
+    if (filesToAdd.length < newFiles.length) {
+      alert(`Vous ne pouvez ajouter que ${MAX_GLOBAL_FILES} fichiers au maximum.`);
+    }
+
+    setGlobalFiles([...currentFiles, ...filesToAdd]);
+  };
+
+  const handleRemoveGlobalFile = (fileIndex: number) => {
+    setGlobalFiles(prev => prev.filter((_, i) => i !== fileIndex));
+  };
+
   const allQuestionsAnswered = questions.every(q => {
     if (q.type_question === 'ouverte' || q.type_question === 'piece_jointe') {
       return answers[q.id] || (uploadedFiles[q.id] && uploadedFiles[q.id].length > 0);
@@ -113,6 +183,7 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
   const getAnswers = () => ({
     answers,
     uploadedFiles,
+    globalFiles, // Inclure les fichiers globaux
     commentaire,
     allQuestionsAnswered
   });
@@ -122,7 +193,7 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
     if (onGetAnswers && !readOnly) {
       onGetAnswers(getAnswers);
     }
-  }, [answers, uploadedFiles, commentaire, allQuestionsAnswered, onGetAnswers, readOnly]);
+  }, [answers, uploadedFiles, globalFiles, commentaire, allQuestionsAnswered, onGetAnswers, readOnly]);
 
   const handleConfirmClick = () => {
     if (allQuestionsAnswered) {
@@ -136,10 +207,17 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
     setShowConfirmModal(false);
     
     // Appeler le callback avec les réponses et fichiers organisés par questionId
+    // Les fichiers globaux seront ajoutés avec un questionId spécial (0 ou null)
     if (onSubmit) {
-      onSubmit(answers, uploadedFiles, commentaire);
+      // Créer un objet fichiers qui inclut les fichiers globaux
+      const allFiles = { ...uploadedFiles };
+      if (globalFiles.length > 0) {
+        // Utiliser 0 comme questionId pour les fichiers globaux
+        allFiles[0] = globalFiles;
+      }
+      onSubmit(answers, allFiles, commentaire);
     } else {
-      console.log('Réponses soumises:', { answers, uploadedFiles, commentaire });
+      console.log('Réponses soumises:', { answers, uploadedFiles, globalFiles, commentaire });
     }
   };
 
@@ -156,9 +234,15 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
     
     // Appeler le callback avec les réponses et fichiers organisés par questionId
     if (onSubmit) {
-      onSubmit(answers, uploadedFiles, commentaire);
+      // Créer un objet fichiers qui inclut les fichiers globaux
+      const allFiles = { ...uploadedFiles };
+      if (globalFiles.length > 0) {
+        // Utiliser 0 comme questionId pour les fichiers globaux
+        allFiles[0] = globalFiles;
+      }
+      onSubmit(answers, allFiles, commentaire);
     } else {
-      console.log('Réponses soumises (incomplètes):', { answers, uploadedFiles, commentaire });
+      console.log('Réponses soumises (incomplètes):', { answers, uploadedFiles, globalFiles, commentaire });
     }
   };
 
@@ -416,6 +500,101 @@ export const EtudeCasViewer = ({ etudeCas, questions, isPreview = true, readOnly
             )}
           </div>
         ))}
+      </div>
+
+      {/* Section d'upload de fichiers globaux (document externe avec toutes les réponses) */}
+      <div className="bg-[#F8F5E4] border-2 border-[#032622] p-4 sm:p-5 md:p-6">
+        <h3 className="text-base sm:text-lg font-bold text-[#032622] mb-3 sm:mb-4 break-words" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+          DOCUMENT EXTERNE
+        </h3>
+        <p className="text-xs sm:text-sm text-[#032622] mb-3 sm:mb-4 break-words">
+          Si vos réponses ont été rédigées sur un document externe (Word, PDF, etc.), vous pouvez l'uploader ici.
+          <br />
+          <strong>Maximum 2 fichiers</strong> - Formats acceptés: PDF, DOC, DOCX, PPT, PPTX, TXT, ODT
+        </p>
+        <div className="border-2 border-dashed border-[#032622] p-4 sm:p-5 md:p-6">
+          {(globalFiles.length > 0 || globalFilesUrls.length > 0) ? (
+            <div className="space-y-2 sm:space-y-3">
+              {/* Afficher les fichiers uploadés (mode édition) */}
+              {globalFiles.map((file, fileIndex) => (
+                <div key={`file-${fileIndex}`} className="flex items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 bg-white border-2 border-[#032622]">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-[#032622] font-bold break-words flex-1 min-w-0">{file.name}</span>
+                    <span className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">
+                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  </div>
+                  {!readOnly && (
+                    <button
+                      onClick={() => handleRemoveGlobalFile(fileIndex)}
+                      className="text-[#D96B6B] hover:text-[#D96B6B]/80 active:text-[#D96B6B]/60 transition-colors flex-shrink-0"
+                      aria-label="Supprimer le fichier"
+                    >
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              
+              {/* Afficher les fichiers déjà soumis (mode lecture seule) */}
+              {readOnly && globalFilesUrls.map((url, urlIndex) => {
+                // Extraire le nom du fichier depuis l'URL
+                const fileName = url.split('/').pop()?.split('?')[0] || `Document ${urlIndex + 1}`;
+                return (
+                  <div key={`url-${urlIndex}`} className="flex items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 bg-white border-2 border-[#032622]">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-[#032622] font-bold break-words flex-1 min-w-0">{fileName}</span>
+                    </div>
+                    <a
+                      href={url}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#032622] text-[#F8F5E4] hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors font-bold text-xs sm:text-sm uppercase whitespace-nowrap"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      Télécharger
+                    </a>
+                  </div>
+                );
+              })}
+              
+              {!readOnly && globalFiles.length < 2 && (
+                <div className="pt-2 sm:pt-3 border-t-2 border-[#032622]">
+                  <label className="bg-[#032622] text-[#F8F5E4] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold cursor-pointer inline-block hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,application/vnd.oasis.opendocument.text"
+                      onChange={(e) => handleGlobalFileUpload(e.target.files)}
+                      className="hidden"
+                      disabled={readOnly || globalFiles.length >= 2}
+                    />
+                    {globalFiles.length === 0 ? 'Sélectionner des fichiers' : 'Ajouter un autre fichier'}
+                  </label>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-[#032622] mb-3 sm:mb-4 break-words">Aucun fichier sélectionné</p>
+              <label className="bg-[#032622] text-[#F8F5E4] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold cursor-pointer inline-block hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,application/vnd.oasis.opendocument.text"
+                  onChange={(e) => handleGlobalFileUpload(e.target.files)}
+                  className="hidden"
+                  disabled={readOnly}
+                />
+                Sélectionner des fichiers
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bouton de soumission - seulement en mode preview (admin) */}

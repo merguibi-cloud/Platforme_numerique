@@ -613,93 +613,125 @@ export async function DELETE(request: NextRequest) {
         } else if (questions && questions.length > 0) {
           const questionIds = questions.map(q => q.id);
 
-          // Supprimer les réponses possibles
+          // Récupérer les tentatives de quiz pour ces quiz
+          const { data: tentatives, error: tentativesFetchError } = await supabase
+            .from('tentatives_quiz')
+            .select('id')
+            .in('quiz_id', quizIds);
+
+          if (tentativesFetchError) {
+            console.error('Erreur lors de la récupération des tentatives:', tentativesFetchError);
+          } else if (tentatives && tentatives.length > 0) {
+            const tentativeIds = tentatives.map(t => t.id);
+
+            // 1. Supprimer les modifications_notes qui référencent reponses_quiz ou tentatives_quiz
+            const { error: modificationsNotesDeleteError } = await supabase
+              .from('modifications_notes')
+              .delete()
+              .in('tentative_id', tentativeIds);
+
+            if (modificationsNotesDeleteError) {
+              console.error('Erreur lors de la suppression des modifications de notes:', modificationsNotesDeleteError);
+            }
+
+            // 2. Supprimer les reponses_quiz (qui référencent reponses_possibles via reponse_correcte_id)
+            const { error: reponsesQuizDeleteError } = await supabase
+              .from('reponses_quiz')
+              .delete()
+              .in('tentative_id', tentativeIds);
+
+            if (reponsesQuizDeleteError) {
+              console.error('Erreur lors de la suppression des réponses de quiz:', reponsesQuizDeleteError);
+            }
+
+            // 3. Supprimer les tentatives_quiz
+            const { error: tentativesDeleteError } = await supabase
+              .from('tentatives_quiz')
+              .delete()
+              .in('quiz_id', quizIds);
+
+            if (tentativesDeleteError) {
+              console.error('Erreur lors de la suppression des tentatives:', tentativesDeleteError);
+            }
+          }
+
+          // 4. Supprimer les réponses possibles (maintenant qu'on a supprimé reponses_quiz)
           const { error: reponsesDeleteError } = await supabase
             .from('reponses_possibles')
             .delete()
             .in('question_id', questionIds);
 
           if (reponsesDeleteError) {
-            console.error('Erreur lors de la suppression des réponses:', reponsesDeleteError);
+            return NextResponse.json({ error: `Erreur lors de la suppression des réponses: ${reponsesDeleteError.message}` }, { status: 500 });
           }
 
-          // Supprimer les questions
+          // 5. Supprimer les questions
           const { error: questionsDeleteError } = await supabase
             .from('questions_quiz')
             .delete()
             .in('quiz_id', quizIds);
 
           if (questionsDeleteError) {
-            console.error('Erreur lors de la suppression des questions:', questionsDeleteError);
+            return NextResponse.json({ error: `Erreur lors de la suppression des questions: ${questionsDeleteError.message}` }, { status: 500 });
+          }
+        } else {
+          // Même s'il n'y a pas de questions, supprimer les tentatives si elles existent
+          const { data: tentatives, error: tentativesFetchError } = await supabase
+            .from('tentatives_quiz')
+            .select('id')
+            .in('quiz_id', quizIds);
+
+          if (tentativesFetchError) {
+            console.error('Erreur lors de la récupération des tentatives:', tentativesFetchError);
+          } else if (tentatives && tentatives.length > 0) {
+            const tentativeIds = tentatives.map(t => t.id);
+
+            // Supprimer les modifications_notes
+            await supabase
+              .from('modifications_notes')
+              .delete()
+              .in('tentative_id', tentativeIds);
+
+            // Supprimer les reponses_quiz
+            await supabase
+              .from('reponses_quiz')
+              .delete()
+              .in('tentative_id', tentativeIds);
+
+            // Supprimer les tentatives_quiz
+            await supabase
+              .from('tentatives_quiz')
+              .delete()
+              .in('quiz_id', quizIds);
           }
         }
 
-        // Supprimer les quiz
+        // 6. Supprimer les quiz
         const { error: quizzesDeleteError } = await supabase
           .from('quiz_evaluations')
           .delete()
           .eq('chapitre_id', chapitreId);
 
         if (quizzesDeleteError) {
-          console.error('Erreur lors de la suppression des quiz:', quizzesDeleteError);
+          return NextResponse.json({ error: `Erreur lors de la suppression des quiz: ${quizzesDeleteError.message}` }, { status: 500 });
         }
       }
 
-      // 2. Supprimer l'étude de cas associée au chapitre (avec ses questions et réponses)
-      const { data: etudeCas, error: etudeCasFetchError } = await supabase
-        .from('etudes_cas')
-        .select('id')
-        .eq('chapitre_id', chapitreId)
-        .maybeSingle();
+      // 2. Note: Les études de cas sont liées au cours (cours_id), pas au chapitre
+      // On ne supprime donc pas l'étude de cas lors de la suppression d'un chapitre seul
+      // L'étude de cas sera supprimée uniquement lors de la suppression du cours entier
 
-      if (etudeCasFetchError && etudeCasFetchError.code !== 'PGRST116') {
-        console.error('Erreur lors de la récupération de l\'étude de cas:', etudeCasFetchError);
-      } else if (etudeCas) {
+      // 3. Supprimer les notes_etudiants associées au chapitre
+      const { error: notesChapitreDeleteError } = await supabase
+        .from('notes_etudiants')
+        .delete()
+        .eq('chapitre_id', chapitreId);
 
-        // Récupérer les questions de l'étude de cas
-        const { data: questionsEtudeCas, error: questionsEtudeCasFetchError } = await supabase
-          .from('questions_etude_cas')
-          .select('id')
-          .eq('etude_cas_id', etudeCas.id);
-
-        if (questionsEtudeCasFetchError) {
-          console.error('Erreur lors de la récupération des questions d\'étude de cas:', questionsEtudeCasFetchError);
-        } else if (questionsEtudeCas && questionsEtudeCas.length > 0) {
-          const questionEtudeCasIds = questionsEtudeCas.map(q => q.id);
-
-          // Supprimer les réponses possibles de l'étude de cas
-          const { error: reponsesEtudeCasDeleteError } = await supabase
-            .from('reponses_possibles_etude_cas')
-            .delete()
-            .in('question_id', questionEtudeCasIds);
-
-          if (reponsesEtudeCasDeleteError) {
-            console.error('Erreur lors de la suppression des réponses d\'étude de cas:', reponsesEtudeCasDeleteError);
-          }
-
-          // Supprimer les questions d'étude de cas
-          const { error: questionsEtudeCasDeleteError } = await supabase
-            .from('questions_etude_cas')
-            .delete()
-            .eq('etude_cas_id', etudeCas.id);
-
-          if (questionsEtudeCasDeleteError) {
-            console.error('Erreur lors de la suppression des questions d\'étude de cas:', questionsEtudeCasDeleteError);
-          }
-        }
-
-        // Supprimer l'étude de cas
-        const { error: etudeCasDeleteError } = await supabase
-          .from('etudes_cas')
-          .delete()
-          .eq('chapitre_id', chapitreId);
-
-        if (etudeCasDeleteError) {
-          console.error('Erreur lors de la suppression de l\'étude de cas:', etudeCasDeleteError);
-        }
+      if (notesChapitreDeleteError) {
+        console.error('Erreur lors de la suppression des notes par chapitre:', notesChapitreDeleteError);
       }
 
-      // 3. Supprimer le chapitre
+      // 4. Supprimer le chapitre
       const { error: singleChapitreDeleteError } = await supabase
         .from('chapitres_cours')
         .delete()
@@ -753,7 +785,49 @@ export async function DELETE(request: NextRequest) {
           } else if (questions && questions.length > 0) {
             const questionIds = questions.map(q => q.id);
 
-            // Supprimer les réponses possibles
+            // Récupérer les tentatives de quiz pour ces quiz
+            const { data: tentatives, error: tentativesFetchError } = await supabase
+              .from('tentatives_quiz')
+              .select('id')
+              .in('quiz_id', quizIds);
+
+            if (tentativesFetchError) {
+              console.error('Erreur lors de la récupération des tentatives:', tentativesFetchError);
+            } else if (tentatives && tentatives.length > 0) {
+              const tentativeIds = tentatives.map(t => t.id);
+
+              // 1. Supprimer les modifications_notes qui référencent reponses_quiz ou tentatives_quiz
+              const { error: modificationsNotesDeleteError } = await supabase
+                .from('modifications_notes')
+                .delete()
+                .in('tentative_id', tentativeIds);
+
+              if (modificationsNotesDeleteError) {
+                console.error('Erreur lors de la suppression des modifications de notes:', modificationsNotesDeleteError);
+              }
+
+              // 2. Supprimer les reponses_quiz (qui référencent reponses_possibles via reponse_correcte_id)
+              const { error: reponsesQuizDeleteError } = await supabase
+                .from('reponses_quiz')
+                .delete()
+                .in('tentative_id', tentativeIds);
+
+              if (reponsesQuizDeleteError) {
+                console.error('Erreur lors de la suppression des réponses de quiz:', reponsesQuizDeleteError);
+              }
+
+              // 3. Supprimer les tentatives_quiz
+              const { error: tentativesDeleteError } = await supabase
+                .from('tentatives_quiz')
+                .delete()
+                .in('quiz_id', quizIds);
+
+              if (tentativesDeleteError) {
+                console.error('Erreur lors de la suppression des tentatives:', tentativesDeleteError);
+              }
+            }
+
+            // 4. Supprimer les réponses possibles (maintenant qu'on a supprimé reponses_quiz)
             const { error: reponsesDeleteError } = await supabase
               .from('reponses_possibles')
               .delete()
@@ -763,7 +837,7 @@ export async function DELETE(request: NextRequest) {
               return NextResponse.json({ error: `Erreur lors de la suppression des réponses: ${reponsesDeleteError.message}` }, { status: 500 });
             }
 
-            // Supprimer les questions
+            // 5. Supprimer les questions
             const { error: questionsDeleteError } = await supabase
               .from('questions_quiz')
               .delete()
@@ -772,9 +846,39 @@ export async function DELETE(request: NextRequest) {
             if (questionsDeleteError) {
               return NextResponse.json({ error: `Erreur lors de la suppression des questions: ${questionsDeleteError.message}` }, { status: 500 });
             }
+          } else {
+            // Même s'il n'y a pas de questions, supprimer les tentatives si elles existent
+            const { data: tentatives, error: tentativesFetchError } = await supabase
+              .from('tentatives_quiz')
+              .select('id')
+              .in('quiz_id', quizIds);
+
+            if (tentativesFetchError) {
+              console.error('Erreur lors de la récupération des tentatives:', tentativesFetchError);
+            } else if (tentatives && tentatives.length > 0) {
+              const tentativeIds = tentatives.map(t => t.id);
+
+              // Supprimer les modifications_notes
+              await supabase
+                .from('modifications_notes')
+                .delete()
+                .in('tentative_id', tentativeIds);
+
+              // Supprimer les reponses_quiz
+              await supabase
+                .from('reponses_quiz')
+                .delete()
+                .in('tentative_id', tentativeIds);
+
+              // Supprimer les tentatives_quiz
+              await supabase
+                .from('tentatives_quiz')
+                .delete()
+                .in('quiz_id', quizIds);
+            }
           }
 
-          // Supprimer les quiz
+          // 6. Supprimer les quiz
           const { error: quizzesDeleteError } = await supabase
             .from('quiz_evaluations')
             .delete()
@@ -785,16 +889,68 @@ export async function DELETE(request: NextRequest) {
           }
         }
 
-        // 3. Supprimer toutes les études de cas associées aux chapitres (avec leurs questions et réponses)
+        // 3. Supprimer toutes les études de cas associées au cours (avec leurs questions et réponses)
         const { data: etudesCas, error: etudesCasFetchError } = await supabase
           .from('etudes_cas')
           .select('id')
-          .in('chapitre_id', chapitreIds);
+          .eq('cours_id', coursId);
 
         if (etudesCasFetchError) {
           return NextResponse.json({ error: `Erreur lors de la récupération des études de cas: ${etudesCasFetchError.message}` }, { status: 500 });
         } else if (etudesCas && etudesCas.length > 0) {
           const etudeCasIds = etudesCas.map(e => e.id);
+
+          // Récupérer les soumissions d'études de cas
+          const { data: soumissions, error: soumissionsFetchError } = await supabase
+            .from('soumissions_etude_cas')
+            .select('id')
+            .in('etude_cas_id', etudeCasIds);
+
+          if (soumissionsFetchError) {
+            console.error('Erreur lors de la récupération des soumissions:', soumissionsFetchError);
+          } else if (soumissions && soumissions.length > 0) {
+            const soumissionIds = soumissions.map(s => s.id);
+
+            // 1. Supprimer les modifications_notes qui référencent soumissions_etude_cas
+            const { error: modificationsNotesDeleteError } = await supabase
+              .from('modifications_notes')
+              .delete()
+              .in('soumission_id', soumissionIds);
+
+            if (modificationsNotesDeleteError) {
+              console.error('Erreur lors de la suppression des modifications de notes:', modificationsNotesDeleteError);
+            }
+
+            // 2. Supprimer les corrections_etude_cas
+            const { error: correctionsDeleteError } = await supabase
+              .from('corrections_etude_cas')
+              .delete()
+              .in('soumission_id', soumissionIds);
+
+            if (correctionsDeleteError) {
+              console.error('Erreur lors de la suppression des corrections:', correctionsDeleteError);
+            }
+
+            // 3. Supprimer les reponses_etude_cas (qui référencent reponses_possibles_etude_cas)
+            const { error: reponsesEtudeCasDeleteError } = await supabase
+              .from('reponses_etude_cas')
+              .delete()
+              .in('soumission_id', soumissionIds);
+
+            if (reponsesEtudeCasDeleteError) {
+              console.error('Erreur lors de la suppression des réponses d\'étude de cas:', reponsesEtudeCasDeleteError);
+            }
+
+            // 4. Supprimer les soumissions_etude_cas
+            const { error: soumissionsDeleteError } = await supabase
+              .from('soumissions_etude_cas')
+              .delete()
+              .in('etude_cas_id', etudeCasIds);
+
+            if (soumissionsDeleteError) {
+              console.error('Erreur lors de la suppression des soumissions:', soumissionsDeleteError);
+            }
+          }
 
           // Récupérer les questions des études de cas
           const { data: questionsEtudeCas, error: questionsEtudeCasFetchError } = await supabase
@@ -807,17 +963,27 @@ export async function DELETE(request: NextRequest) {
           } else if (questionsEtudeCas && questionsEtudeCas.length > 0) {
             const questionEtudeCasIds = questionsEtudeCas.map(q => q.id);
 
-            // Supprimer les réponses possibles des études de cas
-            const { error: reponsesEtudeCasDeleteError } = await supabase
+            // 5. Supprimer les réponses possibles des études de cas (après reponses_etude_cas)
+            const { error: reponsesEtudeCasPossiblesDeleteError } = await supabase
               .from('reponses_possibles_etude_cas')
               .delete()
               .in('question_id', questionEtudeCasIds);
 
-            if (reponsesEtudeCasDeleteError) {
-              return NextResponse.json({ error: `Erreur lors de la suppression des réponses d'étude de cas: ${reponsesEtudeCasDeleteError.message}` }, { status: 500 });
+            if (reponsesEtudeCasPossiblesDeleteError) {
+              return NextResponse.json({ error: `Erreur lors de la suppression des réponses possibles d'étude de cas: ${reponsesEtudeCasPossiblesDeleteError.message}` }, { status: 500 });
             }
 
-            // Supprimer les questions d'étude de cas
+            // 6. Supprimer les corrections_etude_cas qui référencent questions_etude_cas (si pas déjà supprimé)
+            const { error: correctionsQuestionsDeleteError } = await supabase
+              .from('corrections_etude_cas')
+              .delete()
+              .in('question_id', questionEtudeCasIds);
+
+            if (correctionsQuestionsDeleteError) {
+              console.error('Erreur lors de la suppression des corrections par question:', correctionsQuestionsDeleteError);
+            }
+
+            // 7. Supprimer les questions d'étude de cas
             const { error: questionsEtudeCasDeleteError } = await supabase
               .from('questions_etude_cas')
               .delete()
@@ -828,11 +994,11 @@ export async function DELETE(request: NextRequest) {
             }
           }
 
-          // Supprimer les études de cas
+          // 8. Supprimer les études de cas
           const { error: etudesCasDeleteError } = await supabase
             .from('etudes_cas')
             .delete()
-            .in('chapitre_id', chapitreIds);
+            .eq('cours_id', coursId);
 
           if (etudesCasDeleteError) {
             return NextResponse.json({ error: `Erreur lors de la suppression des études de cas: ${etudesCasDeleteError.message}` }, { status: 500 });
@@ -840,7 +1006,30 @@ export async function DELETE(request: NextRequest) {
         }
       }
 
-      // 4. Supprimer tous les chapitres
+      // 4. Supprimer les notes_etudiants associées au cours et aux chapitres
+      if (chapitreIds.length > 0) {
+        // Supprimer les notes associées aux chapitres
+        const { error: notesChapitresDeleteError } = await supabase
+          .from('notes_etudiants')
+          .delete()
+          .in('chapitre_id', chapitreIds);
+
+        if (notesChapitresDeleteError) {
+          console.error('Erreur lors de la suppression des notes par chapitre:', notesChapitresDeleteError);
+        }
+      }
+
+      // Supprimer les notes associées directement au cours
+      const { error: notesCoursDeleteError } = await supabase
+        .from('notes_etudiants')
+        .delete()
+        .eq('cours_id', coursId);
+
+      if (notesCoursDeleteError) {
+        console.error('Erreur lors de la suppression des notes par cours:', notesCoursDeleteError);
+      }
+
+      // 5. Supprimer tous les chapitres
       const { data: deletedChapitres, error: chapitresDeleteError } = await supabase
         .from('chapitres_cours')
         .delete()
@@ -851,7 +1040,7 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: `Erreur lors de la suppression des chapitres: ${chapitresDeleteError.message}` }, { status: 500 });
       }
 
-      // 5. Supprimer le cours
+      // 6. Supprimer le cours
       const { data: coursData, error: coursFetchError } = await supabase
         .from('cours_apprentissage')
         .select('titre')
