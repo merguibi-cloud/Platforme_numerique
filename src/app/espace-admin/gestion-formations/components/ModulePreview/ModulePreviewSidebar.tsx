@@ -77,7 +77,6 @@ export const ModulePreviewSidebar = ({
       const etudeCasCoursMap = new Map<number, EtudeCasData>();
 
     // Extraire les données des cours passés en props (déjà chargées)
-    console.log('[CoursPreviewSidebar] Extraction des quiz et études de cas depuis cours:', cours.length);
     cours.forEach((c: any) => {
       const chapitresList = c.chapitres || [];
       
@@ -90,9 +89,8 @@ export const ModulePreviewSidebar = ({
               id: quiz.id,
               chapitre_id: chapitre.id,
               titre: quiz.titre || 'Quiz'
-                    });
-            console.log(`[CoursPreviewSidebar] Quiz trouvé pour chapitre ${chapitre.id}:`, quiz.titre);
-              }
+            });
+          }
         }
       });
       
@@ -104,14 +102,12 @@ export const ModulePreviewSidebar = ({
             id: etudeCas.id,
             titre: etudeCas.titre || 'Étude de cas'
           });
-          console.log(`[CoursPreviewSidebar] Étude de cas trouvée pour cours ${c.id}:`, etudeCas.titre);
         }
       }
     });
 
     setQuizzesByChapitre(quizzesMap);
     setEtudeCasByCours(etudeCasCoursMap);
-    console.log(`[CoursPreviewSidebar] Total quiz extraits: ${quizzesMap.size}, Total études de cas au niveau cours: ${etudeCasCoursMap.size}`);
   }, [cours]);
 
   const toggleCours = (coursId: number) => {

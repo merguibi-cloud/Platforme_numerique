@@ -643,7 +643,7 @@ export default function MesFormationsPage() {
               </div>
               <div className="border-t lg:border-t-0 lg:border-l border-black p-4 sm:p-5 md:p-6 flex flex-col justify-center items-center w-full lg:w-auto lg:min-w-[180px] sm:min-w-[200px]">
                 <Link
-                  href={block.locked || !block.premier_cours_id ? '#' : `/espace-etudiant/cours/${block.formation_id}/${block.id}/${block.premier_cours_id}`}
+                  href={block.locked ? '#' : `/espace-etudiant/bloc/${block.formation_id}/${block.id}`}
                   className={`px-4 sm:px-5 md:px-6 py-2 text-xs sm:text-sm font-bold border border-black flex items-center justify-center space-x-2 transition-colors w-full sm:w-auto ${
                     block.locked
                       ? "bg-gray-400 text-white cursor-not-allowed"
@@ -652,7 +652,7 @@ export default function MesFormationsPage() {
                       : "bg-[#6b7280] text-white hover:bg-[#4b5563] active:bg-[#374151]"
                   }`}
                   onClick={(e) => {
-                    if (block.locked || !block.premier_cours_id) {
+                    if (block.locked) {
                       e.preventDefault();
                     }
                   }}

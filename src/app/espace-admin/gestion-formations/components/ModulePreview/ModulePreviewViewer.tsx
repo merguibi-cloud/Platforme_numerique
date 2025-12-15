@@ -252,12 +252,12 @@ export const ModulePreviewViewer = ({
     loadCoursData();
   }, [coursId, blocId, formationId]);
 
-  // Charger tous les cours du bloc pour la sidebar - OPTIMISÉ : Une seule requête au lieu de M + M×N
+  // Charger tous les cours du bloc pour la sidebar - OPTIMISÉ : Endpoint léger pour la sidebar
   useEffect(() => {
     const loadAllCours = async () => {
       try {
-        // OPTIMISATION : Utiliser l'endpoint batch qui charge tous les cours avec leurs chapitres en une seule requête
-        const response = await fetch(`/api/blocs/${blocId}/cours-complete?preview=true`, {
+        // OPTIMISATION : Utiliser l'endpoint optimisé pour la sidebar (sans questions, réponses, etc.)
+        const response = await fetch(`/api/blocs/${blocId}/cours-sidebar?preview=true`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -266,13 +266,20 @@ export const ModulePreviewViewer = ({
           const data = await response.json();
           const coursList = data.cours || [];
           
-          // Les cours sont déjà chargés avec leurs chapitres, quiz et études de cas
-          // Il suffit de formater les données pour la sidebar
+          // Les cours sont déjà chargés avec leurs chapitres, quiz et études de cas (titres seulement)
+          // Formater les données pour correspondre au format attendu par la sidebar
           const coursWithChapitres = coursList.map((c: any) => ({
             ...c,
-            chapitres: (c.chapitres || []).sort((a: ChapitreCours, b: ChapitreCours) => 
-                      a.ordre_affichage - b.ordre_affichage
-                    )
+            chapitres: (c.chapitres || []).map((ch: any) => ({
+              id: ch.id,
+              cours_id: ch.cours_id,
+              titre: ch.titre,
+              ordre_affichage: ch.ordre_affichage,
+              quiz: ch.quiz ? { quiz: ch.quiz } : null
+            })).sort((a: ChapitreCours, b: ChapitreCours) => 
+              a.ordre_affichage - b.ordre_affichage
+            ),
+            etude_cas: c.etude_cas ? { etudeCas: c.etude_cas } : null
           }));
           
           setAllCours(coursWithChapitres);

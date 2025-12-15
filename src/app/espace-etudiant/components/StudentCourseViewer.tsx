@@ -394,11 +394,12 @@ export const StudentCourseViewer = ({
     loadCoursData();
   }, [coursId, blocId, formationId]);
 
-  // Charger tous les cours du bloc
+  // Charger tous les cours du bloc pour la sidebar - OPTIMISÉ : Endpoint léger
   useEffect(() => {
     const loadAllCours = async () => {
       try {
-        const response = await fetch(`/api/blocs/${blocId}/cours-complete`, {
+        // OPTIMISATION : Utiliser l'endpoint optimisé pour la sidebar (sans questions, réponses, etc.)
+        const response = await fetch(`/api/blocs/${blocId}/cours-sidebar`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -407,11 +408,19 @@ export const StudentCourseViewer = ({
           const data = await response.json();
           const coursList = data.cours || [];
           
+          // Formater les données pour correspondre au format attendu
           const coursWithChapitres = coursList.map((c: any) => ({
             ...c,
-            chapitres: (c.chapitres || []).sort((a: ChapitreCours, b: ChapitreCours) => 
-                      a.ordre_affichage - b.ordre_affichage
-                    )
+            chapitres: (c.chapitres || []).map((ch: any) => ({
+              id: ch.id,
+              cours_id: ch.cours_id,
+              titre: ch.titre,
+              ordre_affichage: ch.ordre_affichage,
+              quiz: ch.quiz ? { quiz: ch.quiz } : null
+            })).sort((a: ChapitreCours, b: ChapitreCours) => 
+              a.ordre_affichage - b.ordre_affichage
+            ),
+            etude_cas: c.etude_cas ? { etudeCas: c.etude_cas } : null
           }));
           
           setAllCours(coursWithChapitres);

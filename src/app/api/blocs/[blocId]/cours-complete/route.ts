@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
 
 /**
- * Endpoint optimisé pour charger tous les cours d'un bloc avec leurs données complètes
+ * Endpoint pour charger tous les cours d'un bloc avec leurs données complètes
  * 
- * AVANT : M + M×N + M requêtes (M = cours, N = chapitres par cours)
- * APRÈS : 1 requête avec jointures SQL
+ * ⚠️ ATTENTION : Cet endpoint est LENT car il charge TOUTES les données (questions, réponses, etc.)
+ * 
+ * Pour la sidebar, utilisez plutôt : /api/blocs/[blocId]/cours-sidebar
+ * Pour la liste de sélection, utilisez plutôt : /api/blocs/[blocId]/cours-list
  * 
  * Charge pour chaque cours :
  * - Les informations du cours
  * - Tous les chapitres avec leurs fichiers complémentaires
  * - Tous les quiz avec leurs questions et réponses (indexés par chapitre_id)
  * - L'étude de cas avec ses questions et réponses
+ * 
+ * Utilisé uniquement quand on a besoin de TOUTES les données complètes d'un cours.
  */
 export async function GET(
   request: NextRequest,
@@ -72,8 +76,6 @@ export async function GET(
     const chapitresList = allChapitres || [];
     const chapitreIds = chapitresList.map(c => c.id);
 
-    console.log(`[DEBUG] ${chapitresList.length} chapitres trouvés pour ${coursIds.length} cours`);
-
     // 3. Organiser les chapitres par cours_id
     const chapitresByCours = new Map<number, any[]>();
     chapitresList.forEach((chapitre: any) => {
@@ -95,7 +97,6 @@ export async function GET(
       if (quizzesError) {
         console.error('Erreur lors de la récupération des quiz:', quizzesError);
       } else if (quizzes && quizzes.length > 0) {
-        console.log(`[DEBUG] ${quizzes.length} quiz trouvés pour les chapitres:`, chapitreIds);
         const quizIds = quizzes.map(q => q.id);
 
         // Charger les questions pour tous les quiz en une seule requête
@@ -111,8 +112,6 @@ export async function GET(
 
         if (questionsError) {
           console.error('Erreur lors de la récupération des questions:', questionsError);
-        } else {
-          console.log(`[DEBUG] ${questions?.length || 0} questions trouvées pour les quiz`);
         }
 
         // Organiser les questions par quiz_id
@@ -139,16 +138,9 @@ export async function GET(
               quiz,
               questions: questionsByQuiz.get(quiz.id) || []
             });
-            console.log(`[DEBUG] Quiz ${quiz.id} associé au chapitre ${quiz.chapitre_id}`);
-          } else {
-            console.warn(`[DEBUG] Quiz ${quiz.id} n'a pas de chapitre_id`);
           }
         });
-      } else {
-        console.log(`[DEBUG] Aucun quiz trouvé pour les chapitres:`, chapitreIds);
       }
-    } else {
-      console.log('[DEBUG] Aucun chapitre trouvé, impossible de charger les quiz');
     }
 
     // 5. Charger toutes les études de cas pour ces cours

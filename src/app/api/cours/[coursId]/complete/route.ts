@@ -63,8 +63,6 @@ export async function GET(
     const chapitresList = chapitres || [];
     const chapitreIds = chapitresList.map(c => c.id);
 
-    console.log(`[DEBUG] ${chapitresList.length} chapitres trouvés pour le cours ${coursIdNum}`);
-
     // 3. Charger tous les quiz pour ces chapitres avec leurs questions et réponses
     let quizzesMap = new Map<number, any>();
     
@@ -79,7 +77,6 @@ export async function GET(
       if (quizzesError) {
         console.error('Erreur lors de la récupération des quiz:', quizzesError);
       } else if (quizzes && quizzes.length > 0) {
-        console.log(`[DEBUG] ${quizzes.length} quiz trouvés pour les chapitres:`, chapitreIds);
         const quizIds = quizzes.map(q => q.id);
 
         // Charger les questions pour tous les quiz
@@ -95,8 +92,6 @@ export async function GET(
 
         if (questionsError) {
           console.error('Erreur lors de la récupération des questions:', questionsError);
-        } else {
-          console.log(`[DEBUG] ${questions?.length || 0} questions trouvées pour les quiz`);
         }
 
         // Organiser les questions par quiz_id
@@ -153,7 +148,6 @@ export async function GET(
         console.error('Erreur lors de la récupération des questions de l\'étude de cas:', questionsEtudeCasError);
       } else {
         etudeCasQuestions = questionsEtudeCas || [];
-        console.log(`[DEBUG] ${etudeCasQuestions.length} questions trouvées pour l'étude de cas du cours`);
       }
     }
 
@@ -179,8 +173,6 @@ export async function GET(
         etude_cas_questions: etudeCasQuestions
       }
     };
-
-    console.log(`[DEBUG] Réponse finale - ${chapitresList.length} chapitres, ${quizzesMap.size} quiz, etudeCas: ${etudeCas ? 'oui' : 'non'}`);
 
     return NextResponse.json(response);
   } catch (error) {
