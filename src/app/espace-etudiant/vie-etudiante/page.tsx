@@ -7,16 +7,19 @@ const campusCards = [
     id: "forum",
     title: "FORUM",
     image: "/images/student-library/Forum.jpg",
+    redirection: "/espace-etudiant/vie-etudiante/forum",
   },
   {
     id: "events",
     title: "ÉVÉNEMENTS",
     image: "/images/student-library/Actu.jpg",
+    redirection: "/espace-etudiant/vie-etudiante/evenements",
   },
   {
     id: "news",
     title: "ACTUALITÉ",
     image: "/images/student-library/Actualité.jpg",
+    redirection: "/espace-etudiant/vie-etudiante/actualites",
   },
 ];
 

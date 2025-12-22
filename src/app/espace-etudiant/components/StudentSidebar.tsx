@@ -310,7 +310,7 @@ export const StudentSidebar = ({ onCollapseChange }: StudentSidebarProps) => {
                   />
                   {!isCollapsed && (
                     <span 
-                      className="text-sm font-medium pointer-events-none"
+                      className="text-sm font-medium pointer-events-none whitespace-nowrap"
                       style={{ fontFamily: 'var(--font-termina-bold)' }}
                     >
                       {isLoggingOut ? 'DÉCONNEXION...' : item.label}
