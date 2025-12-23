@@ -79,7 +79,7 @@ export const CategoriesCards = () => {
       {rowCategories.map((category, index) => (
         <div
           key={`${rowKey}-${index}`}
-          className="category-card bg-[#F8F5E4] text-[#032622] px-8 py-4 font-bold flex-shrink-0 text-center min-w-[200px]"
+          className="category-card bg-[#F8F5E4] text-[#032622] px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-bold flex-shrink-0 text-center min-w-[160px] sm:min-w-[180px] md:min-w-[200px] text-xs sm:text-sm md:text-base"
           style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
         >
           {category}
@@ -89,7 +89,7 @@ export const CategoriesCards = () => {
       {rowCategories.map((category, index) => (
         <div
           key={`${rowKey}-dup-${index}`}
-          className="category-card bg-[#F8F5E4] text-[#032622] px-8 py-4 font-bold flex-shrink-0 text-center min-w-[200px]"
+          className="category-card bg-[#F8F5E4] text-[#032622] px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-bold flex-shrink-0 text-center min-w-[160px] sm:min-w-[180px] md:min-w-[200px] text-xs sm:text-sm md:text-base"
           style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
         >
           {category}
@@ -99,16 +99,18 @@ export const CategoriesCards = () => {
   );
 
   return (
-    <div className="relative w-full py-16 overflow-hidden" style={{ backgroundColor: '#032622' }}> 
+    <div className="relative w-full py-8 sm:py-12 md:py-16 overflow-x-hidden" style={{ backgroundColor: '#032622', maxWidth: '100%' }}> 
       {/* Première rangée - défile vers la droite */}
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-6 md:mb-8">
         <div 
           ref={row1Ref}
-          className="flex gap-4 overflow-x-auto scrollbar-hide"
+          className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide carousel-container"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            width: '100%'
+            width: '100%',
+            maxWidth: '100%',
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           {renderCards(categories.row1, 'row1')}
@@ -116,14 +118,16 @@ export const CategoriesCards = () => {
       </div>
 
       {/* Deuxième rangée - défile vers la gauche */}
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-6 md:mb-8">
         <div 
           ref={row2Ref}
-          className="flex gap-4 overflow-x-auto scrollbar-hide"
+          className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide carousel-container"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            width: '100%'
+            width: '100%',
+            maxWidth: '100%',
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           {renderCards(categories.row2, 'row2')}
@@ -134,11 +138,13 @@ export const CategoriesCards = () => {
       <div>
         <div 
           ref={row3Ref}
-          className="flex gap-4 overflow-x-auto scrollbar-hide"
+          className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide carousel-container"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            width: '100%'
+            width: '100%',
+            maxWidth: '100%',
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           {renderCards(categories.row3, 'row3')}

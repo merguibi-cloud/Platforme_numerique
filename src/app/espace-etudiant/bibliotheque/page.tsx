@@ -1,9 +1,5 @@
-import AdminLibraryContent from '../../espace-admin/components/AdminLibraryContent';
+import StudentLibraryContent from "../components/StudentLibraryContent";
 
 export default function BibliothequePage() {
-  return (
-    <div className="p-6">
-      <AdminLibraryContent />
-    </div>
-  );
+  return <StudentLibraryContent />;
 }

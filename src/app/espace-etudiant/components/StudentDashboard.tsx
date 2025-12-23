@@ -1,25 +1,124 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { BookOpen, AlarmClock, CalendarClock } from 'lucide-react';
+import { User, FileText, Settings, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+
+interface StudentProfile {
+  nom: string;
+  prenom: string;
+  photo_profil_url?: string | null;
+}
+
+interface DashboardData {
+  formation: {
+    id: number;
+    titre: string;
+    ecole: string;
+  } | null;
+  progression: {
+    pourcentage: number;
+    chapitresLus: number;
+    chapitresTotal: number;
+    quizCompletes: number;
+    quizTotal: number;
+    etudeCasSoumises: number;
+    etudeCasTotal: number;
+  };
+  statistiques: {
+    chapitresLus: number;
+    quizCompletes: number;
+    etudeCasSoumises: number;
+    chapitresRestants: number;
+    quizRestants: number;
+    etudeCasRestantes: number;
+    pourcentageChapitres: number;
+    pourcentageQuiz: number;
+    pourcentageEtudeCas: number;
+  };
+  activite: {
+    tempsTotalHeures: number;
+    tempsTotalSessionsHeures: number;
+    activiteHebdomadaire: Array<{
+      jour: string;
+      heures: number;
+      minutes: number;
+    }>;
+  };
+  aCommence: boolean;
+  competences: {
+    current: number;
+    total: number;
+  };
+}
 
 export const StudentDashboard = () => {
-  const [progress] = useState(10);
-  const [activitiesProgress] = useState(10);
-  const [activitiesAnimated, setActivitiesAnimated] = useState(0);
-  const [competences] = useState({ current: 2, total: 19 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [hoursAnimated, setHoursAnimated] = useState(0);
-  const [blocksAnimated, setBlocksAnimated] = useState(0);
-  const [isChartsHovered, setIsChartsHovered] = useState(false);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [latestGrades, setLatestGrades] = useState<Array<{
+    id: string;
+    title: string;
+    label: string;
+    grade: string;
+    date: string;
+    type: string;
+  }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+
+  // Charger le profil et les données du dashboard
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Charger le profil
+        const profileResponse = await fetch('/api/espace-etudiant/profile', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.success && profileData.profile) {
+            setProfile(profileData.profile);
+          }
+        }
+
+        // Charger les données du dashboard
+        const dashboardResponse = await fetch('/api/espace-etudiant/dashboard', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (dashboardResponse.ok) {
+          const dashboardResult = await dashboardResponse.json();
+          if (dashboardResult.success && dashboardResult.dashboard) {
+            setDashboardData(dashboardResult.dashboard);
+          }
+        }
+
+        // Charger les notes depuis l'API unifiée
+        const notesResponse = await fetch('/api/espace-etudiant/notes', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (notesResponse.ok) {
+          const notesResult = await notesResponse.json();
+          if (notesResult.success && notesResult.notes) {
+            setLatestGrades(notesResult.notes);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   // Fermer le dropdown quand on clique en dehors
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
@@ -31,101 +130,67 @@ export const StudentDashboard = () => {
     };
   }, []);
 
-  // Animation de la barre de progression des activités au chargement
-  useEffect(() => {
-    const timer = setTimeout(() => setActivitiesAnimated(activitiesProgress), 200);
-    return () => clearTimeout(timer);
-  }, [activitiesProgress]);
+  // Calculer les valeurs pour le diagramme circulaire
+  // Les cercles doivent être empilés : cours (extérieur), quiz (milieu), vidéos (intérieur)
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  
+  const coursPercentage = dashboardData?.statistiques.pourcentageChapitres || 0;
+  const quizPercentage = dashboardData?.statistiques.pourcentageQuiz || 0;
+  const etudeCasPercentage = dashboardData?.statistiques.pourcentageEtudeCas || 0;
+  
+  // Cours : cercle complet (extérieur)
+  const coursDashArray = circumference;
+  const coursDashOffset = circumference - (coursPercentage / 100) * circumference;
+  
+  // Quiz : commence après le cours
+  const quizDashArray = circumference;
+  const quizDashOffset = circumference - (quizPercentage / 100) * circumference;
+  
+  // Vidéos : commence après le quiz
+  const etudeCasDashArray = circumference;
+  const etudeCasDashOffset = circumference - (etudeCasPercentage / 100) * circumference;
 
-  // Animation du pourcentage à droite du titre
-  const [percentAnimated, setPercentAnimated] = useState(0);
-  useEffect(() => {
-    const duration = 800;
-    let start: number | null = null;
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-    const step = (ts: number) => {
-      if (start === null) start = ts;
-      const progress = Math.min(1, (ts - start) / duration);
-      setPercentAnimated(Math.round(activitiesProgress * easeOut(progress)));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    const raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [activitiesProgress]);
+  // Préparer les données pour le graphique d'activité
+  const activiteData = dashboardData?.activite.activiteHebdomadaire || [];
 
-  // Animation des compteurs (Temps total et Blocs de compétences)
-  useEffect(() => {
-    const targetHours = 5;
-    const targetBlocks = competences.current;
-    const duration = 1000; // ms
-    let start: number | null = null;
-
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-
-    const step = (timestamp: number) => {
-      if (start === null) start = timestamp;
-      const elapsed = timestamp - start;
-      const progress = Math.min(1, elapsed / duration);
-      const eased = easeOutCubic(progress);
-      setHoursAnimated(Math.round(targetHours * eased));
-      setBlocksAnimated(Math.round(targetBlocks * eased));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-
-    const raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [competences.current]);
-
-  // Auto-défilement du carousel
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 3);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Données des slides (icônes élégantes + couleurs pastel)
-  const slides = [
-    {
-      title: "EXCELLENT PROGRÈS!",
-      subtitle: `Vous avez terminé ${progress}% du Module 1`,
-      buttonText: "CONTINUER",
-      icon: ( <BookOpen className="w-6 h-6 text-[#032622]" /> ),
-      // Conserver la couleur de marque pour la première slide
-      color: "bg-[#032622]"
-    },
-    {
-      title: "PROCHAINE ÉCHÉANCE",
-      subtitle: "Devoir Bloc 2 - 18 octobre 2025",
-      buttonText: "PRÉPARER",
-      icon: ( <AlarmClock className="w-6 h-6 text-[#032622]" /> ),
-      // Rose pastel
-      color: "bg-[#f2b1b1]"
-    },
-    {
-      title: "RENDEZ-VOUS TUTEUR",
-      subtitle: "Visio tuteur - 15 octobre 2025 à 09h00",
-      buttonText: "REJOINDRE",
-      icon: ( <CalendarClock className="w-6 h-6 text-[#032622]" /> ),
-      // Bleu ciel pastel
-      color: "bg-[#b9d6f2]"
-    }
-  ];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8F5E4] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]"></div>
+          <p className="mt-4 text-[#032622]">Chargement du dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 bg-[#F8F5E4] min-h-screen p-6">
+    <div className="space-y-4 sm:space-y-6 bg-[#F8F5E4] min-h-screen p-3 sm:p-4 md:p-6">
       {/* En-tête avec notifications */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
+        <div className="flex-1">
           <h1 
-            className="text-4xl font-bold text-[#032622] mb-2"
+            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#032622] mb-2"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
-            BONJOUR, CHADI EL ASSOWAD
+            {profile ? (
+              <>
+                <span className="block sm:inline">BONJOUR,</span>{' '}
+                <span className="block sm:inline">{profile.prenom.toUpperCase()} {profile.nom.toUpperCase()}</span>
+              </>
+            ) : (
+              'BONJOUR'
+            )}
           </h1>
+          {dashboardData?.formation && (
+            <p className="text-sm sm:text-base md:text-lg text-[#032622] font-medium">
+              {dashboardData.formation.titre}
+            </p>
+          )}
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button className="p-2 text-[#032622] hover:bg-gray-100 rounded-full">
             <Image 
               src="/menue_etudiant/nonselectionner/Enregistrer.png" 
@@ -146,127 +211,131 @@ export const StudentDashboard = () => {
             />
           </button>
           
-          <div className="flex items-center space-x-2 relative" ref={dropdownRef}>
-            <button 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 transition-colors"
-            >
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full overflow-hidden border-3 border-[#032622] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <Image
-                    src="/images/student-library/IMG_1719 2.PNG"
-                    alt="Avatar"
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {/* Indicateur de statut en ligne */}
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F8F5E4] rounded-full animate-pulse"></div>
-              </div>
-              <span className="text-[#032622] font-medium">Chadi El Assowad</span>
-              <svg 
-                className={`w-4 h-4 text-[#032622] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
+          {profile && (
+            <div className="flex items-center space-x-2 relative" ref={dropdownRef}>
+              <button 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 transition-colors"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {/* Dropdown menu */}
-            {isDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                <div className="py-2">
-                  <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mes documents</a>
-                  <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Paramètres</a>
-                  <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Se déconnecter</a>
+                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                  {profile.photo_profil_url && (profile.photo_profil_url.startsWith('http://') || profile.photo_profil_url.startsWith('https://')) ? (
+                    <Image
+                      src={profile.photo_profil_url}
+                      alt="Photo de profil"
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-gray-600" />
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
+                <span className="text-[#032622] font-medium" style={{ fontFamily: 'var(--font-termina-bold)' }}>
+                  {profile.prenom} {profile.nom}
+                </span>
+                <svg 
+                  className={`w-4 h-4 text-[#032622] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Dropdown menu */}
+              {isDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[100]">
+                  <div className="py-2">
+                    <Link
+                      href="/espace-etudiant/mes-documents"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Mes documents</span>
+                    </Link>
+                    <Link
+                      href="/espace-etudiant/parametres"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Paramètres</span>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Carousel de progression avec 3 slides */}
-      <div className="relative overflow-hidden rounded-lg">
-        <div 
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {slides.map((slide, index) => (
-            <div key={index} className={`w-full ${slide.color} text-white p-6 rounded-lg flex-shrink-0`}>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                    {slide.icon}
-                  </div>
-                  <div>
-                    <h2 
-                      className="text-xl font-bold mb-2"
-                      style={{ fontFamily: 'var(--font-termina-bold)' }}
-                    >
-                      {slide.title}
-                    </h2>
-                    <p className="text-sm opacity-90">
-                      {slide.subtitle}
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => {
-                    if (index === 0) router.push('/espace-etudiant/mes-formations');
-                    else if (index === 1) router.push('/espace-etudiant/mes-formations');
-                    else router.push('/espace-etudiant/agenda');
-                  }}
-                  className="bg-white text-[#032622] px-6 py-3 font-bold rounded-lg hover:bg-gray-100 transition-colors"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
-                >
-                  {slide.buttonText}
-                </button>
-              </div>
+      {/* Carte de progression principale */}
+      <div className="bg-[#032622] text-white p-4 sm:p-5 md:p-6 rounded-lg">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[#032622]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
             </div>
-          ))}
+            <div>
+              <h2 
+                className="text-lg sm:text-xl font-bold mb-1 sm:mb-2"
+                style={{ fontFamily: 'var(--font-termina-bold)' }}
+              >
+                EXCELLENT PROGRÈS!
+              </h2>
+              <p className="text-xs sm:text-sm opacity-90">
+                Vous avez terminé {dashboardData?.progression.pourcentage || 0}% de votre formation
+              </p>
+            </div>
+          </div>
+          <button 
+            className="bg-white text-[#032622] px-4 sm:px-6 py-2 sm:py-3 font-bold rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors w-full sm:w-auto text-sm sm:text-base"
+            style={{ fontFamily: 'var(--font-termina-bold)' }}
+          >
+            CONTINUER
+          </button>
         </div>
         
         {/* Indicateurs de progression */}
-        <div className="flex justify-center space-x-2 mt-4">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`w-8 h-1 rounded transition-all duration-300 ${
-                index === currentSlide ? 'bg-[#032622]' : 'bg-gray-300'
-              }`}
-            />
-          ))}
+        <div className="flex space-x-1 mt-4">
+          <div className="w-8 h-1 bg-white rounded"></div>
+          <div className={`w-8 h-1 rounded ${(dashboardData?.progression.pourcentage || 0) > 33 ? 'bg-white' : 'bg-white/30'}`}></div>
+          <div className={`w-8 h-1 rounded ${(dashboardData?.progression.pourcentage || 0) > 66 ? 'bg-white' : 'bg-white/30'}`}></div>
         </div>
       </div>
 
       {/* Contenu principal en grille */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Section gauche - Activités */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6">
           {/* Carte d'activités */}
           <div className="bg-[#F8F5E4] border border-black">
             {/* En-tête avec titre et pourcentage */}
             <div className="flex justify-between items-center p-6">
-              <h3 
-                className="text-lg font-bold text-[#032622]"
-                style={{ fontFamily: 'var(--font-termina-bold)' }}
-              >
-                RESPONSABLE DU DÉVELOPPEMENT DES ACTIVITÉS
-              </h3>
-              <span className="text-2xl font-bold text-[#032622]">{percentAnimated}%</span>
+              <div>
+                {dashboardData?.formation && (
+                <h3 
+                  className="text-lg font-bold text-[#032622] mb-1"
+                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+                >
+                  {dashboardData.formation.titre}
+                </h3>
+                )}
+              </div>
+              <span className="text-2xl font-bold text-[#032622]">{dashboardData?.progression.pourcentage || 0}%</span>
             </div>
             
             {/* Barre de progression (animée) */}
             <div className="px-6 pb-4">
               <div className="w-full bg-gray-300 h-2">
                 <div 
-                  className="bg-[#032622] h-2 transition-[width] duration-1000 ease-out"
-                  style={{ width: `${activitiesAnimated}%` }}
+                  className="bg-[#032622] h-2 transition-all duration-300"
+                  style={{ width: `${dashboardData?.progression.pourcentage || 0}%` }}
                 ></div>
               </div>
             </div>
@@ -274,61 +343,71 @@ export const StudentDashboard = () => {
             {/* Section avec informations */}
             <div className="px-6 py-4 border-b border-black">
               {/* Informations en ligne */}
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-12">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-wrap gap-6 sm:gap-8 md:gap-12">
                   <div>
-                  <div className="text-4xl font-bold text-[#032622] mb-1">{hoursAnimated}H</div>
-                    <div className="text-sm text-[#032622]">Temps total</div>
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] mb-1">
+                      {dashboardData?.activite.tempsTotalHeures || 0}H
+                    </div>
+                    <div className="text-xs sm:text-sm text-[#032622]">Temps total</div>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold text-[#032622] mb-1">{blocksAnimated}/{competences.total}</div>
-                    <div className="text-sm text-[#032622]">Blocs de compétences</div>
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] mb-1">
+                      {dashboardData?.competences.current || 0}/{dashboardData?.competences.total || 0}
+                    </div>
+                    <div className="text-xs sm:text-sm text-[#032622]">Blocs de compétences</div>
                   </div>
                 </div>
                 <button 
-                  onClick={() => router.push('/espace-etudiant/mes-formations')}
-                  className="bg-[#032622] text-white px-6 py-3 font-bold hover:bg-[#044a3a] transition-colors"
+                  className="bg-[#032622] text-white px-4 sm:px-6 py-2 sm:py-3 font-bold hover:bg-[#044a3a] active:bg-[#032622]/80 transition-colors w-full sm:w-auto text-sm sm:text-base"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
-                  REPRENDRE
+                  {dashboardData?.aCommence ? 'REPRENDRE' : 'COMMENCER'}
                 </button>
               </div>
             </div>
             
             {/* Contenu principal - Graphiques côte à côte */}
-            <div 
-              className="grid grid-cols-2 gap-0"
-              onMouseEnter={() => setIsChartsHovered(true)}
-              onMouseLeave={() => setIsChartsHovered(false)}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
               {/* Section gauche - Légende et diagramme circulaire */}
               <div className="p-6 border-r border-black flex flex-col justify-between">
-                {/* Légende */}
+                {/* Légende avec nombres */}
                 <div className="flex justify-start mb-4">
-                  <div className="flex items-center space-x-4 text-xs">
-                    <div className="flex items-center space-x-1">
+                  <div className="flex flex-col space-y-2 text-xs">
+                    <div 
+                      className="flex items-center space-x-1 group cursor-pointer"
+                      title={`${dashboardData?.statistiques.chapitresLus || 0} chapitres lus sur ${dashboardData?.progression.chapitresTotal || 0}`}
+                    >
                       <div className="w-3 h-3 bg-[#032622]"></div>
-                      <span className="text-[#032622]">Cours lus</span>
+                      <span className="text-[#032622]">
+                        Chapitres lus <span className="font-bold">({dashboardData?.statistiques.chapitresLus || 0})</span>
+                      </span>
                     </div>
-                    <div className="flex items-center space-x-1">
+                    <div 
+                      className="flex items-center space-x-1 group cursor-pointer"
+                      title={`${dashboardData?.statistiques.quizCompletes || 0} quiz complétés sur ${dashboardData?.progression.quizTotal || 0}`}
+                    >
                       <div className="w-3 h-3 bg-[#6b7280]"></div>
-                      <span className="text-[#032622]">Quiz complétés</span>
+                      <span className="text-[#032622]">
+                        Quiz complétés <span className="font-bold">({dashboardData?.statistiques.quizCompletes || 0})</span>
+                      </span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-3 h-3 bg-[#d1d5db]"></div>
-                      <span className="text-[#032622]">Vidéos vues</span>
+                    <div 
+                      className="flex items-center space-x-1 group cursor-pointer"
+                      title={`${dashboardData?.statistiques.etudeCasSoumises || 0} études de cas soumises sur ${dashboardData?.progression.etudeCasTotal || 0}`}
+                    >
+                      <div className="w-3 h-3 bg-[#5AA469]"></div>
+                      <span className="text-[#032622]">
+                        Études de cas <span className="font-bold">({dashboardData?.statistiques.etudeCasSoumises || 0})</span>
+                      </span>
                     </div>
                   </div>
                 </div>
                 
-                {/* Diagramme circulaire */}
-                <div className="flex justify-center">
-                  <div className="relative w-32 h-32">
-                    <svg 
-                      className="w-32 h-32 transform -rotate-90 transition-transform duration-500"
-                      style={{ transform: isChartsHovered ? 'rotate(-82deg) scale(1.04)' : 'rotate(-90deg) scale(1)' }}
-                      viewBox="0 0 100 100"
-                    >
+                {/* Diagramme circulaire avec tooltips */}
+                <div className="flex justify-center relative">
+                  <div className="relative w-32 h-32 group">
+                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
                       {/* Cercle de fond beige */}
                       <circle
                         cx="50"
@@ -338,29 +417,7 @@ export const StudentDashboard = () => {
                         strokeWidth="12"
                         fill="none"
                       />
-                      {/* Cercle gris clair */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="30"
-                        stroke="#d1d5db"
-                        strokeWidth="12"
-                        fill="none"
-                        strokeDasharray={`${2 * Math.PI * 30 * 0.25}`}
-                        strokeDashoffset={`${2 * Math.PI * 30 * (isChartsHovered ? 0.70 : 0.75)}`}
-                      />
-                      {/* Cercle gris moyen */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="30"
-                        stroke="#6b7280"
-                        strokeWidth="12"
-                        fill="none"
-                        strokeDasharray={`${2 * Math.PI * 30 * 0.35}`}
-                        strokeDashoffset={`${2 * Math.PI * 30 * (isChartsHovered ? 0.35 : 0.40)}`}
-                      />
-                      {/* Cercle vert foncé */}
+                      {/* Cercle chapitres (vert foncé) - extérieur, le plus épais */}
                       <circle
                         cx="50"
                         cy="50"
@@ -368,32 +425,107 @@ export const StudentDashboard = () => {
                         stroke="#032622"
                         strokeWidth="12"
                         fill="none"
-                        strokeDasharray={`${2 * Math.PI * 30 * 0.40}`}
-                        strokeDashoffset={`${2 * Math.PI * 30 * 0}`}
+                        strokeDasharray={coursDashArray}
+                        strokeDashoffset={coursDashOffset}
+                        strokeLinecap="round"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                      />
+                      {/* Cercle quiz (gris moyen) - milieu */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="30"
+                        stroke="#6b7280"
+                        strokeWidth="10"
+                        fill="none"
+                        strokeDasharray={quizDashArray}
+                        strokeDashoffset={quizDashOffset}
+                        strokeLinecap="round"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                      />
+                      {/* Cercle études de cas (vert clair) - intérieur */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="30"
+                        stroke="#5AA469"
+                        strokeWidth="8"
+                        fill="none"
+                        strokeDasharray={etudeCasDashArray}
+                        strokeDashoffset={etudeCasDashOffset}
+                        strokeLinecap="round"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
                       />
                     </svg>
+                    {/* Tooltip au survol */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#032622] text-white px-3 py-1 rounded text-xs font-bold whitespace-nowrap">
+                        {dashboardData?.statistiques.chapitresLus || 0} chapitres | {dashboardData?.statistiques.quizCompletes || 0} quiz | {dashboardData?.statistiques.etudeCasSoumises || 0} études de cas
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               
               {/* Section droite - Graphique en barres */}
               <div className="p-6 flex flex-col justify-between">
-                <div className="text-sm text-[#032622]">Activité hebdomadaire</div>
-                <div className="flex items-end justify-center h-16 space-x-2">
-                  {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      <div 
-                        className="bg-[#032622] w-6 transition-all duration-500 ease-out"
-                        style={{ 
-                          height: `${([40, 25, 45, 60, 65, 50, 20][index] + (isChartsHovered ? 12 : 0))}px`,
-                          transform: isChartsHovered ? 'translateY(-4px)' : 'translateY(0)',
-                          transitionDelay: `${index * 60}ms`
+                <div className="text-sm text-[#032622] mb-4">Activité hebdomadaire</div>
+                {activiteData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart data={activiteData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                      <XAxis 
+                        dataKey="jour" 
+                        tick={{ fontSize: 11, fill: '#032622', fontWeight: 'bold' }}
+                        axisLine={{ stroke: '#032622', strokeWidth: 1 }}
+                        tickLine={{ stroke: '#032622' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 11, fill: '#032622' }}
+                        axisLine={{ stroke: '#032622', strokeWidth: 1 }}
+                        tickLine={{ stroke: '#032622' }}
+                        width={35}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#F8F5E4', 
+                          border: '1px solid #032622',
+                          borderRadius: '4px',
+                          padding: '8px 12px'
                         }}
-                      ></div>
-                      <span className="text-xs text-[#032622] mt-2 font-medium">{day}</span>
-                    </div>
-                  ))}
-                </div>
+                        labelStyle={{ color: '#032622', fontWeight: 'bold', marginBottom: '4px' }}
+                        formatter={(value: number, name: string, props: any) => {
+                          const minutes = props.payload.minutes || 0;
+                          if (minutes === 0) {
+                            return ['0 min', 'Temps'];
+                          }
+                          const heures = Math.floor(minutes / 60);
+                          const mins = minutes % 60;
+                          if (heures > 0 && mins > 0) {
+                            return [`${heures}h ${mins}min`, 'Temps'];
+                          } else if (heures > 0) {
+                            return [`${heures}h`, 'Temps'];
+                          } else {
+                            return [`${mins}min`, 'Temps'];
+                          }
+                        }}
+                      />
+                      <Bar 
+                        dataKey="heures" 
+                        fill="#032622"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-end justify-center h-16 space-x-2">
+                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
+                      <div key={index} className="flex flex-col items-center">
+                        <div className="bg-[#032622] w-6 h-0"></div>
+                        <span className="text-xs text-[#032622] mt-2 font-medium">{day}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -449,54 +581,22 @@ export const StudentDashboard = () => {
 
         {/* Section droite - Profil et notes */}
         <div className="space-y-6">
-          {/* Carte de profil - Design ultra moderne */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#F8F5E4] via-[#f0ebd8] to-[#eae5cf] rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-700 group border border-[#032622]/10">
-            {/* Effet de brillance premium */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-[#032622]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            
-            {/* Motif décoratif en arrière-plan */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#032622]/5 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#032622]/5 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
-            
-            {/* Contenu principal */}
-            <div className="relative p-8 text-center">
-              {/* Photo de profil avec design premium amélioré */}
-              <div className="relative mb-8">
-                {/* Conteneur principal pour la photo */}
-                <div className="w-48 h-48 mx-auto relative">
-                  {/* Ombre portée multiple */}
-                  <div className="absolute inset-0 rounded-full bg-[#032622]/15 blur-xl scale-125"></div>
-                  <div className="absolute inset-0 rounded-full bg-[#032622]/10 blur-lg scale-115"></div>
-                  
-                  {/* Cercle principal avec bordure premium */}
-                  <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-2xl">
-                    <Image
-                      src="/images/student-library/IMG_1719 2.PNG"
-                      alt="Photo de profil"
-                      width={192}
-                      height={192}
-                      className="w-full h-full object-cover object-center scale-110 transition-transform duration-700 group-hover:scale-100"
-                      style={{ objectPosition: 'center top' }}
-                    />
-                  </div>
-                  
-                  {/* Bordures décoratives multiples */}
-                  <div className="absolute inset-0 rounded-full border-2 border-[#032622]/20 scale-105"></div>
-                  <div className="absolute inset-0 rounded-full border border-white/50 scale-110"></div>
-                  
-                  {/* Effet de halo */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                </div>
-                
-                {/* Badge de statut ultra moderne */}
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-gradient-to-r from-[#032622] via-[#01302C] to-[#032622] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-xl backdrop-blur-md border border-white/30">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-lg"></div>
-                      <span className="tracking-wider">ACTIF</span>
-                    </div>
-                  </div>
-                </div>
+          {/* Carte de profil */}
+          <div className="bg-[#F8F5E4] border border-black">
+            <div className="p-8 text-center">
+              <div className="w-40 h-40 border border-black mx-auto mb-6 flex items-center justify-center overflow-hidden bg-[#F8F5E4]">
+                {profile?.photo_profil_url && (profile.photo_profil_url.startsWith('http://') || profile.photo_profil_url.startsWith('https://')) ? (
+                  <Image
+                    src={profile.photo_profil_url}
+                    alt="Photo de profil"
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <User className="w-24 h-24 text-[#032622]" />
+                )}
               </div>
               
               {/* Informations du profil avec design amélioré */}
@@ -544,37 +644,36 @@ export const StudentDashboard = () => {
               </h3>
             </div>
             
-            <div className="bg-[#032622] border-b border-black">
-              <div className="flex">
-                <div className="flex-1 p-4 border-r border-[#F8F5E4]">
-                  <div className="text-xs text-white mb-1">Bloc 1-Module 1</div>
-                  <div className="text-sm font-bold text-white">Quizz</div>
-                </div>
-                <div className="w-20 p-4 flex items-center justify-center bg-[#F8F5E4]">
-                  <span className="text-2xl font-bold text-[#032622]">9,5</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-[#032622]">
-              <div className="flex">
-                <div className="flex-1 p-4 border-r border-[#F8F5E4]">
-                  <div className="text-xs text-white mb-1">Bloc 1</div>
-                  <div className="text-sm font-bold text-white">Etude de cas</div>
-                </div>
-                <div className="w-20 p-4 flex items-center justify-center bg-[#F8F5E4]">
-                  <span className="text-2xl font-bold text-[#032622]">13</span>
-                </div>
-              </div>
-            </div>
-            
             <div className="p-4">
-              <button className="text-[#032622] text-sm font-bold flex items-center">
-                VOIR TOUTES LES NOTES
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+              {latestGrades.length > 0 ? (
+                <>
+                  {latestGrades.map((grade) => (
+                    <div
+                      key={grade.id}
+                      className="flex items-center justify-between border border-black mb-3 last:mb-0"
+                    >
+                      <div className="p-3">
+                        <p className="text-xs text-[#032622] opacity-80">{grade.title}</p>
+                        <p className="text-sm font-semibold text-[#032622]">{grade.label}</p>
+                      </div>
+                      <div className="p-3 bg-[#032622] text-white font-bold text-lg min-w-[70px] text-center">
+                        {grade.grade}
+                      </div>
+                    </div>
+                  ))}
+                  <Link 
+                    href="/espace-etudiant/releve-notes"
+                    className="text-xs font-semibold text-[#032622] flex items-center space-x-1 mt-2 hover:underline"
+                  >
+                    <span>VOIR TOUTES LES NOTES</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </>
+              ) : (
+                <div className="text-center text-[#032622] opacity-60 text-xs py-4">
+                  Aucune note disponible
+                </div>
+              )}
             </div>
           </div>
 
@@ -582,15 +681,9 @@ export const StudentDashboard = () => {
           <div className="bg-[#F8F5E4] border border-black">
             <div className="flex h-32">
               <div className="w-32 border-r border-black flex items-center justify-center bg-[#F8F5E4]">
-                {/* Photo du référent */}
-                <div className="w-full h-full">
-                  <Image
-                    src="/menue_etudiant/DSC05507.JPG"
-                    alt="Référent Pédagogique"
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
+                {/* Placeholder pour photo du référent */}
+                <div className="w-24 h-24 bg-gray-300 flex items-center justify-center">
+                  <User className="w-12 h-12 text-gray-600" />
                 </div>
               </div>
               <div className="flex-1 bg-[#032622] p-4 flex flex-col justify-center">
@@ -610,5 +703,3 @@ export const StudentDashboard = () => {
     </div>
   );
 };
-
-

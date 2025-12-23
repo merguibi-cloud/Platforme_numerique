@@ -2,26 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
-import {
-  Bell,
-  CalendarClock,
-  ChevronDown,
-  Clock,
-  Mail,
-  MessageCircle,
-  PencilLine,
-  Phone,
-  Send,
-  Target,
-  UserRound,
-  Users,
-  X,
-} from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { ChevronDown, MessageCircle, PencilLine, Users, UserCog } from "lucide-react";
+import { getAllFormations, getFormationsByEcole } from "@/lib/formations";
+import { Formation } from "@/types/formations";
+import AdminTopBar from "./AdminTopBar";
+import { useAdminUser } from "./AdminUserProvider";
 
-type SchoolId = "keos" | "edifice" | "x1001";
-
-type FormationId = "devWeb" | "marketing" | "ia" | "designUX";
+// Types pour les données dynamiques de la base de données
+type SchoolId = string;
+type FormationId = number;
 
 interface AgendaEvent {
   id: string;
@@ -39,11 +29,16 @@ interface CorrectionItem {
 }
 
 interface CourseItem {
-  id: string;
-  title: string;
-  mentor: string;
-  status: "a_valider" | "en_ligne";
-  actionLabel: string;
+  id: number;
+  titre: string;
+  module: string;
+  bloc: string;
+  statut: "brouillon" | "en_cours_examen" | "en_ligne";
+  module_id?: number | null;
+  bloc_id?: number | null;
+  formation_id?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface MessageItem {
@@ -93,7 +88,13 @@ interface StudentProfile {
 interface FormationData {
   name: string;
   greeting: string;
-  courses: CourseItem[];
+  courses: Array<{
+    id: string;
+    title: string;
+    mentor: string;
+    status: "a_valider" | "en_ligne";
+    actionLabel: string;
+  }>;
   messages: MessageItem[];
   corrections: {
     late: CorrectionItem[];
@@ -105,19 +106,9 @@ interface FormationData {
   studentProfiles?: StudentProfile[];
 }
 
-const schools: Record<SchoolId, { label: string }> = {
-  keos: { label: "KEOS" },
-  x1001: { label: "1001" },
-  edifice: { label: "EDIFICE" },
-};
+// Données dynamiques de la base de données
 
-const formationsPerSchool: Record<SchoolId, FormationId[]> = {
-  keos: ["devWeb", "marketing", "ia"],
-  edifice: ["designUX", "marketing"],
-  x1001: ["devWeb", "ia"],
-};
-
-const formationsData: Record<FormationId, FormationData> = {
+const formationsData: Record<string, FormationData> = {
   devWeb: {
     name: "Développement Web",
     greeting: "Bonjour, Sophie Moreau",
@@ -530,77 +521,295 @@ const monthWeeks = [
 ];
 
 const AdminDashboardContent = () => {
-  const [selectedSchool, setSelectedSchool] = useState<SchoolId>("keos");
-  const availableFormations = formationsPerSchool[selectedSchool];
-  const [selectedFormation, setSelectedFormation] = useState<FormationId>(
-    availableFormations[0]
-  );
+  const adminUser = useAdminUser();
+  const [allFormations, setAllFormations] = useState<Formation[]>([]);
+  const [selectedSchool, setSelectedSchool] = useState<SchoolId>("");
+  const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [firstBlocId, setFirstBlocId] = useState<number | null>(null);
+  const [firstModuleId, setFirstModuleId] = useState<number | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
-  const data = useMemo(() => formationsData[selectedFormation], [selectedFormation]);
+  // Charger toutes les formations au montage du composant et restaurer les sélections
+  useEffect(() => {
+    const loadFormations = async () => {
+      try {
+        // Charger les valeurs sauvegardées depuis localStorage
+        let savedSchool: SchoolId | null = null;
+        let savedFormation: number | null = null;
+        
+        if (typeof window !== 'undefined') {
+          const savedSchoolStr = localStorage.getItem('admin_selected_school');
+          const savedFormationStr = localStorage.getItem('admin_selected_formation');
+          
+          if (savedSchoolStr) {
+            savedSchool = savedSchoolStr as SchoolId;
+          }
+          
+          if (savedFormationStr) {
+            const formationId = parseInt(savedFormationStr);
+            if (!isNaN(formationId)) {
+              savedFormation = formationId;
+            }
+          }
+        }
 
-  const handleSchoolChange = (school: SchoolId) => {
-    setSelectedSchool(school);
-    const firstFormation = formationsPerSchool[school][0];
-    setSelectedFormation(firstFormation);
-    setSelectedStudentId(null);
+        const formations = await getAllFormations();
+        setAllFormations(formations);
+        
+        if (formations.length === 0) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Vérifier et restaurer l'école sauvegardée
+        let schoolToSet: SchoolId;
+        if (savedSchool && formations.some(f => f.ecole === savedSchool)) {
+          schoolToSet = savedSchool;
+        } else {
+          // Si l'école sauvegardée n'existe plus ou n'est pas définie, prendre la première
+          schoolToSet = formations[0].ecole;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('admin_selected_school', schoolToSet);
+          }
+        }
+        setSelectedSchool(schoolToSet);
+
+        // Vérifier et restaurer la formation sauvegardée
+        if (savedFormation) {
+          const formationExists = formations.some(f => 
+            f.id === savedFormation && f.ecole === schoolToSet
+          );
+          if (formationExists) {
+            setSelectedFormation(savedFormation);
+          } else {
+            // Si la formation sauvegardée n'existe plus, réinitialiser
+            setSelectedFormation(null);
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('admin_selected_formation');
+            }
+          }
+        }
+      } catch (error) {
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFormations();
+  }, []);
+
+  // Obtenir les écoles uniques disponibles
+  const availableSchools = useMemo(() => {
+    const schools = Array.from(new Set(allFormations.map(f => f.ecole)));
+    return schools.map(school => ({
+      value: school,
+      label: school
+    }));
+  }, [allFormations]);
+
+  // Obtenir les formations filtrées par école sélectionnée
+  const availableFormations = useMemo(() => {
+    if (!selectedSchool) return [];
+    return allFormations
+      .filter(f => f.ecole === selectedSchool)
+      .map(formation => ({
+        value: formation.id.toString(),
+        label: formation.titre
+      }));
+  }, [allFormations, selectedSchool]);
+
+  // Gérer le changement d'école
+  const handleSchoolChange = (schoolId: SchoolId) => {
+    setSelectedSchool(schoolId);
+    setSelectedFormation(null); // Reset formation selection
+    
+    // Sauvegarder dans localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_selected_school', schoolId);
+      localStorage.removeItem('admin_selected_formation');
+    }
   };
 
-  const totalStudentsOnline = data.students.filter((s) => s.status === "online").length;
-  const totalTeachersOnline = data.teachers.filter((t) => t.status === "online").length;
+  // Gérer le changement de formation
+  const handleFormationChange = (formationId: string) => {
+    const formationIdNum = parseInt(formationId);
+    setSelectedFormation(formationIdNum);
+    
+    // Sauvegarder dans localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_selected_formation', formationId);
+    }
+  };
+
+  // Charger le premier bloc et module de la formation sélectionnée
+  useEffect(() => {
+    const loadFirstBlocAndModule = async () => {
+      if (!selectedFormation) {
+        setFirstBlocId(null);
+        setFirstModuleId(null);
+        return;
+      }
+
+      try {
+        // Récupérer les blocs de la formation
+        const blocsResponse = await fetch(`/api/blocs?formationId=${selectedFormation}`, {
+          credentials: 'include'
+        });
+        
+        if (blocsResponse.ok) {
+          const blocsData = await blocsResponse.json();
+          const blocs = blocsData.blocs || [];
+          
+          if (blocs.length > 0) {
+            // Prendre le premier bloc (trié par ordre_affichage ou numero_bloc)
+            const firstBloc = blocs.sort((a: any, b: any) => 
+              (a.ordre_affichage || a.numero_bloc || 0) - (b.ordre_affichage || b.numero_bloc || 0)
+            )[0];
+            setFirstBlocId(firstBloc.id);
+
+            // Récupérer les modules du premier bloc
+            const modulesResponse = await fetch(`/api/cours?formationId=${selectedFormation}&blocId=${firstBloc.id}`, {
+              credentials: 'include'
+            });
+            
+            if (modulesResponse.ok) {
+              const modulesData = await modulesResponse.json();
+              const modules = modulesData.modules || [];
+              
+              if (modules.length > 0) {
+                // Prendre le premier module (trié par ordre_affichage ou numero_module)
+                const firstModule = modules.sort((a: any, b: any) => 
+                  (a.ordre_affichage || a.numero_module || 0) - (b.ordre_affichage || b.numero_module || 0)
+                )[0];
+                setFirstModuleId(firstModule.id);
+              } else {
+                setFirstModuleId(null);
+              }
+            } else {
+              setFirstModuleId(null);
+            }
+          } else {
+            setFirstBlocId(null);
+            setFirstModuleId(null);
+          }
+        } else {
+          setFirstBlocId(null);
+          setFirstModuleId(null);
+        }
+      } catch (error) {
+        setFirstBlocId(null);
+        setFirstModuleId(null);
+      }
+    };
+
+    loadFirstBlocAndModule();
+  }, [selectedFormation]);
+
+  // Charger les cours de la formation sélectionnée
+  useEffect(() => {
+    const loadCourses = async () => {
+      if (!selectedFormation) {
+        setCourses([]);
+        return;
+      }
+
+      setIsLoadingCourses(true);
+      try {
+        const response = await fetch(`/api/cours/by-formation?formationId=${selectedFormation}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCourses(data.cours || []);
+        } else {
+          setCourses([]);
+        }
+      } catch (error) {
+        setCourses([]);
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+
+    loadCourses();
+  }, [selectedFormation]);
+
+  // Formater les cours pour l'affichage
+  const formattedCourses = useMemo(() => {
+    const toValidate: CourseItem[] = [];
+    const online: CourseItem[] = [];
+
+    courses.forEach(course => {
+      if (course.statut === 'en_cours_examen') {
+        toValidate.push(course);
+      } else if (course.statut === 'en_ligne') {
+        online.push(course);
+      } else {
+        // Les brouillons peuvent aussi être considérés comme "à valider"
+        toValidate.push(course);
+      }
+    });
+
+    return { toValidate, online };
+  }, [courses]);
+
+  // Données statiques pour l'affichage (en attendant la vraie intégration)
+  const data = useMemo(() => {
+    // Pour l'instant, on garde les données statiques pour les autres éléments
+    return formationsData["devWeb"]; // Valeur par défaut
+  }, []);
+
+  const totalStudentsOnline = data.students.filter((s: StudentStatus) => s.status === "online").length;
+  const totalTeachersOnline = data.teachers.filter((t: TeacherStatus) => t.status === "online").length;
 
   return (
-    <div className="flex-1 p-10 bg-[#F8F5E4]">
-      <div className="flex justify-end items-center space-x-4 mb-8">
-        <div className="relative">
-          <Bell className="w-6 h-6 text-[#032622]" />
-          <span className="absolute -top-2 -right-2 bg-[#D96B6B] text-white text-xs rounded-full px-1.5 py-0.5">
-            6
-          </span>
-        </div>
-        <ProfileDropdown />
-      </div>
+    <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 bg-[#F8F5E4]">
+      <AdminTopBar notificationCount={6} className="mb-4 sm:mb-6 md:mb-8" />
 
-      <div className="space-y-8">
-        <div className="space-y-3">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8">
+        <div className="space-y-2 sm:space-y-3">
           <h1
-            className="text-4xl font-bold text-[#032622]"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#032622] break-words"
             style={{ fontFamily: "var(--font-termina-bold)" }}
           >
-            {data.greeting.toUpperCase()}
+            {adminUser.isLoading 
+              ? "BONJOUR..." 
+              : `BONJOUR, ${adminUser.displayName.toUpperCase()}`}
           </h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <DropdownSelector
               label="ÉCOLE"
               value={selectedSchool}
-              options={Object.entries(schools).map(([id, info]) => ({
-                value: id,
-                label: info.label,
-              }))}
+              options={availableSchools}
               onChange={(value) => handleSchoolChange(value as SchoolId)}
             />
             <DropdownSelector
               label="FORMATION"
-              value={selectedFormation}
-              options={availableFormations.map((id) => ({
-                value: id,
-                label: formationsData[id].name,
-              }))}
-              onChange={(value) => {
-                setSelectedFormation(value as FormationId);
-                setSelectedStudentId(null);
-              }}
+              value={selectedFormation?.toString() || ""}
+              options={availableFormations}
+              onChange={handleFormationChange}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <CoursesCard courses={data.courses} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6">
+            <CoursesCard 
+              courses={formattedCourses} 
+              isLoading={isLoadingCourses}
+              formationId={selectedFormation}
+              blocId={firstBlocId}
+              moduleId={firstModuleId}
+            />
+            <UsersManagementCard />
             <CorrectionsCard corrections={data.corrections} />
             <AgendaCard agenda={data.agenda} />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-5 md:space-y-6">
             <MessagesCard messages={data.messages} />
             <ProfileCard
               selectedStudentId={selectedStudentId}
@@ -629,78 +838,177 @@ interface DropdownSelectorProps {
   onChange: (value: string) => void;
 }
 
-const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const selectedOption = options.find(option => option.value === value);
-
-  return (
-    <div className="relative">
-      <div 
-        className="border border-[#032622] px-4 py-3 flex justify-between items-center bg-[#F8F5E4] cursor-pointer hover:bg-[#eae5cf] transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
+const DropdownSelector = ({ label, value, options, onChange }: DropdownSelectorProps) => (
+  <div className="border border-[#032622] px-3 sm:px-4 py-2 sm:py-3 flex justify-between items-center bg-[#F8F5E4] relative">
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] sm:text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="text-sm sm:text-base md:text-lg font-semibold text-[#032622] bg-[#F8F5E4] focus:outline-none appearance-none w-full pr-6 sm:pr-8 cursor-pointer truncate"
+        style={{ fontFamily: 'var(--font-termina-medium)' }}
       >
-        <div className="flex-1">
-          <p className="text-xs text-[#032622]/70 uppercase tracking-wider">{label}</p>
-          <p className="text-lg font-semibold text-[#032622]">{selectedOption?.label}</p>
-        </div>
-        <ChevronDown 
-          className={`w-5 h-5 text-[#032622] transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-        />
-      </div>
-      
-      {isOpen && (
-        <div className="absolute z-20 mt-1 w-full border border-[#032622] bg-[#F8F5E4] shadow-lg">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className="w-full text-left px-4 py-3 text-sm text-[#032622] hover:bg-[#eae5cf] transition-colors border-b border-[#032622]/20 last:border-b-0"
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-      
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-10" 
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+        {options.map((option) => (
+          <option 
+            key={option.value} 
+            value={option.value} 
+            className="text-[#032622] bg-[#F8F5E4]"
+            style={{ backgroundColor: '#F8F5E4', color: '#032622' }}
+          >
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
-  );
-};
+    <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-[#032622] absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none flex-shrink-0" />
+  </div>
+);
 
-const CoursesCard = ({ courses }: { courses: FormationData["courses"] }) => {
-  const toValidate = courses.filter((course) => course.status === "a_valider");
-  const online = courses.filter((course) => course.status === "en_ligne");
+const CoursesCard = ({ 
+  courses, 
+  isLoading, 
+  formationId,
+  blocId,
+  moduleId,
+}: { 
+  courses: { toValidate: CourseItem[]; online: CourseItem[] };
+  isLoading: boolean;
+  formationId: number | null;
+  blocId: number | null;
+  moduleId: number | null;
+}) => {
+  const hasCourses = courses.toValidate.length > 0 || courses.online.length > 0;
 
   return (
-    <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-      <div className="flex justify-between items-center">
+    <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <h2
-          className="text-2xl font-bold text-[#032622]"
+          className="text-xl sm:text-2xl font-bold text-[#032622]"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
           COURS
         </h2>
         <Link
-          href="/espace-admin/gestion-formations"
-          className="text-sm font-semibold text-[#032622] border border-[#032622] px-4 py-2 inline-flex items-center space-x-2 hover:bg-[#eae5cf] transition-colors"
+          href={
+            formationId && blocId
+              ? `/espace-admin/gestion-formations/${formationId}/${blocId}`
+              : formationId
+              ? `/espace-admin/gestion-formations/${formationId}`
+              : "/espace-admin/gestion-formations"
+          }
+          className="text-xs sm:text-sm font-semibold text-[#032622] border border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center space-x-1.5 sm:space-x-2 hover:bg-[#eae5cf] active:bg-[#e0dbc5] transition-colors whitespace-nowrap"
         >
-          <PencilLine className="w-4 h-4" />
-          <span>Créer un cours</span>
+          <PencilLine className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Accéder aux cours</span>
         </Link>
       </div>
 
-      <div className="space-y-6">
-        <BlockCoursesList title="À VALIDER" colorClass="bg-[#F0C75E]" courses={toValidate} />
-        <BlockCoursesList title="EN LIGNE" colorClass="bg-[#4CAF50]" courses={online} />
+      {isLoading ? (
+        <div className="text-center py-6 sm:py-8">
+          <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-[#032622]">Chargement des cours...</p>
+        </div>
+      ) : !formationId ? (
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-sm sm:text-base text-[#032622] break-words">Veuillez sélectionner une formation pour voir les cours</p>
+        </div>
+      ) : !hasCourses ? (
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-base sm:text-lg text-[#032622] mb-1 sm:mb-2">Aucun cours disponible</p>
+          <p className="text-xs sm:text-sm text-[#032622]/70">Créez votre premier cours pour commencer</p>
+        </div>
+      ) : (
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
+          {courses.toValidate.length > 0 && (
+            <BlockCoursesList title="À VALIDER" colorClass="bg-[#F0C75E]" courses={courses.toValidate} />
+          )}
+          {courses.online.length > 0 && (
+            <BlockCoursesList title="EN LIGNE" colorClass="bg-[#4CAF50]" courses={courses.online} />
+          )}
+        </div>
+      )}
+    </section>
+  );
+
+};
+
+const UsersManagementCard = () => {
+  const [inscriptions, setInscriptions] = useState<{
+    leads: InscriptionItem[];
+    candidats: InscriptionItem[];
+  }>({
+    leads: [],
+    candidats: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInscriptions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/admin/inscriptions', {
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setInscriptions({
+              leads: data.leads || [],
+              candidats: data.candidats || [],
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des inscriptions:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInscriptions();
+  }, []);
+
+  const hasInscriptions = inscriptions.leads.length > 0 || inscriptions.candidats.length > 0;
+
+  return (
+    <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <h2
+          className="text-xl sm:text-2xl font-bold text-[#032622]"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          GESTION DES INSCRIPTIONS
+        </h2>
+        <Link
+          href="/espace-admin/gestion-inscriptions"
+          className="text-xs sm:text-sm font-semibold text-[#032622] border border-[#032622] px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center space-x-1.5 sm:space-x-2 hover:bg-[#eae5cf] active:bg-[#e0dbc5] transition-colors whitespace-nowrap"
+        >
+          <UserCog className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Accéder à la gestion</span>
+        </Link>
       </div>
+
+      {isLoading ? (
+        <div className="text-center py-6 sm:py-8">
+          <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-[#032622] mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-[#032622]">Chargement des inscriptions...</p>
+        </div>
+      ) : !hasInscriptions ? (
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-base sm:text-lg text-[#032622] mb-1 sm:mb-2">Aucune inscription disponible</p>
+          <p className="text-xs sm:text-sm text-[#032622]/70">Les nouvelles inscriptions apparaîtront ici</p>
+        </div>
+      ) : (
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
+          {inscriptions.leads.length > 0 && (
+            <BlockInscriptionsList title="LEADS" colorClass="bg-[#F0C75E]" inscriptions={inscriptions.leads} type="lead" />
+          )}
+          {inscriptions.candidats.length > 0 && (
+            <BlockInscriptionsList title="CANDIDATS" colorClass="bg-[#4CAF50]" inscriptions={inscriptions.candidats} type="candidat" />
+          )}
+        </div>
+      )}
     </section>
   );
 };
@@ -713,62 +1021,174 @@ const BlockCoursesList = ({
   title: string;
   colorClass: string;
   courses: CourseItem[];
-}) => (
-  <div className="space-y-3">
-    <div className="flex items-center space-x-2">
-      <span className={`w-2 h-2 rounded-full ${colorClass}`} />
-      <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+}) => {
+  return (
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center space-x-2">
+        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${colorClass}`} />
+        <h3 className="text-base sm:text-lg font-semibold text-[#032622]">{title}</h3>
+      </div>
+      <div className="space-y-2">
+        {courses.map((course) => {
+          const statusLabel = course.statut === "en_cours_examen" 
+            ? "En cours d'examen" 
+            : course.statut === "en_ligne" 
+            ? "En ligne" 
+            : "Brouillon";
+          
+          // Construire l'URL de redirection vers le cours
+          // Nouvelle structure: /formationId/blocId/cours/coursId/chapitre
+          let courseUrl = "/espace-admin/gestion-formations";
+          if (course.formation_id && course.bloc_id) {
+            courseUrl = `/espace-admin/gestion-formations/${course.formation_id}/${course.bloc_id}/cours/${course.id}/chapitre`;
+          } else if (course.formation_id) {
+            courseUrl = `/espace-admin/gestion-formations/${course.formation_id}`;
+          }
+          
+          return (
+            <div
+              key={course.id}
+              className="grid grid-cols-1 sm:grid-cols-12 items-start sm:items-center gap-2 sm:gap-0 border border-[#032622]/40 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#032622] bg-[#F8F5E4]"
+            >
+              <span className="col-span-1 sm:col-span-4 uppercase tracking-wide font-semibold break-words">
+                {course.titre}
+              </span>
+              <span className="col-span-1 sm:col-span-3 text-[#032622]/80">{statusLabel}</span>
+              <span className="col-span-1 sm:col-span-3 text-[#032622]/80 truncate">{course.module}</span>
+              <Link
+                href={courseUrl}
+                className="col-span-1 sm:col-span-2 text-left sm:text-right font-semibold text-[#032622] hover:underline active:text-[#032622]/80"
+              >
+                {course.statut === "en_cours_examen" ? "À vérifier" : "Modifier"}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
     </div>
-    <div className="space-y-2">
-      {courses.map((course) => (
-        <div
-          key={course.id}
-          className="grid grid-cols-12 items-center border border-[#032622]/40 px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
-        >
-          <span className="col-span-3 uppercase tracking-wide font-semibold">
-            {course.title}
-          </span>
-          <span className="col-span-4">{course.status === "a_valider" ? "En cours d’examen" : "En ligne"}</span>
-          <span className="col-span-3">{course.mentor}</span>
-          <Link
-            href="/espace-admin/gestion-formations"
-            className="col-span-2 text-right font-semibold text-[#032622] hover:underline"
-          >
-            {course.actionLabel}
-          </Link>
-        </div>
-      ))}
+  );
+};
+
+interface InscriptionItem {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  formation?: string;
+  date?: string;
+}
+
+const BlockInscriptionsList = ({
+  title,
+  colorClass,
+  inscriptions,
+  type,
+}: {
+  title: string;
+  colorClass: string;
+  inscriptions: InscriptionItem[];
+  type: "lead" | "candidat";
+}) => {
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "nouveau":
+        return "Nouveau";
+      case "contacte":
+        return "Contacté";
+      case "en_attente":
+        return "En attente";
+      case "accepte":
+        return "Accepté";
+      case "refuse":
+        return "Refusé";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "nouveau":
+        return "bg-[#F0C75E]";
+      case "contacte":
+        return "bg-[#4CAF50]";
+      case "en_attente":
+        return "bg-[#F0C75E]";
+      case "accepte":
+        return "bg-[#4CAF50]";
+      case "refuse":
+        return "bg-[#D96B6B]";
+      default:
+        return "bg-[#C9C6B4]";
+    }
+  };
+
+  return (
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center space-x-2">
+        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${colorClass}`} />
+        <h3 className="text-base sm:text-lg font-semibold text-[#032622]">{title}</h3>
+      </div>
+      <div className="space-y-2">
+        {inscriptions.map((inscription) => {
+          const statusLabel = getStatusLabel(inscription.status);
+          const statusColor = getStatusColor(inscription.status);
+          
+          return (
+            <div
+              key={inscription.id}
+              className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-center border border-[#032622]/40 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#032622] bg-[#F8F5E4]"
+            >
+              <span className="col-span-1 sm:col-span-4 uppercase tracking-wide font-semibold truncate">
+                {inscription.name}
+              </span>
+              <span className="col-span-1 sm:col-span-4 text-[#032622]/80 truncate">
+                {inscription.formation || "-"}
+              </span>
+              <span className={`col-span-1 sm:col-span-2 px-2 py-1 text-[10px] sm:text-xs font-semibold text-white ${statusColor} text-center`}>
+                {statusLabel}
+              </span>
+              <Link
+                href={`/espace-admin/gestion-inscriptions/${type}/${inscription.id}`}
+                className="col-span-1 sm:col-span-2 text-left sm:text-right font-semibold text-[#032622] hover:underline active:text-[#032622]/80"
+              >
+                Voir
+              </Link>
+            </div>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const MessagesCard = ({ messages }: { messages: FormationData["messages"] }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <div className="flex justify-between items-center">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+    <div className="flex justify-between items-center gap-2">
       <h2
-        className="text-2xl font-bold text-[#032622] flex items-center space-x-2"
+        className="text-lg sm:text-xl md:text-2xl font-bold text-[#032622] flex items-center space-x-1.5 sm:space-x-2"
         style={{ fontFamily: "var(--font-termina-bold)" }}
       >
         <span>MESSAGERIE</span>
-        <span className="bg-[#D96B6B] text-white text-xs rounded-full px-2 py-0.5">
+        <span className="bg-[#D96B6B] text-white text-[10px] sm:text-xs rounded-full px-1.5 sm:px-2 py-0.5">
           {messages.length}
         </span>
       </h2>
-      <button className="text-sm font-semibold text-[#032622]">Tout voir</button>
+      <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 whitespace-nowrap">Tout voir</button>
     </div>
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {messages.map((message) => (
-        <article key={message.id} className="border border-[#032622]/30 px-4 py-3 bg-[#F8F5E4]">
-          <header className="flex justify-between items-center mb-2">
-            <div className="space-y-1">
-              <p className="text-[#032622] font-semibold">{message.author}</p>
-              <p className="text-xs uppercase tracking-wide text-[#032622]/70">
+        <article key={message.id} className="border border-[#032622]/30 px-3 sm:px-4 py-2 sm:py-3 bg-[#F8F5E4]">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0 flex-1">
+              <p className="text-sm sm:text-base text-[#032622] font-semibold truncate">{message.author}</p>
+              <p className="text-[10px] sm:text-xs uppercase tracking-wide text-[#032622]/70">
                 {message.role}
               </p>
             </div>
-            <span className="text-xs text-[#032622]/70">{message.timeAgo}</span>
+            <span className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">{message.timeAgo}</span>
           </header>
-          <p className="text-sm text-[#032622]/80 leading-relaxed">{message.excerpt}</p>
+          <p className="text-xs sm:text-sm text-[#032622]/80 leading-relaxed break-words">{message.excerpt}</p>
         </article>
       ))}
     </div>
@@ -780,15 +1200,15 @@ const CorrectionsCard = ({
 }: {
   corrections: FormationData["corrections"];
 }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <header className="flex justify-between items-center">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+    <header className="flex justify-between items-center gap-2">
       <h2
-        className="text-2xl font-bold text-[#032622]"
+        className="text-xl sm:text-2xl font-bold text-[#032622]"
         style={{ fontFamily: "var(--font-termina-bold)" }}
       >
         CORRECTION
       </h2>
-      <button className="text-sm font-semibold text-[#032622]">Tout voir</button>
+      <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 whitespace-nowrap">Tout voir</button>
     </header>
 
     <CorrectionList title="EN RETARD" items={corrections.late} />
@@ -803,29 +1223,29 @@ const CorrectionList = ({
   title: string;
   items: CorrectionItem[];
 }) => (
-  <div className="space-y-3">
-    <h3 className="text-lg font-semibold text-[#032622]">{title}</h3>
+  <div className="space-y-2 sm:space-y-3">
+    <h3 className="text-base sm:text-lg font-semibold text-[#032622]">{title}</h3>
     <div className="space-y-2">
       {items.map((item) => (
         <div
           key={item.id}
-          className="grid grid-cols-12 gap-4 items-center border border-[#032622]/30 px-4 py-3 text-sm text-[#032622] bg-[#F8F5E4]"
+          className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-start sm:items-center border border-[#032622]/30 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#032622] bg-[#F8F5E4]"
         >
-          <div className="col-span-5">
-            <p className="font-semibold uppercase tracking-wide leading-snug">
+          <div className="col-span-1 sm:col-span-5 min-w-0">
+            <p className="font-semibold uppercase tracking-wide leading-snug break-words">
               {item.blockName}
             </p>
           </div>
-          <div className="col-span-2">
-            <span className={`px-3 py-1 text-xs uppercase font-semibold ${statusColors[item.status]}`}>
+          <div className="col-span-1 sm:col-span-2">
+            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs uppercase font-semibold ${statusColors[item.status]}`}>
               {item.status === "en_retard" ? "En retard" : "Corrigé"}
             </span>
           </div>
-          <span className="col-span-2">{item.submissionDate}</span>
-          <span className="col-span-2">{item.assignedTo}</span>
+          <span className="col-span-1 sm:col-span-2 text-[#032622]/80">{item.submissionDate}</span>
+          <span className="col-span-1 sm:col-span-2 text-[#032622]/80 truncate">{item.assignedTo}</span>
           <Link
             href="/espace-admin/gestion-formations"
-            className="col-span-1 text-right text-xs font-semibold text-[#032622] hover:underline"
+            className="col-span-1 text-left sm:text-right text-[10px] sm:text-xs font-semibold text-[#032622] hover:underline active:text-[#032622]/80"
           >
             Voir
           </Link>
@@ -836,25 +1256,25 @@ const CorrectionList = ({
 );
 
 const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <header className="flex justify-between items-center">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+    <header className="flex justify-between items-center gap-2">
       <div>
         <h2
-          className="text-2xl font-bold text-[#032622]"
+          className="text-xl sm:text-2xl font-bold text-[#032622]"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
           AGENDA
         </h2>
-        <p className="text-sm text-[#032622]/70">Septembre 2025</p>
+        <p className="text-xs sm:text-sm text-[#032622]/70">Septembre 2025</p>
       </div>
-      <button className="text-sm font-semibold text-[#032622]">Tout voir</button>
+      <button className="text-xs sm:text-sm font-semibold text-[#032622] hover:underline active:text-[#032622]/80 whitespace-nowrap">Tout voir</button>
     </header>
 
-    <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-[#032622]">
+    <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs md:text-sm font-medium text-[#032622]">
       {monthWeeks.flat().map((day, index) => (
         <div
           key={`${day}-${index}`}
-          className={`py-2 ${index % 7 === 0 ? "text-[#032622]" : ""} ${
+          className={`py-1 sm:py-1.5 md:py-2 ${index % 7 === 0 ? "text-[#032622]" : ""} ${
             day === "30" ? "bg-[#F8F5E4] text-[#032622] border-2 border-[#032622]" : "bg-[#F8F5E4]"
           } border border-[#032622]/20`}
         >
@@ -868,10 +1288,10 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
         <Link
           key={event.id}
           href="/espace-admin/agenda"
-          className="flex items-center space-x-3 text-sm text-[#032622] hover:underline"
+          className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 text-xs sm:text-sm text-[#032622] hover:underline active:text-[#032622]/80"
         >
           <div
-            className={`w-2 h-2 rounded-full ${
+            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${
               event.status === "important"
                 ? "bg-[#D96B6B]"
                 : event.status === "late"
@@ -879,420 +1299,24 @@ const AgendaCard = ({ agenda }: { agenda: AgendaEvent[] }) => (
                 : "bg-[#4CAF50]"
             }`}
           />
-          <p>{event.title}</p>
-          <span className="text-xs text-[#032622]/70">{event.date}</span>
+          <p className="break-words">{event.title}</p>
+          <span className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">{event.date}</span>
         </Link>
       ))}
     </div>
   </section>
 );
 
-const ProfileCard = ({
-  selectedStudentId,
-  onClose,
-  students,
-}: {
+interface ProfileCardProps {
   selectedStudentId: string | null;
   onClose: () => void;
   students: StudentProfile[];
-}) => {
-  const student = students.find((item) => item.id === selectedStudentId);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [showMailModal, setShowMailModal] = useState(false);
-  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-  const [mailContent, setMailContent] = useState("");
-  const [appointmentDate, setAppointmentDate] = useState("");
-  const [appointmentTime, setAppointmentTime] = useState("");
-  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+}
 
-  const handleAction = (message: string) => {
-    if (feedbackTimer.current) {
-      clearTimeout(feedbackTimer.current);
-    }
-    setFeedback(message);
-    feedbackTimer.current = setTimeout(() => setFeedback(null), 2500);
-  };
-
-  const handleClose = () => {
-    if (feedbackTimer.current) {
-      clearTimeout(feedbackTimer.current);
-      feedbackTimer.current = null;
-    }
-    setFeedback(null);
-    setShowMailModal(false);
-    setShowAppointmentModal(false);
-    onClose();
-  };
-
-  const handleSendMail = () => {
-    if (mailContent.trim()) {
-      handleAction(`E-mail envoyé à Chadi : "${mailContent}"`);
-      setMailContent("");
-      setShowMailModal(false);
-    }
-  };
-
-  const handleScheduleAppointment = () => {
-    if (appointmentDate && appointmentTime) {
-      handleAction(`Rendez-vous planifié le ${appointmentDate} à ${appointmentTime}`);
-      setAppointmentDate("");
-      setAppointmentTime("");
-      setShowAppointmentModal(false);
-    }
-  };
-
-  if (!student) {
-    return (
-      <section className="border border-[#032622] bg-[#F8F5E4] p-6">
-        <div className="flex flex-col items-center justify-center gap-3 text-center text-[#032622]/70">
-          <UserRound className="w-10 h-10" />
-          <p className="text-sm font-semibold">
-            Sélectionnez un étudiant pour afficher sa fiche de suivi
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="border border-[#032622] bg-[#F8F5E4] p-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[#032622]/20 px-6 py-4 bg-[#032622]/10">
-        <h2
-          className="text-xl font-bold text-[#032622]"
-          style={{ fontFamily: "var(--font-termina-bold)" }}
-        >
-          Suivi étudiant
-        </h2>
-        <button
-          onClick={handleClose}
-          className="text-[#032622]/60 hover:text-[#032622] transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[#032622]">
-            <Image
-              src={student.avatar}
-              alt={student.id}
-              fill
-              sizes="80px"
-              className="object-cover"
-            />
-          </div>
-          <div>
-            <h3
-              className="text-lg font-bold text-[#032622]"
-              style={{ fontFamily: "var(--font-termina-bold)" }}
-            >
-              Chadi El Assowad
-            </h3>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#032622]/70">
-              {student.track}
-            </p>
-            <span className="inline-flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] mt-2">
-              {student.school}
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/70">
-                Progression globale
-              </span>
-              <span className="text-sm font-bold text-[#032622]">
-                {student.progress}%
-              </span>
-            </div>
-            <div className="h-2 bg-[#dcd5b8]">
-              <div
-                className="h-full bg-[#032622]"
-                style={{ width: `${student.progress}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 text-sm text-[#032622]">
-            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
-              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-                Dernière connexion
-              </span>
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Clock className="w-4 h-4" />
-                {student.lastLogin}
-              </div>
-            </div>
-            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
-              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-                Prochaine échéance
-              </span>
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Target className="w-4 h-4" />
-                {student.nextDeadline.label}
-              </div>
-              <p className="text-xs text-[#032622]/70">{student.nextDeadline.date}</p>
-            </div>
-            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
-              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-                Prochaine séance
-              </span>
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <CalendarClock className="w-4 h-4" />
-                {student.upcomingSession.label}
-              </div>
-              <p className="text-xs text-[#032622]/70">{student.upcomingSession.date}</p>
-            </div>
-            <div className="border border-[#032622]/30 p-3 bg-[#f8f5e4] space-y-1">
-              <span className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-                Promotion
-              </span>
-              <p className="text-sm font-semibold">{student.promotion}</p>
-              <p className="text-xs text-[#032622]/70">{student.campus}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-            Contact direct
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleAction("Appel préparé : pense à confirmer avec Chadi l'heure exacte de la visio.")}
-              className="flex items-center gap-2 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
-            >
-              <Phone className="w-3 h-3" />
-              Appeler
-            </button>
-            <button
-              onClick={() => setShowMailModal(true)}
-              className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
-            >
-              <Mail className="w-3 h-3" />
-              Envoyer un mail
-            </button>
-            <button
-              onClick={() => handleAction("Message envoyé au coach référent pour caler un point avec Chadi.")}
-              className="flex items-center gap-2 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
-            >
-              <MessageCircle className="w-3 h-3" />
-              Coach référent
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-            Notes administratives
-          </h4>
-          <div className="border border-[#032622]/30 bg-[#f8f5e4] p-4 text-sm text-[#032622]/80 leading-relaxed">
-            {student.notes}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h4 className="text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60">
-            Relancer ou planifier
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setShowMailModal(true)}
-              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
-            >
-              <Send className="w-3 h-3" />
-              Relancer par mail
-            </button>
-            <button
-              onClick={() => setShowAppointmentModal(true)}
-              className="flex items-center justify-center gap-2 border border-[#032622] bg-[#f8f5e4] px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#032622] hover:bg-[#032622] hover:text-white transition-colors"
-            >
-              <CalendarClock className="w-3 h-3" />
-              Planifier un rendez-vous
-            </button>
-          </div>
-        </div>
-
-        {feedback && (
-          <div
-            className="border border-[#032622]/30 bg-[#032622]/10 px-4 py-3 text-xs font-semibold text-[#032622]"
-            role="status"
-            aria-live="polite"
-          >
-            {feedback}
-          </div>
-        )}
-      </div>
-
-      {/* Modal E-mail */}
-      {showMailModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#F8F5E4] border border-[#032622] p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                Envoyer un e-mail
-              </h3>
-              <button
-                onClick={() => setShowMailModal(false)}
-                className="text-[#032622]/60 hover:text-[#032622] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
-                  Destinataire
-                </label>
-                <div className="border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
-                  Chadi El Assowad &lt;chadi.elassowad@elite-society.fr&gt;
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
-                  Message
-                </label>
-                <textarea
-                  value={mailContent}
-                  onChange={(e) => setMailContent(e.target.value)}
-                  placeholder="Tapez votre message ici..."
-                  className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622] placeholder-[#032622]/50 resize-none h-24"
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSendMail}
-                  className="flex-1 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
-                >
-                  Envoyer
-                </button>
-                <button
-                  onClick={() => setShowMailModal(false)}
-                  className="flex-1 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Rendez-vous */}
-      {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#F8F5E4] border border-[#032622] p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#032622]" style={{ fontFamily: "var(--font-termina-bold)" }}>
-                Planifier un rendez-vous
-              </h3>
-              <button
-                onClick={() => setShowAppointmentModal(false)}
-                className="text-[#032622]/60 hover:text-[#032622] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
-                  Étudiant
-                </label>
-                <div className="border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
-                  Chadi El Assowad - KEOS Business School
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={appointmentDate}
-                    onChange={(e) => setAppointmentDate(e.target.value)}
-                    className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
-                    Heure
-                  </label>
-                  <input
-                    type="time"
-                    value={appointmentTime}
-                    onChange={(e) => setAppointmentTime(e.target.value)}
-                    className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs uppercase font-semibold tracking-[0.2em] text-[#032622]/60 mb-2">
-                  Type de rendez-vous
-                </label>
-                <select className="w-full border border-[#032622]/30 bg-[#f8f5e4] p-3 text-sm text-[#032622]">
-                  <option>Suivi pédagogique</option>
-                  <option>Relance devoir</option>
-                  <option>Préparation examen</option>
-                  <option>Orientation</option>
-                </select>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleScheduleAppointment}
-                  className="flex-1 border border-[#032622] bg-[#032622] text-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#01302C] transition-colors"
-                >
-                  Planifier
-                </button>
-                <button
-                  onClick={() => setShowAppointmentModal(false)}
-                  className="flex-1 border border-[#032622] bg-[#f8f5e4] text-[#032622] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-};
-
-const ProfileDropdown = () => (
-  <div className="relative group">
-    <div className="flex items-center space-x-3 cursor-pointer">
-      <div className="w-12 h-12 rounded-full bg-[#F8F5E4] border-2 border-[#032622] flex items-center justify-center text-[#032622] text-lg">
-        SM
-      </div>
-      <div>
-        <p
-          className="text-[#032622] font-semibold text-sm"
-          style={{ fontFamily: "var(--font-termina-bold)" }}
-        >
-          Sophie Moreau
-        </p>
-        <p className="text-xs text-[#032622]/70">Coordinatrice pédagogique</p>
-      </div>
-    </div>
-
-    <div className="absolute right-0 mt-3 w-52 border border-[#032622] bg-[#F8F5E4] shadow-lg z-30 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
-      <nav className="flex flex-col divide-y divide-[#032622]/20 text-sm text-[#032622]">
-        <Link href="/espace-admin/compte" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
-          Mon compte
-        </Link>
-        <Link href="/espace-admin/parametres" className="px-4 py-3 hover:bg-[#eae5cf] transition-colors">
-          Paramètres
-        </Link>
-        <button className="px-4 py-3 text-left hover:bg-[#eae5cf] transition-colors">
-          Se déconnecter
-        </button>
-      </nav>
-    </div>
-  </div>
+const ProfileCard = ({ selectedStudentId, onClose, students }: ProfileCardProps) => (
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6">
+    <div className="w-full aspect-square border border-[#032622]/50 bg-[#C9C6B4] rounded-sm" />
+  </section>
 );
 
 const PromoCard = ({
@@ -1310,10 +1334,10 @@ const PromoCard = ({
   onStudentFocus: (id: string) => void;
   selectedStudentId: string | null;
 }) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-6">
+  <section className="border border-[#032622] bg-[#F8F5E4] p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
     <header>
       <h2
-        className="text-xl font-bold text-[#032622]"
+        className="text-lg sm:text-xl font-bold text-[#032622]"
         style={{ fontFamily: "var(--font-termina-bold)" }}
       >
         PROMO
@@ -1321,25 +1345,27 @@ const PromoCard = ({
     </header>
 
     {/* Section Formateurs */}
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Formateurs
         </h3>
-        <p className="text-xs text-[#032622]/70">{totalTeachersOnline} en ligne</p>
+        <p className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">
+          {totalTeachersOnline} en ligne
+        </p>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         {teachers.map((teacher) => (
-          <div key={teacher.id} className="flex items-center justify-between text-sm text-[#032622]">
-            <div className="flex items-center space-x-3">
-              <span className={`w-3 h-3 rounded-full ${studentStatusColors[teacher.status]}`} />
-              <div>
-                <p className="font-semibold">{teacher.name}</p>
-                <p className="text-xs text-[#032622]/60">{teacher.specialty}</p>
+          <div key={teacher.id} className="flex items-center justify-between text-xs sm:text-sm text-[#032622] gap-2">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${studentStatusColors[teacher.status]}`} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold truncate">{teacher.name}</p>
+                <p className="text-[10px] sm:text-xs text-[#032622]/60 truncate">{teacher.specialty}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 text-[#032622]/60">
-              <MessageCircle className="w-4 h-4" />
+            <div className="flex items-center space-x-2 sm:space-x-3 text-[#032622]/60 flex-shrink-0">
+              <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
         ))}
@@ -1348,33 +1374,26 @@ const PromoCard = ({
 
     <div className="border-t border-[#032622]/20" />
 
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#032622] uppercase tracking-wide">
+    {/* Section Étudiants */}
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide">
           Étudiants
         </h3>
-        <p className="text-xs text-[#032622]/70">{totalStudentsOnline} en ligne</p>
+        <p className="text-[10px] sm:text-xs text-[#032622]/70 whitespace-nowrap">
+          {totalStudentsOnline} en ligne
+        </p>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         {students.map((student) => (
-          <div
-            key={student.id}
-            className={`flex items-center justify-between text-sm text-[#032622] transition-colors ${
-              selectedStudentId === student.id ? "bg-[#032622]/10" : ""
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <span className={`w-3 h-3 rounded-full ${studentStatusColors[student.status]}`} />
-              <p className="font-semibold">{student.name}</p>
+          <div key={student.id} className="flex items-center justify-between text-xs sm:text-sm text-[#032622] gap-2">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${studentStatusColors[student.status]}`} />
+              <p className="font-semibold truncate">{student.name}</p>
             </div>
-            <div className="flex items-center space-x-2 text-[#032622]/60">
-              <Users className="w-4 h-4" />
-              <button
-                onClick={() => onStudentFocus(student.id)}
-                className="border border-[#032622] bg-[#F8F5E4] text-[#032622] px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#032622] hover:text-white transition-colors"
-              >
-                Suivre
-              </button>
+            <div className="flex items-center space-x-2 sm:space-x-3 text-[#032622]/60 flex-shrink-0">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
         ))}

@@ -1,1030 +1,447 @@
-"use client";
+import { MessageCircle, Bell } from "lucide-react";
+import Image from "next/image";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  Calendar,
-  Check,
-  ChevronRight,
-  FileText,
-  ImageIcon,
-  MessageCircle,
-  Plus,
-  Share2,
-  ThumbsUp,
-  Upload,
-  Video,
-  X,
-  XCircle,
-} from "lucide-react";
+const heroImage = "/img/BANEDIFICE.png";
 
-type AttachmentType = "image" | "video" | "document" | "link";
-
-interface Attachment {
-  id: string;
-  type: AttachmentType;
-  label: string;
-  url: string;
-}
-
-interface CommentItem {
-  id: string;
-  author: string;
-  role: "Administrateur" | "Étudiant";
-  message: string;
-  date: string;
-}
-
-type PostStatus = "published" | "pending" | "rejected";
-
-interface StudentLifePost {
-  id: string;
-  title: string;
-  summary: string;
-  content: string;
-  category: string;
-  author: string;
-  authorRole: "Administrateur" | "Étudiant";
-  date: string;
-  submittedAt: string;
-  status: PostStatus;
-  attachments: Attachment[];
-  likes: number;
-  shares: number;
-  comments: CommentItem[];
-}
-
-interface AttachmentDraft {
-  type: AttachmentType;
-  label: string;
-  url: string;
-}
-
-const formatDate = (date: Date) =>
-  date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-const formatDateTime = (date: Date) =>
-  date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }) +
-  " • " +
-  date.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-const initialPosts: StudentLifePost[] = [
+const campusCards = [
   {
-    id: "post-1",
-    title: "Journée portes ouvertes",
-    summary:
-      "Rencontrez nos équipes et découvrez les locaux lors d’une journée immersive dédiée aux nouvelles promotions.",
-    content:
-      "Nous ouvrons nos portes samedi 14 septembre pour une journée d’échanges et de rencontres. Au programme : visite guidée, ateliers découvertes, échanges avec les étudiants ambassadeurs et session de questions-réponses avec l’équipe pédagogique.",
-    category: "Événement",
-    author: "Équipe Pédagogique",
-    authorRole: "Administrateur",
-    date: "14 septembre 2025",
-    submittedAt: "10 septembre 2025 • 09:20",
-    status: "published",
-    attachments: [
-      {
-        id: "att-1",
-        type: "image",
-        label: "Affiche officielle",
-        url: "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b",
-      },
-      {
-        id: "att-2",
-        type: "video",
-        label: "Teaser vidéo (YouTube)",
-        url: "https://youtu.be/porte-ouverte",
-      },
-      {
-        id: "att-3",
-        type: "document",
-        label: "Programme détaillé (PDF)",
-        url: "programme-journee.pdf",
-      },
-    ],
-    likes: 128,
-    shares: 45,
-    comments: [
-      {
-        id: "c-1",
-        author: "Lena S.",
-        role: "Étudiant",
-        message: "Hâte d’y être ! Merci pour l’organisation.",
-        date: "11 septembre 2025 • 18:34",
-      },
-      {
-        id: "c-2",
-        author: "Administration ESO",
-        role: "Administrateur",
-        message: "Pensez à vous inscrire via le formulaire afin de réserver votre créneau.",
-        date: "12 septembre 2025 • 09:12",
-      },
-    ],
+    id: "forum",
+    title: "FORUM",
+    image: "/images/student-library/Forum.jpg",
   },
   {
-    id: "post-2",
-    title: "Afterwork UX/UI",
-    summary:
-      "Retour en images sur l’afterwork organisé par la promotion Design UX avec nos partenaires.",
-    content:
-      "Merci à toutes et tous pour votre participation à l’afterwork UX/UI. Nous partageons ici la galerie photo et les ressources évoquées durant la soirée. N’hésitez pas à commenter vos retours pour les prochaines éditions !",
-    category: "Vie du campus",
-    author: "Mina P.",
-    authorRole: "Étudiant",
-    date: "05 septembre 2025",
-    submittedAt: "05 septembre 2025 • 22:05",
-    status: "published",
-    attachments: [
-      {
-        id: "att-4",
-        type: "image",
-        label: "Galerie photo",
-        url: "https://images.unsplash.com/photo-1529158062015-cad636e69505",
-      },
-      {
-        id: "att-5",
-        type: "link",
-        label: "Playlist Spotify",
-        url: "https://open.spotify.com/playlist/afterwork",
-      },
-    ],
-    likes: 96,
-    shares: 27,
-    comments: [
-      {
-        id: "c-3",
-        author: "Oscar V.",
-        role: "Étudiant",
-        message: "Super ambiance, merci à l’équipe organisatrice !",
-        date: "06 septembre 2025 • 08:12",
-      },
-    ],
+    id: "events",
+    title: "ÉVÉNEMENTS",
+    image: "/images/student-library/Actu.jpg",
   },
   {
-    id: "post-3",
-    title: "Atelier “Pitch ton projet”",
-    summary:
-      "La promo Start-up souhaite partager un atelier collaboratif prévu la semaine prochaine.",
-    content:
-      "Nous proposons un atelier ouvert à toutes les promotions pour présenter vos projets devant des mentors. Venez tester votre pitch et obtenir des retours constructifs.",
-    category: "Initiative étudiante",
-    author: "Collectif Start-up",
-    authorRole: "Étudiant",
-    date: "18 septembre 2025",
-    submittedAt: "09 septembre 2025 • 14:57",
-    status: "pending",
-    attachments: [
-      {
-        id: "att-6",
-        type: "document",
-        label: "Brief atelier (PDF)",
-        url: "brief-pitch.pdf",
-      },
-      {
-        id: "att-7",
-        type: "image",
-        label: "Visuel événement",
-        url: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d",
-      },
-    ],
-    likes: 0,
-    shares: 0,
-    comments: [],
-  },
-  {
-    id: "post-4",
-    title: "Tournoi esport inter-promo",
-    summary:
-      "La team Esport propose un tournoi Rocket League. L’admin doit valider la communication.",
-    content:
-      "La team esport organise un tournoi Rocket League le 28 septembre. Nous sollicitons la communication officielle et la mise à disposition du hub streaming.",
-    category: "Association",
-    author: "Team Esport",
-    authorRole: "Étudiant",
-    date: "28 septembre 2025",
-    submittedAt: "12 septembre 2025 • 20:42",
-    status: "pending",
-    attachments: [
-      {
-        id: "att-8",
-        type: "video",
-        label: "Trailer 2024",
-        url: "https://youtu.be/rocket-trailer",
-      },
-    ],
-    likes: 0,
-    shares: 0,
-    comments: [],
+    id: "news",
+    title: "ACTUALITÉ",
+    image: "/images/student-library/Actualité.jpg",
   },
 ];
 
-const emptyPostDraft = {
-  title: "",
-  summary: "",
-  content: "",
-  category: "Événement",
-  attachments: [] as Attachment[],
-};
+const upcomingEvents = [
+  { 
+    id: "event-1", 
+    title: "MASTERCLASS AVEC ALBAN CLOCHET",
+    badge: "MASTERCLASS",
+    description: "Alban chez Wikipédia partage son expérience terrain : des questions, des conseils, des décisions intelligibles. Réservé mais très précis, il saura te faire un profil média ad régiun.",
+    image: "/img/bibliothequenum/Masterclass Alban.png",
+    buttonText: "METTRE UN RAPPEL",
+    buttonIcon: "bell"
+  },
+  { 
+    id: "event-2", 
+    title: "LOUP-GAROU PARTY",
+    badge: "ÉVÉNEMENT",
+    description: "Rejoins la promo pour une nuit immersive : bluff, alliances, mensonges, déductions. Ton but sera de découvrir le rôle de chacun et de coopérer à convenance !",
+    image: "/img/bibliothequenum/Soiree Loup Garou.png",
+    buttonText: "M'INSCRIRE",
+    buttonIcon: "none"
+  },
+  { 
+    id: "event-3", 
+    title: "MASTERCLASS AVEC ARNAUD ROMOLI",
+    badge: "MASTERCLASS",
+    description: "Avec plus de 25 ans d'expérience Directeur Commercial et des Marques, Arnaud t'fera comment structurer une croissance, fidéliser des équipes et mener des projets de transformation.",
+    image: "/img/bibliothequenum/Masterclass Romoli.png",
+    buttonText: "METTRE UN RAPPEL",
+    buttonIcon: "bell"
+  },
+];
 
-const emptyAttachmentDraft: AttachmentDraft = {
-  type: "image",
-  label: "",
-  url: "",
-};
-
-const attachmentTypeIcons: Record<AttachmentType, React.ReactElement> = {
-  image: <ImageIcon className="w-4 h-4" />,
-  video: <Video className="w-4 h-4" />,
-  document: <FileText className="w-4 h-4" />,
-  link: <Upload className="w-4 h-4" />,
-};
-
-const attachmentTypeLabels: Record<AttachmentType, string> = {
-  image: "Image",
-  video: "Vidéo",
-  document: "Document",
-  link: "Lien",
-};
-
-const AdminStudentLifeManager = () => {
-  const [posts, setPosts] = useState<StudentLifePost[]>(initialPosts);
-  const publishedPosts = useMemo(
-    () => posts.filter((post) => post.status === "published"),
-    [posts]
-  );
-  const pendingPosts = useMemo(
-    () => posts.filter((post) => post.status === "pending"),
-    [posts]
-  );
-
-  const defaultSelected = publishedPosts[0]?.id || pendingPosts[0]?.id || "";
-  const [selectedPostId, setSelectedPostId] = useState<string>(defaultSelected);
-  const selectedPost = posts.find((post) => post.id === selectedPostId);
-
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [postDraft, setPostDraft] = useState(emptyPostDraft);
-  const [attachmentDraft, setAttachmentDraft] = useState(emptyAttachmentDraft);
-  const [commentDraft, setCommentDraft] = useState("");
-
-  const totalLikes = useMemo(
-    () => posts.filter((post) => post.status === "published").reduce((acc, post) => acc + post.likes, 0),
-    [posts]
-  );
-
-  const totalShares = useMemo(
-    () => posts.filter((post) => post.status === "published").reduce((acc, post) => acc + post.shares, 0),
-    [posts]
-  );
-
-  const openCreateModal = () => {
-    setPostDraft(emptyPostDraft);
-    setAttachmentDraft(emptyAttachmentDraft);
-    setIsCreateModalOpen(true);
-  };
-
-  const closeCreateModal = () => {
-    setIsCreateModalOpen(false);
-  };
-
-  const handleAddAttachmentToDraft = () => {
-    if (!attachmentDraft.label.trim() || !attachmentDraft.url.trim()) {
-      return;
-    }
-
-    setPostDraft((prev) => ({
-      ...prev,
-      attachments: [
-        ...prev.attachments,
-        {
-          id: `draft-att-${Date.now()}`,
-          type: attachmentDraft.type,
-          label: attachmentDraft.label,
-          url: attachmentDraft.url,
-        },
-      ],
-    }));
-
-    setAttachmentDraft(emptyAttachmentDraft);
-  };
-
-  const handleRemoveAttachmentFromDraft = (attachmentId: string) => {
-    setPostDraft((prev) => ({
-      ...prev,
-      attachments: prev.attachments.filter((att) => att.id !== attachmentId),
-    }));
-  };
-
-  const handleCreatePost = () => {
-    if (!postDraft.title.trim() || !postDraft.summary.trim()) {
-      return;
-    }
-
-    const now = new Date();
-    const newPost: StudentLifePost = {
-      id: `post-${Date.now()}`,
-      title: postDraft.title,
-      summary: postDraft.summary,
-      content: postDraft.content,
-      category: postDraft.category,
-      author: "Administration ESO",
-      authorRole: "Administrateur",
-      date: formatDate(now),
-      submittedAt: formatDateTime(now),
-      status: "published",
-      attachments: postDraft.attachments,
-      likes: 0,
-      shares: 0,
-      comments: [],
-    };
-
-    setPosts((prev) => [newPost, ...prev]);
-    setSelectedPostId(newPost.id);
-    closeCreateModal();
-  };
-
-  const handleApprovePost = (postId: string) => {
-    const now = new Date();
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              status: "published",
-              date: formatDate(now),
-            }
-          : post
-      )
-    );
-    setSelectedPostId(postId);
-  };
-
-  const handleRejectPost = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              status: "rejected",
-            }
-          : post
-      )
-    );
-
-    if (selectedPostId === postId) {
-      const nextPublished = posts.find((post) => post.status === "published" && post.id !== postId);
-      setSelectedPostId(nextPublished?.id || "");
-    }
-  };
-
-  const handleLikePost = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              likes: post.likes + 1,
-            }
-          : post
-      )
-    );
-  };
-
-  const handleSharePost = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              shares: post.shares + 1,
-            }
-          : post
-      )
-    );
-  };
-
-  const handleAddComment = (postId: string) => {
-    if (!commentDraft.trim()) {
-      return;
-    }
-
-    const now = new Date();
-    const newComment: CommentItem = {
-      id: `comment-${Date.now()}`,
-      author: "Administration ESO",
-      role: "Administrateur",
-      message: commentDraft.trim(),
-      date: formatDateTime(now),
-    };
-
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: [newComment, ...post.comments],
-            }
-          : post
-      )
-    );
-
-    setCommentDraft("");
-  };
-
-  const handleSelectPost = (postId: string) => {
-    setSelectedPostId(postId);
-  };
-
+export default function AdminVieEtudiante() {
   return (
-    <div className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2
-            className="text-2xl font-bold text-[#032622]"
-            style={{ fontFamily: "var(--font-termina-bold)" }}
-          >
-            Vie étudiante
-          </h2>
-          <p className="text-sm text-[#032622]/70">
-            Gérez les actualités, soumissions étudiantes et interagissez avec la communauté.
-          </p>
-        </div>
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center space-x-2 border border-[#032622] px-4 py-2 text-[#032622] font-semibold hover:bg-[#eae5cf] transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Créer une actualité</span>
-        </button>
-      </header>
-
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="Actualités publiées" value={publishedPosts.length} />
-        <StatCard label="Soumissions en attente" value={pendingPosts.length} />
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
-          <StatCard label="Likes cumulés" value={totalLikes} compact />
-          <StatCard label="Partages" value={totalShares} compact />
+    <div className="p-4 sm:p-5 md:p-6 space-y-6 sm:space-y-7 md:space-y-8 overflow-x-hidden max-w-full">
+      {/* Section Hero */}
+      <section
+        className="relative overflow-hidden border border-[#032622] bg-[#032622] text-white max-w-full"
+        style={{
+          backgroundImage: `url(${heroImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'top'
+        }}
+      >
+        <div className="relative z-10 p-4 sm:p-5 md:p-6 lg:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em]">
+              MASTERCLASS
+            </span>
+          </div>
+          <div className="space-y-2 sm:space-y-3 md:space-y-4">
+            <h1
+              className="text-xl sm:text-2xl md:text-3xl font-bold uppercase leading-tight break-words"
+              style={{ fontFamily: "var(--font-termina-bold)" }}
+            >
+              DU PROJET À LA RÉUSSITE
+        </h1>
+            <p className="text-xs sm:text-sm text-white/90 max-w-full sm:max-w-md break-words">
+              Découvre les clés pour évoluer plus vite dans ton parcours.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-5 md:mt-6">
+            <button className="bg-white text-[#032622] px-4 sm:px-5 md:px-6 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest border border-[#032622] hover:bg-white/90 active:bg-white/80 transition-colors whitespace-nowrap">
+              S&apos;INSCRIRE
+            </button>
+            <button className="bg-[#032622] text-white px-4 sm:px-5 md:px-6 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest border border-white hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors whitespace-nowrap">
+              EN SAVOIR PLUS
+            </button>
+          </div>
+          {/* Indicateurs de carrousel */}
+          <div className="flex gap-2 mt-6">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+            <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+            <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+          </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="space-y-6 xl:col-span-2">
-          <PublishedPosts
-            posts={publishedPosts}
-            selectedPostId={selectedPostId}
-            onSelect={handleSelectPost}
-          />
-          <PendingPosts
-            posts={pendingPosts}
-            selectedPostId={selectedPostId}
-            onSelect={handleSelectPost}
-            onApprove={handleApprovePost}
-            onReject={handleRejectPost}
-          />
-        </div>
-
-        <div>
-          {selectedPost ? (
-            <PostDetails
-              post={selectedPost}
-              commentDraft={commentDraft}
-              onLike={() => handleLikePost(selectedPost.id)}
-              onShare={() => handleSharePost(selectedPost.id)}
-              onComment={() => handleAddComment(selectedPost.id)}
-              setCommentDraft={setCommentDraft}
-              onApprove={() => handleApprovePost(selectedPost.id)}
-              onReject={() => handleRejectPost(selectedPost.id)}
-            />
-          ) : (
-            <div className="border border-[#032622] bg-[#F8F5E4] p-6 text-[#032622]/70">
-              Sélectionnez une actualité pour afficher les détails.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {isCreateModalOpen && (
-        <CreatePostModal
-          postDraft={postDraft}
-          setPostDraft={setPostDraft}
-          attachmentDraft={attachmentDraft}
-          setAttachmentDraft={setAttachmentDraft}
-          onAddAttachment={handleAddAttachmentToDraft}
-          onRemoveAttachment={handleRemoveAttachmentFromDraft}
-          onClose={closeCreateModal}
-          onSubmit={handleCreatePost}
-        />
-      )}
-    </div>
-  );
-};
-
-const StatCard = ({
-  label,
-  value,
-  compact = false,
-}: {
-  label: string;
-  value: number;
-  compact?: boolean;
-}) => (
-  <div className="border border-[#032622] bg-[#F8F5E4] px-4 py-3">
-    <p className="text-xs uppercase tracking-widest text-[#032622]/70">{label}</p>
-    <p
-      className={`text-[#032622] font-bold ${compact ? "text-xl" : "text-3xl"}`}
-      style={{ fontFamily: "var(--font-termina-bold)" }}
-    >
-      {value}
-    </p>
-  </div>
-);
-
-const PublishedPosts = ({
-  posts,
-  selectedPostId,
-  onSelect,
-}: {
-  posts: StudentLifePost[];
-  selectedPostId: string;
-  onSelect: (postId: string) => void;
-}) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <header className="flex items-center justify-between">
-      <h3
-        className="text-xl font-bold text-[#032622]"
-        style={{ fontFamily: "var(--font-termina-bold)" }}
-      >
-        Actualités publiées
-      </h3>
-      <span className="text-xs text-[#032622]/60 uppercase">{posts.length} éléments</span>
-    </header>
-
-    <div className="space-y-3">
-      {posts.map((post) => (
-        <button
-          key={post.id}
-          onClick={() => onSelect(post.id)}
-          className={`w-full text-left border border-[#032622]/30 px-4 py-4 transition-colors ${
-            selectedPostId === post.id ? "bg-[#E9E3D1]" : "bg-[#F8F5E4] hover:bg-[#ede7d5]"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="space-y-1">
-              <p className="text-sm text-[#032622]/60 uppercase tracking-wide">{post.category}</p>
-              <h4 className="text-lg font-semibold text-[#032622]">{post.title}</h4>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#032622]/60" />
-          </div>
-          <p className="text-sm text-[#032622]/80 line-clamp-2">{post.summary}</p>
-          <div className="flex items-center gap-4 mt-3 text-xs text-[#032622]/70">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {post.date}
-            </span>
-            <span>
-              {post.author} • {post.authorRole}
-            </span>
-            <span className="ml-auto flex items-center gap-3 text-[#032622]">
-              <span className="flex items-center gap-1">
-                <ThumbsUp className="w-3 h-3" /> {post.likes}
-              </span>
-              <span className="flex items-center gap-1">
-                <Share2 className="w-3 h-3" /> {post.shares}
-              </span>
-            </span>
-          </div>
-        </button>
-      ))}
-
-      {posts.length === 0 && (
-        <p className="text-sm text-[#032622]/60">
-          Aucune actualité publiée pour le moment.
-        </p>
-      )}
-    </div>
-  </section>
-);
-
-const PendingPosts = ({
-  posts,
-  selectedPostId,
-  onSelect,
-  onApprove,
-  onReject,
-}: {
-  posts: StudentLifePost[];
-  selectedPostId: string;
-  onSelect: (postId: string) => void;
-  onApprove: (postId: string) => void;
-  onReject: (postId: string) => void;
-}) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-4">
-    <header className="flex items-center justify-between">
-      <h3
-        className="text-xl font-bold text-[#032622]"
-        style={{ fontFamily: "var(--font-termina-bold)" }}
-      >
-        Soumissions étudiantes en attente
-      </h3>
-      <span className="text-xs text-[#032622]/60 uppercase">{posts.length}</span>
-    </header>
-
-    <div className="space-y-3">
-      {posts.map((post) => (
-        <div
-          key={post.id}
-          className={`border border-[#032622]/30 px-4 py-4 bg-[#F8F5E4] ${
-            selectedPostId === post.id ? "ring-1 ring-[#032622]" : ""
-          }`}
-        >
-          <button
-            className="w-full text-left"
-            onClick={() => onSelect(post.id)}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="space-y-1">
-                <p className="text-sm text-[#032622]/60 uppercase tracking-wide">{post.category}</p>
-                <h4 className="text-lg font-semibold text-[#032622]">{post.title}</h4>
-              </div>
-              <ChevronRight className="w-4 h-4 text-[#032622]/60" />
-            </div>
-            <p className="text-sm text-[#032622]/80 line-clamp-2">{post.summary}</p>
-            <div className="flex items-center gap-4 mt-3 text-xs text-[#032622]/70">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {post.date}
-              </span>
-              <span>
-                Soumis par {post.author}
-              </span>
-            </div>
-          </button>
-          <div className="flex items-center gap-2 mt-4">
-            <button
-              onClick={() => onApprove(post.id)}
-              className="flex-1 inline-flex items-center justify-center gap-2 border border-[#032622] px-3 py-2 text-sm font-semibold text-[#032622] hover:bg-[#eae5cf] transition-colors"
-            >
-              <Check className="w-4 h-4" />
-              Valider
-            </button>
-            <button
-              onClick={() => onReject(post.id)}
-              className="flex-1 inline-flex items-center justify-center gap-2 border border-[#D96B6B] text-[#D96B6B] px-3 py-2 text-sm font-semibold hover:bg-[#f5d5d5] transition-colors"
-            >
-              <XCircle className="w-4 h-4" />
-              Refuser
-            </button>
-          </div>
-        </div>
-      ))}
-
-      {posts.length === 0 && (
-        <p className="text-sm text-[#032622]/60">
-          Aucune nouvelle soumission en attente de validation.
-        </p>
-      )}
-    </div>
-  </section>
-);
-
-const PostDetails = ({
-  post,
-  commentDraft,
-  setCommentDraft,
-  onLike,
-  onShare,
-  onComment,
-  onApprove,
-  onReject,
-}: {
-  post: StudentLifePost;
-  commentDraft: string;
-  setCommentDraft: (value: string) => void;
-  onLike: () => void;
-  onShare: () => void;
-  onComment: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-}) => (
-  <section className="border border-[#032622] bg-[#F8F5E4] p-6 space-y-5">
-    <header className="space-y-2">
-      <p className="text-xs uppercase tracking-wide text-[#032622]/60">{post.category}</p>
-      <h3
-        className="text-2xl font-bold text-[#032622]"
-        style={{ fontFamily: "var(--font-termina-bold)" }}
-      >
-        {post.title}
-      </h3>
-      <div className="flex flex-wrap items-center gap-4 text-xs text-[#032622]/70">
-        <span>{post.author} • {post.authorRole}</span>
-        <span>Publié le {post.date}</span>
-        {post.status === "pending" && (
-          <span className="text-[#D96B6B] uppercase font-semibold">En attente de validation</span>
-        )}
-      </div>
-      <p className="text-sm text-[#032622]/80">{post.summary}</p>
-    </header>
-
-    <div className="space-y-2 text-sm text-[#032622]/80 leading-relaxed">
-      {post.content}
-    </div>
-
-    {post.attachments.length > 0 && (
-      <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-[#032622] uppercase">Pièces jointes</h4>
-        <div className="space-y-2">
-          {post.attachments.map((attachment) => (
-            <AttachmentRow key={attachment.id} attachment={attachment} />
-          ))}
-        </div>
-      </div>
-    )}
-
-    <div className="flex items-center gap-3">
-      <button
-        onClick={onLike}
-        className="flex-1 inline-flex items-center justify-center gap-2 border border-[#032622] px-3 py-2 text-sm font-semibold text-[#032622] hover:bg-[#eae5cf] transition-colors"
-      >
-        <ThumbsUp className="w-4 h-4" />
-        {post.likes} likes
-      </button>
-      <button
-        onClick={onShare}
-        className="flex-1 inline-flex items-center justify-center gap-2 border border-[#032622] px-3 py-2 text-sm font-semibold text-[#032622] hover:bg-[#eae5cf] transition-colors"
-      >
-        <Share2 className="w-4 h-4" />
-        {post.shares} partages
-      </button>
-    </div>
-
-    {post.status === "pending" && (
-      <div className="flex items-center gap-3 bg-[#ede7d5] border border-[#032622]/40 px-3 py-3">
-        <button
-          onClick={onApprove}
-          className="flex-1 inline-flex items-center justify-center gap-2 border border-[#032622] px-3 py-2 text-sm font-semibold text-[#032622] hover:bg-[#e0d8c3] transition-colors"
-        >
-          <Check className="w-4 h-4" />
-          Valider la publication
-        </button>
-        <button
-          onClick={onReject}
-          className="flex-1 inline-flex items-center justify-center gap-2 border border-[#D96B6B] text-[#D96B6B] px-3 py-2 text-sm font-semibold hover:bg-[#f5d5d5] transition-colors"
-        >
-          <XCircle className="w-4 h-4" />
-          Refuser
-        </button>
-      </div>
-    )}
-
-    <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-[#032622] uppercase flex items-center gap-2">
-        <MessageCircle className="w-4 h-4" />
-        Commentaires ({post.comments.length})
-      </h4>
-
-      <div className="space-y-2">
-        {post.comments.map((comment) => (
-          <div key={comment.id} className="border border-[#032622]/30 px-3 py-2">
-            <div className="flex items-center justify-between text-xs text-[#032622]/70">
-              <span>{comment.author} • {comment.role}</span>
-              <span>{comment.date}</span>
-            </div>
-            <p className="text-sm text-[#032622] mt-1">{comment.message}</p>
-          </div>
-        ))}
-
-        {post.comments.length === 0 && (
-          <p className="text-sm text-[#032622]/60">Aucun commentaire pour le moment.</p>
-        )}
-      </div>
-
-      {post.status === "published" && (
-        <div className="space-y-2">
-          <textarea
-            value={commentDraft}
-            onChange={(event) => setCommentDraft(event.target.value)}
-            placeholder="Ajouter un commentaire en tant qu’administrateur"
-            className="w-full border border-[#032622]/40 bg-[#F8F5E4] text-sm text-[#032622] px-3 py-2 focus:outline-none focus:border-[#032622]"
-            rows={3}
-          />
-          <button
-            onClick={onComment}
-            className="inline-flex items-center gap-2 border border-[#032622] px-3 py-2 text-sm font-semibold text-[#032622] hover:bg-[#eae5cf] transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Publier le commentaire
-          </button>
-        </div>
-      )}
-    </div>
-  </section>
-);
-
-const AttachmentRow = ({ attachment }: { attachment: Attachment }) => (
-  <div className="flex items-center justify-between border border-[#032622]/30 px-3 py-2 text-sm text-[#032622] bg-[#F8F5E4]">
-    <div className="flex items-center gap-3">
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#E9E3D1] text-[#032622]">
-        {attachmentTypeIcons[attachment.type]}
-      </div>
-      <div>
-        <p className="font-semibold">{attachment.label}</p>
-        <p className="text-xs text-[#032622]/70">{attachmentTypeLabels[attachment.type]}</p>
-      </div>
-    </div>
-    <Link href={attachment.url} target="_blank" className="text-xs text-[#032622] underline">
-      Ouvrir
-    </Link>
-  </div>
-);
-
-const CreatePostModal = ({
-  postDraft,
-  setPostDraft,
-  attachmentDraft,
-  setAttachmentDraft,
-  onAddAttachment,
-  onRemoveAttachment,
-  onClose,
-  onSubmit,
-}: {
-  postDraft: typeof emptyPostDraft;
-  setPostDraft: (value: typeof emptyPostDraft) => void;
-  attachmentDraft: AttachmentDraft;
-  setAttachmentDraft: (value: AttachmentDraft) => void;
-  onAddAttachment: () => void;
-  onRemoveAttachment: (attachmentId: string) => void;
-  onClose: () => void;
-  onSubmit: () => void;
-}) => (
-  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-    <div className="w-full max-w-3xl bg-[#F8F5E4] border border-[#032622] p-6 space-y-6 relative">
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 text-[#032622] hover:text-[#01302C]"
-      >
-        <X className="w-5 h-5" />
-      </button>
-
-      <header className="space-y-2">
-        <h3
-          className="text-2xl font-bold text-[#032622]"
+      {/* Section Explorer le campus */}
+      <section className="space-y-4 sm:space-y-5 md:space-y-6">
+        <h2
+          className="text-xl sm:text-2xl font-bold uppercase text-[#032622] break-words"
           style={{ fontFamily: "var(--font-termina-bold)" }}
         >
-          Nouvelle actualité
-        </h3>
-        <p className="text-sm text-[#032622]/70">
-          Publiez une actualité officielle. Les étudiants verront le contenu après validation.
-        </p>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-xs uppercase tracking-wide text-[#032622]/70">Titre</label>
-          <input
-            value={postDraft.title}
-            onChange={(event) => setPostDraft({ ...postDraft, title: event.target.value })}
-            className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
-            placeholder="Nom de l’actualité"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs uppercase tracking-wide text-[#032622]/70">Catégorie</label>
-          <select
-            value={postDraft.category}
-            onChange={(event) => setPostDraft({ ...postDraft, category: event.target.value })}
-            className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
+          EXPLORER LE CAMPUS
+        </h2>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+          {/* Forum Card - Grande carte à gauche */}
+          <article
+            className="relative h-64 sm:h-72 md:h-80 lg:h-[380px] xl:h-[420px] overflow-hidden border border-[#032622] bg-[#032622] text-white cursor-pointer"
+            style={{
+              backgroundImage: `linear-gradient(rgba(3, 38, 34, 0.6), rgba(3, 38, 34, 0.3)), url(${campusCards[0].image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
           >
-            <option value="Événement">Événement</option>
-            <option value="Vie du campus">Vie du campus</option>
-            <option value="Association">Association</option>
-            <option value="Initiative étudiante">Initiative étudiante</option>
-            <option value="Autre">Autre</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-xs uppercase tracking-wide text-[#032622]/70">Accroche</label>
-        <textarea
-          value={postDraft.summary}
-          onChange={(event) => setPostDraft({ ...postDraft, summary: event.target.value })}
-          rows={2}
-          className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
-          placeholder="Résumé court visible dans la liste"
-        />
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-xs uppercase tracking-wide text-[#032622]/70">Contenu détaillé</label>
-        <textarea
-          value={postDraft.content}
-          onChange={(event) => setPostDraft({ ...postDraft, content: event.target.value })}
-          rows={6}
-          className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
-          placeholder="Décrivez l’activité, les intervenants, les informations logistiques…"
-        />
-      </div>
-
-      <div className="space-y-3 border border-[#032622]/30 p-4">
-        <h4 className="text-sm font-semibold text-[#032622] uppercase">Ajouter des pièces jointes</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide text-[#032622]/70">Type</label>
-            <select
-              value={attachmentDraft.type}
-              onChange={(event) =>
-                setAttachmentDraft({ ...attachmentDraft, type: event.target.value as AttachmentType })
-              }
-              className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
-            >
-              <option value="image">Image</option>
-              <option value="video">Vidéo</option>
-              <option value="document">Document</option>
-              <option value="link">Lien</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide text-[#032622]/70">Libellé</label>
-            <input
-              value={attachmentDraft.label}
-              onChange={(event) => setAttachmentDraft({ ...attachmentDraft, label: event.target.value })}
-              className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
-              placeholder="Nom du fichier ou lien"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide text-[#032622]/70">Lien / Fichier</label>
-            <input
-              value={attachmentDraft.url}
-              onChange={(event) => setAttachmentDraft({ ...attachmentDraft, url: event.target.value })}
-              className="border border-[#032622]/40 bg-[#F8F5E4] px-3 py-2 text-sm text-[#032622] focus:outline-none focus:border-[#032622]"
-              placeholder="URL ou référence"
-            />
-          </div>
-        </div>
-        <button
-          onClick={onAddAttachment}
-          className="inline-flex items-center gap-2 border border-[#032622] px-3 py-2 text-sm font-semibold text-[#032622] hover:bg-[#eae5cf] transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Ajouter la pièce jointe
-        </button>
-
-        {postDraft.attachments.length > 0 && (
-          <div className="space-y-2">
-            {postDraft.attachments.map((attachment) => (
-              <div
-                key={attachment.id}
-                className="flex items-center justify-between border border-[#032622]/30 px-3 py-2 text-sm text-[#032622]"
+            <div className="absolute bottom-3 sm:bottom-4 md:bottom-5 lg:bottom-6 left-3 sm:left-4 md:left-5 lg:left-6">
+              <h3
+                className="text-lg sm:text-xl md:text-2xl font-bold uppercase break-words"
+                style={{ fontFamily: "var(--font-termina-bold)" }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#E9E3D1] text-[#032622]">
-                    {attachmentTypeIcons[attachment.type]}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{attachment.label}</p>
-                    <p className="text-xs text-[#032622]/70">{attachmentTypeLabels[attachment.type]}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => onRemoveAttachment(attachment.id)}
-                  className="text-xs text-[#D96B6B] hover:text-[#a84d4d]"
+                {campusCards[0].title}
+              </h3>
+            </div>
+          </article>
+
+          {/* Colonne droite avec deux cartes empilées */}
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Événements Card */}
+            <article
+              className="relative flex-1 min-h-[160px] sm:min-h-[180px] md:min-h-[200px] overflow-hidden border border-[#032622] bg-[#032622] text-white cursor-pointer"
+              style={{
+                backgroundImage: `linear-gradient(rgba(3, 38, 34, 0.6), rgba(3, 38, 34, 0.3)), url(${campusCards[1].image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute bottom-3 sm:bottom-4 md:bottom-5 lg:bottom-6 left-3 sm:left-4 md:left-5 lg:left-6">
+                <h3
+                  className="text-lg sm:text-xl md:text-2xl font-bold uppercase break-words"
+                  style={{ fontFamily: "var(--font-termina-bold)" }}
                 >
-                  Retirer
+                  {campusCards[1].title}
+                </h3>
+              </div>
+            </article>
+/* 
+            {/* Actualité Card */}
+            <article
+              className="relative flex-1 min-h-[160px] sm:min-h-[180px] md:min-h-[200px] overflow-hidden border border-[#032622] bg-[#032622] text-white cursor-pointer"
+              style={{
+                backgroundImage: `linear-gradient(rgba(3, 38, 34, 0.6), rgba(3, 38, 34, 0.3)), url(${campusCards[2].image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute bottom-3 sm:bottom-4 md:bottom-5 lg:bottom-6 left-3 sm:left-4 md:left-5 lg:left-6">
+                <h3
+                  className="text-lg sm:text-xl md:text-2xl font-bold uppercase break-words"
+                  style={{ fontFamily: "var(--font-termina-bold)" }}
+                >
+                  {campusCards[2].title}
+                </h3>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* Section ÉVÉNEMENT À VENIR 
+      <section className="space-y-3 sm:space-y-4">
+        <h2
+          className="text-lg sm:text-xl font-bold uppercase text-[#032622] break-words"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          ÉVÉNEMENT À VENIR
+        </h2>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {upcomingEvents.map((item) => (
+            <div key={item.id} className="border border-[#032622] bg-white overflow-hidden max-w-full">
+              {/* Image de l'événement 
+              <div className="h-40 sm:h-44 md:h-48 relative">
+                <Image 
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+                {/* Badge 
+                <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest ${
+                    item.badge === 'MASTERCLASS' 
+                      ? 'bg-[#032622] text-white' 
+                      : 'bg-[#D96B6B] text-white'
+                  }`}>
+                    {item.badge}
+                  </span>
+                </div>
+              </div>
+              {/* Contenu de la carte 
+              <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 bg-[#F8F5E4]">
+                <h3 
+                  className="text-xs sm:text-sm font-bold uppercase text-[#032622] break-words"
+                  style={{ fontFamily: "var(--font-termina-bold)" }}
+                >
+                  {item.title}
+                </h3>
+                <p className="text-[10px] sm:text-xs text-[#032622]/70 leading-relaxed break-words">
+                  {item.description}
+                </p>
+                <button className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-[#032622] text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest hover:bg-[#01302C] active:bg-[#012a26] transition-colors">
+                  {item.buttonIcon === 'bell' && <Bell className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />}
+                  <span className="break-words">{item.buttonText}</span>
                 </button>
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+      </section>
+
+
+      {/* Section ÉVÉNEMENTS PASSÉS 
+      <section className="space-y-3 sm:space-y-4">
+        <h2
+          className="text-lg sm:text-xl font-bold uppercase text-[#032622] break-words"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          ÉVÉNEMENTS PASSÉS
+        </h2>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+          {/* Replay Masterclass 
+          <div className="border border-[#032622] bg-white overflow-hidden max-w-full">
+            <div className="h-40 sm:h-44 md:h-48 relative">
+              <Image 
+                src="/img/eventvieetudiante/KEOS MORALD MASTERCLASS.png"
+                alt="REPLAY MASTERCLASS : AVEC MORALD CHIBOUT"
+                fill
+                className="object-cover object-top"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+              <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest bg-[#032622] text-white">
+                  MASTERCLASS
+                </span>
+              </div>
+            </div>
+            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 bg-[#F8F5E4]">
+              <h3 
+                className="text-xs sm:text-sm font-bold uppercase text-[#032622] break-words"
+                style={{ fontFamily: "var(--font-termina-bold)" }}
+              >
+                REPLAY MASTERCLASS : AVEC MORALD CHIBOUT
+              </h3>
+              <p className="text-[10px] sm:text-xs text-[#032622]/70 leading-relaxed break-words">
+                Revivez la rencontre exclusive avec Morald Chibout, dirigeant inspirant, qui partage son parcours, ses enjeux, et sa vision entrepreneuriale.
+              </p>
+              <button className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-[#032622] text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest hover:bg-[#01302C] active:bg-[#012a26] transition-colors">
+                VOIR LE REPLAY
+              </button>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={onClose}
-          className="border border-[#032622] px-4 py-2 text-sm font-semibold text-[#032622] hover:bg-[#eae5cf] transition-colors"
-        >
-          Annuler
-        </button>
-        <button
-          onClick={onSubmit}
-          className="border border-[#032622] px-4 py-2 text-sm font-semibold text-[#032622] hover:bg-[#e0d8c3] transition-colors"
-        >
-          Publier l’actualité
-        </button>
+          {/* Rentrée Edifice 
+          <div className="border border-[#032622] bg-white overflow-hidden max-w-full">
+            <div className="h-40 sm:h-44 md:h-48 relative">
+              <Image 
+                src="/img/eventvieetudiante/rentree-edifice-elite-society 3.png"
+                alt="RENTRÉE EDIFICE SCHOOL : UNE NOUVELLE PROMOTION À BORD"
+                fill
+                className="object-cover object-top"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+              <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest bg-[#D96B6B] text-white">
+                  ACTUALITÉ
+                </span>
+              </div>
+            </div>
+            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 bg-[#F8F5E4]">
+              <h3 
+                className="text-xs sm:text-sm font-bold uppercase text-[#032622] break-words"
+                style={{ fontFamily: "var(--font-termina-bold)" }}
+              >
+                RENTRÉE EDIFICE SCHOOL : UNE NOUVELLE PROMOTION À BORD
+              </h3>
+              <p className="text-[10px] sm:text-xs text-[#032622]/70 leading-relaxed break-words">
+                Les futurs experts du BTP font leur entrée entre projets concrets, apprentissage sur le terrain et cohésion commune. Bienvenu à tous !
+              </p>
+              <button className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-[#032622] text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest hover:bg-[#01302C] active:bg-[#012a26] transition-colors">
+                EN SAVOIR PLUS
+              </button>
+            </div>
       </div>
+        </div>
+      </section>
+
+      {/* Section AVANTAGES ÉTUDIANTS 
+      <section className="space-y-4 sm:space-y-5 md:space-y-6">
+        <h2
+          className="text-xl sm:text-2xl font-bold uppercase text-[#032622] break-words"
+          style={{ fontFamily: "var(--font-termina-bold)" }}
+        >
+          AVANTAGES ÉTUDIANTS
+        </h2>
+        <div className="relative overflow-x-hidden w-full max-w-full carousel-container">
+          <div className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 animate-scroll" style={{ willChange: 'transform' }}>
+            {/* EN VOITURE 
+            <a href="https://www.envoituresimone.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
+              <div className="relative w-full aspect-[580/310] overflow-hidden">
+                <Image 
+                  src="/img/avantageetudiants/EN VOITURE.png"
+                  alt="PASSE TON PERMIS À TON RYTHME"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 350px, (max-width: 1024px) 420px, (max-width: 1280px) 500px, 580px"
+                />
+              </div>
+              <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 lg:bottom-5 left-1/3 right-0 flex flex-col items-start justify-center px-2 sm:px-3 md:px-4 lg:px-6 text-left">
+                <h3 className="text-[9px] sm:text-[10px] md:text-xs font-bold uppercase mb-0.5 sm:mb-1 break-words" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  PASSE TON PERMIS À TON RYTHME
+                </h3>
+                <p className="text-[7px] sm:text-[8px] md:text-[9px] leading-relaxed max-w-[160px] sm:max-w-[200px] md:max-w-[240px] break-words">
+                  Profite d'une auto-école en ligne moderne et accessible. Avec En Voiture Simone, révise, conduis et réussis ton permis sans stress.
+                </p>
+              </div>
+            </a>
+
+            {/* NEXITY 
+            <a href="https://www.nexity.fr/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
+              <div className="relative w-full aspect-[580/310] overflow-hidden">
+                <Image 
+                  src="/img/avantageetudiants/NEXITY.png"
+                  alt="TROUVE TON LOGEMENT FACILEMENT"
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 350px, (max-width: 1024px) 420px, (max-width: 1280px) 500px, 580px"
+                />
+              </div>
+              <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 lg:bottom-5 left-1/3 right-0 flex flex-col items-start justify-center px-2 sm:px-3 md:px-4 lg:px-6 text-left">
+                <h3 className="text-[9px] sm:text-[10px] md:text-xs font-bold uppercase mb-0.5 sm:mb-1 break-words" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  TROUVE TON LOGEMENT FACILEMENT
+                </h3>
+                <p className="text-[7px] sm:text-[8px] md:text-[9px] leading-relaxed max-w-[160px] sm:max-w-[200px] md:max-w-[240px] break-words">
+                  Grâce à notre partenaire Nexity, accède à des offres de logements étudiants adaptées à ton profil et à ta ville de formation.
+                </p>
+              </div>
+            </a>
+
+            {/* STATUT FR 
+            <a href="https://statut-francais.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
+              <div className="relative w-full aspect-[580/310] overflow-hidden">
+                <Image 
+                  src="/img/avantageetudiants/Statut FR.png"
+                  alt="STATUT FRANÇAIS"
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 350px, (max-width: 1024px) 420px, (max-width: 1280px) 500px, 580px"
+                />
+              </div>
+              <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 lg:bottom-5 left-1/3 right-0 flex flex-col items-start justify-center px-2 sm:px-3 md:px-4 lg:px-6 text-left">
+                <h3 className="text-[9px] sm:text-[10px] md:text-xs font-bold uppercase mb-0.5 sm:mb-1 break-words" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  TON ACCOMPAGNEMENT ADMINISTRATIF SIMPLIFIÉ
+                </h3>
+                <p className="text-[7px] sm:text-[8px] md:text-[9px] leading-relaxed max-w-[160px] sm:max-w-[200px] md:max-w-[240px] break-words">
+                  Besoin d'aide pour ton titre de séjour ou ta naturalisation ? Statut Français t'accompagne à chaque étape, avec clarté et bienveillance.
+                </p>
+              </div>
+            </a>
+
+            {/* STUDEFI 
+            <a href="https://www.studefi.fr/main.php" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
+              <div className="relative w-full aspect-[580/310] overflow-hidden">
+                <Image 
+                  src="/img/avantageetudiants/Studefi.png"
+                  alt="STUDEFI"
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 350px, (max-width: 1024px) 420px, (max-width: 1280px) 500px, 580px"
+                />
+              </div>
+              <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 lg:bottom-5 left-1/3 right-0 flex flex-col items-start justify-center px-2 sm:px-3 md:px-4 lg:px-6 text-left">
+                <h3 className="text-[9px] sm:text-[10px] md:text-xs font-bold uppercase mb-0.5 sm:mb-1 break-words" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  LOGEMENT ÉTUDIANT, SIMPLE ET PROCHE
+                </h3>
+                <p className="text-[7px] sm:text-[8px] md:text-[9px] leading-relaxed max-w-[160px] sm:max-w-[200px] md:max-w-[240px] break-words">
+                  Studefi propose des résidences étudiantes en Île-de-France : studios fonctionnels, loyers maîtrisés, services et régisseur sur place.
+                </p>
+              </div>
+            </a>
+
+            {/* Duplication pour défilement continu 
+            <a href="https://www.envoituresimone.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
+              <div className="relative w-full aspect-[580/310] overflow-hidden">
+                <Image 
+                  src="/img/avantageetudiants/EN VOITURE.png"
+                  alt="PASSE TON PERMIS À TON RYTHME"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 350px, (max-width: 1024px) 420px, (max-width: 1280px) 500px, 580px"
+                />
+              </div>
+              <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 lg:bottom-5 left-1/3 right-0 flex flex-col items-start justify-center px-2 sm:px-3 md:px-4 lg:px-6 text-left">
+                <h3 className="text-[9px] sm:text-[10px] md:text-xs font-bold uppercase mb-0.5 sm:mb-1 break-words" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  PASSE TON PERMIS À TON RYTHME
+                </h3>
+                <p className="text-[7px] sm:text-[8px] md:text-[9px] leading-relaxed max-w-[160px] sm:max-w-[200px] md:max-w-[240px] break-words">
+                  Profite d'une auto-école en ligne moderne et accessible. Avec En Voiture Simone, révise, conduis et réussis ton permis sans stress.
+                </p>
+              </div>
+            </a>
+
+            <a href="https://www.nexity.fr/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 relative block w-[280px] sm:w-[350px] md:w-[420px] lg:w-[500px] xl:w-[580px] max-w-[90vw]">
+              <div className="relative w-full aspect-[580/310] overflow-hidden">
+                <Image 
+                  src="/img/avantageetudiants/NEXITY.png"
+                  alt="TROUVE TON LOGEMENT FACILEMENT"
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 350px, (max-width: 1024px) 420px, (max-width: 1280px) 500px, 580px"
+                />
+              </div>
+              <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 lg:bottom-5 left-1/3 right-0 flex flex-col items-start justify-center px-2 sm:px-3 md:px-4 lg:px-6 text-left">
+                <h3 className="text-[9px] sm:text-[10px] md:text-xs font-bold uppercase mb-0.5 sm:mb-1 break-words" style={{ fontFamily: "var(--font-termina-bold)" }}>
+                  TROUVE TON LOGEMENT FACILEMENT
+                </h3>
+                <p className="text-[7px] sm:text-[8px] md:text-[9px] leading-relaxed max-w-[160px] sm:max-w-[200px] md:max-w-[240px] break-words">
+                  Grâce à notre partenaire Nexity, accède à des offres de logements étudiants adaptées à ton profil et à ta ville de formation.
+                </p>
+              </div>
+            </a>
+      </div>
+        </div>
+      </section>
+
+      {/* Bouton flottant messagerie 
+      <button
+        className="fixed bottom-8 right-8 w-12 h-12 bg-[#032622] text-white rounded shadow-lg flex items-center justify-center z-50"
+        aria-label="Ouvrir la messagerie"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </button>
+       */}
     </div>
-  </div>
-);
-
-export default AdminStudentLifeManager;
-
+  );
+}

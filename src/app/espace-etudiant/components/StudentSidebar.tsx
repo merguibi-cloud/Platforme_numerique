@@ -1,9 +1,11 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, MouseEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import { signOut } from '@/lib/auth-api';
+import { Modal } from '../../validation/components/Modal';
 
 const menuItems = [
   { 
@@ -41,13 +43,13 @@ const menuItems = [
     iconInactive: '/images/student-library/VieStudentpasselectionné.png',
     href: '/espace-etudiant/vie-etudiante'
   },
-  { 
+  /* { 
     id: 'messagerie', 
     label: 'MESSAGERIE', 
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
     href: '/espace-etudiant/messagerie'
-  }
+  } */
 ];
 
 const bottomMenuItems = [
@@ -74,15 +76,57 @@ interface StudentSidebarProps {
 
 export const StudentSidebar = ({ isCollapsed, onCollapseChange }: StudentSidebarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [activeItem, setActiveItem] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleCollapse = () => {
-    onCollapseChange(!isCollapsed);
+    const newCollapsed = !isCollapsed;
+    onCollapseChange?.(newCollapsed);
   };
 
-  const handleItemClick = (itemId: string) => {
-    setActiveItem(itemId);
-    // Ne pas ouvrir la sidebar automatiquement quand on clique sur un item
+  const handleLogoutClick = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setShowConfirmModal(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setShowConfirmModal(false);
+    setIsLoggingOut(true);
+
+    try {
+      const result = await signOut();
+      if (result.success) {
+        router.push('/');
+        router.refresh();
+      } else {
+        console.error('Erreur lors de la déconnexion:', result.error);
+        setErrorMessage(result.error || 'Erreur lors de la déconnexion. Veuillez réessayer.');
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      setErrorMessage('Erreur lors de la déconnexion. Veuillez réessayer.');
+      setShowErrorModal(true);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
   };
 
   // Déterminer l'élément actif basé sur l'URL
@@ -104,50 +148,120 @@ export const StudentSidebar = ({ isCollapsed, onCollapseChange }: StudentSidebar
     }
   }, [pathname]);
 
+  useEffect(() => {
+    setIsLoggingOut(false);
+  }, []);
+
+
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#032622] min-h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-40`}>
+    <>
+      {/* Mobile Menu Button - Caché quand le menu est ouvert */}
+      {!isMobileMenuOpen && (
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-[101] bg-[#032622] text-white p-2 rounded-lg shadow-lg hover:bg-[#01302C] active:bg-[#012a26] transition-colors"
+          aria-label="Ouvrir le menu"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Mobile Overlay - En arrière-plan, ne bloque pas la sidebar */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-[45]"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Au-dessus de l'overlay */}
+      <div className={`
+        ${isCollapsed ? 'w-24' : 'w-64'} 
+        bg-[#032622] 
+        min-h-screen 
+        flex 
+        flex-col 
+        transition-all 
+        duration-300 
+        fixed 
+        left-0 
+        top-0 
+        z-[50]
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Mobile Close Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMobileMenuOpen(false);
+          }}
+          className="lg:hidden absolute top-4 right-4 text-white hover:bg-gray-700 p-1 rounded transition-colors z-[51]"
+          aria-label="Fermer le menu"
+        >
+          <X className="w-6 h-6" />
+        </button>
       {/* Logo et titre */}
-      <div className="p-6 border-b border-gray-600">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Image 
-              src="/menue_etudiant/ESObeige.png" 
-              alt="ELITE SOCIETY ONLINE" 
-              width={40} 
-              height={40}
-              className="w-10 h-10"
-            />
-            {!isCollapsed && (
-              <div>
-                <h1 className="text-white text-sm font-bold uppercase tracking-wide">
-                  ELITE SOCIETY
-                </h1>
-                <p className="text-white text-xs opacity-80">
-                  ONLINE
-                </p>
+      <div className={`${isCollapsed ? 'p-4' : 'p-6'} border-b border-gray-600`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {isCollapsed ? (
+            <button
+              onClick={handleCollapse}
+              className="hidden lg:flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <Image 
+                src="/menue_etudiant/ESObeige.png" 
+                alt="ELITE SOCIETY ONLINE" 
+                width={36} 
+                height={36}
+                className="w-9 h-9"
+              />
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center space-x-3">
+                <Image 
+                  src="/menue_etudiant/ESObeige.png" 
+                  alt="ELITE SOCIETY ONLINE" 
+                  width={50} 
+                  height={50}
+                  className="w-12 h-12"
+                />
+                <div>
+                  <h1 className="text-white text-sm font-bold uppercase tracking-wide">
+                    ELITE SOCIETY
+                  </h1>
+                  <p className="text-white text-xs opacity-80">
+                    ONLINE
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
-          <button
-            onClick={handleCollapse}
-            className="text-white hover:bg-gray-700 p-1 rounded transition-colors"
-          >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+              <button
+                onClick={handleCollapse}
+                className="hidden lg:flex text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
+                aria-label={isCollapsed ? "Développer le menu" : "Réduire le menu"}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Menu principal */}
-      <div className="flex-1 py-6">
+      <div className="flex-1 py-6 overflow-y-auto relative z-[51]">
         <nav className={`space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
           {menuItems.map((item) => (
             <Link
               key={item.id}
               href={item.href}
-              onClick={() => handleItemClick(item.id)}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveItem(item.id);
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 relative z-[51] ${
                 activeItem === item.id
-                  ? 'text-[#F8F5E4]'
+                  ? 'text-[#F8F5E4] bg-gray-700'
                   : 'text-white hover:bg-gray-700'
               }`}
               title={isCollapsed ? item.label : undefined}
@@ -157,11 +271,11 @@ export const StudentSidebar = ({ isCollapsed, onCollapseChange }: StudentSidebar
                 alt={item.label} 
                 width={24} 
                 height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} pointer-events-none`}
               />
               {!isCollapsed && (
                 <span 
-                  className="text-sm font-medium"
+                  className="text-sm font-medium pointer-events-none"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
                   {item.label}
@@ -173,35 +287,94 @@ export const StudentSidebar = ({ isCollapsed, onCollapseChange }: StudentSidebar
       </div>
 
       {/* Menu du bas */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
+      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600 relative z-[51]`}>
         <nav className="space-y-2">
-          {bottomMenuItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Image 
-                src={activeItem === item.id ? item.icon : item.iconInactive} 
-                alt={item.label} 
-                width={24} 
-                height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
-              />
-              {!isCollapsed && (
-                <span 
-                  className="text-sm font-medium"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+          {bottomMenuItems.map((item) => {
+            if (item.id === 'logout') {
+              return (
+                <button
+                  key={item.id}
+                  onClick={handleLogoutClick}
+                  disabled={isLoggingOut}
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer`}
+                  title={isCollapsed ? item.label : undefined}
+                  style={{ pointerEvents: isLoggingOut ? 'none' : 'auto' }}
                 >
-                  {item.label}
-                </span>
-              )}
-            </Link>
-          ))}
+                  <Image 
+                    src={item.icon} 
+                    alt={item.label} 
+                    width={24} 
+                    height={24}
+                    className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} pointer-events-none`}
+                  />
+                  {!isCollapsed && (
+                    <span 
+                      className="text-sm font-medium pointer-events-none whitespace-nowrap"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      {isLoggingOut ? 'DÉCONNEXION...' : item.label}
+                    </span>
+                  )}
+                  {isCollapsed && isLoggingOut && (
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse pointer-events-none"></div>
+                  )}
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 relative z-[51]`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <Image 
+                  src={activeItem === item.id ? item.icon : item.iconInactive} 
+                  alt={item.label} 
+                  width={24} 
+                  height={24}
+                  className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} pointer-events-none`}
+                />
+                {!isCollapsed && (
+                  <span 
+                    className="text-sm font-medium pointer-events-none"
+                    style={{ fontFamily: 'var(--font-termina-bold)' }}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
-    </div>
+
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={handleLogoutCancel}
+        title="Confirmation de déconnexion"
+        message="Êtes-vous sûr de vouloir vous déconnecter ?"
+        type="warning"
+        isConfirm={true}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
+
+      <Modal
+        isOpen={showErrorModal}
+        onClose={handleErrorModalClose}
+        title="Erreur de déconnexion"
+        message={errorMessage}
+        type="error"
+        isConfirm={false}
+      />
+      </div>
+    </>
   );
 };
 

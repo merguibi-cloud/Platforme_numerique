@@ -47,10 +47,10 @@ export default function Partners() {
   }, []);
 
   return (
-    <div className="w-full bg-[#F8F5E4] py-12">
-      <div className="w-full px-4">
+    <div className="w-full bg-[#F8F5E4] py-8 sm:py-10 md:py-12">
+      <div className="w-full px-4 sm:px-6 md:px-8">
         <h2 
-          className="text-3xl md:text-4xl font-bold text-center text-[#032622] mb-12"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-[#032622] mb-8 sm:mb-10 md:mb-12"
           style={{ fontFamily: 'var(--font-termina-bold)', fontWeight: '700' }}
         >
           NOS PARTENAIRES
@@ -58,22 +58,22 @@ export default function Partners() {
         
         <div 
           ref={carouselRef}
-          className="relative overflow-hidden w-full"
+          className="relative overflow-x-hidden w-full carousel-container"
+          style={{ maxWidth: '100%' }}
         >
-          <div className="flex space-x-16 items-center">
+          <div className="flex space-x-8 sm:space-x-12 md:space-x-16 items-center" style={{ willChange: 'scroll-position' }}>
             {duplicatedPartners.map((partner, index) => (
               <div
                 key={`${partner.name}-${index}`}
-                className="flex-shrink-0 flex items-center justify-center"
-                style={{ minWidth: '300px', height: '120px' }}
+                className="flex-shrink-0 flex items-center justify-center min-w-[150px] sm:min-w-[200px] md:min-w-[250px] lg:min-w-[300px] h-16 sm:h-20 md:h-24 lg:h-[120px]"
               >
-                <div className="relative w-full h-full opacity-90 hover:opacity-100 transition-opacity duration-300">
+                <div className="relative w-full h-full opacity-90 hover:opacity-100 transition-opacity duration-300 px-2 sm:px-4">
                   <Image
                     src={partner.image}
                     alt={partner.name}
                     fill
                     className="object-contain transition-all duration-300"
-                    sizes="(max-width: 768px) 250px, 300px"
+                    sizes="(max-width: 640px) 150px, (max-width: 768px) 200px, (max-width: 1024px) 250px, 300px"
                   />
                 </div>
               </div>

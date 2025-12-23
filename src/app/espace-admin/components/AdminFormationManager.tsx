@@ -17,6 +17,8 @@ import {
   UserCheck,
   X
 } from 'lucide-react';
+import { Modal } from '../../validation/components/Modal';
+import { useModal } from '../../validation/components/useModal';
 
 type ModuleType = 'cours' | 'video' | 'pdf' | 'quiz' | 'word' | 'image';
 
@@ -93,191 +95,7 @@ const defaultModuleDraft = () => ({
   fileSize: ''
 });
 
-const initialBlocks: BlockItem[] = [
-  {
-    id: createId(),
-    title: 'Bloc 1 - Stratégie organisationnelle',
-    description: "Contribuer à la stratégie de développement de l'organisation",
-    antiCheatEnabled: true,
-    modules: [
-      {
-        id: createId(),
-        title: 'Vidéo - Vision et mission',
-        type: 'video',
-        duration: '18 min'
-      },
-      {
-        id: createId(),
-        title: 'Cours interactif - SWOT avancé',
-        type: 'cours',
-        duration: '45 min'
-      },
-      {
-        id: createId(),
-        title: 'Quiz - Alignement stratégique',
-        type: 'quiz',
-        duration: '15 questions'
-      },
-      {
-        id: createId(),
-        title: 'PDF - Synthèse stratégique',
-        type: 'pdf',
-        duration: '24 pages',
-        fileName: 'synthese-strategique.pdf',
-        fileSize: '2.3 MB'
-      },
-      {
-        id: createId(),
-        title: 'Document Word - Template rapport',
-        type: 'word',
-        duration: '8 pages',
-        fileName: 'template-rapport.docx',
-        fileSize: '1.1 MB'
-      }
-    ],
-    students: [
-      {
-        id: createId(),
-        name: 'Chadi El Assowad',
-        progress: 95,
-        status: 'Terminé',
-        lastActivity: "Aujourd'hui · 09:45",
-        flagged: false
-      },
-      {
-        id: createId(),
-        name: 'Lina Bouchard',
-        progress: 76,
-        status: 'En cours',
-        lastActivity: 'Hier · 14:12',
-        flagged: true
-      },
-      {
-        id: createId(),
-        name: 'Youssef Karim',
-        progress: 48,
-        status: 'En retard',
-        lastActivity: '12/10 · 18:05',
-        flagged: false
-      }
-    ],
-    flags: [
-      {
-        id: createId(),
-        student: 'Mikasa Ackerman',
-        timestamp: 'Hier · 14:12',
-        reason: "Changement d'onglet détecté pendant le quiz",
-        status: 'pending'
-      }
-    ]
-  },
-  {
-    id: createId(),
-    title: 'Bloc 2 - Pilotage de la performance',
-    description: 'Suivre et optimiser les indicateurs clés de performance',
-    antiCheatEnabled: true,
-    modules: [
-      {
-        id: createId(),
-        title: 'Cours - Tableaux de bord dynamiques',
-        type: 'cours',
-        duration: '35 min'
-      },
-      {
-        id: createId(),
-        title: 'PDF - Kit indicateurs clés',
-        type: 'pdf',
-        duration: '16 pages'
-      },
-      {
-        id: createId(),
-        title: 'Quiz - Lecture des KPIs',
-        type: 'quiz',
-        duration: '12 questions'
-      }
-    ],
-    students: [
-      {
-        id: createId(),
-        name: 'Anaïs Dubois',
-        progress: 58,
-        status: 'En cours',
-        lastActivity: "Aujourd'hui · 11:02",
-        flagged: false
-      },
-      {
-        id: createId(),
-        name: 'Marc Lefort',
-        progress: 32,
-        status: 'En retard',
-        lastActivity: '10/10 · 17:20',
-        flagged: false
-      }
-    ],
-    flags: []
-  },
-  {
-    id: createId(),
-    title: "Bloc 3 - Management de l'innovation",
-    description: "Impulser une culture d'innovation durable",
-    antiCheatEnabled: false,
-    modules: [
-      {
-        id: createId(),
-        title: 'Vidéo - Design thinking',
-        type: 'video',
-        duration: '22 min'
-      },
-      {
-        id: createId(),
-        title: 'Quiz - Posture innovante',
-        type: 'quiz',
-        duration: '10 questions'
-      },
-      {
-        id: createId(),
-        title: 'PDF - Études de cas',
-        type: 'pdf',
-        duration: '20 pages'
-      },
-      {
-        id: createId(),
-        title: 'Images - Galerie exemples',
-        type: 'image',
-        duration: '15 images',
-        fileName: 'galerie-innovation.zip',
-        fileSize: '12.8 MB'
-      }
-    ],
-    students: [
-      {
-        id: createId(),
-        name: 'Inès Roussel',
-        progress: 58,
-        status: 'En cours',
-        lastActivity: 'Hier · 20:10',
-        flagged: false
-      },
-      {
-        id: createId(),
-        name: 'Thomas Nguyen',
-        progress: 22,
-        status: 'En retard',
-        lastActivity: '08/10 · 08:33',
-        flagged: false
-      }
-    ],
-    flags: [
-      {
-        id: createId(),
-        student: 'Levi Ackerman',
-        timestamp: '08/09 · 08:20',
-        reason: 'Fenêtre du navigateur réduite pendant la vidéo',
-        status: 'resolved'
-      }
-    ]
-  }
-];
+// Les blocs sont maintenant chargés depuis la base de données
 
 const formatStatusColor = (status: StudentProgress['status']) => {
   switch (status) {
@@ -291,9 +109,10 @@ const formatStatusColor = (status: StudentProgress['status']) => {
 };
 
 export default function AdminFormationManager() {
-  const [blocks, setBlocks] = useState<BlockItem[]>(initialBlocks);
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(initialBlocks[0]?.id ?? null);
+  const [blocks, setBlocks] = useState<BlockItem[]>([]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { modalState, showConfirm, hideModal, handleConfirm, handleCancel } = useModal();
   const [newBlockTitle, setNewBlockTitle] = useState('');
   const [newBlockDescription, setNewBlockDescription] = useState('');
   const [newBlockAntiCheat, setNewBlockAntiCheat] = useState(true);
@@ -467,14 +286,18 @@ export default function AdminFormationManager() {
   };
 
   const handleDeleteBlock = (blockId: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce bloc ? Cette action est irréversible.')) {
-      setBlocks((prev) => prev.filter((block) => block.id !== blockId));
-      // Si le bloc supprimé était sélectionné, sélectionner le premier bloc restant
-      if (selectedBlockId === blockId) {
-        const remainingBlocks = blocks.filter((block) => block.id !== blockId);
-        setSelectedBlockId(remainingBlocks.length > 0 ? remainingBlocks[0].id : null);
+    showConfirm(
+      'Êtes-vous sûr de vouloir supprimer ce bloc ? Cette action est irréversible.',
+      'Confirmation de suppression',
+      () => {
+        setBlocks((prev) => prev.filter((block) => block.id !== blockId));
+        // Si le bloc supprimé était sélectionné, sélectionner le premier bloc restant
+        if (selectedBlockId === blockId) {
+          const remainingBlocks = blocks.filter((block) => block.id !== blockId);
+          setSelectedBlockId(remainingBlocks.length > 0 ? remainingBlocks[0].id : null);
+        }
       }
-    }
+    );
   };
 
   const isCreateDisabled = !newBlockTitle.trim() || newBlockModules.some((module) => !module.title.trim());
@@ -1066,6 +889,18 @@ export default function AdminFormationManager() {
           </div>
         </div>
       )}
+      
+      {/* Modal de confirmation */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isConfirm={modalState.isConfirm}
+        onConfirm={modalState.onConfirm ? handleConfirm : undefined}
+        onCancel={modalState.onCancel ? handleCancel : undefined}
+      />
     </div>
   );
 }
