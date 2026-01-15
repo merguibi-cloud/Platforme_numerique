@@ -175,12 +175,16 @@ export async function GET(request: NextRequest) {
     
     // Retourner avec la clé "modules" pour compatibilité avec le code existant
     // mais aussi "cours" pour la nouvelle structure
-    return NextResponse.json({ 
+    return NextResponse.json({
       modules: coursWithStatus,
-      cours: coursWithStatus 
+      cours: coursWithStatus
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error('[GET /api/cours] Erreur:', error);
+    return NextResponse.json({
+      error: 'Erreur serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, { status: 500 });
   }
 }
 

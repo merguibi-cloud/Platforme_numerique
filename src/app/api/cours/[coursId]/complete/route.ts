@@ -27,25 +27,32 @@ export async function GET(
       return NextResponse.json({ error: 'ID de cours invalide' }, { status: 400 });
     }
 
-    // 1. Charger le cours avec le bloc associé
+    // 1. Charger le cours
     const { data: cours, error: coursError } = await supabase
       .from('cours_apprentissage')
-      .select(`
-        *,
-        blocs_competences (
-          id,
-          numero_bloc,
-          titre,
-          description,
-          formation_id
-        )
-      `)
+      .select('*')
       .eq('id', coursIdNum)
       .single();
 
     if (coursError) {
       console.error('Erreur lors de la récupération du cours:', coursError);
-      return NextResponse.json({ error: 'Cours non trouvé' }, { status: 404 });
+      return NextResponse.json({ error: 'Cours non trouvé', details: coursError.message }, { status: 404 });
+    }
+
+    // 1b. Charger le bloc associé séparément
+    let blocs_competences = null;
+    if (cours.bloc_id) {
+      const { data: blocData, error: blocError } = await supabase
+        .from('blocs_competences')
+        .select('id, numero_bloc, titre, description, formation_id')
+        .eq('id', cours.bloc_id)
+        .single();
+
+      if (blocError) {
+        console.error('Erreur lors de la récupération du bloc:', blocError);
+      } else {
+        blocs_competences = blocData;
+      }
     }
 
     // 2. Charger tous les chapitres du cours (pour la visualisation, on charge tous les chapitres, même inactifs)
@@ -164,6 +171,7 @@ export async function GET(
     const response = {
       cours: {
         ...cours,
+        blocs_competences,
         chapitres: chapitresList.map((chapitre: any) => ({
           ...chapitre,
           fichiers_complementaires: chapitre.fichiers_complementaires || [],
