@@ -229,6 +229,126 @@ export async function PUT(
         message: 'Accès à la plateforme débloqué. L\'utilisateur est maintenant étudiant.',
       });
 
+    } else if (action === 'debloquer_etape') {
+      // Débloquer l'étape suivante pour l'utilisateur
+      const stepOrder = ['informations', 'inscription', 'documents', 'recap', 'validation'];
+
+      // Récupérer la candidature
+      const { data: candidature, error: candidatureError } = await supabase
+        .from('candidatures')
+        .select('*')
+        .eq('user_id', profile.user_id)
+        .maybeSingle();
+
+      if (candidatureError) {
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de la récupération de la candidature' },
+          { status: 500 }
+        );
+      }
+
+      if (!candidature) {
+        return NextResponse.json(
+          { success: false, error: 'Aucune candidature trouvée pour cet utilisateur' },
+          { status: 404 }
+        );
+      }
+
+      const currentStep = candidature.current_step || 'informations';
+      const currentStepIndex = stepOrder.indexOf(currentStep);
+
+      // Vérifier si on est déjà à la dernière étape
+      if (currentStepIndex >= stepOrder.length - 1) {
+        return NextResponse.json(
+          { success: false, error: 'L\'utilisateur est déjà à la dernière étape' },
+          { status: 400 }
+        );
+      }
+
+      const nextStep = stepOrder[currentStepIndex + 1];
+      const now = new Date().toISOString();
+
+      // Préparer les données de mise à jour
+      const updateData: Record<string, unknown> = {
+        current_step: nextStep,
+        updated_at: now,
+      };
+
+      // Si on passe à l'étape après inscription (documents), marquer comme payé
+      if (nextStep === 'documents' && !candidature.paid_at) {
+        updateData.paid_at = now;
+        updateData.status = 'paid';
+      }
+
+      // Mettre à jour la candidature
+      const { error: updateError } = await supabase
+        .from('candidatures')
+        .update(updateData)
+        .eq('user_id', profile.user_id);
+
+      if (updateError) {
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de la mise à jour de la candidature' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Étape débloquée. L'utilisateur est maintenant à l'étape "${nextStep}".`,
+        data: { previousStep: currentStep, newStep: nextStep }
+      });
+
+    } else if (action === 'relancer_mail') {
+      // Relancer par email - envoyer un lien magique pour continuer la candidature
+
+      // Récupérer l'email de l'utilisateur
+      const { data: userProfile, error: userProfileError } = await supabase
+        .from('user_profiles')
+        .select('email')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (userProfileError || !userProfile?.email) {
+        return NextResponse.json(
+          { success: false, error: 'Email de l\'utilisateur non trouvé' },
+          { status: 404 }
+        );
+      }
+
+      // Récupérer la candidature pour connaître l'étape actuelle
+      const { data: candidature } = await supabase
+        .from('candidatures')
+        .select('current_step, nom, prenom')
+        .eq('user_id', profile.user_id)
+        .maybeSingle();
+
+      const currentStep = candidature?.current_step || 'informations';
+
+      // Envoyer un magic link pour se connecter directement
+      // Le redirect passe par /auth/callback qui échangera le code et redirigera
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+      const { error: emailError } = await supabase.auth.signInWithOtp({
+        email: userProfile.email,
+        options: {
+          emailRedirectTo: `${siteUrl}/auth/callback`,
+        },
+      });
+
+      if (emailError) {
+        console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de l\'envoi de l\'email de relance' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Email de relance envoyé à ${userProfile.email}. L'utilisateur recevra un lien pour continuer sa candidature.`,
+      });
+
     } else if (action === 'supprimer_candidature') {
       // Récupérer la candidature avant de la supprimer pour obtenir les fichiers associés
       const { data: candidature, error: candidatureError } = await supabase
