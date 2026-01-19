@@ -27,19 +27,44 @@ export async function GET(request: NextRequest) {
       // Récupérer les questions avec leurs réponses possibles
       const { data: questions, error: questionsError } = await supabase
         .from('questions_quiz')
-        .select(`
-          *,
-          reponses_possibles (*)
-        `)
+        .select('*')
         .eq('quiz_id', quizId)
         .eq('actif', true)
-        .order('ordre_affichage', { ascending: true });
+        .order('ordre_affichage', { ascending: true});
 
       if (questionsError) {
         return NextResponse.json({ quiz, questions: [] });
       }
 
-      return NextResponse.json({ quiz, questions: questions || [] });
+      // Récupérer les réponses possibles pour toutes les questions
+      let questionsWithReponses = questions || [];
+      if (questions && questions.length > 0) {
+        const questionIds = questions.map(q => q.id);
+        const { data: reponses, error: reponsesError } = await supabase
+          .from('reponses_possibles')
+          .select('*')
+          .in('question_id', questionIds)
+          .order('ordre_affichage', { ascending: true });
+
+        if (!reponsesError && reponses) {
+          // Group reponses by question_id
+          const reponsesByQuestion = new Map<number, any[]>();
+          reponses.forEach(reponse => {
+            if (!reponsesByQuestion.has(reponse.question_id)) {
+              reponsesByQuestion.set(reponse.question_id, []);
+            }
+            reponsesByQuestion.get(reponse.question_id)!.push(reponse);
+          });
+
+          // Attach reponses to questions
+          questionsWithReponses = questions.map(q => ({
+            ...q,
+            reponses_possibles: reponsesByQuestion.get(q.id) || []
+          }));
+        }
+      }
+
+      return NextResponse.json({ quiz, questions: questionsWithReponses });
     }
 
     if (chapitreId) {
@@ -62,17 +87,42 @@ export async function GET(request: NextRequest) {
       // Récupérer les questions
       const { data: questions, error: questionsError } = await supabase
         .from('questions_quiz')
-        .select(`
-          *,
-          reponses_possibles (*)
-        `)
+        .select('*')
         .eq('quiz_id', quiz.id)
         .eq('actif', true)
         .order('ordre_affichage', { ascending: true });
 
-      return NextResponse.json({ 
-        quiz, 
-        questions: questions || [] 
+      // Récupérer les réponses possibles pour toutes les questions
+      let questionsWithReponses = questions || [];
+      if (questions && questions.length > 0) {
+        const questionIds = questions.map(q => q.id);
+        const { data: reponses, error: reponsesError } = await supabase
+          .from('reponses_possibles')
+          .select('*')
+          .in('question_id', questionIds)
+          .order('ordre_affichage', { ascending: true });
+
+        if (!reponsesError && reponses) {
+          // Group reponses by question_id
+          const reponsesByQuestion = new Map<number, any[]>();
+          reponses.forEach(reponse => {
+            if (!reponsesByQuestion.has(reponse.question_id)) {
+              reponsesByQuestion.set(reponse.question_id, []);
+            }
+            reponsesByQuestion.get(reponse.question_id)!.push(reponse);
+          });
+
+          // Attach reponses to questions
+          questionsWithReponses = questions.map(q => ({
+            ...q,
+            reponses_possibles: reponsesByQuestion.get(q.id) || []
+          }));
+        }
+      }
+
+      return NextResponse.json({
+        quiz,
+        questions: questionsWithReponses
       });
     }
 
