@@ -25,11 +25,26 @@ function ConfirmationContent() {
   }, [searchParams]);
 
   const handleResendEmail = async () => {
+    if (!email) {
+      showError('Email non disponible', 'Erreur');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Ici vous pouvez ajouter une fonction pour renvoyer l'email de confirmation
-      // await resendConfirmationEmail(email);
-      showSuccess('Email de confirmation renvoyé !', 'Succès');
+      const response = await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showSuccess('Email de confirmation renvoyé !', 'Succès');
+      } else {
+        showError(result.error || 'Erreur lors du renvoi de l\'email', 'Erreur');
+      }
     } catch (error) {
       showError('Erreur lors du renvoi de l\'email', 'Erreur');
     } finally {

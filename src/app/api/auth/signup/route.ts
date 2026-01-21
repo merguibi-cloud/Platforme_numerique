@@ -240,12 +240,28 @@ export async function POST(request: NextRequest) {
     } else {
       console.error('Aucune donnée retournée après insertion du profil');
       return NextResponse.json(
-        { 
+        {
           success: false,
           error: 'Erreur lors de la création du profil: aucune donnée retournée'
         },
         { status: 500 }
       );
+    }
+
+    // Envoyer l'email de confirmation (magic link) car admin.createUser() ne l'envoie pas automatiquement
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
+      email: email.toLowerCase(),
+      options: {
+        emailRedirectTo: `${siteUrl}/auth/callback`,
+      },
+    });
+
+    if (otpError) {
+      console.error('Erreur lors de l\'envoi de l\'email de confirmation:', otpError);
+      // On ne bloque pas l'inscription, l'utilisateur peut renvoyer l'email depuis la page de confirmation
+    } else {
+      console.log('Email de confirmation envoyé à:', email);
     }
 
     return NextResponse.json({
