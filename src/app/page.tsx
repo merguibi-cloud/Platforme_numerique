@@ -18,6 +18,23 @@ import { Improve } from './Improve';
 import { Footer } from './Footer';
 import { Modal } from './Modal';
 
+// Détecte les tokens d'authentification dans le hash et redirige vers /auth/callback
+function AuthTokenRedirectHandler() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) {
+      // Tokens détectés dans le hash, rediriger vers /auth/callback avec le hash
+      router.replace(`/auth/callback${hash}`);
+    }
+  }, [router]);
+
+  return null;
+}
+
 function SessionExpiredModalHandler() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -85,6 +102,8 @@ export default function Home() {
       <Suspense fallback={null}>
         <SessionExpiredModalHandler />
       </Suspense>
+
+      <AuthTokenRedirectHandler />
     </>
   );
 }
