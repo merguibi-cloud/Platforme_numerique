@@ -28,18 +28,41 @@ export async function POST(request: NextRequest) {
       ordre_affichage: (count || 0) + 1,
       explication,
       justification,
+      actif: true, // Les questions sont actives par défaut pour être visibles
     };
 
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:33',message:'Before question insert',data:questionData,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
+    
+    // Récupérer le max ID pour générer l'ID manuellement
+    const { data: maxQuestionIdData, error: maxQuestionIdError } = await supabase
+      .from('questions_quiz')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:37',message:'Max question ID query',data:{maxQuestionId:maxQuestionIdData?.id,hasError:!!maxQuestionIdError},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
+    const nextQuestionId = maxQuestionIdData?.id ? maxQuestionIdData.id + 1 : 1;
+    
+    const questionDataWithId = { ...questionData, id: nextQuestionId };
+    
     const { data: newQuestion, error: questionError } = await supabase
       .from('questions_quiz')
-      .insert(questionData)
+      .insert(questionDataWithId)
       .select()
       .single();
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:45',message:'Question insert result',data:{hasQuestion:!!newQuestion,hasError:!!questionError,errorCode:questionError?.code,errorMessage:questionError?.message,errorDetails:questionError?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
 
     if (questionError) {
       console.error('Erreur lors de la création de la question:', questionError);
       await logCreate(request, 'questions_quiz', 'unknown', questionData, `Échec de création de question: ${questionError.message}`).catch(() => {});
-      return NextResponse.json({ error: 'Erreur lors de la création de la question' }, { status: 500 });
+      return NextResponse.json({ error: questionError.message || 'Erreur lors de la création de la question' }, { status: 500 });
     }
 
     // Logger la création de la question
@@ -49,16 +72,37 @@ export async function POST(request: NextRequest) {
     if (reponses_possibles && reponses_possibles.length > 0 && 
         (type_question === 'choix_unique' || type_question === 'choix_multiple' || type_question === 'vrai_faux')) {
       
+      // Récupérer le max ID des réponses
+      const { data: maxReponseIdData, error: maxReponseIdError } = await supabase
+        .from('reponses_possibles')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single();
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:62',message:'Max reponse ID query',data:{maxReponseId:maxReponseIdData?.id,hasError:!!maxReponseIdError},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
+      let nextReponseId = maxReponseIdData?.id ? maxReponseIdData.id + 1 : 1;
+      
       const reponsesData = reponses_possibles.map((reponse: any, index: number) => ({
+        id: nextReponseId + index, // Générer des IDs séquentiels
         question_id: newQuestion.id,
         reponse: reponse.reponse,
         est_correcte: reponse.est_correcte || false,
         ordre_affichage: reponse.ordre_affichage || index + 1,
       }));
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:71',message:'Before reponses insert',data:{reponsesCount:reponsesData.length,firstReponse:reponsesData[0]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
 
       const { error: reponsesError } = await supabase
         .from('reponses_possibles')
         .insert(reponsesData);
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:76',message:'Reponses insert result',data:{hasError:!!reponsesError,errorCode:reponsesError?.code,errorMessage:reponsesError?.message,errorDetails:reponsesError?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
 
       if (reponsesError) {
         console.error('Erreur lors de la création des réponses:', reponsesError);
@@ -142,16 +186,30 @@ export async function PUT(request: NextRequest) {
            updatedQuestion.type_question === 'choix_multiple' || 
            updatedQuestion.type_question === 'vrai_faux')) {
         
+        // Récupérer le max ID des réponses
+        const { data: maxReponseIdData } = await supabase
+          .from('reponses_possibles')
+          .select('id')
+          .order('id', { ascending: false })
+          .limit(1)
+          .single();
+        let nextReponseId = maxReponseIdData?.id ? maxReponseIdData.id + 1 : 1;
+        
         const reponsesData = reponses_possibles.map((reponse: any, index: number) => ({
+          id: nextReponseId + index, // Générer des IDs séquentiels
           question_id: questionId,
           reponse: reponse.reponse,
           est_correcte: reponse.est_correcte || false,
           ordre_affichage: reponse.ordre_affichage || index + 1,
         }));
 
-        await supabase
+        const { error: reponsesInsertError } = await supabase
           .from('reponses_possibles')
           .insert(reponsesData);
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:163',message:'Reponses insert in PUT',data:{hasError:!!reponsesInsertError,errorMessage:reponsesInsertError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+        // #endregion
       }
     }
 

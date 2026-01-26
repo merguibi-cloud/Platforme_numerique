@@ -704,18 +704,20 @@ export const TiptapEditor = ({
         </div>
       )}
       
-      {/* Toolbar - Sticky */}
-      <TiptapToolbar
-        editor={editor}
-        onSaveDraft={onSaveDraft}
-        onNextStep={onNextStep}
-        isSaving={isSaving}
-        isAutoSaving={isAutoSaving}
-        onOpenImageModal={openImageModal}
-        onOpenVideoModal={openVideoModal}
-        onOpenLinkModal={openLinkModal}
-        nextStepButtonText={nextStepButtonText}
-      />
+      {/* Toolbar - Sticky pour rester visible en haut quand on scroll */}
+      <div className="sticky top-0 z-[100] bg-[#F8F5E4]">
+        <TiptapToolbar
+          editor={editor}
+          onSaveDraft={onSaveDraft}
+          onNextStep={onNextStep}
+          isSaving={isSaving}
+          isAutoSaving={isAutoSaving}
+          onOpenImageModal={openImageModal}
+          onOpenVideoModal={openVideoModal}
+          onOpenLinkModal={openLinkModal}
+          nextStepButtonText={nextStepButtonText}
+        />
+      </div>
 
       {/* Module Info Display */}
        {(moduleNumber || moduleTitle) && (
@@ -735,7 +737,7 @@ export const TiptapEditor = ({
        )}
 
        {/* Editor et Supports complémentaires en flex */}
-      <div className="flex flex-col overflow-y-auto">
+      <div className="flex flex-col">
         {/* Editor */}
         <div className="flex-1 min-h-[400px]">
           <EditorContent editor={editor} />

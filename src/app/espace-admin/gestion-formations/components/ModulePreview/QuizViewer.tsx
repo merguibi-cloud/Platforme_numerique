@@ -21,6 +21,13 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number[] }>({});
   const startTimeRef = useRef<Date | null>(null);
   const [tempsPasseMinutes, setTempsPasseMinutes] = useState(0);
+  const [maxVisitedIndex, setMaxVisitedIndex] = useState(0); // Suivre la dernière question visitée pour empêcher de revenir en arrière
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizViewer.tsx:18',message:'QuizViewer mounted',data:{quizId:quiz?.id,questionsCount:questions?.length || 0,questionsIsArray:Array.isArray(questions),firstQuestionId:questions?.[0]?.id,readOnly,isPreview},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+  }, [quiz, questions]);
+  // #endregion
 
   // Si readOnly, charger les réponses depuis les props
   useEffect(() => {
@@ -55,6 +62,12 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
 
   const currentQuestion = questions[currentQuestionIndex];
 
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizViewer.tsx:60',message:'Current question check',data:{currentQuestionIndex,questionsCount:questions?.length || 0,hasCurrentQuestion:!!currentQuestion,currentQuestionId:currentQuestion?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+  }, [currentQuestionIndex, questions, currentQuestion]);
+  // #endregion
+
   const handleAnswerSelect = (questionId: number, reponseId: number, isMultiple: boolean) => {
     if (readOnly) return; // Ne pas permettre la sélection en mode lecture seule
     if (isMultiple) {
@@ -73,7 +86,10 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      // Mettre à jour l'index maximum visité (empêche de revenir en arrière)
+      setMaxVisitedIndex(prev => Math.max(prev, nextIndex));
     } else {
       // Fin du quiz - afficher les résultats
       setUserAnswers(selectedAnswers);
@@ -88,8 +104,19 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
   };
 
   const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+    // Empêcher de revenir en arrière si on n'est pas en mode preview ou en mode lecture seule
+    // En mode étudiant normal, on ne peut pas revenir en arrière une fois qu'on a avancé
+    if (readOnly || isPreview) {
+      // En mode lecture seule ou preview, on peut naviguer librement
+      if (currentQuestionIndex > 0) {
+        setCurrentQuestionIndex(prev => prev - 1);
+      }
+    } else {
+      // En mode étudiant normal : une fois qu'on a cliqué sur "Suivante", on ne peut plus jamais revenir en arrière
+      // On ne peut revenir seulement si on est toujours à la position initiale (maxVisitedIndex === 0)
+      // ou si on n'a pas encore avancé (currentQuestionIndex === maxVisitedIndex === 0)
+      // En pratique, cela signifie qu'on ne peut jamais revenir en arrière en mode étudiant normal
+      // car dès qu'on clique sur "Suivante", maxVisitedIndex augmente et on ne peut plus revenir
     }
   };
 
@@ -295,19 +322,26 @@ export const QuizViewer = ({ quiz, questions, isPreview = true, readOnly = false
 
       {/* Navigation */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 md:gap-4">
-        <button
-          onClick={handlePrevious}
-          disabled={currentQuestionIndex === 0}
-          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-bold uppercase transition-colors ${
-            currentQuestionIndex === 0
-              ? 'bg-[#F8F5E4] text-[#032622]/50 border-2 border-[#032622]/30 cursor-not-allowed'
-              : 'bg-[#F8F5E4] text-[#032622] border-2 border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4] active:bg-[#032622]/80'
-          }`}
-          style={{ fontFamily: 'var(--font-termina-bold)' }}
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-          PRÉCÉDENTE
-        </button>
+        <div className="relative">
+          <button
+            onClick={handlePrevious}
+            disabled={
+              readOnly || isPreview 
+                ? currentQuestionIndex === 0 
+                : currentQuestionIndex === 0 || maxVisitedIndex > 0
+            }
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-bold uppercase transition-colors bg-[#F8F5E4] text-[#032622] border-2 border-[#032622] hover:bg-[#032622] hover:text-[#F8F5E4] active:bg-[#032622]/80 disabled:hover:bg-[#F8F5E4] disabled:hover:text-[#032622]"
+            style={{ fontFamily: 'var(--font-termina-bold)' }}
+          >
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+            PRÉCÉDENTE
+          </button>
+          {(readOnly || isPreview 
+            ? currentQuestionIndex === 0 
+            : currentQuestionIndex === 0 || maxVisitedIndex > 0) && (
+            <div className="absolute inset-0 bg-gray-500/50 rounded-sm cursor-not-allowed pointer-events-none"></div>
+          )}
+        </div>
 
         <button
           onClick={handleNext}

@@ -542,10 +542,16 @@ export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: Qui
     }
     
     setIsSaving(true);
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:544',message:'handleSubmit - Entry',data:{hasQuizId:!!quizId,questionsCount:questions.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'ALL'})}).catch(()=>{});
+    // #endregion
     try {
       // Créer ou mettre à jour le quiz
       let currentQuizId = quizId;
       if (!currentQuizId) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:549',message:'Creating quiz',data:{coursId,chapitreId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         const quizResponse = await fetch('/api/quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -559,21 +565,38 @@ export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: Qui
             questions_aleatoires: false,
           }),
         });
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:566',message:'Quiz creation response',data:{ok:quizResponse.ok,status:quizResponse.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         if (quizResponse.ok) {
           const quizData = await quizResponse.json();
           currentQuizId = quizData.quiz.id;
           setQuizId(currentQuizId);
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:572',message:'Quiz created successfully',data:{quizId:currentQuizId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+          // #endregion
         } else {
-          throw new Error('Erreur lors de la création du quiz');
+          const errorData = await quizResponse.json().catch(() => ({}));
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:577',message:'Quiz creation failed',data:{error:errorData.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+          // #endregion
+          throw new Error(errorData.error || 'Erreur lors de la création du quiz');
         }
       }
 
       // Sauvegarder chaque question
       const updatedQuestions = [...questions];
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:577',message:'Starting to save questions',data:{questionsCount:questions.length,quizId:currentQuizId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         if (!q.question.trim()) continue;
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:584',message:'Processing question',data:{questionIndex:i,hasQuestionId:!!q.id,typeQuestion:q.type_question,reponsesCount:q.reponses.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
 
         const questionData: any = {
           quiz_id: currentQuizId,
@@ -697,6 +720,9 @@ export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: Qui
       // Rediriger vers le chapitre après sauvegarde
       router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`);
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'QuizEditorPage.tsx:707',message:'Error caught in handleSubmit',data:{errorMessage:error instanceof Error ? error.message : String(error),errorStack:error instanceof Error ? error.stack : undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'ALL'})}).catch(()=>{});
+      // #endregion
       console.error('Erreur lors de la sauvegarde du quiz:', error);
       setModal({
         isOpen: true,

@@ -262,20 +262,40 @@ export const StudentCourseViewer = ({
           let chapitres = chapitresData?.chapitres || [];
 
           const quizzesMap = new Map<number, QuizData>();
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:264',message:'Starting quiz fetch',data:{chapitresCount:chapitres.length,chapitresIds:chapitres.map(ch => ch.id),coursId},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+          // #endregion
           await Promise.all(
             chapitres.map(async (ch: ChapitreCours) => {
               try {
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:268',message:'Fetching quiz for chapitre',data:{chapitreId:ch.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                // #endregion
                 const quizResponse = await fetch(`/api/quiz?chapitreId=${ch.id}`, {
                   credentials: 'include',
                   headers: { 'Content-Type': 'application/json' }
                 });
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:275',message:'Quiz response for chapitre',data:{chapitreId:ch.id,ok:quizResponse.ok,status:quizResponse.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                // #endregion
                 if (quizResponse.ok) {
                   const quizData = await quizResponse.json();
+                  // #region agent log
+                  fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:280',message:'Quiz data received from API',data:{chapitreId:ch.id,hasQuiz:!!quizData.quiz,quizId:quizData.quiz?.id,questionsCount:quizData.questions?.length || 0,questionsIsArray:Array.isArray(quizData.questions),quizDataKeys:Object.keys(quizData),firstQuestionId:quizData.questions?.[0]?.id,rawQuestionsLength:quizData.questions?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                  // #endregion
                   if (quizData.quiz) {
-                    quizzesMap.set(ch.id, {
+                    const questionsArray = quizData.questions || [];
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:287',message:'Setting quiz in map',data:{chapitreId:ch.id,quizId:quizData.quiz.id,questionsCount:questionsArray.length,questionsIsArray:Array.isArray(questionsArray),questionsLength:questionsArray.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                    // #endregion
+                    const quizDataForMap = {
                       quiz: quizData.quiz,
-                      questions: quizData.questions || []
-                    });
+                      questions: questionsArray
+                    };
+                    quizzesMap.set(ch.id, quizDataForMap);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:295',message:'Quiz set in map, verifying',data:{chapitreId:ch.id,mapSize:quizzesMap.size,retrievedQuizId:quizzesMap.get(ch.id)?.quiz?.id,retrievedQuestionsCount:quizzesMap.get(ch.id)?.questions?.length || 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                    // #endregion
                   }
                 }
               } catch (error) {
@@ -283,6 +303,67 @@ export const StudentCourseViewer = ({
               }
             })
           );
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:294',message:'Quizzes map after chapitres search',data:{quizzesMapSize:quizzesMap.size,mapEntries:Array.from(quizzesMap.entries()).map(([k,v]) => ({key:k,quizId:v.quiz?.id,questionsCount:v.questions?.length || 0}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+          // #endregion
+          
+          // Si aucun quiz trouvé par chapitre, chercher au niveau du cours
+          if (quizzesMap.size === 0 && coursId) {
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:297',message:'No quiz found by chapitre, trying coursId',data:{coursId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
+            try {
+              const quizResponse = await fetch(`/api/quiz?coursId=${coursId}`, {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              // #region agent log
+              fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:304',message:'Quiz response by coursId',data:{coursId,ok:quizResponse.ok,status:quizResponse.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+              // #endregion
+              if (quizResponse.ok) {
+                const quizData = await quizResponse.json();
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:309',message:'Quiz data by coursId',data:{coursId,hasQuizzes:Array.isArray(quizData.quizzes),quizzesCount:quizData.quizzes?.length || 0,firstQuizId:quizData.quizzes?.[0]?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                // #endregion
+                // Si c'est un tableau (plusieurs quiz)
+                if (Array.isArray(quizData.quizzes) && quizData.quizzes.length > 0) {
+                  // Prendre le premier quiz et l'associer au premier chapitre ou créer une clé virtuelle
+                  const firstQuiz = quizData.quizzes[0];
+                  // #region agent log
+                  fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:315',message:'Fetching quiz with questions',data:{quizId:firstQuiz.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+                  // #endregion
+                  // Récupérer les questions de ce quiz
+                  const quizWithQuestionsResponse = await fetch(`/api/quiz?quizId=${firstQuiz.id}`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                  });
+                  // #region agent log
+                  fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:322',message:'Quiz with questions response',data:{quizId:firstQuiz.id,ok:quizWithQuestionsResponse.ok,hasQuiz:!!quizWithQuestionsResponse.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+                  // #endregion
+                  if (quizWithQuestionsResponse.ok) {
+                    const quizWithQuestions = await quizWithQuestionsResponse.json();
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:327',message:'Quiz with questions data',data:{quizId:quizWithQuestions.quiz?.id,questionsCount:quizWithQuestions.questions?.length || 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+                    // #endregion
+                    // Utiliser l'ID du cours comme clé si aucun chapitre
+                    const keyId = chapitres.length > 0 ? chapitres[0].id : coursId;
+                    quizzesMap.set(keyId, {
+                      quiz: quizWithQuestions.quiz,
+                      questions: quizWithQuestions.questions || []
+                    });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error(`Erreur lors du chargement du quiz pour le cours ${coursId}:`, error);
+            }
+          }
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:346',message:'Final quizzes map',data:{quizzesMapSize:quizzesMap.size,hasQuiz:quizzesMap.size > 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'ALL'})}).catch(()=>{});
+          // #endregion
+          
           setQuizzesByChapitre(quizzesMap);
 
           let etudeCas = null;
@@ -301,11 +382,24 @@ export const StudentCourseViewer = ({
           
           let quiz = null;
           let quizQuestions = [];
+          // Chercher le quiz dans la map (par chapitre ou par coursId si pas de chapitres)
           if (chapitres.length > 0 && quizzesMap.has(chapitres[0].id)) {
             const firstQuizData = quizzesMap.get(chapitres[0].id)!;
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:382',message:'Setting currentQuiz from chapitre',data:{chapitreId:chapitres[0].id,quizId:firstQuizData.quiz?.id,questionsCount:firstQuizData.questions?.length || 0,questionsIsArray:Array.isArray(firstQuizData.questions)},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
             quiz = firstQuizData.quiz;
             quizQuestions = firstQuizData.questions;
             setCurrentQuiz(firstQuizData);
+          } else if (quizzesMap.size > 0) {
+            // Prendre le premier quiz trouvé (même si pas de chapitres)
+            const firstQuizEntry = Array.from(quizzesMap.values())[0];
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:389',message:'Setting currentQuiz from map (no chapitres)',data:{quizId:firstQuizEntry.quiz?.id,questionsCount:firstQuizEntry.questions?.length || 0,questionsIsArray:Array.isArray(firstQuizEntry.questions)},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
+            quiz = firstQuizEntry.quiz;
+            quizQuestions = firstQuizEntry.questions;
+            setCurrentQuiz(firstQuizEntry);
           } else {
             setCurrentQuiz(null);
           }
@@ -325,6 +419,9 @@ export const StudentCourseViewer = ({
             const lastPosition = await loadLastPosition(sortedChapitres);
             setCurrentChapitreIndex(lastPosition !== null ? lastPosition : 0);
             setCurrentView('cours');
+          } else if (quiz && quizQuestions.length > 0) {
+            // Si pas de chapitres mais un quiz avec des questions, afficher directement le quiz
+            setCurrentView('quiz');
           }
           
           setIsLoading(false);
@@ -338,15 +435,34 @@ export const StudentCourseViewer = ({
           const etudeCasQuestions = cours.etude_cas_questions || [];
 
           const quizzesMap = new Map<number, QuizData>();
-          chapitres.forEach((chapitre: any) => {
-            if (chapitre.quizzes && chapitre.quizzes.length > 0) {
-              const quizData = chapitre.quizzes[0];
-              quizzesMap.set(chapitre.id, {
-                quiz: quizData.quiz || quizData,
-                questions: quizData.questions || []
-              });
-            }
-          });
+          // Charger les quiz avec leurs questions depuis l'API car completeData peut ne pas avoir les questions
+          await Promise.all(
+            chapitres.map(async (chapitre: any) => {
+              try {
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:439',message:'Loading quiz from API for completeData path',data:{chapitreId:chapitre.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                // #endregion
+                const quizResponse = await fetch(`/api/quiz?chapitreId=${chapitre.id}`, {
+                  credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' }
+                });
+                if (quizResponse.ok) {
+                  const quizData = await quizResponse.json();
+                  // #region agent log
+                  fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:446',message:'Quiz loaded from API in completeData path',data:{chapitreId:chapitre.id,hasQuiz:!!quizData.quiz,questionsCount:quizData.questions?.length || 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H1'})}).catch(()=>{});
+                  // #endregion
+                  if (quizData.quiz) {
+                    quizzesMap.set(chapitre.id, {
+                      quiz: quizData.quiz,
+                      questions: quizData.questions || []
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error(`Erreur lors du chargement du quiz pour le chapitre ${chapitre.id}:`, error);
+              }
+            })
+          );
           setQuizzesByChapitre(quizzesMap);
 
           let quiz = null;
@@ -543,6 +659,9 @@ export const StudentCourseViewer = ({
       trackProgression('view_chapitre', tempsPasseMinutes);
       
       const quizData = quizzesByChapitre.get(currentChapitre.id);
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:642',message:'Updating currentQuiz from quizzesByChapitre in useEffect',data:{chapitreId:currentChapitre.id,hasQuizData:!!quizData,questionsCount:quizData?.questions?.length || 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       if (quizData) {
         setCurrentQuiz(quizData);
       } else {
@@ -556,6 +675,22 @@ export const StudentCourseViewer = ({
       }, 500);
     }
   }, [currentChapitreIndex, currentChapitre, quizzesByChapitre, currentView]);
+
+  // Synchroniser currentQuiz quand quizzesByChapitre change et qu'on est en vue quiz
+  useEffect(() => {
+    if (currentView === 'quiz' && currentChapitre) {
+      const quizData = quizzesByChapitre.get(currentChapitre.id);
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:663',message:'Syncing currentQuiz when quizzesByChapitre changes in quiz view',data:{chapitreId:currentChapitre.id,hasQuizData:!!quizData,questionsCount:quizData?.questions?.length || 0,currentQuizQuestionsCount:currentQuiz?.questions?.length || 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
+      if (quizData && quizData.questions && quizData.questions.length > 0) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:668',message:'Updating currentQuiz with questions from map',data:{quizId:quizData.quiz?.id,questionsCount:quizData.questions.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
+        setCurrentQuiz(quizData);
+      }
+    }
+  }, [quizzesByChapitre, currentView, currentChapitre]);
 
   // Enregistrer quand on quitte la page
   useEffect(() => {
@@ -809,7 +944,18 @@ export const StudentCourseViewer = ({
           loadRealProgress();
         }, 500);
       } else {
-        console.error('Erreur lors de la soumission du quiz');
+        // Récupérer le message d'erreur de l'API
+        let errorMessage = 'Erreur lors de la soumission du quiz';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // Si on ne peut pas parser la réponse, utiliser le message par défaut
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+        }
+        console.error('Erreur lors de la soumission du quiz:', errorMessage);
+        setErrorMessage(errorMessage);
+        setShowErrorModal(true);
       }
     } catch (error) {
       console.error('Erreur lors de la soumission du quiz:', error);
@@ -1253,20 +1399,28 @@ export const StudentCourseViewer = ({
                 )}
 
                 {currentView === 'quiz' && currentQuiz && (
-                  <QuizViewer
-                    quiz={currentQuiz.quiz}
-                    questions={currentQuiz.questions}
-                    isPreview={false}
-                    readOnly={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id}
-                    userAnswers={quizReponses?.reponses || null}
-                    quizResult={quizReponses?.tentative || null}
-                    onQuizComplete={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id ? undefined : (reponses, tempsPasse) => {
-                      if (reponses && tempsPasse !== undefined) {
-                        handleQuizSubmit(reponses, tempsPasse);
-                        setQuizCompleted(true);
-                      }
-                    }}
-                  />
+                  <>
+                    {/* #region agent log */}
+                    {(() => {
+                      fetch('http://127.0.0.1:7244/ingest/69901f65-8844-4cd3-80e9-b1212b63434f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StudentCourseViewer.tsx:1338',message:'Rendering QuizViewer',data:{quizId:currentQuiz.quiz?.id,questionsCount:currentQuiz.questions?.length || 0,questionsIsArray:Array.isArray(currentQuiz.questions),readOnly:quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H2'})}).catch(()=>{});
+                      return null;
+                    })()}
+                    {/* #endregion */}
+                    <QuizViewer
+                      quiz={currentQuiz.quiz}
+                      questions={currentQuiz.questions}
+                      isPreview={false}
+                      readOnly={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id}
+                      userAnswers={quizReponses?.reponses || null}
+                      quizResult={quizReponses?.tentative || null}
+                      onQuizComplete={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id ? undefined : (reponses, tempsPasse) => {
+                        if (reponses && tempsPasse !== undefined) {
+                          handleQuizSubmit(reponses, tempsPasse);
+                          setQuizCompleted(true);
+                        }
+                      }}
+                    />
+                  </>
                 )}
 
                 {currentView === 'etude-cas' && data.etudeCas && (
