@@ -290,6 +290,9 @@ export async function GET(request: NextRequest) {
       if (bloc.numero_bloc === 1) {
         // Le bloc 1 est toujours débloqué
         locked = false;
+      } else if (bloc.numero_bloc === 4) {
+        // TEMPORAIRE : Débloquer le bloc 4 pour les tests
+        locked = false;
       } else {
         // Vérifier si tous les blocs précédents sont à 100%
         const blocsPrecedents = blocsFiltres.slice(0, index);

@@ -821,7 +821,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
         </div>
       </div>
       {/* Main Content */}
-      <div className="w-full">
+      <div className="w-full h-[calc(100vh-80px)] overflow-y-auto">
         <div className="w-full space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6">
         </div>
 

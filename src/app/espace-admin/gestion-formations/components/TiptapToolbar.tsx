@@ -73,7 +73,7 @@ export const TiptapToolbar = ({
   }
 
   return (
-    <div className="sticky top-0 z-50 bg-[#F8F5E4] border-b border-[#032622] shadow-sm">
+    <div className="bg-[#F8F5E4] border-b border-[#032622] shadow-sm">
       <div className="flex items-stretch w-full">
         {/* Toolbar */}
         <div className="bg-[#032622] text-[#F8F5E4] p-3 flex items-center gap-4 flex-[2]">
