@@ -8,7 +8,8 @@ import { getCurrentUser } from '@/lib/auth-api';
  * Hook pour suivre le temps de connexion de l'utilisateur
  * Envoie périodiquement la durée de connexion au serveur
  * Ne fonctionne QUE dans l'espace étudiant pour éviter de tracker le temps passé dans la validation
- */
+ */ 
+
 export function useSessionTracker() {
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
