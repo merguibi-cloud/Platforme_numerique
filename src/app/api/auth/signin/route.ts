@@ -26,31 +26,31 @@ export async function POST(request: NextRequest) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        
+
         // Récupérer l'utilisateur par email
         const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
         const user = userList?.users?.find(u => u.email === email.toLowerCase());
-        
+
         if (user && !user.email_confirmed_at) {
           // Confirmer l'email
           await supabaseAdmin.auth.admin.updateUserById(user.id, {
             email_confirm: true,
           });
-          
+
           // Réessayer la connexion
           const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
-          
+
           if (retryError) {
-            await logLogin(request, user.id, email, 'error', retryError.message).catch(() => {});
+            await logLogin(request, user.id, email, 'error', retryError.message).catch(() => { });
             return NextResponse.json(
               { error: 'Email ou mot de passe incorrect.' },
               { status: 400 }
             );
           }
-          
+
           // Utiliser les données de la nouvelle tentative
           if (retryData) {
             Object.assign(data, retryData);
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
           const userList = await supabaseAdmin.auth.admin.listUsers();
           const user = userList?.data?.users?.find(u => u.email === email.toLowerCase());
           if (user) {
-            await logLogin(request, user.id, email, 'error', 'Email non confirmé').catch(() => {});
+            await logLogin(request, user.id, email, 'error', 'Email non confirmé').catch(() => { });
           }
           return NextResponse.json(
             { error: 'Veuillez confirmer votre email avant de vous connecter.' },
@@ -69,20 +69,20 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // Logger l'échec de connexion (email/mot de passe incorrect)
-        await logLogin(request, null, email, 'error', error.message).catch(() => {});
+        await logLogin(request, null, email, 'error', error.message).catch(() => { });
         return NextResponse.json(
           { error: 'Email ou mot de passe incorrect.' },
           { status: 400 }
         );
       }
     }
-    
+
     // Si l'email n'est pas encore confirmé, le confirmer maintenant
     if (data.user && !data.user.email_confirmed_at) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-      
+
       await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
         email_confirm: true,
       });
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        
+
         // Mettre à jour les metadata pour forcer le changement de mot de passe
         await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
           user_metadata: {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
             requires_password_change: true,
           },
         });
-        
+
         // Définir les cookies de session pour qu'il puisse changer son mot de passe
         const response = NextResponse.json({
           success: false,
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
           message: 'Vous devez changer votre mot de passe temporaire',
           redirectTo: '/espace-admin/change-password',
         });
-        
+
         if (data.session) {
           try {
             const cookieStore = await cookies();
@@ -134,15 +134,16 @@ export async function POST(request: NextRequest) {
               maxAge: 60 * 60 * 24 * 7, // 7 jours
             });
             cookieStore.set('sb-refresh-token', data.session.refresh_token, {
-              httpOnly: false,
+              httpOnly: true, // Security: refresh token not accessible via JavaScript
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
               maxAge: 60 * 60 * 24 * 7, // 7 jours
             });
+
           } catch (cookieError) {
           }
         }
-        
+
         return response;
       }
     }
@@ -157,14 +158,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Logger la connexion réussie
-    await logLogin(request, data.user.id, data.user.email || email, 'success').catch(() => {});
-    
+    await logLogin(request, data.user.id, data.user.email || email, 'success').catch(() => { });
+
     // Enregistrer la session de connexion initiale (1 minute)
     // Utiliser une approche avec vérification pour éviter les erreurs
     try {
       const supabaseServer = getSupabaseServerClient();
       const aujourdhui = new Date().toISOString().split('T')[0];
-      
+
       // Vérifier si une session existe déjà pour aujourd'hui
       const { data: existingSession } = await supabaseServer
         .from('sessions_connexion')
@@ -194,7 +195,7 @@ export async function POST(request: NextRequest) {
       console.error('Erreur enregistrement session initiale:', err);
       // Ne pas bloquer la connexion si l'enregistrement échoue
     }
-    
+
     // Définir les cookies de session
     const response = NextResponse.json({
       success: true,
@@ -214,11 +215,12 @@ export async function POST(request: NextRequest) {
           maxAge: 60 * 60 * 24 * 7, // 7 jours
         });
         cookieStore.set('sb-refresh-token', data.session.refresh_token, {
-          httpOnly: false,
+          httpOnly: true, // Security: refresh token not accessible via JavaScript
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 7, // 7 jours
         });
+
       } catch (cookieError) {
       }
     }

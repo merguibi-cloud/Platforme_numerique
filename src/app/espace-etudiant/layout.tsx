@@ -5,6 +5,9 @@ import { StudentSidebar } from './components/StudentSidebar';
 import { SessionTracker } from '@/components/SessionTracker';
 import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 import { getSessionRole } from '@/lib/auth-api';
+import { useTokenRefresh } from '@/hooks/useTokenRefresh';
+
+
 
 export default function StudentLayout({
   children,
@@ -15,6 +18,9 @@ export default function StudentLayout({
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  useTokenRefresh(); // Proactively refresh tokens before expiry
+
+  
 
   useEffect(() => {
     const checkStudentAccess = async () => {
