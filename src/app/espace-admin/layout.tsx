@@ -6,6 +6,9 @@ import { AdminUserProvider } from './components/AdminUserProvider';
 import { SessionTracker } from '@/components/SessionTracker';
 import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 import { getSessionRole, getCurrentUser } from '@/lib/auth-api';
+import { useTokenRefresh } from '@/hooks/useTokenRefresh';
+
+
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -17,6 +20,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
   const pathname = usePathname();
+  useTokenRefresh(); // Proactively refresh tokens before expiry
+
 
   useEffect(() => {
     const checkAdminAccess = async (): Promise<void> => {

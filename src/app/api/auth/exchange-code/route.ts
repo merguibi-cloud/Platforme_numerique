@@ -8,24 +8,24 @@ export async function GET(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
+
     // Récupérer le code depuis l'URL
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
-    
+
     if (!code) {
       return NextResponse.redirect(new URL('/?error=code_missing', request.url));
     }
-    
+
     // Échanger le code contre une session
     const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-    
+
     if (sessionError) {
       return NextResponse.redirect(new URL('/?error=token_invalid', request.url));
     }
-    
+
     if (sessionData.session) {
       // Définir les cookies de session
       const cookieStore = await cookies();
@@ -36,12 +36,13 @@ export async function GET(request: NextRequest) {
         maxAge: 60 * 60 * 24 * 7, // 7 jours
       });
       cookieStore.set('sb-refresh-token', sessionData.session.refresh_token, {
-        httpOnly: false,
+        httpOnly: true, // Security: refresh token not accessible via JavaScript
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 7 jours
       });
-      
+
+
       // Confirmer l'email si ce n'est pas déjà fait
       if (!sessionData.user.email_confirmed_at) {
         const supabaseService = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -49,14 +50,14 @@ export async function GET(request: NextRequest) {
           email_confirm: true,
         });
       }
-      
+
       // Déterminer la redirection selon le rôle
       const roleResolution = await resolveRoleForUser(sessionData.user.id);
-      
+
       // Pour les nouveaux utilisateurs (lead), rediriger vers /validation
       // Pour les autres rôles, utiliser la redirection définie
       let redirectTo = roleResolution.redirectTo;
-      
+
       // Si pas de redirection trouvée, vérifier si c'est un lead/candidat
       if (!redirectTo) {
         const supabaseService = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -65,17 +66,17 @@ export async function GET(request: NextRequest) {
           .select('role')
           .eq('user_id', sessionData.user.id)
           .maybeSingle();
-        
+
         if (profile && (profile.role === 'lead' || profile.role === 'candidat')) {
           redirectTo = '/validation';
         } else {
           redirectTo = '/';
         }
       }
-      
+
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
-    
+
     return NextResponse.redirect(new URL('/?error=session_error', request.url));
   } catch (error) {
     return NextResponse.redirect(new URL('/?error=callback_error', request.url));
