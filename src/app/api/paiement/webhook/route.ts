@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
+import { sendPaymentConfirmationEmailWithResend } from '@/lib/email-service';
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
   // Vérifier que Stripe est configuré avec une clé valide
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
+
   if (!stripeSecretKey) {
     console.error('STRIPE_SECRET_KEY non configuré dans les variables d\'environnement');
     return NextResponse.json(
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     // S'assurer que candidature_id est une string (Stripe peut parfois convertir les valeurs)
     const candidatureId = String(paymentIntent.metadata?.candidature_id || '').trim();
-    
+
     if (!candidatureId || candidatureId === '') {
       console.error('candidature_id manquant dans les metadata du Payment Intent:', paymentIntent.id);
       return NextResponse.json({ received: true });
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
     // SÉCURITÉ 3: Valider la candidature
     const { data: candidature, error: candidatureError } = await supabase
       .from('candidatures')
-      .select('id, user_id, paid_at, status')
+      .select('id, user_id, paid_at, status, email, prenom, nom, formation_id')
       .eq('id', candidatureId)
       .maybeSingle();
 
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
       if (insertError.code === '23505') { // Code d'erreur PostgreSQL pour violation UNIQUE
         return NextResponse.json({ received: true });
       }
-      
+
       console.error('Erreur lors de la création du paiement:', insertError);
       return NextResponse.json(
         { error: 'Erreur lors de la création du paiement' },
@@ -199,11 +200,39 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+    // Envoyer l'email de confirmation de paiement
+    try {
+      // Récupérer les informations de la formation
+      let formationName: string | undefined;
+      if (candidature.formation_id) {
+        const { data: formation } = await supabase
+          .from('formations')
+          .select('nom')
+          .eq('id', candidature.formation_id)
+          .maybeSingle();
+        formationName = formation?.nom;
+      }
+
+      await sendPaymentConfirmationEmailWithResend({
+        to: candidature.email || '',
+        candidateName: `${candidature.prenom || ''} ${candidature.nom || ''}`.trim() || 'Candidat',
+        amount: amountReceived,
+        currency: paymentIntent.currency.toUpperCase(),
+        paidAt: paidAtDate,
+        paymentMethod: 'card',
+        formationName: formationName,
+        paiementId: paiement.id,
+      });
+    } catch (emailError) {
+      // Ne pas bloquer le webhook si l'email échoue
+      console.error('Erreur lors de l\'envoi de l\'email de confirmation:', emailError);
+    }
+
   } else if (event.type === 'payment_intent.payment_failed') {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     // S'assurer que candidature_id est une string
     const candidatureId = String(paymentIntent.metadata?.candidature_id || '').trim();
-    
+
     if (!candidatureId || candidatureId === '') {
       console.error('candidature_id manquant dans les metadata du Payment Intent pour paiement échoué');
       return NextResponse.json({ received: true });
@@ -241,7 +270,7 @@ export async function POST(request: NextRequest) {
       if (insertError.code === '23505') {
         return NextResponse.json({ received: true });
       }
-      
+
       console.error('Erreur lors de la création du paiement échoué:', insertError);
     }
   }
