@@ -1,32 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
 import Stripe from 'stripe';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseServerClient();
 
-    // Récupérer le token d'accès depuis les cookies
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('access_token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: 'Non authentifié' },
-        { status: 401 }
-      );
+    // Vérifier l'authentification
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
-
-    // Vérifier l'utilisateur avec le token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Session invalide' },
-        { status: 401 }
-      );
-    }
+    const { user } = authResult;
 
     // Récupérer l'ID du paiement ou de la candidature depuis les paramètres
     const { searchParams } = new URL(request.url);
