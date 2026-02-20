@@ -26,9 +26,9 @@ interface MenuGroup {
 }
 
 const menuItems: (MenuItem | MenuGroup)[] = [
-  { 
-    id: 'dashboard', 
-    label: 'DASHBOARD', 
+  {
+    id: 'dashboard',
+    label: 'DASHBOARD',
     icon: '/menue_etudiant/Dashboard.png',
     iconInactive: '/menue_etudiant/nonselectionner/dashboard.png',
     href: '/espace-admin/dashboard'
@@ -40,79 +40,86 @@ const menuItems: (MenuItem | MenuGroup)[] = [
     icon: '/menue_etudiant/Livre.png',
     iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
     children: [
-  { 
-    id: 'gestion-etudiants', 
-    label: 'GESTION ÉTUDIANTS', 
-    icon: '/menue_etudiant/Etudiant.png',
-    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/gestion-etudiants'
-  },
-  { 
-    id: 'gestion-formations', 
-    label: 'GESTION FORMATIONS', 
-    icon: '/menue_etudiant/Livre.png',
-    iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
-    href: '/espace-admin/gestion-formations'
-  },
-      { 
-        id: 'gestion-inscriptions', 
-        label: 'GESTION DES INSCRIPTIONS', 
+      {
+        id: 'gestion-etudiants',
+        label: 'GESTION ÉTUDIANTS',
+        icon: '/menue_etudiant/Etudiant.png',
+        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+        href: '/espace-admin/gestion-etudiants'
+      },
+      {
+        id: 'gestion-formations',
+        label: 'GESTION FORMATIONS',
+        icon: '/menue_etudiant/Livre.png',
+        iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
+        href: '/espace-admin/gestion-formations'
+      },
+      {
+        id: 'gestion-inscriptions',
+        label: 'GESTION DES INSCRIPTIONS',
         icon: '/menue_etudiant/Etudiant.png',
         iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
         href: '/espace-admin/gestion-inscriptions'
       },
-  { 
-    id: 'attribution', 
-    label: 'ESPACE D\'ATTRIBUTION', 
-    icon: '/menue_etudiant/Etudiant.png',
-    iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
-    href: '/espace-admin/attribution'
+      {
+        id: 'attribution',
+        label: 'ESPACE D\'ATTRIBUTION',
+        icon: '/menue_etudiant/Etudiant.png',
+        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+        href: '/espace-admin/attribution'
+      },
+      {
+        id: 'gestion-paiements',
+        label: 'GESTION PAIEMENTS',
+        icon: '/menue_etudiant/Etudiant.png',
+        iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
+        href: '/espace-admin/gestion-paiements'
       }
     ]
   },
-  { 
-    id: 'agenda', 
-    label: 'AGENDA', 
+  {
+    id: 'agenda',
+    label: 'AGENDA',
     icon: '/menue_etudiant/calendrier.png',
     iconInactive: '/menue_etudiant/nonselectionner/calandrier.png',
     href: '/espace-admin/agenda'
   },
-  { 
-    id: 'bibliotheque', 
-    label: 'BIBLIOTHÈQUE NUMÉRIQUE', 
+  {
+    id: 'bibliotheque',
+    label: 'BIBLIOTHÈQUE NUMÉRIQUE',
     icon: '/menue_etudiant/Bibliothèque.png',
     iconInactive: '/menue_etudiant/nonselectionner/bibliothequenumerique.png',
     href: '/espace-admin/bibliotheque'
   },
-  { 
-    id: 'vie-etudiante', 
-    label: 'VIE ÉTUDIANTE', 
+  {
+    id: 'vie-etudiante',
+    label: 'VIE ÉTUDIANTE',
     icon: '/menue_etudiant/Etudiant.png',
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
     href: '/espace-admin/vie-etudiante'
   },
-  
- /* { 
-    id: 'messagerie', 
-    label: 'MESSAGERIE', 
-    icon: '/menue_etudiant/messagerie.png',
-    iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
-    href: '/espace-admin/messagerie'
-  },
-  */
+
+  /* { 
+     id: 'messagerie', 
+     label: 'MESSAGERIE', 
+     icon: '/menue_etudiant/messagerie.png',
+     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
+     href: '/espace-admin/messagerie'
+   },
+   */
 ];
 
 const bottomMenuItems = [
-  { 
-    id: 'parametres', 
-    label: 'PARAMÈTRES', 
+  {
+    id: 'parametres',
+    label: 'PARAMÈTRES',
     icon: '/menue_etudiant/Support.png',
     iconInactive: '/menue_etudiant/Support.png',
     href: '/espace-admin/parametres'
   },
-  { 
-    id: 'logout', 
-    label: 'SE DÉCONNECTER', 
+  {
+    id: 'logout',
+    label: 'SE DÉCONNECTER',
     icon: '/menue_etudiant/Logout2.png',
     iconInactive: '/menue_etudiant/nonselectionner/deconnexion.png',
     href: '/',
@@ -133,7 +140,7 @@ export const AdminSidebar = ({ isCollapsed: isCollapsedProp, defaultCollapsed = 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['gestion'])); // Par défaut ouvert
-  
+
   // États pour le modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -168,14 +175,14 @@ export const AdminSidebar = ({ isCollapsed: isCollapsedProp, defaultCollapsed = 
   const handleLogoutClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Empêcher tout comportement par défaut
     e.stopPropagation(); // Empêcher la propagation
-   
+
     setShowConfirmModal(true);
   };
 
   const handleLogoutConfirm = async () => {
     setShowConfirmModal(false);
     setIsLoggingOut(true);
-    
+
     try {
       const result = await signOut();
       if (result.success) {
@@ -217,6 +224,9 @@ export const AdminSidebar = ({ isCollapsed: isCollapsedProp, defaultCollapsed = 
       setOpenGroups(prev => new Set(prev).add('gestion'));
     } else if (pathname.includes('/attribution')) {
       setActiveItem('attribution');
+      setOpenGroups(prev => new Set(prev).add('gestion'));
+    } else if (pathname.includes('/gestion-paiements')) {
+      setActiveItem('gestion-paiements');
       setOpenGroups(prev => new Set(prev).add('gestion'));
     } else if (pathname.includes('/bibliotheque')) {
       setActiveItem('bibliotheque');
@@ -284,309 +294,305 @@ export const AdminSidebar = ({ isCollapsed: isCollapsedProp, defaultCollapsed = 
           <X className="w-6 h-6" />
         </button>
 
-      {/* Logo et titre */}
-      <div className={`${currentIsCollapsed ? 'p-4' : 'p-6'} border-b border-gray-600`}>
-        <div className={`flex items-center ${currentIsCollapsed ? 'justify-center' : 'justify-between'}`}>
-          {currentIsCollapsed ? (
-            <button
-              onClick={handleCollapse}
-              className="hidden lg:flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              <Image 
-                src="/menue_etudiant/ESObeige.png" 
-                alt="ELITE SOCIETY ONLINE" 
-                width={36} 
-                height={36}
-                className="w-9 h-9"
-              />
-            </button>
-          ) : (
-            <>
-          <div className="flex items-center space-x-3">
-            <Image 
-              src="/menue_etudiant/ESObeige.png" 
-              alt="ELITE SOCIETY ONLINE" 
-                  width={50} 
-                  height={50}
-                  className="w-12 h-12"
-            />
-              <div>
-                <h1 className="text-white text-sm font-bold uppercase tracking-wide">
-                  ELITE SOCIETY
-                </h1>
-                <p className="text-white text-xs opacity-80">
-                  ADMIN
-                </p>
-              </div>
+        {/* Logo et titre */}
+        <div className={`${currentIsCollapsed ? 'p-4' : 'p-6'} border-b border-gray-600`}>
+          <div className={`flex items-center ${currentIsCollapsed ? 'justify-center' : 'justify-between'}`}>
+            {currentIsCollapsed ? (
+              <button
+                onClick={handleCollapse}
+                className="hidden lg:flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <Image
+                  src="/menue_etudiant/ESObeige.png"
+                  alt="ELITE SOCIETY ONLINE"
+                  width={36}
+                  height={36}
+                  className="w-9 h-9"
+                />
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center space-x-3">
+                  <Image
+                    src="/menue_etudiant/ESObeige.png"
+                    alt="ELITE SOCIETY ONLINE"
+                    width={50}
+                    height={50}
+                    className="w-12 h-12"
+                  />
+                  <div>
+                    <h1 className="text-white text-sm font-bold uppercase tracking-wide">
+                      ELITE SOCIETY
+                    </h1>
+                    <p className="text-white text-xs opacity-80">
+                      ADMIN
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCollapse}
+                  className="hidden lg:flex text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
+                  aria-label={currentIsCollapsed ? "Développer le menu" : "Réduire le menu"}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
-          <button
-            onClick={handleCollapse}
-                className="hidden lg:flex text-white hover:bg-gray-700 p-1 rounded transition-colors flex-shrink-0"
-            aria-label={currentIsCollapsed ? "Développer le menu" : "Réduire le menu"}
-          >
-                <ChevronLeft className="w-4 h-4" />
-          </button>
-            </>
-          )}
         </div>
-      </div>
 
-      {/* Menu principal */}
-      <div className="flex-1 py-6 overflow-y-auto relative z-[51]">
-        <nav className={`space-y-2 ${currentIsCollapsed ? 'px-2' : 'px-4'}`}>
-          {menuItems.map((item) => {
-            // Gestion des groupes avec sous-menus
-            if ('type' in item && item.type === 'group') {
-              const isOpen = isGroupOpen(item.id);
-              const hasActiveChild = item.children?.some(child => 
-                pathname.includes(child.href) || activeItem === child.id
-              );
-              
-              return (
-                <div key={item.id}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleGroup(item.id);
-                    }}
-                    className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-3'} rounded-lg transition-colors duration-200 w-full relative z-[51] ${
-                      hasActiveChild
+        {/* Menu principal */}
+        <div className="flex-1 py-6 overflow-y-auto relative z-[51]">
+          <nav className={`space-y-2 ${currentIsCollapsed ? 'px-2' : 'px-4'}`}>
+            {menuItems.map((item) => {
+              // Gestion des groupes avec sous-menus
+              if ('type' in item && item.type === 'group') {
+                const isOpen = isGroupOpen(item.id);
+                const hasActiveChild = item.children?.some(child =>
+                  pathname.includes(child.href) || activeItem === child.id
+                );
+
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleGroup(item.id);
+                      }}
+                      className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-3'} rounded-lg transition-colors duration-200 w-full relative z-[51] ${hasActiveChild
                         ? 'text-[#F8F5E4]'
                         : 'text-white hover:bg-gray-700'
-                    }`}
-                    title={currentIsCollapsed ? item.label : undefined}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Image 
-                        src={hasActiveChild ? item.icon : item.iconInactive} 
-                        alt={item.label} 
-                        width={24} 
-                        height={24}
-                        className={`${currentIsCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
-                      />
-                      {!currentIsCollapsed && (
-                        <span 
-                          className="text-sm font-medium"
-                          style={{ fontFamily: 'var(--font-termina-bold)' }}
-                        >
-                          {item.label}
-                        </span>
-                      )}
-                    </div>
-                    {!currentIsCollapsed && (
-                      isOpen ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )
-                    )}
-                  </button>
-                  
-                  {/* Sous-menus */}
-                  {!currentIsCollapsed && isOpen && item.children && (
-                    <div className="ml-4 mt-1 space-y-1">
-                      {item.children.map((child) => {
-                        const isActive = activeItem === child.id || pathname.includes(child.href);
-                        return (
-                          <Link
-                            key={child.id}
-                            href={child.href}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveItem(child.id);
-                              setIsMobileMenuOpen(false);
-                            }}
-                            className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors duration-200 relative z-[51] ${
-                              isActive
-                                ? 'text-[#F8F5E4] bg-gray-700'
-                                : 'text-gray-300 hover:bg-gray-700'
-                            }`}
+                        }`}
+                      title={currentIsCollapsed ? item.label : undefined}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Image
+                          src={hasActiveChild ? item.icon : item.iconInactive}
+                          alt={item.label}
+                          width={24}
+                          height={24}
+                          className={`${currentIsCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                        />
+                        {!currentIsCollapsed && (
+                          <span
+                            className="text-sm font-medium"
+                            style={{ fontFamily: 'var(--font-termina-bold)' }}
                           >
-                            <Image 
-                              src={isActive ? child.icon : child.iconInactive} 
-                              alt={child.label} 
-                              width={20} 
-                              height={20}
-                              className="w-5 h-5"
-                            />
-                            <span 
-                              className="text-sm font-medium"
-                              style={{ fontFamily: 'var(--font-termina-bold)' }}
-                            >
-                              {child.label}
-                            </span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {currentIsCollapsed && isOpen && item.children && (
-                    <div className="mt-2 flex flex-col items-center gap-2">
-                      {item.children.map((child) => {
-                        const isActive = activeItem === child.id || pathname.includes(child.href);
-                        return (
-                          <div key={child.id} className="flex flex-col items-center gap-1">
-                            <div className="w-px h-3 bg-gray-600" />
+                            {item.label}
+                          </span>
+                        )}
+                      </div>
+                      {!currentIsCollapsed && (
+                        isOpen ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )
+                      )}
+                    </button>
+
+                    {/* Sous-menus */}
+                    {!currentIsCollapsed && isOpen && item.children && (
+                      <div className="ml-4 mt-1 space-y-1">
+                        {item.children.map((child) => {
+                          const isActive = activeItem === child.id || pathname.includes(child.href);
+                          return (
                             <Link
+                              key={child.id}
                               href={child.href}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setActiveItem(child.id);
                                 setIsMobileMenuOpen(false);
                               }}
-                              className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 relative z-[51] ${
-                                isActive ? 'bg-gray-700 text-[#F8F5E4]' : 'text-gray-200 hover:bg-gray-700'
-                              }`}
-                              title={child.label}
+                              className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors duration-200 relative z-[51] ${isActive
+                                ? 'text-[#F8F5E4] bg-gray-700'
+                                : 'text-gray-300 hover:bg-gray-700'
+                                }`}
                             >
-                              <Image 
-                                src={isActive ? child.icon : child.iconInactive} 
-                                alt={child.label} 
-                                width={20} 
+                              <Image
+                                src={isActive ? child.icon : child.iconInactive}
+                                alt={child.label}
+                                width={20}
                                 height={20}
                                 className="w-5 h-5"
                               />
+                              <span
+                                className="text-sm font-medium"
+                                style={{ fontFamily: 'var(--font-termina-bold)' }}
+                              >
+                                {child.label}
+                              </span>
                             </Link>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            
-            // Gestion des items normaux
-            if ('href' in item) {
-              return (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveItem(item.id);
-                setIsMobileMenuOpen(false);
-              }}
-              className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 relative z-[51] ${
-                activeItem === item.id
-                  ? 'text-[#F8F5E4]'
-                  : 'text-white hover:bg-gray-700'
-              }`}
-              title={currentIsCollapsed ? item.label : undefined}
-            >
-              <Image 
-                src={activeItem === item.id ? item.icon : item.iconInactive} 
-                alt={item.label} 
-                width={24} 
-                height={24}
-                    className={`${currentIsCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
-              />
-              {!currentIsCollapsed && (
-                <span 
-                  className="text-sm font-medium"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
-                >
-                  {item.label}
-                </span>
-              )}
-            </Link>
-              );
-            }
-            return null;
-          })}
-        </nav>
-      </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {currentIsCollapsed && isOpen && item.children && (
+                      <div className="mt-2 flex flex-col items-center gap-2">
+                        {item.children.map((child) => {
+                          const isActive = activeItem === child.id || pathname.includes(child.href);
+                          return (
+                            <div key={child.id} className="flex flex-col items-center gap-1">
+                              <div className="w-px h-3 bg-gray-600" />
+                              <Link
+                                href={child.href}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveItem(child.id);
+                                  setIsMobileMenuOpen(false);
+                                }}
+                                className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 relative z-[51] ${isActive ? 'bg-gray-700 text-[#F8F5E4]' : 'text-gray-200 hover:bg-gray-700'
+                                  }`}
+                                title={child.label}
+                              >
+                                <Image
+                                  src={isActive ? child.icon : child.iconInactive}
+                                  alt={child.label}
+                                  width={20}
+                                  height={20}
+                                  className="w-5 h-5"
+                                />
+                              </Link>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
-      {/* Menu du bas */}
-      <div className={`${currentIsCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600 relative z-[51]`}>
-        <nav className="space-y-2">
-          {bottomMenuItems.map((item) => {
-            if (item.id === 'logout') {
+              // Gestion des items normaux
+              if ('href' in item) {
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveItem(item.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 relative z-[51] ${activeItem === item.id
+                      ? 'text-[#F8F5E4]'
+                      : 'text-white hover:bg-gray-700'
+                      }`}
+                    title={currentIsCollapsed ? item.label : undefined}
+                  >
+                    <Image
+                      src={activeItem === item.id ? item.icon : item.iconInactive}
+                      alt={item.label}
+                      width={24}
+                      height={24}
+                      className={`${currentIsCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
+                    />
+                    {!currentIsCollapsed && (
+                      <span
+                        className="text-sm font-medium"
+                        style={{ fontFamily: 'var(--font-termina-bold)' }}
+                      >
+                        {item.label}
+                      </span>
+                    )}
+                  </Link>
+                );
+              }
+              return null;
+            })}
+          </nav>
+        </div>
+
+        {/* Menu du bas */}
+        <div className={`${currentIsCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600 relative z-[51]`}>
+          <nav className="space-y-2">
+            {bottomMenuItems.map((item) => {
+              if (item.id === 'logout') {
+                return (
+                  <button
+                    key={item.id}
+                    onClick={handleLogoutClick}
+                    disabled={isLoggingOut}
+                    className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer`}
+                    title={currentIsCollapsed ? item.label : undefined}
+                    style={{ pointerEvents: isLoggingOut ? 'none' : 'auto' }}
+                  >
+                    <Image
+                      src={item.icon}
+                      alt={item.label}
+                      width={24}
+                      height={24}
+                      className={`${currentIsCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
+                    />
+                    {!currentIsCollapsed && (
+                      <span
+                        className="text-sm font-medium"
+                        style={{ fontFamily: 'var(--font-termina-bold)' }}
+                      >
+                        {isLoggingOut ? 'DÉCONNEXION...' : item.label}
+                      </span>
+                    )}
+                    {currentIsCollapsed && isLoggingOut && (
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                    )}
+                  </button>
+                );
+              }
+
               return (
-                <button
+                <Link
                   key={item.id}
-                  onClick={handleLogoutClick}
-                  disabled={isLoggingOut}
-                  className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer`}
+                  href={item.href}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 relative z-[51]`}
                   title={currentIsCollapsed ? item.label : undefined}
-                  style={{ pointerEvents: isLoggingOut ? 'none' : 'auto' }}
                 >
-                  <Image 
-                    src={item.icon} 
-                    alt={item.label} 
-                    width={24} 
+                  <Image
+                    src={activeItem === item.id ? item.icon : item.iconInactive}
+                    alt={item.label}
+                    width={24}
                     height={24}
                     className={`${currentIsCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
                   />
                   {!currentIsCollapsed && (
-                    <span 
+                    <span
                       className="text-sm font-medium"
                       style={{ fontFamily: 'var(--font-termina-bold)' }}
                     >
-                      {isLoggingOut ? 'DÉCONNEXION...' : item.label}
+                      {item.label}
                     </span>
                   )}
-                  {currentIsCollapsed && isLoggingOut && (
-                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                  )}
-                </button>
+                </Link>
               );
-            }
-            
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`flex items-center ${currentIsCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 relative z-[51]`}
-                title={currentIsCollapsed ? item.label : undefined}
-              >
-                <Image 
-                  src={activeItem === item.id ? item.icon : item.iconInactive} 
-                  alt={item.label} 
-                  width={24} 
-                  height={24}
-                  className={`${currentIsCollapsed ? 'w-8 h-8' : 'w-5 h-5'}`}
-                />
-                {!currentIsCollapsed && (
-                  <span 
-                    className="text-sm font-medium"
-                    style={{ fontFamily: 'var(--font-termina-bold)' }}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+            })}
+          </nav>
+        </div>
+
+        {/* Modal de confirmation de déconnexion */}
+        <Modal
+          isOpen={showConfirmModal}
+          onClose={handleLogoutCancel}
+          title="Confirmation de déconnexion"
+          message="Êtes-vous sûr de vouloir vous déconnecter ?"
+          type="warning"
+          isConfirm={true}
+          onConfirm={handleLogoutConfirm}
+          onCancel={handleLogoutCancel}
+        />
+
+        {/* Modal d'erreur */}
+        <Modal
+          isOpen={showErrorModal}
+          onClose={handleErrorModalClose}
+          title="Erreur de déconnexion"
+          message={errorMessage}
+          type="error"
+          isConfirm={false}
+        />
       </div>
-
-      {/* Modal de confirmation de déconnexion */}
-      <Modal
-        isOpen={showConfirmModal}
-        onClose={handleLogoutCancel}
-        title="Confirmation de déconnexion"
-        message="Êtes-vous sûr de vouloir vous déconnecter ?"
-        type="warning"
-        isConfirm={true}
-        onConfirm={handleLogoutConfirm}
-        onCancel={handleLogoutCancel}
-      />
-
-      {/* Modal d'erreur */}
-      <Modal
-        isOpen={showErrorModal}
-        onClose={handleErrorModalClose}
-        title="Erreur de déconnexion"
-        message={errorMessage}
-        type="error"
-        isConfirm={false}
-      />
-    </div>
     </>
   );
 };
