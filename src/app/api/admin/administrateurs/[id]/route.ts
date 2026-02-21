@@ -4,14 +4,14 @@ import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdmin } from '@/lib/auth-helpers';
 import { logUpdate, logDelete } from '@/lib/audit-logger';
 
-// PUT - Modifier un administrateur
+// PUT - Modifier un administrateur ou formateur
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    
+
     // Authentification
     const authResult = await getAuthenticatedUser(request);
     if ('error' in authResult) {
@@ -45,7 +45,76 @@ export async function PUT(
 
     const supabase = getSupabaseServerClient();
 
-    // Récupérer l'admin à modifier
+    // Vérifier si c'est un tuteur (formateur) - les IDs tuteurs sont préfixés avec "tuteur_"
+    const isTuteur = id.startsWith('tuteur_');
+
+    if (isTuteur) {
+      const tuteurId = id.replace('tuteur_', '');
+
+      const { data: tuteurToUpdate, error: fetchError } = await supabase
+        .from('tuteurs')
+        .select('*')
+        .eq('id', tuteurId)
+        .maybeSingle();
+
+      if (fetchError || !tuteurToUpdate) {
+        return NextResponse.json(
+          { success: false, error: 'Formateur non trouvé' },
+          { status: 404 }
+        );
+      }
+
+      // Mettre à jour l'email et les métadonnées dans auth.users
+      await supabase.auth.admin.updateUserById(tuteurToUpdate.user_id, {
+        email: email.toLowerCase(),
+        user_metadata: {
+          nom: nom.toUpperCase(),
+          prenom: prenom.toUpperCase(),
+        },
+      });
+
+      // Mettre à jour le tuteur
+      const { data: updatedTuteur, error: updateError } = await supabase
+        .from('tuteurs')
+        .update({
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tuteurId)
+        .select()
+        .single();
+
+      if (updateError) {
+        return NextResponse.json(
+          { success: false, error: `Erreur lors de la mise à jour: ${updateError.message}` },
+          { status: 500 }
+        );
+      }
+
+      await logUpdate(
+        request,
+        'tuteurs',
+        tuteurId,
+        tuteurToUpdate,
+        updatedTuteur,
+        ['nom', 'prenom', 'email'],
+        `Mise à jour du formateur ${prenom} ${nom}`
+      ).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: 'Formateur mis à jour avec succès',
+        admin: {
+          ...updatedTuteur,
+          nom: nom.toUpperCase(),
+          prenom: prenom.toUpperCase(),
+          email: email.toLowerCase(),
+          role_secondaire: 'pedagogie',
+          service: ecole || null,
+        },
+      });
+    }
+
+    // === ADMIN: Logique existante ===
     const { data: adminToUpdate, error: fetchError } = await supabase
       .from('administrateurs')
       .select('*')
@@ -117,7 +186,7 @@ export async function PUT(
       await logUpdate(request, 'administrateurs', id, adminToUpdate, {
         nom, prenom, email, role, ecole
       }, undefined, `Échec de mise à jour d'administrateur: ${updateError.message}`).catch(() => {});
-      
+
       return NextResponse.json(
         { success: false, error: `Erreur lors de la mise à jour: ${updateError.message}` },
         { status: 500 }
@@ -131,7 +200,7 @@ export async function PUT(
     if (adminToUpdate.email !== email.toLowerCase()) changedFields.push('email');
     if (adminToUpdate.role_secondaire !== role_secondaire) changedFields.push('role_secondaire');
     if (adminToUpdate.service !== service) changedFields.push('service');
-    
+
     await logUpdate(
       request,
       'administrateurs',
@@ -157,14 +226,14 @@ export async function PUT(
   }
 }
 
-// DELETE - Supprimer un administrateur
+// DELETE - Supprimer un administrateur ou formateur
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    
+
     // Authentification
     const authResult = await getAuthenticatedUser(request);
     if ('error' in authResult) {
@@ -180,7 +249,79 @@ export async function DELETE(
 
     const supabase = getSupabaseServerClient();
 
-    // Récupérer l'admin à supprimer avec toutes les informations nécessaires
+    // Vérifier si c'est un tuteur (formateur) - les IDs tuteurs sont préfixés avec "tuteur_"
+    const isTuteur = id.startsWith('tuteur_');
+
+    if (isTuteur) {
+      const tuteurId = id.replace('tuteur_', '');
+
+      const { data: tuteurToDelete, error: fetchError } = await supabase
+        .from('tuteurs')
+        .select('*')
+        .eq('id', tuteurId)
+        .maybeSingle();
+
+      if (fetchError || !tuteurToDelete) {
+        return NextResponse.json(
+          { success: false, error: 'Formateur non trouvé' },
+          { status: 404 }
+        );
+      }
+
+      // Empêcher de se supprimer soi-même
+      if (tuteurToDelete.user_id === user.id) {
+        return NextResponse.json(
+          { success: false, error: 'Vous ne pouvez pas vous supprimer vous-même' },
+          { status: 403 }
+        );
+      }
+
+      const userIdToDelete = tuteurToDelete.user_id;
+
+      // 1. Supprimer l'entrée dans tuteurs
+      const { error: deleteTuteurError } = await supabase
+        .from('tuteurs')
+        .delete()
+        .eq('id', tuteurId);
+
+      if (deleteTuteurError) {
+        return NextResponse.json(
+          { success: false, error: `Erreur lors de la suppression du formateur: ${deleteTuteurError.message}` },
+          { status: 500 }
+        );
+      }
+
+      // 2. Supprimer l'entrée dans user_profiles
+      await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', userIdToDelete);
+
+      // 3. Supprimer l'utilisateur dans auth.users
+      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userIdToDelete);
+
+      if (deleteUserError) {
+        return NextResponse.json(
+          { success: false, error: `Erreur lors de la suppression de l'utilisateur: ${deleteUserError.message}` },
+          { status: 500 }
+        );
+      }
+
+      await logDelete(
+        request,
+        'tuteurs',
+        tuteurId,
+        tuteurToDelete,
+        `Suppression du formateur (user_id: ${userIdToDelete})`
+      ).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: 'Formateur et utilisateur supprimés avec succès',
+      });
+    }
+
+    // === ADMIN: Logique existante ===
     const { data: adminToDelete, error: fetchError } = await supabase
       .from('administrateurs')
       .select('*')
@@ -211,56 +352,37 @@ export async function DELETE(
     }
 
     const userIdToDelete = adminToDelete.user_id;
-    console.log('=== SUPPRESSION ADMINISTRATEUR ===');
-    console.log('Admin ID:', id);
-    console.log('User ID:', userIdToDelete);
-    console.log('Email:', adminToDelete.email);
-
-    // Ordre de suppression pour éviter les problèmes de contraintes :
-    // 1. Supprimer l'entrée dans administrateurs
-    // 2. Supprimer l'entrée dans user_profiles
-    // 3. Supprimer l'utilisateur dans auth.users
 
     // 1. Supprimer l'entrée dans administrateurs
-    console.log('1. Suppression de l\'entrée dans administrateurs...');
     const { error: deleteAdminError } = await supabase
       .from('administrateurs')
       .delete()
       .eq('id', id);
 
     if (deleteAdminError) {
-      console.error('❌ Erreur suppression admin:', deleteAdminError);
       return NextResponse.json(
         { success: false, error: `Erreur lors de la suppression de l'administrateur: ${deleteAdminError.message}` },
         { status: 500 }
       );
     }
-    console.log('✓ Administrateur supprimé de la table administrateurs');
 
     // 2. Supprimer l'entrée dans user_profiles
-    console.log('2. Suppression de l\'entrée dans user_profiles...');
     const { error: deleteProfileError } = await supabase
       .from('user_profiles')
       .delete()
       .eq('user_id', userIdToDelete);
 
     if (deleteProfileError) {
-      console.error('❌ Erreur suppression user_profile:', deleteProfileError);
-      // Ne pas bloquer si le user_profile n'existe pas, mais logger l'erreur
-      console.warn('⚠️ Impossible de supprimer le user_profile (peut-être qu\'il n\'existe pas)');
-    } else {
-      console.log('✓ user_profile supprimé');
+      console.warn('Impossible de supprimer le user_profile (peut-être qu\'il n\'existe pas)');
     }
 
     // 3. Supprimer l'utilisateur dans auth.users
-    console.log('3. Suppression de l\'utilisateur dans auth.users...');
     const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userIdToDelete);
 
     if (deleteUserError) {
-      console.error('❌ Erreur suppression utilisateur auth:', deleteUserError);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: `Erreur lors de la suppression de l'utilisateur: ${deleteUserError.message}`,
           details: {
             adminDeleted: true,
@@ -271,8 +393,6 @@ export async function DELETE(
         { status: 500 }
       );
     }
-    console.log('✓ Utilisateur supprimé de auth.users');
-    console.log('=== SUPPRESSION COMPLÈTE ===');
 
     // Logger la suppression
     await logDelete(
@@ -296,4 +416,3 @@ export async function DELETE(
     );
   }
 }
-

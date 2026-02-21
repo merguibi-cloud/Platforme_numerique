@@ -6,30 +6,44 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const menuItems = [
-  { 
-    id: 'dashboard', 
-    label: 'DASHBOARD', 
+  {
+    id: 'dashboard',
+    label: 'DASHBOARD',
     icon: '/menue_etudiant/Dashboard.png',
     iconInactive: '/menue_etudiant/nonselectionner/dashboard.png',
     href: '/espace-tuteur/dashboard'
   },
-  { 
-    id: 'mes-etudiants', 
-    label: 'MES ÉTUDIANTS', 
+  {
+    id: 'mes-cours',
+    label: 'MES COURS',
+    icon: '/menue_etudiant/Livre.png',
+    iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
+    href: '/espace-tuteur/cours'
+  },
+  {
+    id: 'mes-etudiants',
+    label: 'MES ÉTUDIANTS',
     icon: '/menue_etudiant/Etudiant.png',
     iconInactive: '/menue_etudiant/nonselectionner/Vieetudiant.png',
     href: '/espace-tuteur/mes-etudiants'
   },
-  { 
-    id: 'agenda', 
-    label: 'AGENDA', 
+  {
+    id: 'corrections',
+    label: 'CORRECTIONS',
+    icon: '/menue_etudiant/Livre.png',
+    iconInactive: '/menue_etudiant/nonselectionner/mesformations.png',
+    href: '/espace-tuteur/corrections'
+  },
+  {
+    id: 'agenda',
+    label: 'AGENDA',
     icon: '/menue_etudiant/calendrier.png',
     iconInactive: '/menue_etudiant/nonselectionner/calandrier.png',
     href: '/espace-tuteur/agenda'
   },
-  { 
-    id: 'messagerie', 
-    label: 'MESSAGERIE', 
+  {
+    id: 'messagerie',
+    label: 'MESSAGERIE',
     icon: '/menue_etudiant/messagerie.png',
     iconInactive: '/menue_etudiant/nonselectionner/messagerie.png',
     href: '/espace-tuteur/messagerie'
@@ -37,16 +51,16 @@ const menuItems = [
 ];
 
 const bottomMenuItems = [
-  { 
-    id: 'parametres', 
-    label: 'PARAMÈTRES', 
+  {
+    id: 'parametres',
+    label: 'PARAMÈTRES',
     icon: '/menue_etudiant/Support.png',
     iconInactive: '/menue_etudiant/Support.png',
     href: '/espace-tuteur/parametres'
   },
-  { 
-    id: 'logout', 
-    label: 'SE DÉCONNECTER', 
+  {
+    id: 'logout',
+    label: 'SE DÉCONNECTER',
     icon: '/menue_etudiant/Logout2.png',
     iconInactive: '/menue_etudiant/nonselectionner/deconnexion.png',
     href: '/'
@@ -73,8 +87,12 @@ export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProp
   useEffect(() => {
     if (pathname === '/espace-tuteur/dashboard') {
       setActiveItem('dashboard');
-    } else if (pathname.includes('/mes-etudiants')) {
+    } else if (pathname.includes('/cours')) {
+      setActiveItem('mes-cours');
+    } else if (pathname.includes('/mes-etudiants') || pathname.includes('/etudiants')) {
       setActiveItem('mes-etudiants');
+    } else if (pathname.includes('/corrections')) {
+      setActiveItem('corrections');
     } else if (pathname.includes('/agenda')) {
       setActiveItem('agenda');
     } else if (pathname.includes('/messagerie')) {
@@ -90,10 +108,10 @@ export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProp
       <div className="p-6 border-b border-gray-600">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Image 
-              src="/menue_etudiant/ESObeige.png" 
-              alt="ELITE SOCIETY ONLINE" 
-              width={40} 
+            <Image
+              src="/menue_etudiant/ESObeige.png"
+              alt="ELITE SOCIETY ONLINE"
+              width={40}
               height={40}
               className="w-10 h-10"
             />
@@ -125,22 +143,21 @@ export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProp
               key={item.id}
               href={item.href}
               onClick={() => handleItemClick(item.id)}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${
-                activeItem === item.id
-                  ? 'text-[#F8F5E4]'
-                  : 'text-white hover:bg-gray-700'
-              }`}
+              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg transition-colors duration-200 ${activeItem === item.id
+                ? 'text-[#F8F5E4]'
+                : 'text-white hover:bg-gray-700'
+                }`}
               title={isCollapsed ? item.label : undefined}
             >
-              <Image 
-                src={activeItem === item.id ? item.icon : item.iconInactive} 
-                alt={item.label} 
-                width={24} 
+              <Image
+                src={activeItem === item.id ? item.icon : item.iconInactive}
+                alt={item.label}
+                width={24}
                 height={24}
                 className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
               />
               {!isCollapsed && (
-                <span 
+                <span
                   className="text-sm font-medium"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >
@@ -162,15 +179,15 @@ export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProp
               className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
               title={isCollapsed ? item.label : undefined}
             >
-              <Image 
-                src={activeItem === item.id ? item.icon : item.iconInactive} 
-                alt={item.label} 
-                width={24} 
+              <Image
+                src={activeItem === item.id ? item.icon : item.iconInactive}
+                alt={item.label}
+                width={24}
                 height={24}
                 className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
               />
               {!isCollapsed && (
-                <span 
+                <span
                   className="text-sm font-medium"
                   style={{ fontFamily: 'var(--font-termina-bold)' }}
                 >

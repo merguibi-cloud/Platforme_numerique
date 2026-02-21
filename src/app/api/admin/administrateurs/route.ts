@@ -3,7 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdmin } from '@/lib/auth-helpers';
 
-// GET - Récupérer la liste des administrateurs
+// GET - Récupérer la liste des administrateurs et formateurs
 export async function GET(request: NextRequest) {
   try {
     // Authentification
@@ -35,15 +35,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Récupérer tous les tuteurs (formateurs)
+    const { data: tuteurs, error: tuteursError } = await supabase
+      .from('tuteurs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (tuteursError) {
+      console.error('Erreur récupération tuteurs:', tuteursError);
+      // Continue without tutors - don't fail the whole request
+    }
+
     // Récupérer les informations d'authentification pour chaque admin
     const adminsWithStatus = await Promise.all(
       (admins || []).map(async (admin: any) => {
         try {
-          // Récupérer les infos de l'utilisateur depuis auth.users via l'admin client
-          const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(admin.user_id);
-          
+          const { data: authUser } = await supabase.auth.admin.getUserById(admin.user_id);
+
           const isPending = !authUser?.user?.email_confirmed_at || !authUser?.user?.last_sign_in_at;
-          
+
           return {
             id: admin.id,
             nom: admin.nom,
@@ -59,7 +69,6 @@ export async function GET(request: NextRequest) {
             last_sign_in_at: authUser?.user?.last_sign_in_at,
           };
         } catch (err) {
-          // Si erreur, considérer comme pending
           return {
             id: admin.id,
             nom: admin.nom,
@@ -78,9 +87,56 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // Récupérer les informations d'authentification pour chaque tuteur (formateur)
+    const tuteursWithStatus = await Promise.all(
+      (tuteurs || []).map(async (tuteur: any) => {
+        try {
+          const { data: authUser } = await supabase.auth.admin.getUserById(tuteur.user_id);
+
+          const isPending = !authUser?.user?.email_confirmed_at || !authUser?.user?.last_sign_in_at;
+          const metadata = authUser?.user?.user_metadata || {};
+
+          return {
+            id: `tuteur_${tuteur.id}`,
+            nom: metadata.nom || '',
+            prenom: metadata.prenom || '',
+            mail: authUser?.user?.email || '',
+            ecole: '',
+            role: 'FORMATEUR',
+            role_secondaire: 'pedagogie',
+            niveau: 'tuteur',
+            service: null,
+            status: isPending ? 'pending' : 'actif',
+            created_at: tuteur.created_at,
+            last_sign_in_at: authUser?.user?.last_sign_in_at,
+          };
+        } catch (err) {
+          return {
+            id: `tuteur_${tuteur.id}`,
+            nom: '',
+            prenom: '',
+            mail: '',
+            ecole: '',
+            role: 'FORMATEUR',
+            role_secondaire: 'pedagogie',
+            niveau: 'tuteur',
+            service: null,
+            status: 'pending',
+            created_at: tuteur.created_at,
+            last_sign_in_at: null,
+          };
+        }
+      })
+    );
+
+    // Fusionner les deux listes et trier par date de création
+    const allUsers = [...adminsWithStatus, ...tuteursWithStatus].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
     return NextResponse.json({
       success: true,
-      administrateurs: adminsWithStatus,
+      administrateurs: allUsers,
     });
 
   } catch (error) {
@@ -102,4 +158,3 @@ function getRoleDisplayName(role_secondaire: string): string {
   };
   return roleMap[role_secondaire] || 'ADMINISTRATEUR';
 }
-

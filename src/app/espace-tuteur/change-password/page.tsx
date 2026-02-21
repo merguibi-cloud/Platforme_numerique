@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth-api";
 
-export default function ChangePasswordPage() {
+export default function TutorChangePasswordPage() {
   const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,11 +24,9 @@ export default function ChangePasswordPage() {
           return;
         }
 
-        // Vérifier si l'utilisateur a vraiment besoin de changer son mot de passe
         const requiresPasswordChange = result.user.user_metadata?.requires_password_change;
         if (!requiresPasswordChange) {
-          // Si le changement n'est plus requis, rediriger vers le dashboard
-          router.replace("/espace-admin/dashboard");
+          router.replace("/espace-tuteur/dashboard");
           return;
         }
       } catch (error) {
@@ -45,7 +43,6 @@ export default function ChangePasswordPage() {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (newPassword.length < 8) {
       setError("Le nouveau mot de passe doit contenir au moins 8 caractères");
       return;
@@ -75,8 +72,7 @@ export default function ChangePasswordPage() {
         throw new Error(result.error || "Erreur lors du changement de mot de passe");
       }
 
-      // Rediriger vers le dashboard après succès
-      router.push("/espace-admin/dashboard");
+      router.push("/espace-tuteur/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors du changement de mot de passe");
@@ -136,7 +132,6 @@ export default function ChangePasswordPage() {
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1"
-                  aria-label={showNewPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showNewPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
@@ -161,7 +156,6 @@ export default function ChangePasswordPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-[#032622] hover:text-[#032622]/70 active:text-[#032622]/50 transition-colors p-1"
-                  aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
@@ -181,4 +175,3 @@ export default function ChangePasswordPage() {
     </div>
   );
 }
-

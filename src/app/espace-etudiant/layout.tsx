@@ -1,13 +1,11 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { StudentSidebar } from './components/StudentSidebar';
 import { SessionTracker } from '@/components/SessionTracker';
 import { SessionExpiredModal } from '@/components/SessionExpiredModal';
-import { getSessionRole } from '@/lib/auth-api';
+import { getSessionRole, getCurrentUser } from '@/lib/auth-api';
 import { useTokenRefresh } from '@/hooks/useTokenRefresh';
-
-
 
 export default function StudentLayout({
   children,
@@ -18,27 +16,29 @@ export default function StudentLayout({
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  useTokenRefresh(); // Proactively refresh tokens before expiry
-
-  
+  const pathname = usePathname();
+  useTokenRefresh();
 
   useEffect(() => {
     const checkStudentAccess = async () => {
       try {
+        // Si on est sur la page de changement de mot de passe, ne pas rediriger
+        if (pathname === '/espace-etudiant/change-password') {
+          setIsAuthorized(true);
+          setIsLoading(false);
+          return;
+        }
+
         const sessionResult = await getSessionRole();
 
         if (!sessionResult.success || !sessionResult.role) {
-          // Vérifier si c'est une session expirée
-          const hasToken = typeof document !== 'undefined' && 
+          const hasToken = typeof document !== 'undefined' &&
             document.cookie.includes('sb-access-token=');
-          
+
           if (hasToken && sessionResult.error === 'Non authentifié') {
-            // Ne pas rediriger immédiatement, le modal va s'afficher
-            // Ajouter le paramètre dans l'URL pour déclencher le modal
             const url = new URL(window.location.href);
             url.searchParams.set('session_expired', 'true');
             window.history.replaceState({}, '', url.toString());
-            // Ne pas bloquer l'affichage, permettre au modal de s'afficher
             setIsLoading(false);
             return;
           } else {
@@ -52,6 +52,19 @@ export default function StudentLayout({
           return;
         }
 
+        // Vérifier si l'utilisateur doit changer son mot de passe
+        const userResult = await getCurrentUser();
+        if (userResult.success && userResult.user) {
+          const userMetadata = userResult.user.user_metadata;
+          const requiresPasswordChange = userMetadata?.requires_password_change === true;
+          const hasTempPassword = !!userMetadata?.temp_password;
+
+          if (requiresPasswordChange || hasTempPassword) {
+            router.replace('/espace-etudiant/change-password');
+            return;
+          }
+        }
+
         setIsAuthorized(true);
       } catch (error) {
         router.replace('/');
@@ -61,7 +74,7 @@ export default function StudentLayout({
     };
 
     checkStudentAccess();
-  }, [router]);
+  }, [router, pathname]);
   
   // Vérifier aussi au chargement si le paramètre session_expired est présent
   useEffect(() => {
