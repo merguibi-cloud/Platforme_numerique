@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await getAuthenticatedUser(request);
     if ('error' in authResult) return authResult.error;
+
     const { user } = authResult;
 
     const supabase = getSupabaseServerClient();
