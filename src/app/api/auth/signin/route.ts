@@ -116,12 +116,21 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        // Resolve user role to determine the correct change-password redirect
+        const tempRoleResolution = await resolveRoleForUser(data.user.id);
+        let changePasswordRedirect = '/espace-admin/change-password';
+        if (tempRoleResolution.role === 'tuteur') {
+          changePasswordRedirect = '/espace-tuteur/change-password';
+        } else if (tempRoleResolution.role === 'etudiant') {
+          changePasswordRedirect = '/espace-etudiant/change-password';
+        }
+
         // Définir les cookies de session pour qu'il puisse changer son mot de passe
         const response = NextResponse.json({
           success: false,
           requiresPasswordChange: true,
           message: 'Vous devez changer votre mot de passe temporaire',
-          redirectTo: '/espace-admin/change-password',
+          redirectTo: changePasswordRedirect,
         });
 
         if (data.session) {

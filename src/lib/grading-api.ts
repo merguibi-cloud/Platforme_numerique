@@ -1,9 +1,4 @@
-// API client for grading operations
-import type {
-  SoumissionEtudeCas,
-  GradeSubmission,
-  BulkGradeRequest
-} from '@/types/grading';
+import type { SoumissionEtudeCas, GradeSubmission, BulkGradeRequest } from '@/types/grading';
 
 export class GradingAPI {
   private static async fetch<T>(url: string, options?: RequestInit): Promise<T> {
@@ -16,14 +11,13 @@ export class GradingAPI {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+      const error = await response.json().catch(() => ({ error: 'An error occurred' }));
+      throw new Error(error.error || error.message || `HTTP ${response.status}`);
     }
 
     return response.json();
   }
 
-  // Get submissions
   static async getSubmissions(filters?: {
     statut?: string;
     etude_cas_id?: string;
@@ -40,12 +34,10 @@ export class GradingAPI {
     );
   }
 
-  // Get single submission
   static async getSubmission(submissionId: string): Promise<SoumissionEtudeCas> {
     return this.fetch<SoumissionEtudeCas>(`/api/espace-tuteur/submissions/${submissionId}`);
   }
 
-  // Grade submission
   static async gradeSubmission(
     submissionId: string,
     grade: GradeSubmission
@@ -59,7 +51,6 @@ export class GradingAPI {
     );
   }
 
-  // Bulk grade submissions
   static async bulkGrade(request: BulkGradeRequest): Promise<{ success: boolean; count: number }> {
     return this.fetch<{ success: boolean; count: number }>(
       '/api/espace-tuteur/submissions/bulk-grade',

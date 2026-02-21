@@ -5,80 +5,60 @@ import { getSupabaseServerClient } from '@/lib/supabase';
 export async function GET(request: NextRequest) {
   try {
     const authResult = await getAuthenticatedUser(request);
-    if ('error' in authResult) {
-      return authResult.error;
-    }
+    if ('error' in authResult) return authResult.error;
     const { user } = authResult;
 
     const supabase = getSupabaseServerClient();
 
-    const { data: tuteur, error: tuteurError } = await supabase
+    // Récupérer le tuteur
+    const { data: tuteur } = await supabase
       .from('tuteurs')
       .select('id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (tuteurError || !tuteur) {
-      return NextResponse.json(
-        { error: 'Profil tuteur non trouvé' },
-        { status: 404 }
-      );
+    if (!tuteur) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    const { data: tutees, error: tuteesError } = await supabase
+    // Récupérer les étudiants assignés avec leurs infos
+    const { data: tutees, error } = await supabase
       .from('tuteur_etudiants')
-      .select(
-        `
+      .select(`
         id,
         tuteur_id,
         etudiant_id,
+        statut,
         date_debut,
         date_fin,
-        statut,
         created_at,
-        etudiant:etudiant_id (
+        etudiants:etudiant_id (
           id,
           user_id,
-          users:user_id (
-            prenom,
-            nom,
-            email
-          )
+          nom,
+          prenom,
+          email,
+          photo_url
         )
-      `
-      )
+      `)
       .eq('tuteur_id', tuteur.id)
       .order('created_at', { ascending: false });
 
-    if (tuteesError) {
-      throw tuteesError;
+    if (error) {
+      console.error('Erreur tutees:', error);
+      return NextResponse.json({ error: 'Erreur lors du chargement' }, { status: 500 });
     }
 
-    // Transform the data to flatten the structure
-    const transformedTutees = tutees?.map((tutee: any) => ({
-      id: tutee.id,
-      tuteur_id: tutee.tuteur_id,
-      etudiant_id: tutee.etudiant_id,
-      date_debut: tutee.date_debut,
-      date_fin: tutee.date_fin,
-      statut: tutee.statut,
-      created_at: tutee.created_at,
-      etudiant: tutee.etudiant?.users
-        ? {
-            id: tutee.etudiant.id,
-            prenom: tutee.etudiant.users.prenom,
-            nom: tutee.etudiant.users.nom,
-            email: tutee.etudiant.users.email,
-          }
-        : null,
+    // Transformer pour mapper etudiants -> etudiant
+    const result = (tutees || []).map((t: any) => ({
+      ...t,
+      etudiant: t.etudiants || null,
+      etudiants: undefined,
     }));
 
-    return NextResponse.json(transformedTutees || []);
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching tutees:', error);
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    );
+    console.error('Erreur tutees:', error);
+    return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
   }
 }

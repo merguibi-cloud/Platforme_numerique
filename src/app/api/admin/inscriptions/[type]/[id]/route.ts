@@ -327,7 +327,7 @@ export async function PUT(
 
       // Envoyer un magic link pour se connecter directement
       // Le redirect passe par /auth/callback qui échangera le code et redirigera
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
       const { error: emailError } = await supabase.auth.signInWithOtp({
         email: userProfile.email,

@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Envoyer l'email de confirmation (magic link) car admin.createUser() ne l'envoie pas automatiquement
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
       email: email.toLowerCase(),
       options: {

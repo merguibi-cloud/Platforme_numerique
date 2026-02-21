@@ -1,5 +1,3 @@
-// Type definitions for grading system
-
 export interface SoumissionEtudeCas {
   id: string;
   etude_cas_id: string;
@@ -13,7 +11,6 @@ export interface SoumissionEtudeCas {
   date_correction?: string;
   created_at: string;
   updated_at: string;
-  // Relations
   etudiant?: {
     id: string;
     prenom: string;
@@ -46,22 +43,4 @@ export interface BulkGradeRequest {
   note: number;
   commentaires: string;
   statut: 'corrige' | 'en_revision';
-}
-
-export interface GradeValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-export interface AuditLog {
-  id: string;
-  action: string;
-  user_id: string;
-  details: any;
-  created_at: string;
-  // Relations
-  user?: {
-    prenom: string;
-    nom: string;
-  };
 }
