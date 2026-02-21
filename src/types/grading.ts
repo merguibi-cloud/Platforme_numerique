@@ -44,3 +44,8 @@ export interface BulkGradeRequest {
   commentaires: string;
   statut: 'corrige' | 'en_revision';
 }
+
+export interface GradeValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
