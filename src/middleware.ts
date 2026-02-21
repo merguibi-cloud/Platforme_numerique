@@ -13,6 +13,7 @@ const publicRoutes = [
 const protectedRoutes: Record<string, AppUserRole[]> = {
   "/espace-admin": ["admin"],
   "/espace-etudiant": ["etudiant"],
+  "/espace-tuteur": ["tuteur"],
   "/validation": ["validation"],
 };
 
@@ -53,12 +54,6 @@ export async function middleware(request: NextRequest) {
     // permettre l'accès (pour afficher le modal) mais on nettoiera l'URL côté client
     if (sessionExpiredParam === "true") {
       return NextResponse.next();
-    }
-
-    // Vérifier le chemin canonique
-    const canonicalPath = roleResult.redirectTo;
-    if (canonicalPath && !pathname.startsWith(canonicalPath)) {
-      return NextResponse.redirect(new URL(canonicalPath, request.url));
     }
 
     return NextResponse.next();

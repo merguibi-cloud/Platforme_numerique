@@ -2,13 +2,16 @@ import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
-export type AppUserRole = "admin" | "etudiant" | "validation";
+export type AppUserRole = "admin" | "etudiant" | "tuteur" | "validation";
+
 
 export const ROLE_REDIRECTS: Record<AppUserRole, string> = {
   admin: "/espace-admin/dashboard",
   etudiant: "/espace-etudiant",
+  tuteur: "/espace-tuteur/dashboard",
   validation: "/validation",
 };
+
 
 interface RoleResolution {
   role?: AppUserRole;
@@ -22,7 +25,7 @@ export interface SessionRoleResult extends RoleResolution {
 }
 
 export function isAppUserRole(value: unknown): value is AppUserRole {
-  return value === "admin" || value === "etudiant" || value === "validation";
+  return value === "admin" || value === "etudiant" || value === "tuteur" || value === "validation";
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -63,6 +66,20 @@ export async function resolveRoleForUser(userId: string): Promise<RoleResolution
       redirectTo: ROLE_REDIRECTS.admin,
     };
   }
+
+  const { data: tutorMatch } = await serviceClient
+    .from("tuteurs")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (tutorMatch) {
+    return {
+      role: "tuteur",
+      redirectTo: ROLE_REDIRECTS.tuteur,
+    };
+  }
+
 
   const { data: studentMatch } = await serviceClient
     .from("etudiants")

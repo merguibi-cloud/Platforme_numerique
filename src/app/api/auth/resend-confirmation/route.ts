@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
     // Envoyer un magic link pour confirmer l'email et se connecter
     // Le redirect passe par /auth/callback qui échangera le code et redirigera vers /validation

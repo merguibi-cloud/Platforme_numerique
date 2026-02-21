@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { requireAdmin } from '@/lib/auth-helpers';
 import { logCreate } from '@/lib/audit-logger';
 
-// POST - Inviter un administrateur
+// POST - Inviter un administrateur ou formateur
 export async function POST(request: NextRequest) {
   try {
     // Authentification
@@ -40,26 +40,29 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
+    const isFormateur = role === 'FORMATEUR';
 
-    // Vérifier si un admin existe déjà avec cet email
-    const { data: existingAdmin, error: checkAdminError } = await supabase
-      .from('administrateurs')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
+    // Pour les admins, vérifier si un admin existe déjà avec cet email
+    if (!isFormateur) {
+      const { data: existingAdmin, error: checkAdminError } = await supabase
+        .from('administrateurs')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
 
-    if (checkAdminError && checkAdminError.code !== 'PGRST116') {
-      return NextResponse.json(
-        { success: false, error: 'Erreur lors de la vérification' },
-        { status: 500 }
-      );
-    }
+      if (checkAdminError && checkAdminError.code !== 'PGRST116') {
+        return NextResponse.json(
+          { success: false, error: 'Erreur lors de la vérification' },
+          { status: 500 }
+        );
+      }
 
-    if (existingAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Un administrateur avec cet email existe déjà' },
-        { status: 400 }
-      );
+      if (existingAdmin) {
+        return NextResponse.json(
+          { success: false, error: 'Un administrateur avec cet email existe déjà' },
+          { status: 400 }
+        );
+      }
     }
 
     // Mapper le rôle du formulaire vers les champs de la base
@@ -88,31 +91,49 @@ export async function POST(request: NextRequest) {
     // Générer un mot de passe temporaire
     const tempPassword = Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16).toUpperCase() + '!@#';
     const tempPasswordBase64 = Buffer.from(tempPassword).toString('base64');
-    
+
     // Vérifier si l'utilisateur existe déjà
     const { data: existingUserList } = await supabase.auth.admin.listUsers();
     const existingUser = existingUserList?.users?.find(u => u.email === email.toLowerCase());
-    
+
     let createdUser;
-    
+
     if (existingUser) {
       createdUser = { user: existingUser };
+
+      // Pour les formateurs, vérifier si un tuteur existe déjà
+      if (isFormateur) {
+        const { data: existingTuteur } = await supabase
+          .from('tuteurs')
+          .select('id')
+          .eq('user_id', existingUser.id)
+          .maybeSingle();
+
+        if (existingTuteur) {
+          return NextResponse.json(
+            { success: false, error: 'Un formateur avec cet email existe déjà' },
+            { status: 400 }
+          );
+        }
+      }
+
       // Mettre à jour le mot de passe si l'utilisateur existe déjà
       await supabase.auth.admin.updateUserById(existingUser.id, {
         password: tempPassword,
         user_metadata: {
+          ...(isFormateur ? { nom: nom.toUpperCase(), prenom: prenom.toUpperCase() } : {}),
           temp_password: tempPasswordBase64,
-          requires_password_change: true, // Forcer le changement de mot de passe à la première connexion
+          requires_password_change: true,
         },
       });
     } else {
       // Créer l'utilisateur avec email non confirmé
-      // L'email sera confirmé après la première connexion
       const { data: createUserData, error: createUserError } = await supabase.auth.admin.createUser({
         email: email.toLowerCase(),
         password: tempPassword,
-        email_confirm: false, // Sera confirmé après la première connexion
+        email_confirm: false,
         user_metadata: {
+          ...(isFormateur ? { nom: nom.toUpperCase(), prenom: prenom.toUpperCase() } : {}),
           temp_password: tempPasswordBase64,
         },
       });
@@ -130,125 +151,205 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
-      
+
       createdUser = createUserData;
     }
 
+    if (isFormateur) {
+      // === FORMATEUR: Insérer dans la table tuteurs ===
 
-    // IMPORTANT: Ne PAS créer de user_profile pour les admins/formateurs
-    // Les admins/formateurs sont uniquement dans la table administrateurs
-    // user_profiles est réservé uniquement pour lead et candidat
-    // Si un user_profile existe déjà (créé par un trigger), on le supprime car ce n'est pas un lead/candidat
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', createdUser.user.id)
-      .maybeSingle();
-
-    if (existingProfile) {
-      // Supprimer le profil car cet utilisateur est un admin/formateur, pas un lead/candidat
+      // Supprimer de la table administrateurs si l'utilisateur y existe (éviter conflit de rôle)
       await supabase
-        .from('user_profiles')
+        .from('administrateurs')
         .delete()
         .eq('user_id', createdUser.user.id);
-    }
 
-    // Créer l'administrateur dans la table administrateurs
-    const { data: newAdmin, error: adminError } = await supabase
-      .from('administrateurs')
-      .insert({
-        user_id: createdUser.user.id,
-        nom,
-        prenom,
-        email: email.toLowerCase(),
-        niveau: role === 'ADMINISTRATEUR' ? 'admin' : 'admin',
-        role_secondaire: role_secondaire,
-        service: service || null,
-      })
-      .select()
-      .single();
+      // Supprimer user_profile si créé par un trigger (les formateurs sont dans tuteurs, pas user_profiles)
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', createdUser.user.id)
+        .maybeSingle();
 
-    let finalAdmin;
-    
-    if (adminError) {
-      // Si l'administrateur existe déjà, on le met à jour
-      if (adminError.code === '23505') {
-        const { data: existingAdmin, error: updateError } = await supabase
-          .from('administrateurs')
-          .update({
-            nom: nom.toUpperCase(),
-            prenom: prenom.toUpperCase(),
-            email: email.toLowerCase(),
-            niveau: role === 'ADMINISTRATEUR' ? 'admin' : 'admin',
-            role_secondaire: role_secondaire as any,
-            service: service || null,
-          })
-          .eq('user_id', createdUser.user.id)
-          .select()
-          .single();
-        
-        if (updateError || !existingAdmin) {
+      if (existingProfile) {
+        await supabase
+          .from('user_profiles')
+          .delete()
+          .eq('user_id', createdUser.user.id);
+      }
+
+      const { data: newTuteur, error: tuteurError } = await supabase
+        .from('tuteurs')
+        .insert({
+          user_id: createdUser.user.id,
+          statut: 'actif',
+        })
+        .select()
+        .single();
+
+      let finalTuteur;
+
+      if (tuteurError) {
+        if (tuteurError.code === '23505') {
+          const { data: updatedTuteur, error: updateError } = await supabase
+            .from('tuteurs')
+            .update({
+              statut: 'actif',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', createdUser.user.id)
+            .select()
+            .single();
+
+          if (updateError || !updatedTuteur) {
+            return NextResponse.json(
+              { success: false, error: 'Erreur lors de la mise à jour du formateur' },
+              { status: 500 }
+            );
+          }
+          finalTuteur = updatedTuteur;
+        } else {
+          await logCreate(request, 'tuteurs', 'unknown', {
+            nom, prenom, email, role, ecole
+          }, `Échec de création de formateur: ${tuteurError.message}`).catch(() => {});
+
           return NextResponse.json(
-            { 
-              success: false, 
-              error: 'Erreur lors de la mise à jour de l\'administrateur'
-            },
+            { success: false, error: 'Erreur lors de la création du formateur' },
             { status: 500 }
           );
         }
-        
-        // Utiliser l'administrateur existant mis à jour
-        finalAdmin = existingAdmin;
-
       } else {
-        await logCreate(request, 'administrateurs', 'unknown', {
-          nom, prenom, email, role, ecole
-        }, `Échec de création d'administrateur: ${adminError.message}`).catch(() => {});
-        
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Erreur lors de la création de l\'administrateur'
-          },
-          { status: 500 }
-        );
+        finalTuteur = newTuteur;
       }
-    } else {
-      finalAdmin = newAdmin;
-    }
-    
-    // Logger la création
-    await logCreate(request, 'administrateurs', finalAdmin.id, {
-      id: finalAdmin.id,
-      nom: finalAdmin.nom,
-      prenom: finalAdmin.prenom,
-      email: finalAdmin.email,
-      role_secondaire: finalAdmin.role_secondaire,
-      service: finalAdmin.service,
-      niveau: finalAdmin.niveau,
-    }, `Création d'un nouvel administrateur: ${finalAdmin.prenom} ${finalAdmin.nom} (${finalAdmin.email})`).catch(() => {});
-    
-    // Retourner les identifiants pour affichage dans le modal
-    return NextResponse.json({
-      success: true,
-      message: 'Administrateur créé avec succès. L\'email sera confirmé après la première connexion.',
-      admin: finalAdmin,
-      credentials: {
+
+      await logCreate(request, 'tuteurs', finalTuteur.id, {
+        id: finalTuteur.id,
+        user_id: finalTuteur.user_id,
+        nom,
+        prenom,
         email: email.toLowerCase(),
-        password: tempPassword, // Retourner le mot de passe temporaire pour affichage
-      },
-    });
+      }, `Création d'un nouveau formateur: ${prenom} ${nom} (${email})`).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: 'Formateur créé avec succès.',
+        admin: {
+          ...finalTuteur,
+          nom: nom.toUpperCase(),
+          prenom: prenom.toUpperCase(),
+          email: email.toLowerCase(),
+          role_secondaire: 'pedagogie',
+          service: service || null,
+        },
+        credentials: {
+          email: email.toLowerCase(),
+          password: tempPassword,
+        },
+      });
+
+    } else {
+      // === ADMIN: Insérer dans la table administrateurs ===
+
+      // Supprimer de la table tuteurs si l'utilisateur y existe (éviter conflit de rôle)
+      await supabase
+        .from('tuteurs')
+        .delete()
+        .eq('user_id', createdUser.user.id);
+
+      // Supprimer user_profile si créé par un trigger (les admins sont dans administrateurs, pas user_profiles)
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', createdUser.user.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        await supabase
+          .from('user_profiles')
+          .delete()
+          .eq('user_id', createdUser.user.id);
+      }
+
+      const { data: newAdmin, error: adminError } = await supabase
+        .from('administrateurs')
+        .insert({
+          user_id: createdUser.user.id,
+          nom,
+          prenom,
+          email: email.toLowerCase(),
+          niveau: 'admin',
+          role_secondaire: role_secondaire,
+          service: service || null,
+        })
+        .select()
+        .single();
+
+      let finalAdmin;
+
+      if (adminError) {
+        if (adminError.code === '23505') {
+          const { data: existingAdmin, error: updateError } = await supabase
+            .from('administrateurs')
+            .update({
+              nom: nom.toUpperCase(),
+              prenom: prenom.toUpperCase(),
+              email: email.toLowerCase(),
+              niveau: 'admin',
+              role_secondaire: role_secondaire as any,
+              service: service || null,
+            })
+            .eq('user_id', createdUser.user.id)
+            .select()
+            .single();
+
+          if (updateError || !existingAdmin) {
+            return NextResponse.json(
+              { success: false, error: 'Erreur lors de la mise à jour de l\'administrateur' },
+              { status: 500 }
+            );
+          }
+          finalAdmin = existingAdmin;
+        } else {
+          await logCreate(request, 'administrateurs', 'unknown', {
+            nom, prenom, email, role, ecole
+          }, `Échec de création d'administrateur: ${adminError.message}`).catch(() => {});
+
+          return NextResponse.json(
+            { success: false, error: 'Erreur lors de la création de l\'administrateur' },
+            { status: 500 }
+          );
+        }
+      } else {
+        finalAdmin = newAdmin;
+      }
+
+      await logCreate(request, 'administrateurs', finalAdmin.id, {
+        id: finalAdmin.id,
+        nom: finalAdmin.nom,
+        prenom: finalAdmin.prenom,
+        email: finalAdmin.email,
+        role_secondaire: finalAdmin.role_secondaire,
+        service: finalAdmin.service,
+        niveau: finalAdmin.niveau,
+      }, `Création d'un nouvel administrateur: ${finalAdmin.prenom} ${finalAdmin.nom} (${finalAdmin.email})`).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: 'Administrateur créé avec succès. L\'email sera confirmé après la première connexion.',
+        admin: finalAdmin,
+        credentials: {
+          email: email.toLowerCase(),
+          password: tempPassword,
+        },
+      });
+    }
 
   } catch (error) {
-    await logCreate(request, 'administrateurs', 'unknown', {}, `Erreur lors de la création d'administrateur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`).catch(() => {});
-    
+    await logCreate(request, 'administrateurs', 'unknown', {}, `Erreur lors de la création: ${error instanceof Error ? error.message : 'Erreur inconnue'}`).catch(() => {});
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Erreur interne du serveur'
-      },
+      { success: false, error: 'Erreur interne du serveur' },
       { status: 500 }
     );
   }
 }
-

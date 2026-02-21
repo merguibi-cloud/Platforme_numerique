@@ -63,10 +63,10 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
       // Vérifier le statut HTTP avant de parser
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
-        
-          setErrorMessage(errorData.error || `Erreur ${response.status}: ${response.statusText}`);
-          return null;
-        }
+
+        setErrorMessage(errorData.error || `Erreur ${response.status}: ${response.statusText}`);
+        return null;
+      }
 
       const data = await response.json();
       if (data.success) {
@@ -74,7 +74,7 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
         if (data.alreadyPaid) {
           return null;
         }
-        
+
         // Retourner le clientSecret
         if (data.clientSecret) {
           setErrorMessage(''); // Effacer les erreurs précédentes
@@ -116,16 +116,16 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
         // Vérifier le statut HTTP avant de parser
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
-          
+
           // Si le paiement est déjà effectué, rafraîchir et passer à l'étape suivante
           if (errorData.error === 'Le paiement a déjà été effectué') {
             // Mettre à jour localement pour éviter les problèmes de timing
-            updateLocalData({ paid_at: new Date().toISOString() });
             await refreshCandidature();
+            updateLocalData({ paid_at: new Date().toISOString() });
             onSuccess();
             return;
           }
-          
+
           setErrorMessage(errorData.error || `Erreur ${response.status}: ${response.statusText}`);
           setIsProcessing(false);
           return;
@@ -136,8 +136,8 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
           // Si le paiement est déjà effectué ou vient d'être créé, rafraîchir et passer à l'étape suivante
           setErrorMessage(''); // Effacer les erreurs
           // Mettre à jour localement pour éviter les problèmes de timing avec le webhook
-          updateLocalData({ paid_at: new Date().toISOString() });
           await refreshCandidature();
+          updateLocalData({ paid_at: new Date().toISOString() });
           onSuccess();
         } else {
           setErrorMessage(data.error || 'Erreur lors de la création du paiement');
@@ -172,7 +172,7 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
     try {
       // Créer le Payment Intent via le backend (uniquement lors de la soumission)
       const paymentSecret = await createPaymentIntent();
-      
+
       if (!paymentSecret) {
         setIsProcessing(false);
         return; // L'erreur a déjà été affichée dans createPaymentIntent
@@ -199,17 +199,28 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
         }
         setIsProcessing(false);
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        setErrorMessage(''); // Effacer les erreurs en cas de succès
-        // Mettre à jour localement immédiatement pour éviter les problèmes de timing avec le webhook
-        updateLocalData({ paid_at: new Date().toISOString() });
-        // Attendre un peu pour que le webhook mette à jour la base de données
+        setErrorMessage('');
+        // Confirm server-side: writes paid_at to DB before navigating
+        const confirmRes = await fetch('/api/paiement/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            payment_intent_id: paymentIntent.id,
+            candidature_id: candidatureData?.id,
+          }),
+        });
+        const confirmData = await confirmRes.json();
+        if (!confirmRes.ok || !confirmData.success) {
+          setErrorMessage(confirmData.error || 'Erreur lors de la confirmation du paiement. Veuillez contacter le support.');
+          setIsProcessing(false);
+          return;
+        }
+        // paid_at is now in DB — refresh returns it correctly
         await refreshCandidature();
-        // Attendre encore un peu pour s'assurer que la base de données est à jour
-        setTimeout(() => {
-          refreshCandidature();
-        }, 1000);
         onSuccess();
-      } else {
+      }
+      else {
         // Si le statut n'est pas succeeded, afficher une erreur
         setErrorMessage('Le paiement n\'a pas pu être complété. Veuillez réessayer.');
         setIsProcessing(false);
@@ -344,11 +355,10 @@ const PaymentForm = memo(({ onSuccess }: { onSuccess: () => void }) => {
       <button
         type="submit"
         disabled={isProcessing || (paymentMethod === 'card' && !stripe)}
-        className={`w-full py-3 sm:py-4 px-6 sm:px-8 font-bold text-white transition-colors text-sm sm:text-base ${
-          isProcessing || (paymentMethod === 'card' && !stripe)
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-[#6B7280] hover:bg-[#4B5563] active:bg-[#374151]'
-        }`}
+        className={`w-full py-3 sm:py-4 px-6 sm:px-8 font-bold text-white transition-colors text-sm sm:text-base ${isProcessing || (paymentMethod === 'card' && !stripe)
+          ? 'bg-gray-400 cursor-not-allowed'
+          : 'bg-[#6B7280] hover:bg-[#4B5563] active:bg-[#374151]'
+          }`}
         style={{ fontFamily: 'var(--font-termina-bold)' }}
       >
         {isProcessing ? 'TRAITEMENT EN COURS...' : 'PAYER'}
@@ -384,13 +394,13 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
   // Vérifier les étapes précédentes au chargement
   useEffect(() => {
     if (!candidatureData) return;
-    
+
     // Ne pas vérifier si le paiement est déjà effectué
     const paidAt = candidatureData?.paid_at;
     if (paidAt && paidAt !== null && paidAt !== '') {
       return; // Paiement déjà effectué, pas besoin de vérifier
     }
-    
+
     const validation = validatePreviousSteps('inscription', candidatureData);
     if (!validation.isValid && validation.missingStep && validation.message) {
       // Utiliser setTimeout pour éviter la boucle infinie
@@ -403,7 +413,7 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
           }
         );
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -459,7 +469,7 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
             </div>
             <div className="text-white text-xs sm:text-sm flex-1">
               <p>
-                CES FRAIS VALIDENT TON INSCRIPTION ET CRÉE UN ACCÈS À LA PLATEFORME. Ils couvrent les coûts de création de son compte, de vérification de dossier. 
+                CES FRAIS VALIDENT TON INSCRIPTION ET CRÉE UN ACCÈS À LA PLATEFORME. Ils couvrent les coûts de création de son compte, de vérification de dossier.
                 <span className="font-bold"> ATTENTION : ces frais ne sont pas remboursables</span>
               </p>
             </div>
@@ -501,7 +511,7 @@ export default function PaiementFraisScolarite({ onNext, onPrev, onClose }: Paie
             >
               RETOUR
             </button>
-            
+
             {hasPaid && (
               <button
                 onClick={onNext}
