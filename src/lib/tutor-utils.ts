@@ -51,7 +51,7 @@ export function getSubmissionStatusText(
  * Get progress status badge color
  */
 export function getProgressStatusColor(
-  statut: 'non_commence' | 'en_cours' | 'termine'
+  statut: 'non_commence' | 'en_cours' | 'termine' | 'en_retard'
 ): string {
   switch (statut) {
     case 'non_commence':
@@ -60,6 +60,8 @@ export function getProgressStatusColor(
       return 'bg-blue-100 text-blue-800';
     case 'termine':
       return 'bg-green-100 text-green-800';
+    case 'en_retard':
+      return 'bg-red-100 text-red-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -69,7 +71,7 @@ export function getProgressStatusColor(
  * Get progress status text in French
  */
 export function getProgressStatusText(
-  statut: 'non_commence' | 'en_cours' | 'termine'
+  statut: 'non_commence' | 'en_cours' | 'termine' | 'en_retard'
 ): string {
   switch (statut) {
     case 'non_commence':
@@ -78,6 +80,8 @@ export function getProgressStatusText(
       return 'En cours';
     case 'termine':
       return 'Terminé';
+    case 'en_retard':
+      return 'En retard';
     default:
       return 'Inconnu';
   }

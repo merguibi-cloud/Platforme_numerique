@@ -1,5 +1,6 @@
 import type { Tuteur, TuteurEtudiant, TutorDashboardStats, StudentProgress } from '@/types/tutor';
 
+
 export class TutorAPI {
   private static async fetch<T>(url: string, options?: RequestInit): Promise<T> {
     const response = await fetch(url, {
@@ -39,5 +40,6 @@ export class TutorAPI {
 
   static async getTuteeProgress(studentId: string): Promise<StudentProgress[]> {
     return this.fetch<StudentProgress[]>(`/api/espace-tuteur/tutees/${studentId}/progress`);
+
   }
 }

@@ -38,6 +38,8 @@ export interface TutorDashboardStats {
 
 export interface StudentProgress {
   etudiant_id: string;
+
+  
   prenom: string;
   nom: string;
   email: string;
@@ -48,4 +50,5 @@ export interface StudentProgress {
   date_derniere_activite: string | null;
   total_chapitres: number;
   chapitres_termines: number;
+
 }
