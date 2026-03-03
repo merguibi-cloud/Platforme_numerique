@@ -35,3 +35,17 @@ export interface TutorDashboardStats {
   taux_reussite_moyen: number;
   derniere_activite?: string;
 }
+
+export interface StudentProgress {
+  etudiant_id: string;
+  prenom: string;
+  nom: string;
+  email: string;
+  cours_id: string;
+  cours_titre: string;
+  progression: number;
+  statut: 'non_commence' | 'en_cours' | 'termine';
+  date_derniere_activite: string | null;
+  total_chapitres: number;
+  chapitres_termines: number;
+}
