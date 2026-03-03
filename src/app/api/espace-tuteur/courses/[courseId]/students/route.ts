@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/api-helpers';
 import { getSupabaseServerClient } from '@/lib/supabase';
-import type { StudentProgress } from '@/types/tutor';
 
 export async function GET(
   request: NextRequest,
@@ -78,7 +77,7 @@ export async function GET(
     }
 
     // Get progress for each student
-    const studentProgress: StudentProgress[] = await Promise.all(
+    const studentProgress = await Promise.all(
       inscriptions.map(async (inscription: any) => {
         const etudiantId = inscription.etudiant_id;
         const etudiant = inscription.etudiants;

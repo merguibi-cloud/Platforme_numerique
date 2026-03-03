@@ -18,9 +18,10 @@ interface ChapitreEditorProps {
   coursOrder?: number;
   formationId?: string;
   blocId?: string;
+  basePath?: string;
 }
 
-export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNumber, coursOrder, formationId, blocId }: ChapitreEditorProps) => {
+export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNumber, coursOrder, formationId, blocId, basePath = '/espace-admin/gestion-formations' }: ChapitreEditorProps) => {
   const router = useRouter();
   const [cours, setCours] = useState<Chapitre | null>(null);
   const [currentChapitreId, setCurrentChapitreId] = useState<number | undefined>(chapitreId);
@@ -651,7 +652,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
           
           // Mettre à jour l'URL si nécessaire
           if (finalChapitreId) {
-            router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${finalChapitreId}`, { scroll: false });
+            router.push(`${basePath}/${formationId}/${blocId}/cours/${coursId}/chapitre/${finalChapitreId}`, { scroll: false });
           }
           
           // Arrêter ici, ne pas continuer
@@ -682,7 +683,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
 
       // Rediriger vers la page d'édition de quiz
       if (finalChapitreId && currentFormationId && currentBlocId) {
-        router.push(`/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${finalChapitreId}/quiz`);
+        router.push(`${basePath}/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${finalChapitreId}/quiz`);
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
@@ -746,7 +747,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   const handleChapitreClick = (clickedChapitreId: number) => {
     if (currentFormationId && currentBlocId) {
       router.push(
-        `/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${clickedChapitreId}`
+        `${basePath}/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${clickedChapitreId}`
       );
     }
   };
@@ -754,7 +755,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   const handleQuizClick = (chapitreId: number, quizId: number) => {
     if (currentFormationId && currentBlocId) {
       router.push(
-        `/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${chapitreId}/quiz`
+        `${basePath}/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${chapitreId}/quiz`
       );
     }
   };
@@ -762,7 +763,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
   const handleEtudeCasClick = (chapitreId: number, etudeCasId: number) => {
     if (currentFormationId && currentBlocId) {
       router.push(
-        `/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${chapitreId}/etude-cas`
+        `${basePath}/${currentFormationId}/${currentBlocId}/cours/${coursId}/chapitre/${chapitreId}/etude-cas`
       );
     }
   };
@@ -793,7 +794,7 @@ export const CoursEditor = ({ chapitreId, coursId, coursTitle, blocTitle, blocNu
 
   const handleBack = () => {
     if (currentFormationId && currentBlocId) {
-      router.push(`/espace-admin/gestion-formations/${currentFormationId}/${currentBlocId}`);
+      router.push(`${basePath}/${currentFormationId}/${currentBlocId}`);
     }
   };
 

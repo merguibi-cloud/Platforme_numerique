@@ -19,7 +19,7 @@ export default function StudentDetailPage({
   useEffect(() => {
     TutorAPI.getTuteeProgress(studentId)
       .then(setProgress)
-      .catch((err) => setError(err.message || 'Erreur lors du chargement'))
+      .catch((err: Error) => setError(err.message || 'Erreur lors du chargement'))
       .finally(() => setLoading(false));
   }, [studentId]);
 

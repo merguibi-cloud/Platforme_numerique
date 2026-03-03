@@ -29,6 +29,7 @@ interface ModuleManagementProps {
   modules: ModuleWithStatus[];
   formationId: string;
   blocId: string;
+  basePath?: string;
   onAddModule: (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => void;
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
@@ -47,6 +48,7 @@ export const ModuleManagement = ({
   modules,
   formationId,
   blocId,
+  basePath = '/espace-admin/gestion-formations',
   onAddModule,
   onEditModule,
   onAddQuiz,
@@ -292,29 +294,26 @@ export const ModuleManagement = ({
                     ref={(el) => {
                       iconRefs.current[module.id] = el;
                     }}
-                    className="flex items-start justify-center"
+                    className="flex items-center justify-center"
                     style={{
-                      paddingTop: '0.5rem', // p-2 = 0.5rem
-                      paddingBottom: '0.5rem', // p-2 = 0.5rem
-                      minHeight: '48px', // Hauteur minimale
+                      paddingTop: '0.5rem',
+                      paddingBottom: '0.5rem',
+                      minHeight: '48px',
                     }}
                   >
                     <button
                       onClick={() => handleStatusIconClick(module)}
                       disabled={module.statut === 'manquant' || isChangingStatus}
                       className={`
-                        flex items-center justify-center 
+                        flex items-center justify-center
                         w-8 h-8 sm:w-10 sm:h-10
                         rounded transition-colors flex-shrink-0
-                        ${module.statut === 'manquant' 
-                          ? 'opacity-50 cursor-not-allowed' 
+                        ${module.statut === 'manquant'
+                          ? 'opacity-50 cursor-not-allowed'
                           : 'cursor-pointer hover:bg-[#032622]/10 active:bg-[#032622]/20'
                         }
                         ${isChangingStatus ? 'opacity-50 cursor-wait' : ''}
                       `}
-                      style={{
-                        marginTop: '0.125rem', // Petit ajustement pour aligner avec le texte du titre
-                      }}
                       title={
                         module.statut === 'manquant' 
                           ? 'Cours manquant - impossible de changer le statut'
@@ -438,7 +437,7 @@ export const ModuleManagement = ({
                     <td className="border border-[#032622] p-0">
                       <button
                         onClick={() => {
-                          router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/module/${module.id}/etude-cas`);
+                          router.push(`${basePath}/${formationId}/${blocId}/module/${module.id}/etude-cas`);
                         }}
                         className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
@@ -478,7 +477,7 @@ export const ModuleManagement = ({
                       <td className="border border-[#032622] p-0">
                         <button
                           onClick={() => {
-                            router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${module.id}/correction`);
+                            router.push(`${basePath}/${formationId}/${blocId}/cours/${module.id}/correction`);
                           }}
                           className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
                           style={{ fontFamily: 'var(--font-termina-bold)' }}

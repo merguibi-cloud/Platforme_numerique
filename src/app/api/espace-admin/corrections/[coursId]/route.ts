@@ -40,24 +40,10 @@ export async function GET(
       );
     }
 
-    // Récupérer les informations du cours et du bloc
+    // Récupérer les informations du cours
     const { data: cours, error: coursError } = await supabase
       .from('cours_apprentissage')
-      .select(`
-        id,
-        titre,
-        bloc_id,
-        blocs_competences (
-          id,
-          titre,
-          formation_id,
-          formations (
-            id,
-            titre,
-            ecole
-          )
-        )
-      `)
+      .select('id, titre, bloc_id')
       .eq('id', coursIdNum)
       .maybeSingle();
 
@@ -68,8 +54,26 @@ export async function GET(
       );
     }
 
-    const bloc = cours.blocs_competences as any;
-    const formation = bloc?.formations as any;
+    // Récupérer le bloc séparément (évite PGRST200 sans FK)
+    const { data: bloc, error: blocError } = await supabase
+      .from('blocs_competences')
+      .select('id, titre, formation_id')
+      .eq('id', cours.bloc_id)
+      .maybeSingle();
+
+    if (blocError || !bloc) {
+      return NextResponse.json(
+        { error: 'Bloc non trouvé' },
+        { status: 404 }
+      );
+    }
+
+    // Récupérer la formation séparément
+    const { data: formation } = await supabase
+      .from('formations')
+      .select('id, titre, ecole')
+      .eq('id', bloc.formation_id)
+      .maybeSingle();
 
     // Récupérer tous les cours du bloc pour la liste déroulante
     const { data: tousCoursBloc, error: tousCoursError } = await supabase
@@ -165,32 +169,22 @@ export async function GET(
     if (quizIds.length > 0) {
       const { data: tentatives, error: tentativesError } = await supabase
         .from('tentatives_quiz')
-        .select(`
-          id,
-          user_id,
-          quiz_id,
-          score,
-          date_tentative,
-          termine,
-          note_modifiee_manuellement,
-          correcteur_id,
-          date_modification_note,
-          quiz_evaluations (
-            id,
-            titre
-          )
-        `)
+        .select('id, user_id, quiz_id, score, date_tentative, termine, note_modifiee_manuellement, correcteur_id, date_modification_note')
         .in('quiz_id', quizIds)
         .eq('termine', true)
         .order('date_tentative', { ascending: false });
 
       if (!tentativesError && tentatives) {
+        // Construire un map des titres de quiz
+        const quizTitreMap = new Map<number, string>();
+        quiz?.forEach((q: any) => quizTitreMap.set(q.id, q.titre || 'Quiz'));
+
         // Récupérer les informations utilisateur pour chaque tentative
         tentativesQuiz = await Promise.all(
           tentatives.map(async (t: any) => {
             // Récupérer l'email depuis auth.users
             const { data: authUser } = await supabase.auth.admin.getUserById(t.user_id);
-            
+
             // Récupérer les informations depuis candidatures
             const { data: candidature } = await supabase
               .from('candidatures')
@@ -202,12 +196,11 @@ export async function GET(
             const prenom = candidature?.prenom || '';
             const email = authUser?.user?.email || candidature?.email || '';
             const etudiantNom = nom && prenom ? `${prenom} ${nom}` : email.split('@')[0] || 'Utilisateur';
-            const quizData = t.quiz_evaluations as any;
 
             return {
               id: t.id,
               quiz_id: t.quiz_id,
-              quiz_titre: quizData?.titre || 'Quiz',
+              quiz_titre: quizTitreMap.get(t.quiz_id) || 'Quiz',
               etudiant_nom: etudiantNom,
               etudiant_email: email,
               score: t.score,
