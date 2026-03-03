@@ -21,26 +21,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    // Récupérer les étudiants assignés avec leurs infos
+    // Récupérer les relations tuteur-étudiants
     const { data: tutees, error } = await supabase
       .from('tuteur_etudiants')
-      .select(`
-        id,
-        tuteur_id,
-        etudiant_id,
-        statut,
-        date_debut,
-        date_fin,
-        created_at,
-        etudiants:etudiant_id (
-          id,
-          user_id,
-          nom,
-          prenom,
-          email,
-          photo_url
-        )
-      `)
+      .select('id, tuteur_id, etudiant_id, statut, date_debut, date_fin, created_at')
       .eq('tuteur_id', tuteur.id)
       .order('created_at', { ascending: false });
 
@@ -49,11 +33,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur lors du chargement' }, { status: 500 });
     }
 
-    // Transformer pour mapper etudiants -> etudiant
+    // Récupérer les infos des étudiants séparément
+    // etudiant_id référence auth.users(id), etudiants.user_id aussi
+    const etudiantUserIds = (tutees || []).map((t: any) => t.etudiant_id).filter(Boolean);
+    let etudiantsMap: Record<string, any> = {};
+
+    if (etudiantUserIds.length > 0) {
+      const { data: etudiants } = await supabase
+        .from('etudiants')
+        .select('id, user_id, nom, prenom, email, photo_url')
+        .in('user_id', etudiantUserIds);
+
+      if (etudiants) {
+        etudiantsMap = Object.fromEntries(etudiants.map((e: any) => [e.user_id, e]));
+      }
+    }
+
+    // Joindre les données
     const result = (tutees || []).map((t: any) => ({
       ...t,
-      etudiant: t.etudiants || null,
-      etudiants: undefined,
+      etudiant: etudiantsMap[t.etudiant_id] || null,
     }));
 
     return NextResponse.json(result);

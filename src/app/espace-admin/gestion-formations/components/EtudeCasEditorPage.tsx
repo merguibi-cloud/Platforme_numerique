@@ -9,6 +9,7 @@ interface EtudeCasEditorPageProps {
   coursId: number;
   formationId: string;
   blocId: string;
+  basePath?: string;
 }
 
 interface QuestionForm {
@@ -36,7 +37,7 @@ interface ReponseData {
   ordre_affichage: number;
 }
 
-export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEditorPageProps) => {
+export const EtudeCasEditorPage = ({ coursId, formationId, blocId, basePath = '/espace-admin/gestion-formations' }: EtudeCasEditorPageProps) => {
   const router = useRouter();
   const [consigne, setConsigne] = useState('');
   const [fichierConsigne, setFichierConsigne] = useState<File | null>(null);
@@ -62,6 +63,11 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
   const [noQuestionsModal, setNoQuestionsModal] = useState<{ isOpen: boolean }>({
     isOpen: false
   });
+  const [deleteQuestionModal, setDeleteQuestionModal] = useState<{ isOpen: boolean; questionIndex: number | null }>({
+    isOpen: false,
+    questionIndex: null
+  });
+  const [isDeletingQuestion, setIsDeletingQuestion] = useState(false);
 
   // Charger l'étude de cas existante
   useEffect(() => {
@@ -251,7 +257,46 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
   };
 
   const removeQuestion = (index: number) => {
-    setQuestions(questions.filter((_, i) => i !== index));
+    setDeleteQuestionModal({ isOpen: true, questionIndex: index });
+  };
+
+  const confirmDeleteQuestion = async () => {
+    const index = deleteQuestionModal.questionIndex;
+    if (index === null) return;
+
+    const question = questions[index];
+    setIsDeletingQuestion(true);
+
+    try {
+      if (question.id) {
+        const response = await fetch(`/api/etude-cas/questions?questionId=${question.id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+          setModal({
+            isOpen: true,
+            message: errorData.error || 'Erreur lors de la suppression de la question',
+            type: 'error',
+            title: 'Erreur'
+          });
+          return;
+        }
+      }
+      setQuestions(questions.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la question:', error);
+      setModal({
+        isOpen: true,
+        message: 'Erreur lors de la suppression de la question',
+        type: 'error',
+        title: 'Erreur'
+      });
+    } finally {
+      setIsDeletingQuestion(false);
+      setDeleteQuestionModal({ isOpen: false, questionIndex: null });
+    }
   };
 
   const updateQuestion = (index: number, field: keyof QuestionForm, value: any) => {
@@ -729,7 +774,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
       setHasUnsavedChanges(false);
       setLastAutoSaveTime(new Date());
 
-      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}`);
+      router.push(`${basePath}/${formationId}/${blocId}`);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de l\'étude de cas:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde de l\'étude de cas';
@@ -760,7 +805,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
       {/* Flèche retour et indicateur de sauvegarde automatique */}
       <div className="mb-4 space-y-2">
         <button
-          onClick={() => router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}`)}
+          onClick={() => router.push(`${basePath}/${formationId}/${blocId}`)}
           className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70 transition-colors"
           title="Retour aux modules"
         >
@@ -1164,7 +1209,7 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
       <Modal
         isOpen={noQuestionsModal.isOpen}
         onClose={() => setNoQuestionsModal({ isOpen: false })}
-        message="Vous n'avez pas ajouté de questions à cette étude de cas.\n\nSouhaitez-vous continuer et enregistrer l'étude de cas sans questions, ou annuler pour ajouter des questions ?"
+        message="Vous n'avez pas ajouté de questions à cette étude de cas. Souhaitez-vous continuer et enregistrer sans questions, ou annuler pour en ajouter ?"
         type="warning"
         title="Aucune question ajoutée"
         isConfirm={true}
@@ -1175,6 +1220,19 @@ export const EtudeCasEditorPage = ({ coursId, formationId, blocId }: EtudeCasEdi
         onCancel={() => {
           setNoQuestionsModal({ isOpen: false });
         }}
+      />
+
+      {/* Modal de confirmation de suppression de question */}
+      <Modal
+        isOpen={deleteQuestionModal.isOpen}
+        onClose={() => setDeleteQuestionModal({ isOpen: false, questionIndex: null })}
+        message="Êtes-vous sûr de vouloir supprimer cette question ? Cette action est irréversible."
+        type="warning"
+        title="Supprimer la question"
+        isConfirm={true}
+        confirmDisabled={isDeletingQuestion}
+        onConfirm={confirmDeleteQuestion}
+        onCancel={() => setDeleteQuestionModal({ isOpen: false, questionIndex: null })}
       />
     </div>
   );

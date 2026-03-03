@@ -11,6 +11,7 @@ interface QuizEditorPageProps {
   coursId: number;
   formationId: string;
   blocId: string;
+  basePath?: string;
 }
 
 interface QuestionForm {
@@ -28,7 +29,7 @@ interface ReponseForm {
   est_correcte: boolean;
 }
 
-export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: QuizEditorPageProps) => {
+export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId, basePath = '/espace-admin/gestion-formations' }: QuizEditorPageProps) => {
   const router = useRouter();
   const [questions, setQuestions] = useState<QuestionForm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -695,7 +696,7 @@ export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: Qui
       // L'heure de la dernière sauvegarde reste affichée
 
       // Rediriger vers le chapitre après sauvegarde
-      router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`);
+      router.push(`${basePath}/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du quiz:', error);
       setModal({
@@ -726,7 +727,7 @@ export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: Qui
       <div className="mb-4 space-y-2">
         {/* Flèche retour */}
         <button
-          onClick={() => router.push(`/espace-admin/gestion-formations/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`)}
+          onClick={() => router.push(`${basePath}/${formationId}/${blocId}/cours/${coursId}/chapitre/${chapitreId}`)}
           className="flex items-center gap-2 text-[#032622] hover:text-[#032622]/70 transition-colors"
           title="Retour au chapitre"
         >
@@ -855,14 +856,18 @@ export const QuizEditorPage = ({ chapitreId, coursId, formationId, blocId }: Qui
                         } font-bold`}
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       />
-                      {question.reponses.length > 2 && (
-                        <button
-                          onClick={() => removeReponse(qIndex, rIndex)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => removeReponse(qIndex, rIndex)}
+                        disabled={question.reponses.length <= 2}
+                        className={`flex-shrink-0 ${
+                          question.reponses.length <= 2
+                            ? 'text-[#032622]/20 cursor-not-allowed'
+                            : 'text-red-600 hover:text-red-800'
+                        }`}
+                        title={question.reponses.length <= 2 ? 'Minimum 2 réponses requises' : 'Supprimer cette réponse'}
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     </>
                   )}
                 </div>

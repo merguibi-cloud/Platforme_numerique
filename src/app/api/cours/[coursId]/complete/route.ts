@@ -86,13 +86,10 @@ export async function GET(
       } else if (quizzes && quizzes.length > 0) {
         const quizIds = quizzes.map(q => q.id);
 
-        // Charger les questions pour tous les quiz
+        // Charger les questions pour tous les quiz (sans join pour éviter PGRST200)
         const { data: questions, error: questionsError } = await supabase
           .from('questions_quiz')
-          .select(`
-            *,
-            reponses_possibles (*)
-          `)
+          .select('*')
           .in('quiz_id', quizIds)
           .eq('actif', true)
           .order('ordre_affichage', { ascending: true });
@@ -101,13 +98,33 @@ export async function GET(
           console.error('Erreur lors de la récupération des questions:', questionsError);
         }
 
+        // Charger les réponses possibles séparément
+        const reponsesByQuestion = new Map<number, any[]>();
+        if (questions && questions.length > 0) {
+          const questionIds = questions.map((q: any) => q.id);
+          const { data: reponses } = await supabase
+            .from('reponses_possibles')
+            .select('*')
+            .in('question_id', questionIds);
+
+          reponses?.forEach((r: any) => {
+            if (!reponsesByQuestion.has(r.question_id)) {
+              reponsesByQuestion.set(r.question_id, []);
+            }
+            reponsesByQuestion.get(r.question_id)!.push(r);
+          });
+        }
+
         // Organiser les questions par quiz_id
         const questionsByQuiz = new Map<number, any[]>();
         questions?.forEach((q: any) => {
           if (!questionsByQuiz.has(q.quiz_id)) {
             questionsByQuiz.set(q.quiz_id, []);
           }
-          questionsByQuiz.get(q.quiz_id)!.push(q);
+          questionsByQuiz.get(q.quiz_id)!.push({
+            ...q,
+            reponses_possibles: reponsesByQuestion.get(q.id) || [],
+          });
         });
 
         // Construire la map des quiz avec leurs questions
@@ -140,21 +157,36 @@ export async function GET(
       etudeCas = etudeCasData;
       const etudeCasId = etudeCasData.id;
 
-      // Charger les questions de l'étude de cas
+      // Charger les questions de l'étude de cas (sans join pour éviter PGRST200)
       const { data: questionsEtudeCas, error: questionsEtudeCasError } = await supabase
         .from('questions_etude_cas')
-        .select(`
-          *,
-          reponses_possibles_etude_cas (*)
-        `)
+        .select('*')
         .eq('etude_cas_id', etudeCasId)
         .eq('actif', true)
         .order('ordre_affichage', { ascending: true });
 
       if (questionsEtudeCasError) {
         console.error('Erreur lors de la récupération des questions de l\'étude de cas:', questionsEtudeCasError);
-      } else {
-        etudeCasQuestions = questionsEtudeCas || [];
+      } else if (questionsEtudeCas && questionsEtudeCas.length > 0) {
+        // Charger les réponses possibles séparément
+        const etudeCasQuestionIds = questionsEtudeCas.map((q: any) => q.id);
+        const { data: reponsesEtudeCas } = await supabase
+          .from('reponses_possibles_etude_cas')
+          .select('*')
+          .in('question_id', etudeCasQuestionIds);
+
+        const reponsesByEtudeCasQuestion = new Map<number, any[]>();
+        reponsesEtudeCas?.forEach((r: any) => {
+          if (!reponsesByEtudeCasQuestion.has(r.question_id)) {
+            reponsesByEtudeCasQuestion.set(r.question_id, []);
+          }
+          reponsesByEtudeCasQuestion.get(r.question_id)!.push(r);
+        });
+
+        etudeCasQuestions = questionsEtudeCas.map((q: any) => ({
+          ...q,
+          reponses_possibles_etude_cas: reponsesByEtudeCasQuestion.get(q.id) || [],
+        }));
       }
     }
 

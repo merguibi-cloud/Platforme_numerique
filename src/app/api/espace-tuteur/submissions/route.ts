@@ -27,26 +27,19 @@ export async function GET(request: NextRequest) {
     const etudeCasId = searchParams.get('etude_cas_id');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
-    // Construire la requête
+    // Construire la requête - sans embedded select pour etudiants (pas de FK vers etudiants)
     let query = supabase
       .from('soumissions_etude_cas')
       .select(`
         *,
-        etudiants:etudiant_id (
-          id,
-          prenom,
-          nom,
-          email
-        ),
         etudes_cas:etude_cas_id (
           id,
           titre,
           description,
-          note_maximale,
-          bloc_id
+          points_max
         )
       `)
-      .eq('corrige_par', tuteur.id)
+      .eq('tuteur_id', tuteur.id)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -65,12 +58,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur lors du chargement' }, { status: 500 });
     }
 
-    // Transformer pour mapper les relations
+    // Récupérer les infos des étudiants séparément
+    // etudiant_id (ou user_id) référence auth.users(id)
+    const studentUserIds = (submissions || [])
+      .map((s: any) => s.etudiant_id || s.user_id)
+      .filter(Boolean);
+    let etudiantsMap: Record<string, any> = {};
+
+    if (studentUserIds.length > 0) {
+      const { data: etudiants } = await supabase
+        .from('etudiants')
+        .select('id, user_id, nom, prenom, email')
+        .in('user_id', studentUserIds);
+
+      if (etudiants) {
+        etudiantsMap = Object.fromEntries(etudiants.map((e: any) => [e.user_id, e]));
+      }
+    }
+
+    // Joindre les données
     const result = (submissions || []).map((s: any) => ({
       ...s,
-      etudiant: s.etudiants || null,
+      etudiant: etudiantsMap[s.etudiant_id || s.user_id] || null,
       etude_cas: s.etudes_cas || null,
-      etudiants: undefined,
       etudes_cas: undefined,
     }));
 

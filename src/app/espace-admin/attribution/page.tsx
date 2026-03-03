@@ -15,6 +15,13 @@ interface AdminUser {
   status?: "pending" | "actif";
 }
 
+interface Formation {
+  id: number;
+  titre: string;
+  ecole: string;
+  niveau: string;
+}
+
 const roles = [
   "ADMINISTRATEUR",
   "ADMINISTRATEUR ADV",
@@ -55,7 +62,10 @@ export default function AttributionPage() {
     mail: "",
     ecole: "",
     role: "",
+    formations: [] as number[],
   });
+  const [allFormations, setAllFormations] = useState<Formation[]>([]);
+  const [isLoadingFormations, setIsLoadingFormations] = useState(false);
 
   // Charger l'ID de l'administrateur connecté
   useEffect(() => {
@@ -81,6 +91,20 @@ export default function AttributionPage() {
   useEffect(() => {
     loadAdmins();
   }, []);
+
+  // Charger les formations quand le rôle FORMATEUR est sélectionné
+  useEffect(() => {
+    if (formData.role === "FORMATEUR" && allFormations.length === 0) {
+      setIsLoadingFormations(true);
+      fetch("/api/admin/formations-list", { credentials: "include" })
+        .then((r) => r.json())
+        .then((result) => {
+          if (result.success) setAllFormations(result.formations || []);
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingFormations(false));
+    }
+  }, [formData.role, allFormations.length]);
 
   const loadAdmins = async () => {
     try {
@@ -134,18 +158,28 @@ export default function AttributionPage() {
       mail: "",
       ecole: "",
       role: "",
+      formations: [],
     });
     setShowForm(true);
   };
 
-  const handleEditClick = (admin: AdminUser) => {
+  const handleEditClick = async (admin: AdminUser) => {
     setEditingAdmin(admin);
+    let currentFormations: number[] = [];
+    if (admin.role === "FORMATEUR") {
+      try {
+        const r = await fetch(`/api/admin/tuteur-formations?id=${admin.id}`, { credentials: "include" });
+        const result = await r.json();
+        if (result.success) currentFormations = result.formation_ids || [];
+      } catch {}
+    }
     setFormData({
       nom: admin.nom,
       prenom: admin.prenom,
       mail: admin.mail,
       ecole: admin.ecole,
       role: admin.role,
+      formations: currentFormations,
     });
     setShowForm(true);
   };
@@ -213,6 +247,7 @@ export default function AttributionPage() {
             email: formData.mail,
             role: formData.role,
             ecole: formData.role === "ADMINISTRATEUR" ? "" : formData.ecole,
+            formations: formData.role === "FORMATEUR" ? formData.formations : [],
           }),
         });
 
@@ -238,6 +273,7 @@ export default function AttributionPage() {
             email: formData.mail,
             role: formData.role,
             ecole: formData.role === "ADMINISTRATEUR" ? "" : formData.ecole,
+            formations: formData.role === "FORMATEUR" ? formData.formations : [],
           }),
         });
 
@@ -268,6 +304,7 @@ export default function AttributionPage() {
         mail: "",
         ecole: "",
         role: "",
+        formations: [],
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -283,7 +320,17 @@ export default function AttributionPage() {
       mail: "",
       ecole: "",
       role: "",
+      formations: [],
     });
+  };
+
+  const toggleFormation = (formationId: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      formations: prev.formations.includes(formationId)
+        ? prev.formations.filter((id) => id !== formationId)
+        : [...prev.formations, formationId],
+    }));
   };
 
   return (
@@ -791,6 +838,65 @@ export default function AttributionPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {formData.role === "FORMATEUR" && (
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-[#032622] uppercase tracking-wide mb-1.5 sm:mb-2">
+                      FORMATIONS ASSIGNÉES
+                      <span className="ml-1 text-[#032622]/60 normal-case font-normal">(optionnel)</span>
+                    </label>
+                    {isLoadingFormations ? (
+                      <div className="border-2 border-[#032622] p-3 text-sm text-[#032622]/60">
+                        Chargement des formations...
+                      </div>
+                    ) : allFormations.length === 0 ? (
+                      <div className="border-2 border-[#032622] p-3 text-sm text-[#032622]/60">
+                        Aucune formation disponible
+                      </div>
+                    ) : (
+                      <div className="border-2 border-[#032622] max-h-48 overflow-y-auto">
+                        {(() => {
+                          const groupedByEcole = allFormations.reduce<Record<string, Formation[]>>((acc, f) => {
+                            if (!acc[f.ecole]) acc[f.ecole] = [];
+                            acc[f.ecole].push(f);
+                            return acc;
+                          }, {});
+                          return Object.entries(groupedByEcole).map(([ecole, formations]) => (
+                            <div key={ecole}>
+                              <div className="px-3 py-1.5 bg-[#032622] text-[#F8F5E4] text-[10px] font-bold uppercase tracking-wider">
+                                {ecole}
+                              </div>
+                              {formations.map((f) => (
+                                <label
+                                  key={f.id}
+                                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#032622]/5 border-b border-[#032622]/10 last:border-b-0"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.formations.includes(f.id)}
+                                    onChange={() => toggleFormation(f.id)}
+                                    className="w-4 h-4 accent-[#032622] flex-shrink-0"
+                                  />
+                                  <span className="text-xs text-[#032622] break-words">
+                                    {f.titre}
+                                    {f.niveau && (
+                                      <span className="ml-1 opacity-60">— {f.niveau}</span>
+                                    )}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                    {formData.formations.length > 0 && (
+                      <p className="mt-1 text-xs text-[#032622]/70">
+                        {formData.formations.length} formation(s) sélectionnée(s)
+                      </p>
+                    )}
                   </div>
                 )}
 

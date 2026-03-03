@@ -116,6 +116,17 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        // Nettoyer les conflits de rôle avant de résoudre
+        const supabaseCleanupTemp = getSupabaseServerClient();
+        const [{ data: adminEntryTemp }, { data: tuteurEntryTemp }] = await Promise.all([
+          supabaseCleanupTemp.from('administrateurs').select('id').eq('user_id', data.user.id).maybeSingle(),
+          supabaseCleanupTemp.from('tuteurs').select('id').eq('user_id', data.user.id).maybeSingle(),
+        ]);
+
+        if (adminEntryTemp && tuteurEntryTemp) {
+          await supabaseCleanupTemp.from('administrateurs').delete().eq('user_id', data.user.id);
+        }
+
         // Resolve user role to determine the correct change-password redirect
         const tempRoleResolution = await resolveRoleForUser(data.user.id);
         let changePasswordRedirect = '/espace-admin/change-password';
@@ -155,6 +166,19 @@ export async function POST(request: NextRequest) {
 
         return response;
       }
+    }
+
+    // Nettoyer les conflits de rôle: si l'utilisateur existe dans plusieurs tables de rôle,
+    // supprimer les entrées obsolètes avant de résoudre le rôle
+    const supabaseCleanup = getSupabaseServerClient();
+    const [{ data: adminEntry }, { data: tuteurEntry }] = await Promise.all([
+      supabaseCleanup.from('administrateurs').select('id').eq('user_id', data.user.id).maybeSingle(),
+      supabaseCleanup.from('tuteurs').select('id').eq('user_id', data.user.id).maybeSingle(),
+    ]);
+
+    if (adminEntry && tuteurEntry) {
+      // L'utilisateur existe dans les deux tables - tuteurs a la priorité (rôle formateur)
+      await supabaseCleanup.from('administrateurs').delete().eq('user_id', data.user.id);
     }
 
     const roleResolution = await resolveRoleForUser(data.user.id);

@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { signOut } from '@/lib/auth-api';
 
 const menuItems = [
   {
@@ -74,7 +75,19 @@ interface TutorSidebarProps {
 
 export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [activeItem, setActiveItem] = useState('dashboard');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+    } finally {
+      router.push('/');
+      router.refresh();
+    }
+  };
 
   const handleCollapse = () => {
     onCollapseChange(!isCollapsed);
@@ -172,30 +185,59 @@ export const TutorSidebar = ({ isCollapsed, onCollapseChange }: TutorSidebarProp
       {/* Menu du bas */}
       <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-600`}>
         <nav className="space-y-2">
-          {bottomMenuItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Image
-                src={activeItem === item.id ? item.icon : item.iconInactive}
-                alt={item.label}
-                width={24}
-                height={24}
-                className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
-              />
-              {!isCollapsed && (
-                <span
-                  className="text-sm font-medium"
-                  style={{ fontFamily: 'var(--font-termina-bold)' }}
+          {bottomMenuItems.map((item) => {
+            if (item.id === 'logout') {
+              return (
+                <button
+                  key={item.id}
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200 w-full disabled:opacity-50`}
+                  title={isCollapsed ? item.label : undefined}
                 >
-                  {item.label}
-                </span>
-              )}
-            </Link>
-          ))}
+                  <Image
+                    src={item.iconInactive}
+                    alt={item.label}
+                    width={24}
+                    height={24}
+                    className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                  />
+                  {!isCollapsed && (
+                    <span
+                      className="text-sm font-medium"
+                      style={{ fontFamily: 'var(--font-termina-bold)' }}
+                    >
+                      {isLoggingOut ? 'DÉCONNEXION...' : item.label}
+                    </span>
+                  )}
+                </button>
+              );
+            }
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`flex items-center ${isCollapsed ? 'justify-center px-2 py-4' : 'space-x-3 px-4 py-3'} rounded-lg text-white hover:bg-gray-700 transition-colors duration-200`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <Image
+                  src={activeItem === item.id ? item.icon : item.iconInactive}
+                  alt={item.label}
+                  width={24}
+                  height={24}
+                  className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                />
+                {!isCollapsed && (
+                  <span
+                    className="text-sm font-medium"
+                    style={{ fontFamily: 'var(--font-termina-bold)' }}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </div>

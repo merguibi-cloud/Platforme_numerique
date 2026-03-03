@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nom, prenom, email, role, ecole } = body;
+    const { nom, prenom, email, role, ecole, formations } = body;
 
     // Validation
     if (!nom || !prenom || !email || !role) {
@@ -220,6 +220,17 @@ export async function POST(request: NextRequest) {
         }
       } else {
         finalTuteur = newTuteur;
+      }
+
+      // Assigner les formations si fournies
+      if (Array.isArray(formations) && formations.length > 0) {
+        const formationRows = formations.map((fid: number) => ({
+          tuteur_id: finalTuteur.id,
+          formation_id: fid,
+        }));
+        await supabase
+          .from('tuteur_formations')
+          .upsert(formationRows, { onConflict: 'tuteur_id,formation_id' });
       }
 
       await logCreate(request, 'tuteurs', finalTuteur.id, {
