@@ -26,7 +26,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { nom, prenom, email, role, ecole } = body;
+    const { nom, prenom, email, role, ecole, formations } = body;
 
     // Validation
     if (!nom || !prenom || !email || !role) {
@@ -64,6 +64,106 @@ export async function PUT(
         );
       }
 
+      if (role !== 'FORMATEUR') {
+        // === Changement de rôle: Formateur → Admin ===
+        let role_secondaire: string;
+        let service: string;
+
+        if (role === 'ADMINISTRATEUR') {
+          role_secondaire = 'all';
+          service = 'all';
+        } else if (role === 'ADMINISTRATEUR ADV') {
+          role_secondaire = 'adv';
+          service = ecole;
+        } else if (role === 'ADMINISTRATEUR COMMERCIAL') {
+          role_secondaire = 'commercial';
+          service = ecole;
+        } else {
+          return NextResponse.json(
+            { success: false, error: 'Rôle invalide' },
+            { status: 400 }
+          );
+        }
+
+        // Générer un nouveau mot de passe temporaire
+        const tempPassword = Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16).toUpperCase() + '!@#';
+        const tempPasswordBase64 = Buffer.from(tempPassword).toString('base64');
+
+        // Mettre à jour l'utilisateur auth
+        await supabase.auth.admin.updateUserById(tuteurToUpdate.user_id, {
+          email: email.toLowerCase(),
+          password: tempPassword,
+          user_metadata: {
+            nom: nom.toUpperCase(),
+            prenom: prenom.toUpperCase(),
+            temp_password: tempPasswordBase64,
+            requires_password_change: true,
+          },
+        });
+
+        // Supprimer de la table tuteurs
+        const { error: deleteTuteurError } = await supabase
+          .from('tuteurs')
+          .delete()
+          .eq('id', tuteurId);
+
+        if (deleteTuteurError) {
+          return NextResponse.json(
+            { success: false, error: `Erreur lors de la suppression de l'ancien rôle: ${deleteTuteurError.message}` },
+            { status: 500 }
+          );
+        }
+
+        // Créer dans administrateurs
+        const { data: newAdmin, error: adminError } = await supabase
+          .from('administrateurs')
+          .insert({
+            user_id: tuteurToUpdate.user_id,
+            nom: nom.toUpperCase(),
+            prenom: prenom.toUpperCase(),
+            email: email.toLowerCase(),
+            niveau: 'admin',
+            role_secondaire,
+            service: service || null,
+          })
+          .select()
+          .single();
+
+        if (adminError) {
+          return NextResponse.json(
+            { success: false, error: `Erreur lors de la création de l'administrateur: ${adminError.message}` },
+            { status: 500 }
+          );
+        }
+
+        await logUpdate(
+          request,
+          'tuteurs',
+          tuteurId,
+          tuteurToUpdate,
+          newAdmin,
+          ['role'],
+          `Changement de rôle: formateur → administrateur pour ${prenom} ${nom}`
+        ).catch(() => {});
+
+        return NextResponse.json({
+          success: true,
+          message: 'Rôle changé en administrateur avec succès.',
+          admin: newAdmin,
+          credentials: {
+            email: email.toLowerCase(),
+            password: tempPassword,
+          },
+        });
+      }
+
+      // === Formateur reste formateur: mise à jour simple ===
+      // Nettoyer toute entrée obsolète dans administrateurs (éviter conflit de rôle)
+      await supabase
+        .from('administrateurs')
+        .delete()
+        .eq('user_id', tuteurToUpdate.user_id);
+
       // Mettre à jour l'email et les métadonnées dans auth.users
       await supabase.auth.admin.updateUserById(tuteurToUpdate.user_id, {
         email: email.toLowerCase(),
@@ -88,6 +188,20 @@ export async function PUT(
           { success: false, error: `Erreur lors de la mise à jour: ${updateError.message}` },
           { status: 500 }
         );
+      }
+
+      // Mettre à jour les formations assignées
+      if (Array.isArray(formations)) {
+        // Supprimer les anciennes assignations
+        await supabase.from('tuteur_formations').delete().eq('tuteur_id', tuteurId);
+        // Insérer les nouvelles
+        if (formations.length > 0) {
+          const formationRows = formations.map((fid: number) => ({
+            tuteur_id: parseInt(tuteurId),
+            formation_id: fid,
+          }));
+          await supabase.from('tuteur_formations').insert(formationRows);
+        }
       }
 
       await logUpdate(
@@ -150,8 +264,123 @@ export async function PUT(
       role_secondaire = 'commercial';
       service = ecole;
     } else if (role === 'FORMATEUR') {
-      role_secondaire = 'pedagogie';
-      service = ecole;
+      // === Changement de rôle: Admin → Formateur ===
+      // Supprimer de la table administrateurs et créer dans tuteurs
+
+      // Générer un nouveau mot de passe temporaire
+      const tempPassword = Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16).toUpperCase() + '!@#';
+      const tempPasswordBase64 = Buffer.from(tempPassword).toString('base64');
+
+      // Mettre à jour l'utilisateur auth avec nouveau mot de passe + métadonnées
+      await supabase.auth.admin.updateUserById(adminToUpdate.user_id, {
+        email: email.toLowerCase(),
+        password: tempPassword,
+        user_metadata: {
+          nom: nom.toUpperCase(),
+          prenom: prenom.toUpperCase(),
+          temp_password: tempPasswordBase64,
+          requires_password_change: true,
+        },
+      });
+
+      // Supprimer l'entrée dans administrateurs
+      const { error: deleteAdminError } = await supabase
+        .from('administrateurs')
+        .delete()
+        .eq('id', id);
+
+      if (deleteAdminError) {
+        return NextResponse.json(
+          { success: false, error: `Erreur lors de la suppression de l'ancien rôle: ${deleteAdminError.message}` },
+          { status: 500 }
+        );
+      }
+
+      // Supprimer user_profile si existant
+      await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', adminToUpdate.user_id);
+
+      // Créer ou mettre à jour dans tuteurs
+      const { data: newTuteur, error: tuteurError } = await supabase
+        .from('tuteurs')
+        .insert({
+          user_id: adminToUpdate.user_id,
+          statut: 'actif',
+        })
+        .select()
+        .single();
+
+      let finalTuteur;
+
+      if (tuteurError) {
+        if (tuteurError.code === '23505') {
+          // Le tuteur existe déjà, mettre à jour
+          const { data: updatedTuteur, error: updateTuteurError } = await supabase
+            .from('tuteurs')
+            .update({
+              statut: 'actif',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', adminToUpdate.user_id)
+            .select()
+            .single();
+
+          if (updateTuteurError || !updatedTuteur) {
+            return NextResponse.json(
+              { success: false, error: 'Erreur lors de la mise à jour du formateur' },
+              { status: 500 }
+            );
+          }
+          finalTuteur = updatedTuteur;
+        } else {
+          return NextResponse.json(
+            { success: false, error: `Erreur lors de la création du formateur: ${tuteurError.message}` },
+            { status: 500 }
+          );
+        }
+      } else {
+        finalTuteur = newTuteur;
+      }
+
+      // Assigner les formations si fournies
+      if (Array.isArray(formations) && formations.length > 0) {
+        const formationRows = formations.map((fid: number) => ({
+          tuteur_id: finalTuteur.id,
+          formation_id: fid,
+        }));
+        await supabase
+          .from('tuteur_formations')
+          .upsert(formationRows, { onConflict: 'tuteur_id,formation_id' });
+      }
+
+      await logUpdate(
+        request,
+        'administrateurs',
+        id,
+        adminToUpdate,
+        finalTuteur,
+        ['role'],
+        `Changement de rôle: administrateur → formateur pour ${prenom} ${nom}`
+      ).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: 'Rôle changé en formateur avec succès.',
+        admin: {
+          ...finalTuteur,
+          nom: nom.toUpperCase(),
+          prenom: prenom.toUpperCase(),
+          email: email.toLowerCase(),
+          role_secondaire: 'pedagogie',
+          service: ecole || null,
+        },
+        credentials: {
+          email: email.toLowerCase(),
+          password: tempPassword,
+        },
+      });
     } else {
       return NextResponse.json(
         { success: false, error: 'Rôle invalide' },

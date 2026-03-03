@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const { count: totalSoumissionsEnAttente } = await supabase
       .from('soumissions_etude_cas')
       .select('id', { count: 'exact', head: true })
-      .eq('corrige_par', tuteur.id)
+      .eq('tuteur_id', tuteur.id)
       .eq('statut', 'en_attente');
 
     // Dernière activité (dernière connexion)

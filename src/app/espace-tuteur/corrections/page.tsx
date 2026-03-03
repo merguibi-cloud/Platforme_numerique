@@ -74,7 +74,7 @@ export default function CorrectionsPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 border-2 border-red-300 p-4 text-red-700 text-sm">
+        <div className="bg-[#D96B6B] border-2 border-[#032622] p-4 text-white text-sm font-semibold">
           {error}
         </div>
       ) : submissions.length === 0 ? (

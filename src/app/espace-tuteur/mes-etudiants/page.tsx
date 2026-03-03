@@ -44,7 +44,7 @@ export default function MesEtudiants() {
           placeholder="Rechercher un étudiant..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 px-4 py-3 border-2 border-[#032622] bg-white text-[#032622] placeholder-gray-400 focus:outline-none"
+          className="flex-1 px-4 py-3 border-2 border-[#032622] bg-[#F8F5E4] text-[#032622] placeholder-[#032622]/50 focus:outline-none"
         />
       </div>
 
@@ -54,7 +54,7 @@ export default function MesEtudiants() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032622]" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 border-2 border-red-300 p-4 text-red-700 text-sm">
+        <div className="bg-[#D96B6B] border-2 border-[#032622] p-4 text-white text-sm font-semibold">
           {error}
         </div>
       ) : filteredTutees.length === 0 ? (
@@ -88,19 +88,19 @@ export default function MesEtudiants() {
 
               <div className="flex items-center justify-between mb-4">
                 <span
-                  className={`text-xs font-bold px-3 py-1 ${
+                  className={`text-xs font-bold px-3 py-1 border ${
                     tutee.statut === 'actif'
-                      ? 'bg-green-100 text-green-800 border border-green-300'
+                      ? 'bg-[#4CAF50] text-white border-[#032622]'
                       : tutee.statut === 'inactif'
-                      ? 'bg-gray-100 text-gray-800 border border-gray-300'
-                      : 'bg-red-100 text-red-800 border border-red-300'
+                      ? 'bg-[#032622]/20 text-[#032622] border-[#032622]'
+                      : 'bg-[#D96B6B] text-white border-[#032622]'
                   }`}
                 >
                   {tutee.statut === 'actif' ? 'ACTIF' : tutee.statut === 'inactif' ? 'INACTIF' : 'TERMINÉ'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#032622] pt-3 border-t border-gray-300">
+              <div className="flex items-center justify-between text-xs text-[#032622] pt-3 border-t border-[#032622]/30">
                 <span>
                   Depuis le {new Date(tutee.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>

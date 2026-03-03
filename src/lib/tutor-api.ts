@@ -1,4 +1,5 @@
-import type { Tuteur, TuteurEtudiant, TuteurCours, TutorDashboardStats, StudentProgress } from '@/types/tutor';
+import type { Tuteur, TuteurEtudiant, TutorDashboardStats, StudentProgress } from '@/types/tutor';
+
 
 export class TutorAPI {
   private static async fetch<T>(url: string, options?: RequestInit): Promise<T> {
@@ -38,14 +39,7 @@ export class TutorAPI {
   }
 
   static async getTuteeProgress(studentId: string): Promise<StudentProgress[]> {
-    return this.fetch<StudentProgress[]>(`/api/espace-tuteur/students/${studentId}/progress`);
-  }
+    return this.fetch<StudentProgress[]>(`/api/espace-tuteur/tutees/${studentId}/progress`);
 
-  static async getAssignedCourses(): Promise<TuteurCours[]> {
-    return this.fetch<TuteurCours[]>('/api/espace-tuteur/courses');
-  }
-
-  static async getCourseStudents(courseId: string): Promise<StudentProgress[]> {
-    return this.fetch<StudentProgress[]>(`/api/espace-tuteur/courses/${courseId}/students`);
   }
 }

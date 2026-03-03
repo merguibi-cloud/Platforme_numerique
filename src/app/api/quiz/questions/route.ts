@@ -66,17 +66,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Récupérer la question avec ses réponses
-    const { data: questionWithReponses, error: fetchError } = await supabase
+    // Récupérer la question avec ses réponses (sans join pour éviter PGRST200)
+    const { data: questionWithReponses } = await supabase
       .from('questions_quiz')
-      .select(`
-        *,
-        reponses_possibles (*)
-      `)
+      .select('*')
       .eq('id', newQuestion.id)
       .single();
 
-    return NextResponse.json({ question: questionWithReponses }, { status: 201 });
+    const { data: reponsesPossibles } = await supabase
+      .from('reponses_possibles')
+      .select('*')
+      .eq('question_id', newQuestion.id);
+
+    return NextResponse.json({ question: { ...questionWithReponses, reponses_possibles: reponsesPossibles || [] } }, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création de la question:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -155,15 +157,17 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Récupérer la question mise à jour avec ses réponses
-    const { data: questionWithReponses, error: fetchError } = await supabase
+    // Récupérer la question mise à jour avec ses réponses (sans join pour éviter PGRST200)
+    const { data: questionWithReponses } = await supabase
       .from('questions_quiz')
-      .select(`
-        *,
-        reponses_possibles (*)
-      `)
+      .select('*')
       .eq('id', questionId)
       .single();
+
+    const { data: reponsesPossibles } = await supabase
+      .from('reponses_possibles')
+      .select('*')
+      .eq('question_id', questionId);
 
     // Vérifier si le quiz est maintenant vide (si la question mise à jour est inactive ou vide)
     // Note: Si une question est vide ou inactive, elle devrait être supprimée plutôt que mise à jour
@@ -194,7 +198,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ question: questionWithReponses });
+    return NextResponse.json({ question: { ...questionWithReponses, reponses_possibles: reponsesPossibles || [] } });
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la question:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

@@ -38,26 +38,17 @@ export interface TutorDashboardStats {
 
 export interface StudentProgress {
   etudiant_id: string;
-  cours_id: string;
+
+  
   prenom: string;
   nom: string;
   email: string;
-  cours_titre?: string;
-  progression: number;
-  chapitres_termines: number;
-  total_chapitres: number;
-  statut: 'en_cours' | 'termine' | 'non_commence' | 'en_retard';
-  date_derniere_activite?: string;
-}
-
-export interface TuteurCours {
-  id: string;
-  tuteur_id: string;
   cours_id: string;
-  created_at: string;
-  cours?: {
-    id: string;
-    titre: string;
-    description?: string;
-  };
+  cours_titre: string;
+  progression: number;
+  statut: 'non_commence' | 'en_cours' | 'termine';
+  date_derniere_activite: string | null;
+  total_chapitres: number;
+  chapitres_termines: number;
+
 }
