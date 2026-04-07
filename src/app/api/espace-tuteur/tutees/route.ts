@@ -21,39 +21,64 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    // Récupérer les relations tuteur-étudiants
-    const { data: tutees, error } = await supabase
-      .from('tuteur_etudiants')
-      .select('id, tuteur_id, etudiant_id, statut, date_debut, date_fin, created_at')
-      .eq('tuteur_id', tuteur.id)
-      .order('created_at', { ascending: false });
+    // Récupérer les formations assignées au tuteur
+    const { data: assignments, error: assignError } = await supabase
+      .from('tuteur_formations')
+      .select('formation_id')
+      .eq('tuteur_id', tuteur.id);
 
-    if (error) {
-      console.error('Erreur tutees:', error);
+    if (assignError) {
+      console.error('Erreur tuteur_formations:', assignError);
       return NextResponse.json({ error: 'Erreur lors du chargement' }, { status: 500 });
     }
 
-    // Récupérer les infos des étudiants séparément
-    // etudiant_id référence auth.users(id), etudiants.user_id aussi
-    const etudiantUserIds = (tutees || []).map((t: any) => t.etudiant_id).filter(Boolean);
-    let etudiantsMap: Record<string, any> = {};
-
-    if (etudiantUserIds.length > 0) {
-      const { data: etudiants } = await supabase
-        .from('etudiants')
-        .select('id, user_id, nom, prenom, email, photo_url')
-        .in('user_id', etudiantUserIds);
-
-      if (etudiants) {
-        etudiantsMap = Object.fromEntries(etudiants.map((e: any) => [e.user_id, e]));
-      }
+    if (!assignments || assignments.length === 0) {
+      return NextResponse.json([]);
     }
 
-    // Joindre les données
-    const result = (tutees || []).map((t: any) => ({
-      ...t,
-      etudiant: etudiantsMap[t.etudiant_id] || null,
-    }));
+    const formationIds = assignments.map((a: any) => a.formation_id);
+
+    // Récupérer tous les étudiants inscrits dans ces formations
+    const { data: etudiants, error: etudiantsError } = await supabase
+      .from('etudiants')
+      .select('id, user_id, formation_id, created_at')
+      .in('formation_id', formationIds);
+
+    if (etudiantsError) {
+      console.error('Erreur etudiants:', etudiantsError);
+      return NextResponse.json({ error: 'Erreur lors du chargement' }, { status: 500 });
+    }
+
+    if (!etudiants || etudiants.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Récupérer les infos de chaque étudiant depuis candidatures
+    const result = await Promise.all(
+      etudiants.map(async (etudiant: any) => {
+        const { data: candidature } = await supabase
+          .from('candidatures')
+          .select('nom, prenom, email')
+          .eq('user_id', etudiant.user_id)
+          .maybeSingle();
+
+        return {
+          id: etudiant.id,
+          tuteur_id: tuteur.id,
+          etudiant_id: etudiant.id,
+          statut: 'actif',
+          date_debut: etudiant.created_at,
+          created_at: etudiant.created_at,
+          formation_id: etudiant.formation_id,
+          etudiant: {
+            id: etudiant.id,
+            prenom: candidature?.prenom || '',
+            nom: candidature?.nom || '',
+            email: candidature?.email || '',
+          },
+        };
+      })
+    );
 
     return NextResponse.json(result);
   } catch (error) {

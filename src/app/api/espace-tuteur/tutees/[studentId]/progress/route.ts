@@ -31,33 +31,32 @@ export async function GET(
       );
     }
 
-    // Verify this student is assigned to this tutor
-    const { data: relationship } = await supabase
-      .from('tuteur_etudiants')
-      .select('id')
-      .eq('tuteur_id', tuteur.id)
-      .eq('etudiant_id', studentId)
-      .eq('statut', 'actif')
-      .maybeSingle();
-
-    if (!relationship) {
-      return NextResponse.json(
-        { error: 'Étudiant non assigné à ce tuteur' },
-        { status: 403 }
-      );
-    }
-
     // Get student info
     const { data: etudiant } = await supabase
       .from('etudiants')
-      .select('id, user_id')
+      .select('id, user_id, formation_id')
       .eq('id', studentId)
-      .single();
+      .maybeSingle();
 
     if (!etudiant) {
       return NextResponse.json(
         { error: 'Étudiant non trouvé' },
         { status: 404 }
+      );
+    }
+
+    // Verify the student's formation is assigned to this tutor
+    const { data: formation } = await supabase
+      .from('tuteur_formations')
+      .select('id')
+      .eq('tuteur_id', tuteur.id)
+      .eq('formation_id', etudiant.formation_id)
+      .maybeSingle();
+
+    if (!formation) {
+      return NextResponse.json(
+        { error: 'Étudiant non assigné à ce tuteur' },
+        { status: 403 }
       );
     }
 
