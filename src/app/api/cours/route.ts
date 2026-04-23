@@ -169,6 +169,7 @@ export async function GET(request: NextRequest) {
         numero_cours: c.numero_cours,
         chapitresDetails,
         hasEtudeCas: etudesCasByCours.has(c.id),
+        created_by: c.created_by ?? null,
       };
     });
 
@@ -208,8 +209,8 @@ export async function POST(request: NextRequest) {
     }
     const { user } = authResult;
 
-    // Vérification des permissions (admin ou rôles pédagogie)
-    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    // Vérification des permissions (admin, pédagogie ou tuteur)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie', 'tuteur']);
     if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
@@ -448,8 +449,8 @@ export async function PUT(request: NextRequest) {
     }
     const { user } = authResult;
 
-    // Vérification des permissions (admin ou rôles pédagogie)
-    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    // Vérification des permissions (admin, pédagogie ou tuteur)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie', 'tuteur']);
     if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
@@ -458,13 +459,18 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { coursId, action } = body;
-    
-    // Récupérer le cours pour le log
+
+    // Récupérer le cours pour le log et la vérification de propriété
     const { data: cours } = await supabase
       .from('cours_apprentissage')
       .select('*')
       .eq('id', coursId)
       .single();
+
+    // Les tuteurs ne peuvent modifier que leurs propres cours
+    if (!('admin' in permissionResult) && cours?.created_by !== user.id) {
+      return NextResponse.json({ error: 'Vous ne pouvez modifier que vos propres cours' }, { status: 403 });
+    }
 
     if (action === 'publish') {
       // Publier le cours (mettre tous les chapitres en actif et le statut en 'en_ligne')
@@ -574,10 +580,22 @@ export async function DELETE(request: NextRequest) {
     }
     const { user } = authResult;
 
-    // Vérification des permissions (admin ou rôles pédagogie)
-    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie']);
+    // Vérification des permissions (admin, pédagogie ou tuteur)
+    const permissionResult = await requireAdminOrRole(user.id, ['admin', 'superadmin', 'pedagogie', 'tuteur']);
     if ('error' in permissionResult) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+    }
+
+    // Les tuteurs ne peuvent supprimer que leurs propres cours
+    if (!('admin' in permissionResult)) {
+      const { data: coursCheck } = await supabase
+        .from('cours_apprentissage')
+        .select('created_by')
+        .eq('id', coursId)
+        .maybeSingle();
+      if (!coursCheck || coursCheck.created_by !== user.id) {
+        return NextResponse.json({ error: 'Vous ne pouvez supprimer que vos propres cours' }, { status: 403 });
+      }
     }
 
     if (scope === 'chapitre') {

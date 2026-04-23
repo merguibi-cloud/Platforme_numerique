@@ -11,16 +11,18 @@ interface BlockCardProps {
   title: string;
   description: string;
   formationId: string;
+  canModify?: boolean;
   onViewBlock?: (blockId: string) => void;
   onEditBlock?: (blockId: string) => void;
   onDeleteBlock?: (blockId: string) => void;
 }
 
-export const BlockCard = ({ 
-  id, 
-  title, 
-  description, 
+export const BlockCard = ({
+  id,
+  title,
+  description,
   formationId,
+  canModify = true,
   onViewBlock,
   onEditBlock,
   onDeleteBlock
@@ -99,16 +101,20 @@ export const BlockCard = ({
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
-              onClick={handleEditBlock}
-              className="bg-[#032622] text-white px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex items-center justify-center gap-1 flex-1 sm:flex-initial"
+              onClick={canModify ? handleEditBlock : undefined}
+              disabled={!canModify}
+              title={!canModify ? 'Ce bloc appartient à un autre tuteur' : undefined}
+              className={`px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 flex-1 sm:flex-initial ${canModify ? 'bg-[#032622] text-white hover:bg-[#032622]/90 active:bg-[#032622]/80 cursor-pointer' : 'bg-[#032622]/20 text-[#032622]/40 cursor-not-allowed'}`}
             >
               <Edit className="w-3 h-3" />
               <span className="hidden sm:inline">ÉDITER</span>
             </button>
-            
+
             <button
-              onClick={handleDeleteBlock}
-              className="bg-red-600 text-white px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-red-700 active:bg-red-800 transition-colors flex items-center justify-center gap-1 flex-1 sm:flex-initial"
+              onClick={canModify ? handleDeleteBlock : undefined}
+              disabled={!canModify}
+              title={!canModify ? 'Ce bloc appartient à un autre tuteur' : undefined}
+              className={`px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 flex-1 sm:flex-initial ${canModify ? 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 cursor-pointer' : 'bg-red-200 text-red-300 cursor-not-allowed'}`}
             >
               <Trash2 className="w-3 h-3" />
               <span className="hidden sm:inline">SUPPRIMER</span>

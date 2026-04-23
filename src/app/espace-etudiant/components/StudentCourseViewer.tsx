@@ -1263,7 +1263,6 @@ export const StudentCourseViewer = ({
                     onQuizComplete={quizAvecNote.has(currentQuiz.quiz.id) && justSubmittedQuiz !== currentQuiz.quiz.id ? undefined : (reponses, tempsPasse) => {
                       if (reponses && tempsPasse !== undefined) {
                         handleQuizSubmit(reponses, tempsPasse);
-                        setQuizCompleted(true);
                       }
                     }}
                   />

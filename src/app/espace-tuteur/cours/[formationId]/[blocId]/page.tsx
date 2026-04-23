@@ -37,6 +37,7 @@ export default function TutorModuleManagementPage({ params }: ModuleManagementPa
   const [modules, setModules] = useState<ModuleWithStatus[]>([]);
   const [blocInfo, setBlocInfo] = useState<{ titre: string; numero_bloc: number } | null>(null);
   const [formationInfo, setFormationInfo] = useState<{ titre: string; ecole?: string } | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
 
   const BASE_PATH = '/espace-tuteur/cours';
 
@@ -91,6 +92,7 @@ export default function TutorModuleManagementPage({ params }: ModuleManagementPa
           ordre_affichage: cours.ordre_affichage,
           numero_module: cours.numero_cours || cours.numero_module,
           hasEtudeCas: cours.hasEtudeCas || false,
+          created_by: cours.created_by ?? null,
         }));
         setModules(formattedModules);
       } else {
@@ -106,6 +108,11 @@ export default function TutorModuleManagementPage({ params }: ModuleManagementPa
 
   useEffect(() => {
     const loadData = async () => {
+      const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData.user?.id) setCurrentUserId(sessionData.user.id);
+      }
       await Promise.all([loadBlocInfo(), loadFormationInfo(), loadModules()]);
       setIsLoading(false);
     };
@@ -221,6 +228,7 @@ export default function TutorModuleManagementPage({ params }: ModuleManagementPa
               formationId={formationId}
               blocId={blocId}
               basePath={BASE_PATH}
+              currentUserId={currentUserId}
               onAddModule={handleAddModule}
               onEditModule={handleEditModule}
               onAddQuiz={handleAddQuiz}

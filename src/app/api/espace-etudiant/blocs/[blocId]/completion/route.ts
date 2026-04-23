@@ -133,7 +133,7 @@ export async function GET(
         .from('soumissions_etude_cas')
         .select('etude_cas_id')
         .in('etude_cas_id', etudeCasIds)
-        .eq('user_id', user.id);
+        .eq('etudiant_id', etudiant.id);
 
       if (soumissionsError) {
         console.error('Erreur lors de la récupération des soumissions:', soumissionsError);

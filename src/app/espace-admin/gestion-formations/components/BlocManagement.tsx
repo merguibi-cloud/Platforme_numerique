@@ -63,7 +63,10 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
   }, [formationId, router]);
 
   const handleAddBlock = async (blocData: { titre: string; description: string; modules: string[] }) => {
-    if (!formation) return;
+    if (!formation) {
+      console.error('[BlocManagement] formation is null, cannot create bloc');
+      return;
+    }
 
     try {
       const result = await createBlocWithModules({
@@ -73,8 +76,7 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
         modules: blocData.modules
       });
 
-      if (result.success && result.bloc) {
-        // Recharger les blocs
+      if (result.success) {
         const updatedBlocs = await getBlocsByFormationId(formation.id);
         setBlocs(updatedBlocs);
         setModalMessage('Bloc créé avec succès !');
@@ -84,6 +86,7 @@ export const BlocManagement = ({ formationId }: BlocManagementProps) => {
         setIsErrorModalOpen(true);
       }
     } catch (error) {
+      console.error('[BlocManagement] handleAddBlock error:', error);
       setModalMessage('Erreur interne lors de la création du bloc');
       setIsErrorModalOpen(true);
     }

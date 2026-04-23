@@ -40,6 +40,7 @@ export async function createBlocWithModules(data: CreateBlocRequest): Promise<Cr
   try {
     const response = await fetch('/api/blocs', {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -221,6 +222,21 @@ export async function getUserProfileServer(userId: string): Promise<{ role: stri
         return { role: 'superadmin' };
       }
       return { role: 'admin' };
+    }
+
+    // Vérifier si l'utilisateur est un tuteur
+    const { data: tuteurRecord, error: tuteurError } = await supabase
+      .from('tuteurs')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (tuteurError) {
+      console.error('Erreur récupération tuteur:', tuteurError);
+    }
+
+    if (tuteurRecord) {
+      return { role: 'tuteur' };
     }
 
     // Vérifier ensuite si l'utilisateur est un étudiant

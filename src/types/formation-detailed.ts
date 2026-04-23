@@ -36,7 +36,8 @@ export interface BlocCompetence {
   actif: boolean;
   created_at: string;
   updated_at: string;
-  
+  created_by?: string | null;
+
   // Relations
   cours?: CoursApprentissage[];
   formation?: Formation;
