@@ -10,16 +10,20 @@ import { BlocCompetence } from '@/types/formation-detailed';
 interface BlocksListViewProps {
   formation: FormationInfo;
   blocks: BlocCompetence[];
+  currentUserId?: string;
+  showAddButton?: boolean;
   onViewBlock: (blockId: string) => void;
   onEditBlock: (blockId: string) => void;
   onDeleteBlock: (blockId: string) => void;
   onAddBlock: (blocData: { titre: string; description: string; modules: string[] }) => void;
 }
 
-export const BlocksListView = ({ 
-  formation, 
-  blocks, 
-  onViewBlock, 
+export const BlocksListView = ({
+  formation,
+  blocks,
+  currentUserId,
+  showAddButton = true,
+  onViewBlock,
   onEditBlock,
   onDeleteBlock,
   onAddBlock
@@ -56,13 +60,15 @@ export const BlocksListView = ({
         </div>
         
         {/* Add Block Button */}
-        <button
-          onClick={handleAddBlockClick}
-          className="bg-[#032622] text-white px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
-        >
-          <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-          AJOUTER UN BLOC
-        </button>
+        {showAddButton && (
+          <button
+            onClick={handleAddBlockClick}
+            className="bg-[#032622] text-white px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
+          >
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+            AJOUTER UN BLOC
+          </button>
+        )}
         
         {/* Blocks List */}
         {blocks.length === 0 ? (
@@ -87,6 +93,7 @@ export const BlocksListView = ({
                 title={bloc.titre}
                 description={bloc.description || 'Aucune description disponible'}
                 formationId={formation.id}
+                canModify={!currentUserId || !bloc.created_by || bloc.created_by === currentUserId}
                 onViewBlock={onViewBlock}
                 onEditBlock={onEditBlock}
                 onDeleteBlock={onDeleteBlock}

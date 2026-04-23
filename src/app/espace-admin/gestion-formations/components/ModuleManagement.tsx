@@ -19,6 +19,7 @@ interface ModuleWithStatus {
   ordre_affichage?: number;
   numero_module?: number;
   hasEtudeCas?: boolean;
+  created_by?: string | null;
 }
 
 interface ModuleManagementProps {
@@ -30,6 +31,7 @@ interface ModuleManagementProps {
   formationId: string;
   blocId: string;
   basePath?: string;
+  currentUserId?: string;
   onAddModule: (moduleData: { titre?: string; cours: Array<{ id?: number; titre: string }> | string[]; moduleId?: string }) => void;
   onEditModule: (moduleId: string) => void;
   onAddQuiz: (moduleId: string) => void;
@@ -49,6 +51,7 @@ export const ModuleManagement = ({
   formationId,
   blocId,
   basePath = '/espace-admin/gestion-formations',
+  currentUserId,
   onAddModule,
   onEditModule,
   onAddQuiz,
@@ -58,6 +61,9 @@ export const ModuleManagement = ({
   onDeleteModule,
   onRefreshModules,
 }: ModuleManagementProps) => {
+  // When currentUserId is set (tutor context), only own courses can be modified
+  const canModify = (module: ModuleWithStatus) =>
+    !currentUserId || !module.created_by || module.created_by === currentUserId;
   const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [preselectedCoursId, setPreselectedCoursId] = useState<string | null>(null);
@@ -302,20 +308,22 @@ export const ModuleManagement = ({
                     }}
                   >
                     <button
-                      onClick={() => handleStatusIconClick(module)}
-                      disabled={module.statut === 'manquant' || isChangingStatus}
+                      onClick={() => canModify(module) && handleStatusIconClick(module)}
+                      disabled={module.statut === 'manquant' || isChangingStatus || !canModify(module)}
                       className={`
                         flex items-center justify-center
                         w-8 h-8 sm:w-10 sm:h-10
                         rounded transition-colors flex-shrink-0
-                        ${module.statut === 'manquant'
-                          ? 'opacity-50 cursor-not-allowed'
+                        ${module.statut === 'manquant' || !canModify(module)
+                          ? 'opacity-30 cursor-not-allowed'
                           : 'cursor-pointer hover:bg-[#032622]/10 active:bg-[#032622]/20'
                         }
                         ${isChangingStatus ? 'opacity-50 cursor-wait' : ''}
                       `}
                       title={
-                        module.statut === 'manquant' 
+                        !canModify(module)
+                          ? 'Ce cours appartient à un autre tuteur'
+                          : module.statut === 'manquant'
                           ? 'Cours manquant - impossible de changer le statut'
                           : module.statut === 'en_ligne'
                           ? 'Mettre en brouillon (hors ligne)'
@@ -416,8 +424,10 @@ export const ModuleManagement = ({
                     </td>
                     <td className="border border-[#032622] p-0">
                       <button
-                        onClick={() => handleEditCoursClick(module)}
-                        className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
+                        onClick={() => canModify(module) && handleEditCoursClick(module)}
+                        disabled={!canModify(module)}
+                        title={!canModify(module) ? 'Ce cours appartient à un autre tuteur' : undefined}
+                        className={`w-full h-full px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0 ${canModify(module) ? 'text-[#032622] hover:bg-[#032622]/10 active:bg-[#032622]/20 cursor-pointer' : 'text-[#032622]/30 cursor-not-allowed'}`}
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
                         <Edit className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
@@ -490,8 +500,10 @@ export const ModuleManagement = ({
                     )}
                     <td className="border border-[#032622] p-0">
                       <button
-                        onClick={() => openDeleteModal(module)}
-                        className="w-full h-full text-[#032622] px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider hover:bg-[#032622]/10 active:bg-[#032622]/20 transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0"
+                        onClick={() => canModify(module) && openDeleteModal(module)}
+                        disabled={!canModify(module)}
+                        title={!canModify(module) ? 'Ce cours appartient à un autre tuteur' : undefined}
+                        className={`w-full h-full px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-0.5 sm:gap-1 border-0 ${canModify(module) ? 'text-[#032622] hover:bg-[#032622]/10 active:bg-[#032622]/20 cursor-pointer' : 'text-[#032622]/30 cursor-not-allowed'}`}
                         style={{ fontFamily: 'var(--font-termina-bold)' }}
                       >
                         <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />

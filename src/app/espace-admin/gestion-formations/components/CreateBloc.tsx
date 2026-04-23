@@ -31,7 +31,7 @@ export const CreateBloc = ({ isOpen, onClose, onSave }: CreateBlocProps) => {
   };
 
   const handleSave = () => {
-    if (titreBloc.trim() && modules.some(module => module.trim())) {
+    if (titreBloc.trim()) {
       onSave({
         titre: titreBloc.trim(),
         description: descriptionBloc.trim(),
@@ -173,7 +173,7 @@ export const CreateBloc = ({ isOpen, onClose, onSave }: CreateBlocProps) => {
         <div className="p-4 sm:p-5 md:p-6 border-t-2 border-[#032622]">
           <button
             onClick={handleSave}
-            disabled={!titreBloc.trim() || !modules.some(module => module.trim())}
+            disabled={!titreBloc.trim()}
             className="w-full bg-[#032622] text-[#F8F5E4] py-2.5 sm:py-3 text-sm sm:text-base md:text-lg font-semibold uppercase tracking-wider hover:bg-[#032622]/90 active:bg-[#032622]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-termina-bold)' }}
           >
