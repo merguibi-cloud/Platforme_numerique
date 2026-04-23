@@ -22,6 +22,7 @@ export default function TutorFormationBlocsPage({
   const [formation, setFormation] = useState<Formation | null>(null);
   const [blocs, setBlocs] = useState<BlocCompetence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [editingBloc, setEditingBloc] = useState<BlocCompetence | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -33,6 +34,12 @@ export default function TutorFormationBlocsPage({
   useEffect(() => {
     const loadData = async () => {
       try {
+        const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData.user?.id) setCurrentUserId(sessionData.user.id);
+        }
+
         const id = parseInt(formationId);
         if (isNaN(id)) {
           router.push('/espace-tuteur/cours');
@@ -171,6 +178,8 @@ export default function TutorFormationBlocsPage({
         <BlocksListView
           formation={formationInfo}
           blocks={blocs}
+          currentUserId={currentUserId}
+          showAddButton={false}
           onViewBlock={handleViewBlock}
           onEditBlock={handleEditBlock}
           onDeleteBlock={handleDeleteBlock}
